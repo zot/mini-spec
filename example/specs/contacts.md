@@ -1,6 +1,8 @@
-# Contacts App
+# Contacts App: an in-browser TypeScript app
 
-A contact manager with search and CRUD operations.
+A contact manager with search and CRUD operations. Currently there is only one contact list but in the future there might be a way to select different named contact lists.
+
+Vanilla HTML5, no external libraries.
 
 ## Layout
 

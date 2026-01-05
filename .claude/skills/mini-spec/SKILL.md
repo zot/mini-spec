@@ -67,7 +67,7 @@ Create files in `design/` directory:
 - `design.md`: main design file
    - **Intent**: What the system accomplishes
    - **Artifacts**: design files, each with sublist of code file checkboxes (unchecked `[ ]`)
-- `crc-*`: CRC cards with references to relevant sequence diagram files
+- `crc-*`: CRC cards (see CRC Card Format below)
 - `seq-*`: sequence diagrams
 - `ui-*`: Terse, scannable, ASCII art for layouts, reference CRC cards for types/behavior, styling requirements
 - `test-*`: test designs
@@ -89,4 +89,35 @@ Create code and tests in the language(s) specified in the specs:
 ### Documentation Phase
 
 Create `docs/user-manual.md` and `docs/developer-guide.md` with traceability links.
+
+## CRC Card Format
+
+```markdown
+# ClassName
+**Source Spec:** feature.md
+
+## Knows (attributes)
+- attribute: description
+
+## Does (behaviors)
+- behavior: description
+
+## Collaborators
+- OtherClass: why
+
+## Sequences
+- seq-scenario.md: description
+```
+
+**Principles:** Single Responsibility, minimal collaborations, PascalCase names.
+
+## Quality Checklist
+
+Before completing design or implementation:
+
+- [ ] **CRC Cards:** Every noun/verb from spec covered, no god classes, `Source Spec` linked
+- [ ] **Sequences:** All participants from CRC cards, ≤150 chars wide
+- [ ] **UI Specs:** ASCII layouts, references CRC cards and manifest-ui.md
+- [ ] **Traceability:** All design files listed in Artifacts, code files have checkboxes
+- [ ] **Tests:** test-*.md created for key behaviors
   

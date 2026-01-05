@@ -1,0 +1,13 @@
+{
+  "name": "contacts-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc -p tsconfig.test.json && node dist-test/src/tests/ContactStore.test.js",
+    "clean": "rm -rf dist dist-test"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

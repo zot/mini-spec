@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <input type="text" id="search" placeholder="Search..." class="search-input">
+      <span id="badge" class="badge">0</span>
+      <button id="add-btn" class="btn-primary">Add</button>
+      <label class="dark-toggle">
+        <input type="checkbox" id="dark-toggle">
+        Dark
+      </label>
+    </header>
+    <main class="main">
+      <div id="contact-list" class="contact-list"></div>
+      <div id="detail-panel" class="detail-panel"></div>
+    </main>
+  </div>
+  <script type="module" src="dist/main.js"></script>
+</body>
+</html>

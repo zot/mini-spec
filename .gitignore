@@ -1,5 +1,17 @@
+# Emacs
 *~
 .*~
 \#*
 .#*
+
+# Project
 notes.md
+old/
+
+# Build artifacts
+node_modules/
+dist/
+dist-test/
+
+# Tools
+.serena/
