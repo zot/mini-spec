@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
+    .dark { background: #1a1a1a; color: #eee; }
+    .dark input, .dark select { background: #333; color: #eee; border-color: #555; }
+
+    .header { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+    .header input[type="text"] { flex: 1; padding: 8px; }
+    .badge { background: #ddd; padding: 4px 10px; border-radius: 12px; font-size: 14px; }
+    .dark .badge { background: #444; }
+
+    .body { display: flex; gap: 20px; }
+    .list, .detail { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 15px; min-height: 250px; }
+    .dark .list, .dark .detail { border-color: #444; }
+
+    .contact-row { padding: 10px; cursor: pointer; border-left: 3px solid transparent; border-radius: 4px; }
+    .contact-row:hover { background: #f5f5f5; }
+    .dark .contact-row:hover { background: #333; }
+    .contact-row.selected { border-left-color: #0066cc; background: #e6f0ff; }
+    .dark .contact-row.selected { background: #1a3a5c; }
+    .contact-name { font-weight: 500; }
+    .contact-email { color: #666; font-size: 14px; }
+    .dark .contact-email { color: #999; }
+
+    .detail label { display: block; margin-bottom: 15px; }
+    .detail label span { display: block; margin-bottom: 4px; font-size: 14px; color: #666; }
+    .dark .detail label span { color: #999; }
+    .detail input, .detail select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .detail .checkbox-label { display: flex; align-items: center; gap: 8px; }
+    .detail .checkbox-label input { width: auto; }
+
+    .actions { display: flex; justify-content: space-between; margin-top: 20px; }
+    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-primary { background: #0066cc; color: white; }
+    .btn-danger { background: #cc3333; color: white; }
+    .btn-default { background: #ddd; }
+    .dark .btn-default { background: #444; color: #eee; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <input type="text" id="search" placeholder="Search contacts...">
+    <span class="badge" id="count">0</span>
+    <button class="btn-primary" id="addBtn">+ Add</button>
+    <label><input type="checkbox" id="darkMode"> Dark</label>
+  </div>
+
+  <div class="body">
+    <div class="list" id="list"></div>
+    <div class="detail hidden" id="detail">
+      <label><span>Name</span><input type="text" id="name"></label>
+      <label><span>Email</span><input type="email" id="email"></label>
+      <label><span>Status</span>
+        <select id="status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </label>
+      <label class="checkbox-label"><input type="checkbox" id="vip"> VIP</label>
+      <div class="actions">
+        <button class="btn-danger" id="deleteBtn">Delete</button>
+        <button class="btn-default" id="cancelBtn">Cancel</button>
+        <button class="btn-primary" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
