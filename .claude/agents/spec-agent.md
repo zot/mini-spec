@@ -1,6 +1,6 @@
 ---
 name: spec-agent
-description: design, update, and implement programs
+description: design, update, and implement programs, reverse engineer code
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, Task
 model: opus
 ---

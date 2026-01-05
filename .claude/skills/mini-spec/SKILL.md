@@ -1,6 +1,6 @@
 ---
 name: mini-spec
-description: use **whenever designing, updating, or implementing the design, code, or docs**
+description: use **whenever designing, updating, or implementing the design, code, or docs** or **whenever reverse engineering a design from code**
 ---
 
 # Mini-spec
