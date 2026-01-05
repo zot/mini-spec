@@ -5,119 +5,89 @@ description: use **whenever designing, updating, or implementing the design, cod
 
 # Mini-spec
 
-Build and maintain 3-level architectures. Drectory structure
+3-level architecture: specs → design → code.
+
 ```
-PROJECT
-├── specs/       # Human readable specs
-├── design/      # SOURCE OF TRUTH (apps AND shared components) -- all design files
-├── docs/        # Human readable documentation
-└── CODE-DIRS/   # names depend on the app language(s)
+specs/    # Human specs (language, environment required)
+design/   # SOURCE OF TRUTH: crc-*, seq-*, ui-*, test-*, manifest-ui.md
+docs/     # user-manual.md, developer-guide.md
+src/      # Code with traceability comments
 ```
 
-## 🎯 Core Principles
-- Use **SOLID principles** in all implementations
-- Create comprehensive **unit tests** for all components
-- Code and specs are as MINIMAL as POSSIBLE
+## Core Principles
+- SOLID principles, comprehensive unit tests
+- Code and specs as MINIMAL as possible
 
-## 🔗 Traceability: Design ↔ Code Sync
+## Traceability
 
-The **Artifacts** section in `design.md` is a memory bank for project state. Each design file lists its implementing code files as checkboxes.
+`design.md` Artifacts section: design files with code file checkboxes.
 
-**When code changes:**
-1. Find the CRC comment on the changed method → identifies which design file
-2. Uncheck `[x]` → `[ ]` for that code file in Artifacts
-3. Later, grep for `[ ]` to find stale design that needs review
+**Code changes:** Uncheck `[x]`→`[ ]`, ask user: "Update design, specs, or defer?"
+**Update design:** Read code, update design file, re-check box.
 
-**When updating design:**
-1. Find unchecked items in Artifacts
-2. Read the code, update the design file
-3. Re-check the box
+## Gap Analysis
 
-This bidirectional link keeps design and code in sync without reading everything.
-
-## 🔍 Gap Analysis
-
-The **Gaps** section in `design.md` tracks discrepancies and potential issues:
-
-- **Spec → Design**: Features in spec not yet designed
-- **Design → Code**: Design elements not yet implemented
-- **Code → Design**: Implementation details not reflected in design
-- **Oversights**: Potential issues (missing validation, UX problems, edge cases)
-
-Review gaps when planning work or before releases.
+`design.md` Gaps section tracks: Spec→Design, Design→Code, Code→Design, Oversights.
 
 ## Workflow
 
-**ALWAYS READ SPECS FIRST** to understand what the user wants.
-- The specs **MUST** indicate the desired language(s), environment(s), etc.
+**Read specs first.** Specs must indicate language/environment.
 
 ### Phase Separation
-
-**"Design" = design only.** Do not implement.
-**"Implement" = code only.** Do not redesign—just update `design.md` Artifacts checkboxes.
-**"Code changes" = update Artifacts, then ask.** When code changes independently of design:
-1. Uncheck affected code files in Artifacts: `[x]` → `[ ]`
-2. Ask user: "Design/specs are now out of sync. Update design, specs, or defer?"
-
-This keeps phases distinct and avoids scope creep.
+- **"Design"** = design only, no code
+- **"Implement"** = code only, update Artifacts checkboxes
+- **"Code changes"** = uncheck Artifacts, ask user
 
 ### Design Phase
-
-Create files in `design/` directory:
-- `design.md`: main design file
-   - **Intent**: What the system accomplishes
-   - **Artifacts**: design files, each with sublist of code file checkboxes (unchecked `[ ]`)
-- `crc-*`: CRC cards (see CRC Card Format below)
-- `seq-*`: sequence diagrams
-- `ui-*`: Terse, scannable, ASCII art for layouts, reference CRC cards for types/behavior, styling requirements
-- `test-*`: test designs
-- `manifest-ui.md` for cross-cutting UI concerns: Routes, Global components, UI patterns, Theme, View lifecycle
+Create in `design/`:
+- `design.md`: Intent + Artifacts (design files → code file checkboxes)
+- `crc-*`: CRC cards (see format below)
+- `seq-*`: sequence diagrams (≤150 chars wide)
+- `ui-*`: ASCII layouts, reference CRC cards
+- `test-*`: test designs (see format below)
+- `manifest-ui.md`: routes, theme, global components
 
 ### Implementation Phase
-
-Create code and tests in the language(s) specified in the specs:
-- Add traceability comments on modules and methods:
-  ```
-  // ContactStore - Observable data store
-  // CRC: crc-ContactStore.md | Seq: seq-crud.md, seq-search.md
-
-  // CRC: crc-ContactStore.md | Seq: seq-crud.md
-  add(data: Omit<Contact, 'id'>): Contact {
-  ```
-- Mark code files as implemented: `[ ]` → `[x]` in `design.md` Artifacts
+Add traceability comments:
+```
+// CRC: crc-Store.md | Seq: seq-crud.md
+add(data): Item {
+```
+Mark implemented: `[ ]`→`[x]` in Artifacts.
 
 ### Documentation Phase
-
 Create `docs/user-manual.md` and `docs/developer-guide.md` with traceability links.
 
 ## CRC Card Format
-
 ```markdown
 # ClassName
 **Source Spec:** feature.md
-
-## Knows (attributes)
+## Knows
 - attribute: description
-
-## Does (behaviors)
+## Does
 - behavior: description
-
 ## Collaborators
 - OtherClass: why
-
 ## Sequences
-- seq-scenario.md: description
+- seq-scenario.md
 ```
+Principles: Single Responsibility, minimal collaborations, PascalCase.
 
-**Principles:** Single Responsibility, minimal collaborations, PascalCase names.
+## Test Case Format
+```markdown
+# Test Design: ComponentName
+**Source:** crc-ComponentName.md
+## Test: name
+**Purpose:** what this validates
+**Input:** setup and data
+**Expected:** verifiable outcome
+**Refs:** crc-*.md, seq-*.md
+```
+Cover: happy path, errors, edge cases.
 
 ## Quality Checklist
-
-Before completing design or implementation:
-
-- [ ] **CRC Cards:** Every noun/verb from spec covered, no god classes, `Source Spec` linked
-- [ ] **Sequences:** All participants from CRC cards, ≤150 chars wide
-- [ ] **UI Specs:** ASCII layouts, references CRC cards and manifest-ui.md
-- [ ] **Traceability:** All design files listed in Artifacts, code files have checkboxes
-- [ ] **Tests:** test-*.md created for key behaviors
-  
+- [ ] CRC Cards: nouns/verbs covered, no god classes, Source Spec linked
+- [ ] Sequences: participants from CRCs, ≤150 chars wide
+- [ ] UI Specs: ASCII layouts, refs to CRCs and manifest-ui.md
+- [ ] Traceability: design files in Artifacts, code files have checkboxes
+- [ ] Tests: test-*.md for key behaviors
