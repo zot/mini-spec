@@ -31,7 +31,7 @@ Design docs are *much* smaller than code—easier for humans to review, and they
 | Feature | Mini-Spec | Heavy Frameworks |
 |---------|-----------|------------------|
 | Skill file | ~93 lines | 500+ lines |
-| Agents | None | Multiple |
+| Agents | 1 optional | Multiple required |
 | Scripts | None | Build tooling |
 | Learning curve | Minutes | Hours |
 
@@ -52,6 +52,9 @@ Mini-spec gives you just enough structure to catch misalignment early, without t
 ├── SKILL.md          # The skill definition (~93 lines)
 └── methodology.md    # CRC background and theory
 
+.claude/agents/
+└── spec-agent.md     # Optional agent for isolated context
+
 example/              # Full working Contacts app
 ├── specs/            # Human spec
 ├── design/           # Generated design (CRC, sequences, UI)
@@ -68,6 +71,21 @@ The skill enforces phase separation:
 - **Code changes independently** = flags drift, asks if you want to update design or specs.
 
 This prevents scope creep and keeps documents in sync.
+
+## Using the Agent
+
+The `spec-agent` runs design/implementation tasks in isolated context. Use it when:
+
+- **Context is getting large** — delegate design work to keep your main conversation lean
+- **Validating designs** — agent loads methodology, checks consistency, reports findings
+- **Batch operations** — create multiple CRC cards or implement several components
+
+Invoke via Task tool:
+```
+Task(subagent_type="spec-agent", prompt="validate the design in example/design")
+```
+
+The agent automatically loads the mini-spec skill and follows the methodology. Results return to your main context as a summary.
 
 ## When to Use
 
