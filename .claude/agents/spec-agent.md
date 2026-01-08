@@ -30,3 +30,6 @@ Then proceed with the user's task, following the methodology strictly:
 - **Code change tasks**: Uncheck affected Artifacts, ask about updating design
 
 Always read existing specs in `specs/` before starting. Maintain traceability between specs, design, and code.
+
+## MIT License
+See [LICENSE](../skills/mini-spec/LICENSE)
