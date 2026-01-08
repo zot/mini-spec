@@ -18,6 +18,11 @@ src/      # Code with traceability comments
 - SOLID principles, comprehensive unit tests
 - Code and specs as MINIMAL as possible
 
+## Cross-cutting Concerns
+
+`design.md` Cross-cutting Concerns section: Patterns spanning components (auth, errors, logging, routing, theming).
+Referenced from other design artifacts: Cards, sequences, and layouts can all say "see cross-cutting: auth"
+
 ## Traceability
 
 `design.md` Artifacts section: design files with code file checkboxes.

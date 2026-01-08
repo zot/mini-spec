@@ -27,12 +27,12 @@ There's also a "Gaps" section tracking discrepancies between specs, design, and 
 
 ## Why mini-spec?
 
-| Feature | Mini-Spec | Heavy Frameworks |
-|---------|-----------|------------------|
-| Skill file | ~93 lines | 500+ lines |
-| Agents | 1 optional | Multiple required |
-| Scripts | None | Build tooling |
-| Learning curve | Minutes | Hours |
+| Feature        | Mini-Spec  | Heavy Frameworks  |
+|----------------|------------|-------------------|
+| Skill file     | ~93 lines  | 500+ lines        |
+| Agents         | 1 optional | Multiple required |
+| Scripts        | None       | Build tooling     |
+| Learning curve | Minutes    | Hours             |
 
 This supersedes my earlier [claude-crc](https://github.com/dustinwloring1988/claude-crc) methodology. Smaller, cleaner, and what I'm using now.
 
