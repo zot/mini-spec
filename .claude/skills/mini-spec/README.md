@@ -1,5 +1,7 @@
 # Mini-Spec
 
+Version: 0.9.3
+
 **Create and maintain designs at minimal token cost.**
 
 ## The Problem
