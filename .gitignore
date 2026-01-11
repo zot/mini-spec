@@ -16,3 +16,4 @@ dist-test/
 # Tools
 .serena/
 /.scratch/
+/mini-spec-*.zip

@@ -30,7 +30,7 @@ Design docs are *much* smaller than code—easier for humans to review, and they
 
 | Feature | Mini-Spec | Heavy Frameworks |
 |---------|-----------|------------------|
-| Skill file | ~93 lines | 500+ lines |
+| Skill file | ~110 lines | 500+ lines |
 | Agents | 1 optional | Multiple required |
 | Scripts | None | Build tooling |
 | Learning curve | Minutes | Hours |
@@ -49,7 +49,7 @@ Mini-spec gives you just enough structure to catch misalignment early, without t
 
 ```
 .claude/skills/mini-spec/
-├── SKILL.md          # The skill definition (~93 lines)
+├── SKILL.md          # The skill definition (~110 lines)
 └── methodology.md    # CRC background and theory
 
 .claude/agents/
