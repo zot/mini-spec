@@ -1,6 +1,6 @@
 # Mini-Spec
 
-Version: 0.9.5
+Version: 0.9.6
 
 **Create and maintain designs at minimal token cost.**
 
