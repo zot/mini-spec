@@ -1,6 +1,6 @@
 ---
 name: mini-spec
-description: use **whenever modifying specs**, **designing, updating, or implementing the design, code, or docs**, or **reverse engineering a design from code**
+description: **Use proactively**. Use a central index to explore the project. Update it properly when changing it. Covers specs, design, and code
 ---
 
 # Mini-spec
