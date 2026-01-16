@@ -24,6 +24,8 @@ First, invoke the mini-spec skill to load the full methodology:
 /mini-spec
 ```
 
+Use todos to track your progress through phases and individual tasks.
+
 Then proceed with the user's task, following the methodology strictly:
 - **Design tasks**: Create design artifacts only, no code
 - **Implementation tasks**: Write code with traceability comments, update Artifacts checkboxes
