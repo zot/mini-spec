@@ -42,11 +42,12 @@ Mini-spec gives you just enough structure to catch misalignment early, without t
 
 ## Quick Start
 
-1. Copy this `mini-spec/` folder to your project's `.claude/skills/`
-2. Write a spec in `specs/your-feature.md`
-3. Tell Claude: **"design this"** → generates design docs, no code
-4. Review the design, iterate if needed
-5. Tell Claude: **"implement this"** → writes code, updates traceability
+1. Install the code-simplifier plugin: `claude plugin install code-simplifier`
+2. Copy this `mini-spec/` folder to your project's `.claude/skills/`
+3. Write a spec in `specs/your-feature.md`
+4. Tell Claude: **"design this"** → generates design docs, no code
+5. Review the design, iterate if needed
+6. Tell Claude: **"implement this"** → writes code, updates traceability
 
 ## What's Included
 
