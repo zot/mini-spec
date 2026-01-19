@@ -17,3 +17,4 @@ dist-test/
 .serena/
 /.scratch/
 /mini-spec-*.zip
+/.claude/agents/code-simplifier.md
