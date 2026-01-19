@@ -17,3 +17,4 @@ Release process:
 5. Push commit + tag
 6. Create GitHub release with `gh release create`
 7. Upload zip to the release
+8. Include in release notes: `claude plugin install code-simplifier`
