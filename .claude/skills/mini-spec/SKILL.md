@@ -16,11 +16,26 @@ src/      # Code with traceability comments
 
 ## Task Tracking
 
-Use todos (TodoWrite) to track progress through phases and tasks:
-- Create a todo for each phase you'll work through
-- Break implementation into per-file or per-component todos
-- Mark phases complete as you finish them
-- Use the Quality Checklist items as todos before finalizing
+Use TaskCreate/TaskUpdate/TaskList tools to track progress through phases:
+
+**At the start of mini-spec work**, create tasks for each applicable phase:
+```
+TaskCreate: "Spec Phase: [feature name]"
+TaskCreate: "Design Phase: [feature name]"
+TaskCreate: "Implementation Phase: [feature name]"
+TaskCreate: "Simplification Phase: [feature name]"
+TaskCreate: "Gaps Phase: [feature name]"
+```
+
+**During implementation**, break down into per-file tasks:
+```
+TaskCreate: "Implement view.ts changes"
+TaskCreate: "Implement viewlist.ts changes"
+TaskCreate: "Update design docs"
+```
+
+**Mark phases complete** with TaskUpdate as you finish them.
+**Use Quality Checklist items** as tasks before finalizing.
 
 ## Core Principles
 - use SOLID principles, comprehensive unit tests
