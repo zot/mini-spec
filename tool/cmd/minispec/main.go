@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/anthropics/minispec/internal/cli"
+	"github.com/zot/minispec/internal/cli"
 )
 
 func main() {

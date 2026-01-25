@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anthropics/minispec/internal/parser"
-	"github.com/anthropics/minispec/internal/project"
+	"github.com/zot/minispec/internal/parser"
+	"github.com/zot/minispec/internal/project"
 )
 
 // Update provides atomic modification operations on design files

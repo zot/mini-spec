@@ -5,7 +5,7 @@ A CLI tool for structural operations on mini-spec design files.
 ## Installation
 
 ```bash
-go install github.com/anthropics/minispec/cmd/minispec@latest
+go install github.com/zot/minispec/cmd/minispec@latest
 ```
 
 Or build from source:

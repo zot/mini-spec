@@ -4,7 +4,7 @@ BINARY := minispec
 BUILD_DIR := bin
 CMD_DIR := cmd/minispec
 VERSION := $(shell grep '^Version:' ../.claude/skills/mini-spec/README.md | cut -d' ' -f2)
-LDFLAGS := -ldflags "-X github.com/anthropics/minispec/internal/cli.Version=$(VERSION)"
+LDFLAGS := -ldflags "-X github.com/zot/minispec/internal/cli.Version=$(VERSION)"
 
 # Build the binary
 build:

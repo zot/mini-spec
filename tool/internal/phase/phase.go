@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/minispec/internal/parser"
-	"github.com/anthropics/minispec/internal/project"
-	"github.com/anthropics/minispec/internal/query"
+	"github.com/zot/minispec/internal/parser"
+	"github.com/zot/minispec/internal/project"
+	"github.com/zot/minispec/internal/query"
 )
 
 // Result contains the output of a phase validation

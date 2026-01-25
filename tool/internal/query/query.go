@@ -4,8 +4,8 @@ package query
 import (
 	"path/filepath"
 
-	"github.com/anthropics/minispec/internal/parser"
-	"github.com/anthropics/minispec/internal/project"
+	"github.com/zot/minispec/internal/parser"
+	"github.com/zot/minispec/internal/project"
 )
 
 // Query provides read-only operations on design files

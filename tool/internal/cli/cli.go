@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/anthropics/minispec/internal/phase"
-	"github.com/anthropics/minispec/internal/project"
-	"github.com/anthropics/minispec/internal/query"
-	"github.com/anthropics/minispec/internal/update"
-	"github.com/anthropics/minispec/internal/validate"
+	"github.com/zot/minispec/internal/phase"
+	"github.com/zot/minispec/internal/project"
+	"github.com/zot/minispec/internal/query"
+	"github.com/zot/minispec/internal/update"
+	"github.com/zot/minispec/internal/validate"
 )
 
 // Version is set at build time via -ldflags
