@@ -38,6 +38,9 @@ func DefaultCommentPatterns() map[string]string {
 		".lua":  `--\s*`,
 		".sh":   `#\s*`,
 		".bash": `#\s*`,
+		".md":   `<!--\s*`,
+		".html": `<!--\s*`,
+		".css":  `/\*\s*`,
 	}
 }
 

@@ -51,6 +51,10 @@ func splitRefs(s string) []string {
 	var refs []string
 	for _, ref := range strings.Split(s, ",") {
 		ref = strings.TrimSpace(ref)
+		// Trim comment-ending sequences (HTML: -->, CSS: */)
+		ref = strings.TrimSuffix(ref, "-->")
+		ref = strings.TrimSuffix(ref, "*/")
+		ref = strings.TrimSpace(ref)
 		if ref != "" {
 			refs = append(refs, ref)
 		}

@@ -238,6 +238,9 @@ Default patterns (built-in):
 | `.py` | `#\s*` | Python |
 | `.lua` | `--\s*` | Lua |
 | `.sh`, `.bash` | `#\s*` | Shell |
+| `.md` | `<!--\s*` | Markdown (HTML comments) |
+| `.html` | `<!--\s*` | HTML |
+| `.css` | `/\*\s*` | CSS |
 
 Custom patterns in `.minispec.yaml` override defaults for matching extensions.
 

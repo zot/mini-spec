@@ -107,6 +107,7 @@ Query subcommands:
   gaps                  List gap items
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
+  comment-patterns      Show recognized comment patterns per file extension
 
 Update subcommands:
   check <file> <item>       Check a checkbox
@@ -321,6 +322,17 @@ func (c *CLI) runQuery(args []string) int {
 				if len(trace.CRCRefs) == 0 && len(trace.SeqRefs) == 0 {
 					fmt.Println("(no traceability comments found)")
 				}
+			}
+		}
+
+	case "comment-patterns":
+		patterns := q.CommentPatterns()
+		if c.JSON {
+			c.output(patterns)
+		} else {
+			fmt.Println("Recognized comment patterns:")
+			for ext, pattern := range patterns {
+				fmt.Printf("  %s: %s\n", ext, pattern)
 			}
 		}
 

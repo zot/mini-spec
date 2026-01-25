@@ -5,9 +5,11 @@ description: **Use proactively**. Use a central index to explore the project. Up
 
 # Mini-spec
 
-## Prerequisite: Minispec Tool
+## Prerequisite: Get Comment Patterns
 
-**First**, verify the tool is available by running `~/.claude/bin/minispec --help`. If not installed, offer to install based on the mini-spec skill readme.
+**First**, run `~/.claude/bin/minispec query comment-patterns` to:
+1. Verify the tool is installed (if not, offer to install per the mini-spec skill readme)
+2. Learn the recognized comment patterns for traceability comments in code files
 
 ## MANDATORY: Create Tasks First
 

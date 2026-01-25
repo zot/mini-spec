@@ -139,3 +139,8 @@ func (q *Query) TraceabilityAll() (map[string]parser.Traceability, error) {
 	}
 	return result, nil
 }
+
+// CommentPatterns returns the configured comment patterns per file extension
+func (q *Query) CommentPatterns() map[string]string {
+	return q.Project.Config.CommentPatterns
+}
