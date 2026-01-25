@@ -9,13 +9,18 @@ import (
 )
 
 var (
-	sectionRe    = regexp.MustCompile(`^## (.+)`)
-	designFileRe = regexp.MustCompile(`^- (.+\.md)`)
-	codeFileRe   = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	gapRe        = regexp.MustCompile(`^- \[([ x])\] ([SRDCO])(\d+):\s*(.+)`)
+	sectionRe       = regexp.MustCompile(`^## (.+)`)
+	subsectionRe    = regexp.MustCompile(`^### .+`)
+	designFileRe    = regexp.MustCompile(`^- (.+\.md)`)
+	codeFileRe      = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
+	gapRe           = regexp.MustCompile(`^- \[([ x])\] ([SRDCO])(\d+):\s*(.+)`)
+	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 
 // ParseArtifacts parses the Artifacts section of design.md
+// Supports both legacy nested format and new inline format:
+// Legacy: - design.md\n  - [x] code.ts
+// Inline: - [x] design.md → code.ts, code2.ts
 func ParseArtifacts(path string) ([]Artifact, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -33,7 +38,7 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 		lineNum++
 		line := scanner.Text()
 
-		// Check for section headers
+		// Check for section headers (## ...)
 		if matches := sectionRe.FindStringSubmatch(line); matches != nil {
 			section := strings.TrimSpace(matches[1])
 			if section == "Artifacts" {
@@ -50,7 +55,45 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			continue
 		}
 
-		// Check for design file line
+		// Skip subsection headers (### CRC Cards, etc.)
+		if subsectionRe.MatchString(line) {
+			continue
+		}
+
+		// Try new inline format first: - [x] design.md → code.ts, code2.ts
+		if matches := inlineArtifactRe.FindStringSubmatch(line); matches != nil {
+			checked := matches[1] == "x"
+			designFile := matches[2]
+			codeFilesStr := matches[3]
+
+			// Save any pending artifact from legacy format
+			if current != nil {
+				artifacts = append(artifacts, *current)
+				current = nil
+			}
+
+			artifact := Artifact{DesignFile: designFile}
+
+			if codeFilesStr != "" {
+				// Split on comma, strip backticks and whitespace
+				for _, cf := range strings.Split(codeFilesStr, ",") {
+					cf = strings.TrimSpace(cf)
+					cf = strings.Trim(cf, "`")
+					if cf != "" {
+						artifact.CodeFiles = append(artifact.CodeFiles, CodeFile{
+							Path:    cf,
+							Checked: checked,
+							Line:    lineNum,
+						})
+					}
+				}
+			}
+
+			artifacts = append(artifacts, artifact)
+			continue
+		}
+
+		// Legacy format: design file line without checkbox
 		if matches := designFileRe.FindStringSubmatch(line); matches != nil {
 			if current != nil {
 				artifacts = append(artifacts, *current)
@@ -59,7 +102,7 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			continue
 		}
 
-		// Check for code file checkbox
+		// Legacy format: code file checkbox (indented)
 		if matches := codeFileRe.FindStringSubmatch(line); matches != nil && current != nil {
 			current.CodeFiles = append(current.CodeFiles, CodeFile{
 				Path:    strings.TrimSpace(matches[2]),
@@ -69,7 +112,7 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 		}
 	}
 
-	// Don't forget the last artifact
+	// Don't forget the last artifact (legacy format)
 	if current != nil {
 		artifacts = append(artifacts, *current)
 	}

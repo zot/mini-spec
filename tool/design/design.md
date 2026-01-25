@@ -14,37 +14,27 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 
 ## Artifacts
 
-- crc-Project.md
-  - [x] cmd/minispec/main.go
-  - [x] internal/project/project.go
-- crc-Parser.md
-  - [x] internal/parser/types.go
-  - [x] internal/parser/requirements.go
-  - [x] internal/parser/crc.go
-  - [x] internal/parser/design.go
-  - [x] internal/parser/traceability.go
-- crc-Query.md
-  - [x] internal/query/query.go
-- crc-Update.md
-  - [x] internal/update/update.go
-- crc-Validate.md
-  - [x] internal/validate/validate.go
-- crc-CLI.md
-  - [x] internal/cli/cli.go
-- crc-Phase.md
-  - [x] internal/phase/phase.go
-- test-Parser.md
-  - [ ] internal/parser/parser_test.go
-- test-Update.md
-  - [ ] internal/update/update_test.go
-- test-Validate.md
-  - [ ] internal/validate/validate_test.go
-- seq-init.md
-- seq-parse.md
-- seq-query.md
-- seq-update.md
-- seq-validate.md
-- seq-phase.md
+### CRC Cards
+- [x] crc-Project.md → `cmd/minispec/main.go`, `internal/project/project.go`
+- [x] crc-Parser.md → `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`
+- [x] crc-Query.md → `internal/query/query.go`
+- [x] crc-Update.md → `internal/update/update.go`
+- [x] crc-Validate.md → `internal/validate/validate.go`
+- [x] crc-CLI.md → `internal/cli/cli.go`
+- [x] crc-Phase.md → `internal/phase/phase.go`
+
+### Sequences
+- [x] seq-init.md
+- [x] seq-parse.md
+- [x] seq-query.md
+- [x] seq-update.md
+- [x] seq-validate.md
+- [x] seq-phase.md
+
+### Test Designs
+- [ ] test-Parser.md → `internal/parser/parser_test.go`
+- [ ] test-Update.md → `internal/update/update_test.go`
+- [ ] test-Validate.md → `internal/validate/validate_test.go`
 
 ## Documentation
 

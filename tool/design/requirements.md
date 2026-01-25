@@ -77,3 +77,10 @@
 - **R48:** `phase gaps` validates gaps section structure
 - **R49:** Phase commands show focused output relevant to that phase only
 - **R50:** Phase commands exit 0 if phase passes, 1 if issues found
+
+## Feature: New Artifacts Format
+**Source:** specs/config.md
+
+- **R51:** Tool parses inline artifact format: `- [x] design.md → code.ts`
+- **R52:** Tool parses comma-separated code files after `→` arrow
+- **R53:** Tool strips optional backticks from code file paths

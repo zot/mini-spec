@@ -15,6 +15,34 @@ Default paths (can be overridden):
 - Sequences: `design/seq-*.md`
 - Source code: `src/` (from Artifacts references)
 
+## Artifacts Format
+
+The Artifacts section in `design.md` uses inline checkbox syntax with optional grouped sections:
+
+```markdown
+## Artifacts
+
+### CRC Cards
+- [x] crc-Store.md → `src/store.ts`
+- [x] crc-View.md → `src/view.ts`, `src/viewlist.ts`
+
+### Sequences
+- [x] seq-crud.md → `src/store.ts`, `src/view.ts`
+
+### UI Layouts
+- [ ] ui-dashboard.md → `web/html/dashboard.html`
+
+### Test Designs
+- [ ] test-Store.md → `src/store_test.ts`
+```
+
+Format rules:
+- Section headers (`### CRC Cards`, etc.) are optional grouping
+- Each line: `- [x] design.md → code-file(s)` or `- [ ] design.md`
+- Multiple code files: comma-separated after `→`
+- Backticks around code paths are optional (stripped during parsing)
+- Checkbox state applies to all code files on that line
+
 ## Config File (Optional)
 
 `.minispec.yaml` in project root:

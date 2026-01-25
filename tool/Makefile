@@ -8,9 +8,10 @@ CMD_DIR := cmd/minispec
 build:
 	go build -o $(BUILD_DIR)/$(BINARY) ./$(CMD_DIR)
 
-# Install to GOPATH/bin
-install:
-	go install ./$(CMD_DIR)
+# Install to ~/.claude/bin
+install: build
+	mkdir -p ~/.claude/bin
+	cp $(BUILD_DIR)/$(BINARY) ~/.claude/bin/
 
 # Run tests
 test:
@@ -52,7 +53,7 @@ release:
 help:
 	@echo "minispec build targets:"
 	@echo "  build          Build the binary to bin/"
-	@echo "  install        Install to GOPATH/bin"
+	@echo "  install        Install to ~/.claude/bin"
 	@echo "  test           Run tests"
 	@echo "  test-coverage  Run tests with coverage report"
 	@echo "  clean          Remove build artifacts"

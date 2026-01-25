@@ -127,18 +127,27 @@ Create in `design/`:
 ```markdown
 ## Artifacts
 
-- crc-Store.md
-  - [x] src/store.ts
-- crc-View.md
-  - [x] src/view.ts
-- seq-crud.md
-- ui-dashboard.md
-  - [ ] web/html/dashboard.html
-- test-Store.md
-  - [ ] src/store_test.ts
-- manifest-ui.md
+### CRC Cards
+- [x] crc-Store.md → `src/store.ts`
+- [x] crc-View.md → `src/view.ts`, `src/viewlist.ts`
+
+### Sequences
+- [x] seq-crud.md → `src/store.ts`, `src/view.ts`
+
+### UI Layouts
+- [ ] ui-dashboard.md → `web/html/dashboard.html`
+
+### Test Designs
+- [ ] test-Store.md → `src/store_test.ts`
 ```
-The Artifacts section is a **manifest of all design files** except design.md and requirements.md. Every crc-*, seq-*, ui-*, test-*, and manifest-*.md must be listed. Code file checkboxes (2-space indent, `[x]`/`[ ]`) track implementation status.
+The Artifacts section is a **manifest of all design files** except design.md and requirements.md. Every crc-*, seq-*, ui-*, test-*, and manifest-*.md must be listed.
+
+Format rules:
+- Section headers (`### CRC Cards`, etc.) are optional grouping
+- Each line: `- [x] design.md → code-file(s)` or `- [ ] design.md`
+- Multiple code files: comma-separated after `→`
+- Backticks around code paths are optional
+- Checkbox state applies to all code files on that line
 
 **Upon completion**, run `~/.claude/bin/minispec phase design` to verify coverage, then offer Implementation Phase. Do not jump to Gaps.
 
