@@ -84,3 +84,9 @@
 - **R51:** Tool parses inline artifact format: `- [x] design.md → code.ts`
 - **R52:** Tool parses comma-separated code files after `→` arrow
 - **R53:** Tool strips optional backticks from code file paths
+
+## Feature: Version Reporting
+**Source:** specs/config.md
+
+- **R54:** `--version` flag displays version and exits
+- **R55:** Version is shown in help output header

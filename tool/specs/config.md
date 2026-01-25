@@ -77,6 +77,12 @@ Default patterns (built-in):
 
 Custom patterns override defaults for matching extensions.
 
+## Version
+
+The tool reports its version:
+- In the help output header (e.g., `minispec v2.1.0`)
+- Via `--version` flag (displays version and exits)
+
 ## Command-Line Flags
 
 All commands accept:
@@ -84,6 +90,7 @@ All commands accept:
 - `--src-dir PATH` - override source directory
 - `--quiet` - minimal output
 - `--json` - output as JSON (for tooling integration)
+- `--version` - display version and exit
 
 ## MCP Server Mode
 

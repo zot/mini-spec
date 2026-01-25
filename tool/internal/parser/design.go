@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	sectionRe       = regexp.MustCompile(`^## (.+)`)
-	subsectionRe    = regexp.MustCompile(`^### .+`)
-	designFileRe    = regexp.MustCompile(`^- (.+\.md)`)
-	codeFileRe      = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	gapRe           = regexp.MustCompile(`^- \[([ x])\] ([SRDCO])(\d+):\s*(.+)`)
+	sectionRe        = regexp.MustCompile(`^## (.+)`)
+	subsectionRe     = regexp.MustCompile(`^### .+`)
+	designFileRe     = regexp.MustCompile(`^- (.+\.md)`)
+	codeFileRe       = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
+	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCO])(\d+):\s*(.+)`)
 	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 

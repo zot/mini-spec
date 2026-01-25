@@ -15,6 +15,9 @@ import (
 	"github.com/anthropics/minispec/internal/validate"
 )
 
+// Version is set at build time via -ldflags
+var Version = "dev"
+
 // CLI handles command-line interface
 type CLI struct {
 	DesignDir string
@@ -25,6 +28,14 @@ type CLI struct {
 
 // Run parses arguments and executes the appropriate command
 func (c *CLI) Run(args []string) int {
+	// Handle --version early (before other parsing)
+	for _, arg := range args {
+		if arg == "--version" || arg == "-v" {
+			fmt.Printf("minispec %s\n", Version)
+			return 0
+		}
+	}
+
 	if len(args) < 1 {
 		c.printUsage()
 		return 1
@@ -77,8 +88,8 @@ func (c *CLI) Run(args []string) int {
 }
 
 func (c *CLI) printUsage() {
-	fmt.Println(`minispec - structural operations on mini-spec design files
-
+	fmt.Printf("minispec %s - structural operations on mini-spec design files\n", Version)
+	fmt.Println(`
 Usage: minispec [flags] <command> [args]
 
 Commands:
@@ -116,7 +127,8 @@ Flags:
   --design-dir PATH    Override design directory
   --src-dir PATH       Override source directory
   --quiet              Minimal output
-  --json               Output as JSON`)
+  --json               Output as JSON
+  --version            Display version and exit`)
 }
 
 func (c *CLI) getProject() (*project.Project, error) {

@@ -222,9 +222,9 @@ func (ph *Phase) RunDesign() *Result {
 	}
 
 	result.Findings = map[string]any{
-		"crc_cards":   crcCards,
-		"covered":     coveredList,
-		"uncovered":   uncoveredList,
+		"crc_cards":    crcCards,
+		"covered":      coveredList,
+		"uncovered":    uncoveredList,
 		"design_files": len(designFiles),
 	}
 	result.Passed = len(result.Issues) == 0
