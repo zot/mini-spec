@@ -5,27 +5,39 @@ description: **Use proactively**. Use a central index to explore the project. Up
 
 # Mini-spec
 
-3-level architecture: specs → design → code.
+## Prerequisite: Minispec Tool
 
-```
-specs/    # Human specs (language, environment required)
-design/   # SOURCE OF TRUTH: crc-*, seq-*, ui-*, test-*, manifest-ui.md
-docs/     # user-manual.md, developer-guide.md
-src/      # Code with traceability comments
-```
+**First**, verify the tool is available by running `~/.claude/bin/minispec --help`. If not installed, offer to install based on the mini-spec skill readme.
 
-## Task Tracking
+## MANDATORY: Create Tasks First
 
-Use TaskCreate/TaskUpdate/TaskList tools to track progress through phases:
+**BEFORE reading any files or doing any work**, create tasks for applicable phases:
 
-**At the start of mini-spec work**, create tasks for each applicable phase:
 ```
 TaskCreate: "Spec Phase: [feature name]"
+TaskCreate: "Requirements Phase: [feature name]"
 TaskCreate: "Design Phase: [feature name]"
 TaskCreate: "Implementation Phase: [feature name]"
 TaskCreate: "Simplification Phase: [feature name]"
 TaskCreate: "Gaps Phase: [feature name]"
 ```
+
+Do NOT proceed until tasks exist. This is required for user visibility into progress.
+
+---
+
+## Overview
+
+3-level architecture: specs → design → code.
+
+```
+specs/    # Human specs (language, environment required)
+design/   # SOURCE OF TRUTH: requirements.md, crc-*, seq-*, ui-*, test-*, manifest-ui.md
+docs/     # user-manual.md, developer-guide.md
+src/      # Code with traceability comments
+```
+
+## Task Tracking
 
 **During implementation**, break down into per-file tasks:
 ```
@@ -59,14 +71,44 @@ Referenced from other design artifacts: Cards, sequences, and layouts can all sa
 
 ## Workflow
 
-**Read specs first.** Specs must indicate language/environment.
+**First:** Read specs. Specs must indicate language/environment.
+
+**Then:** Proceed through phases
 
 1. Spec Phase
 Create in `specs/`: human readable, natural language descriptions
 
-**Upon completion**, offer to update the design (Design Phase). Do not jump to Implementation.
+**Upon completion**, run `~/.claude/bin/minispec phase spec` to verify spec files exist, then offer Requirements Phase. Do not jump to Design.
 
-2. Design Phase
+2. Requirements Phase
+Create `design/requirements.md`: merge all specs into numbered requirements.
+
+Format:
+```markdown
+# Requirements
+
+## Feature: [feature-name]
+**Source:** specs/feature.md
+
+- **R1:** [requirement from spec]
+- **R2:** [requirement from spec]
+- **R3:** [inferred requirement - marked as such]
+
+## Feature: [another-feature]
+**Source:** specs/another.md
+
+- **R4:** [requirement]
+```
+
+Guidelines:
+- Each spec item becomes exactly one numbered requirement (R1, R2, ...)
+- Numbering is global across all features (not per-feature)
+- Mark inferred requirements explicitly: "**R5:** (inferred) ..."
+- Keep requirement text atomic and testable
+
+**Upon completion**, run `~/.claude/bin/minispec phase requirements` to verify format, then offer Design Phase. Do not jump to Implementation.
+
+3. Design Phase
 Create in `design/`:
 - `design.md`: Intent + Artifacts (design files → code file checkboxes)
 - `crc-*`: CRC cards (see format below)
@@ -75,9 +117,32 @@ Create in `design/`:
 - `test-*`: test designs (see format below)
 - `manifest-ui.md`: routes, theme, global components
 
-**Upon completion**, offer to update the implementation (Implementation Phase). Do not jump to Gaps.
+**Design Traceability:** All design artifacts must reference requirements:
+```markdown
+# ClassName
+**Requirements:** R1, R3, R7
+```
 
-3. Implementation Phase
+**Artifacts Format** (must be exact for `minispec` tool parsing):
+```markdown
+## Artifacts
+
+- crc-Store.md
+  - [x] src/store.ts
+- crc-View.md
+  - [x] src/view.ts
+- seq-crud.md
+- ui-dashboard.md
+  - [ ] web/html/dashboard.html
+- test-Store.md
+  - [ ] src/store_test.ts
+- manifest-ui.md
+```
+The Artifacts section is a **manifest of all design files** except design.md and requirements.md. Every crc-*, seq-*, ui-*, test-*, and manifest-*.md must be listed. Code file checkboxes (2-space indent, `[x]`/`[ ]`) track implementation status.
+
+**Upon completion**, run `~/.claude/bin/minispec phase design` to verify coverage, then offer Implementation Phase. Do not jump to Gaps.
+
+4. Implementation Phase
 Add traceability comments:
 ```
 // CRC: crc-Store.md | Seq: seq-crud.md
@@ -87,23 +152,32 @@ Mark implemented: `[ ]`→`[x]` in Artifacts.
 
 Look out for language-specific "gotchas" like mixing functions an methods in Lua.
 
-**Upon completion**, run the Simplification Phase.
+**Upon completion**, run `~/.claude/bin/minispec phase implementation` to verify traceability, then run the Simplification Phase.
 
-4. Simplification Phase
+5. Simplification Phase
 Invoke the `code-simplifier` agent on the recently modified code. This refines code for clarity, consistency, and maintainability while preserving functionality.
 
 **Upon completion**, proceed to Gaps Phase.
 
-5. Gaps Phase
+6. Gaps Phase
 
-`design.md` Gaps section tracks (use S1/D1/C1/O1 numbering):
-- **Spec→Design (Sn):** Spec features without design artifacts
+**Traceability Verification:**
+
+Run `~/.claude/bin/minispec phase gaps` to validate the gaps section, then run `~/.claude/bin/minispec validate` for full coverage check:
+
+1. **Specs ↔ Requirements:** Each spec item maps to exactly one requirement in `requirements.md`
+2. **Requirements ↔ Design:** Each requirement is referenced by at least one design artifact
+
+`design.md` Gaps section tracks (use S1/R1/D1/C1/O1 numbering):
+- **Spec→Requirements (Sn):** Spec items not captured in requirements.md
+- **Requirements→Design (Rn):** Requirements without design artifacts referencing them
 - **Design→Code (Dn):** Designed features without code
 - **Code→Design (Cn):** Code without design artifacts
 - **Oversights (On):** Missing tests, tech debt, enhancements, security concerns, etc.
 
 Nest related items with checkboxes:
 ```markdown
+- [ ] R1: Requirement R5 has no design artifact
 - [ ] O1: Test coverage gaps
   - [ ] Feature A (5 scenarios)
   - [ ] Feature B (3 scenarios)
@@ -111,13 +185,13 @@ Nest related items with checkboxes:
 
 **Upon completion**, offer to update Documentation (Documentation Phase).
 
-6. Documentation Phase, Optional -- offer to user after Gaps
+7. Documentation Phase, Optional -- offer to user after Gaps
 Create `docs/user-manual.md` and `docs/developer-guide.md` with traceability links.
 
 ## CRC Card Format
 ```markdown
 # ClassName
-**Source Spec:** feature.md
+**Requirements:** R1, R3, R7
 ## Knows
 - attribute: description
 ## Does
@@ -142,8 +216,42 @@ Principles: Single Responsibility, minimal collaborations, PascalCase.
 Cover: happy path, errors, edge cases.
 
 ## Quality Checklist
-- [ ] CRC Cards: nouns/verbs covered, no god classes, Source Spec linked
+- [ ] Requirements: all spec items captured, numbered (R1, R2, ...), inferred items marked
+- [ ] CRC Cards: nouns/verbs covered, no god classes, Requirements linked
 - [ ] Sequences: participants from CRCs, ≤150 chars wide
 - [ ] UI Specs: ASCII layouts, refs to CRCs and manifest-ui.md
-- [ ] Traceability: design files in Artifacts, code files have checkboxes
+- [ ] Traceability: design files in Artifacts, code files have checkboxes, all Rn referenced
 - [ ] Tests: test-*.md for key behaviors
+- [ ] Phase validation: `~/.claude/bin/minispec phase <phase>` passes after each phase
+- [ ] Full validation: `~/.claude/bin/minispec validate` passes
+
+## Minispec Tool
+
+The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operations on design files:
+
+```bash
+# Phase-specific validation (run after each phase)
+~/.claude/bin/minispec phase spec            # Verify spec files exist
+~/.claude/bin/minispec phase requirements    # Verify requirements format
+~/.claude/bin/minispec phase design          # Verify design files and coverage
+~/.claude/bin/minispec phase implementation  # Verify code traceability
+~/.claude/bin/minispec phase gaps            # Verify gaps section
+
+# Full validation
+~/.claude/bin/minispec validate              # Run all validations
+
+# Queries
+~/.claude/bin/minispec query uncovered       # List Rn without design refs
+~/.claude/bin/minispec query gaps            # List gap items
+
+# Updates
+~/.claude/bin/minispec update check design.md D1    # Check a checkbox
+~/.claude/bin/minispec update add-ref crc-Store.md R5  # Add requirement ref
+```
+
+Use the tool to:
+- Run phase-specific checks after completing each workflow phase
+- Verify design file formats are parseable
+- Find uncovered requirements quickly
+- Toggle checkboxes atomically
+- Add gaps with auto-numbering

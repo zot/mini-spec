@@ -1,6 +1,6 @@
 # Mini-Spec
 
-Version: 1.1.0
+Version: 2.0.0
 Location: github.com/zot/mini-spec
 
 **Create and maintain designs at minimal token cost.**
@@ -42,12 +42,20 @@ Mini-spec gives you just enough structure to catch misalignment early, without t
 
 ## Quick Start
 
-1. Install the code-simplifier plugin: `claude plugin install code-simplifier`
-2. Copy this `mini-spec/` folder to your project's `.claude/skills/`
-3. Write a spec in `specs/your-feature.md`
-4. Tell Claude: **"design this"** → generates design docs, no code
-5. Review the design, iterate if needed
-6. Tell Claude: **"implement this"** → writes code, updates traceability
+1. Install the minispec tool:
+   ```bash
+   mkdir -p ~/.claude/bin
+   # Download the binary for your platform from:
+   # https://github.com/zot/mini-spec/releases
+   # Place it at ~/.claude/bin/minispec and make executable:
+   chmod +x ~/.claude/bin/minispec
+   ```
+2. Install the code-simplifier plugin: `claude plugin install code-simplifier`
+3. Copy this `mini-spec/` folder to your project's `.claude/skills/`
+4. Write a spec in `specs/your-feature.md`
+5. Tell Claude: **"design this"** → generates design docs, no code
+6. Review the design, iterate if needed
+7. Tell Claude: **"implement this"** → writes code, updates traceability
 
 ## What's Included
 

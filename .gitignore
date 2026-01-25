@@ -18,3 +18,4 @@ dist-test/
 /.scratch/
 /mini-spec-*.zip
 /.claude/agents/code-simplifier.md
+/tool/minispec
