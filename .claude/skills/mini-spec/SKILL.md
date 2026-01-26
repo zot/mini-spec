@@ -68,8 +68,20 @@ Referenced from other design artifacts: Cards, sequences, and layouts can all sa
 
 `design.md` Artifacts section: design files with code file checkboxes.
 
-**Code changes:** Uncheck `[x]`→`[ ]`, ask user: "Update design, specs, or defer?"
-**Update design:** Read code, update design file, re-check box.
+**Use minispec commands for checkbox operations:**
+```bash
+# View current artifact states
+~/.claude/bin/minispec query artifacts
+
+# Before modifying code: uncheck the artifact
+~/.claude/bin/minispec update uncheck design.md crc-Store.md
+
+# After implementation matches design: check the artifact
+~/.claude/bin/minispec update check design.md crc-Store.md
+```
+
+**Code changes:** Uncheck artifact, ask user: "Update design, specs, or defer?"
+**Update design:** Read code, update design file, re-check artifact.
 
 ## Workflow
 
@@ -125,6 +137,11 @@ Create in `design/`:
 **Requirements:** R1, R3, R7
 ```
 
+Use minispec to add requirement references:
+```bash
+~/.claude/bin/minispec update add-ref crc-Store.md R5
+```
+
 **Artifacts Format** (must be exact for `minispec` tool parsing):
 ```markdown
 ## Artifacts
@@ -159,7 +176,10 @@ Add traceability comments:
 // CRC: crc-Store.md | Seq: seq-crud.md
 add(data): Item {
 ```
-Mark implemented: `[ ]`→`[x]` in Artifacts.
+Mark implemented using minispec:
+```bash
+~/.claude/bin/minispec update check design.md crc-Store.md
+```
 
 Look out for language-specific "gotchas" like mixing functions an methods in Lua.
 
@@ -238,7 +258,12 @@ Cover: happy path, errors, edge cases.
 
 ## Minispec Tool
 
-The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operations on design files:
+The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operations on design files.
+
+**IMPORTANT:** Always use minispec commands instead of manual editing for:
+- Checking/unchecking artifact checkboxes
+- Adding requirement references to CRC cards
+- Querying artifact states and coverage
 
 ```bash
 # Phase-specific validation (run after each phase)
@@ -252,17 +277,28 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 ~/.claude/bin/minispec validate              # Run all validations
 
 # Queries
+~/.claude/bin/minispec query artifacts       # Show all artifacts with checkbox states
 ~/.claude/bin/minispec query uncovered       # List Rn without design refs
 ~/.claude/bin/minispec query gaps            # List gap items
+~/.claude/bin/minispec query requirements    # List all requirements
 
-# Updates
-~/.claude/bin/minispec update check design.md D1    # Check a checkbox
-~/.claude/bin/minispec update add-ref crc-Store.md R5  # Add requirement ref
+# Updates - artifact checkboxes (in design.md)
+~/.claude/bin/minispec update check design.md crc-Store.md     # Check artifact
+~/.claude/bin/minispec update uncheck design.md crc-Store.md   # Uncheck artifact
+
+# Updates - requirement references (in CRC cards)
+~/.claude/bin/minispec update add-ref crc-Store.md R5          # Add requirement to CRC
+~/.claude/bin/minispec update remove-ref crc-Store.md R5       # Remove requirement from CRC
+
+# Updates - gaps
+~/.claude/bin/minispec update add-gap O "Test coverage needed" # Add oversight gap
+~/.claude/bin/minispec update resolve-gap O3                   # Mark gap resolved
 ```
 
 Use the tool to:
 - Run phase-specific checks after completing each workflow phase
 - Verify design file formats are parseable
 - Find uncovered requirements quickly
-- Toggle checkboxes atomically
+- Toggle checkboxes atomically (avoid manual checkbox edits)
+- Add/remove requirement references to CRC cards
 - Add gaps with auto-numbering
