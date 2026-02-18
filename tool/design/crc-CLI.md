@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56
 
 Command-line interface handling.
 
@@ -12,6 +12,7 @@ Command-line interface handling.
 ## Does
 - Parse(args): parse command and flags
 - Run(): dispatch to appropriate handler (or show version if --version)
+- CheckVersion(): find skill README.md in project or user .claude/skills/mini-spec/, extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found.
 - Output(data): format and print result (text or JSON)
 - Error(err): print error to stderr
 - PrintVersion(): display version and exit
@@ -27,6 +28,7 @@ Command-line interface handling.
 
 ## Subcommands
 ```
+minispec check-version
 minispec query <subcommand>
 minispec update <subcommand>
 minispec validate

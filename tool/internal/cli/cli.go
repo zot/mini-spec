@@ -2,10 +2,12 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/zot/minispec/internal/phase"
@@ -69,6 +71,8 @@ func (c *CLI) Run(args []string) int {
 	cmdArgs := args[cmdIdx+1:]
 
 	switch cmd {
+	case "check-version":
+		return c.runCheckVersion()
 	case "query":
 		return c.runQuery(cmdArgs)
 	case "update":
@@ -93,6 +97,7 @@ func (c *CLI) printUsage() {
 Usage: minispec [flags] <command> [args]
 
 Commands:
+  check-version         Verify tool and skill versions match
   query <subcommand>    Query design files
   update <subcommand>   Update design files
   validate              Run structural validations
@@ -130,6 +135,54 @@ Flags:
   --quiet              Minimal output
   --json               Output as JSON
   --version            Display version and exit`)
+}
+
+func (c *CLI) runCheckVersion() int {
+	skillReadme := "mini-spec/README.md"
+	candidates := []string{}
+
+	// Project-level
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, filepath.Join(cwd, ".claude", "skills", skillReadme))
+	}
+
+	// User-level
+	if home, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates, filepath.Join(home, ".claude", "skills", skillReadme))
+	}
+
+	for _, path := range candidates {
+		ver, err := readSkillVersion(path)
+		if err != nil {
+			continue
+		}
+		if ver == Version {
+			fmt.Printf("ok: tool and skill both at %s\n", Version)
+			return 0
+		}
+		fmt.Fprintf(os.Stderr, "version mismatch: tool=%s skill=%s (%s)\n", Version, ver, path)
+		return 1
+	}
+
+	fmt.Fprintln(os.Stderr, "skill README.md not found in .claude/skills/mini-spec/")
+	return 1
+}
+
+func readSkillVersion(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if ver, ok := strings.CutPrefix(line, "Version:"); ok {
+			return strings.TrimSpace(ver), nil
+		}
+	}
+	return "", fmt.Errorf("no Version line found")
 }
 
 func (c *CLI) getProject() (*project.Project, error) {

@@ -90,3 +90,4 @@
 
 - **R54:** `--version` flag displays version and exits
 - **R55:** Version is shown in help output header
+- **R56:** `check-version` compares tool version against skill README.md Version: line (project-level then user-level), exits 0 on match, 1 on mismatch or not found

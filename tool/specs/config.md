@@ -85,6 +85,7 @@ Custom patterns override defaults for matching extensions.
 The tool reports its version:
 - In the help output header (e.g., `minispec v2.1.0`)
 - Via `--version` flag (displays version and exits)
+- Via `minispec check-version`: finds the skill's `README.md` in `.claude/skills/mini-spec/` (project-level first, then user-level `~/`), extracts the `Version:` line, and compares it against the tool's version. Exits 0 on match, 1 on mismatch or if not found.
 
 ## Command-Line Flags
 
