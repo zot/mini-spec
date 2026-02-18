@@ -44,9 +44,9 @@ func (u *Update) setCheckbox(file, item string, checked bool) error {
 	lines := strings.Split(string(content), "\n")
 	quotedItem := regexp.QuoteMeta(item)
 
-	// Patterns for gap items (D1:) and code files (path)
+	// Patterns: item with separator (→ or :) and trailing content, or bare item at end of line
 	patterns := []*regexp.Regexp{
-		regexp.MustCompile(`^(\s*-\s*)\[([ x])\](\s*` + quotedItem + `:)`),
+		regexp.MustCompile(`^(\s*-\s*)\[([ x])\](\s*` + quotedItem + `\s*[→:].*)$`),
 		regexp.MustCompile(`^(\s*-\s*)\[([ x])\](\s*` + quotedItem + `)$`),
 	}
 
