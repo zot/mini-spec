@@ -17,8 +17,10 @@ Read-only operations that query parsed design data.
 - OrphanDesigns(): list CRC cards with no/empty Requirements field
 - Artifacts(): list artifacts with checkbox states
 - Gaps(): list gap items
-- Traceability(path): check single file for CRC/Seq comments
+- Traceability(path): check single file for CRC/Seq comments (passes pattern+closer from Project)
 - TraceabilityAll(): check all code files in Artifacts
+- CommentPatterns(): return configured comment patterns map
+- CommentClosers(): return configured comment closers map
 
 ## Collaborators
 - Project: to locate files

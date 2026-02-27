@@ -380,12 +380,26 @@ func (c *CLI) runQuery(args []string) int {
 
 	case "comment-patterns":
 		patterns := q.CommentPatterns()
+		closers := q.CommentClosers()
 		if c.JSON {
-			c.output(patterns)
+			c.output(map[string]any{
+				"patterns": patterns,
+				"closers":  closers,
+			})
 		} else {
 			fmt.Println("Recognized comment patterns:")
 			for ext, pattern := range patterns {
 				fmt.Printf("  %s: %s\n", ext, pattern)
+			}
+			if len(closers) > 0 {
+				fmt.Println()
+				fmt.Println("Comment closers (MUST appear at end of traceability comments):")
+				for ext, closer := range closers {
+					fmt.Printf("  %s: %q\n", ext, closer)
+				}
+				fmt.Println()
+				fmt.Println("WARNING: Extensions with closers use block comments.")
+				fmt.Println("An unclosed comment will silently swallow all subsequent code.")
 			}
 		}
 

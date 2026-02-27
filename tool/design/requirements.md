@@ -91,3 +91,11 @@
 - **R54:** `--version` flag displays version and exits
 - **R55:** Version is shown in help output header
 - **R56:** `check-version` compares tool version against skill README.md Version: line (project-level then user-level), exits 0 on match, 1 on mismatch or not found
+
+## Feature: Comment Closers
+**Source:** specs/config.md
+
+- **R57:** Configurable comment closers per file extension (map in config), merged over defaults
+- **R58:** Default comment closers for block-comment languages (.md, .html, .css)
+- **R59:** Parser strips config-provided comment closer from traceability refs
+- **R60:** `query comment-patterns` shows closers section with WARNING when closers are configured

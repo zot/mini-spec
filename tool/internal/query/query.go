@@ -115,7 +115,8 @@ func (q *Query) Gaps() ([]parser.Gap, error) {
 func (q *Query) Traceability(path string) (parser.Traceability, error) {
 	ext := filepath.Ext(path)
 	pattern := q.Project.CommentPattern(ext)
-	return parser.ParseTraceability(path, pattern)
+	closer := q.Project.CommentCloser(ext)
+	return parser.ParseTraceability(path, pattern, closer)
 }
 
 // TraceabilityAll checks all code files in Artifacts
@@ -143,4 +144,9 @@ func (q *Query) TraceabilityAll() (map[string]parser.Traceability, error) {
 // CommentPatterns returns the configured comment patterns per file extension
 func (q *Query) CommentPatterns() map[string]string {
 	return q.Project.Config.CommentPatterns
+}
+
+// CommentClosers returns the configured comment closers per file extension
+func (q *Query) CommentClosers() map[string]string {
+	return q.Project.Config.CommentClosers
 }

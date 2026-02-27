@@ -15,6 +15,7 @@ type Config struct {
 	SrcDir          string            `yaml:"src_dir"`
 	CodeExtensions  []string          `yaml:"code_extensions"`
 	CommentPatterns map[string]string `yaml:"comment_patterns"`
+	CommentClosers  map[string]string `yaml:"comment_closers"`
 }
 
 // Project represents a mini-spec project
@@ -44,6 +45,16 @@ func DefaultCommentPatterns() map[string]string {
 	}
 }
 
+// DefaultCommentClosers returns closers for block-comment languages.
+// Extensions not listed here use line-terminating comments (no closer needed).
+func DefaultCommentClosers() map[string]string {
+	return map[string]string{
+		".md":   " -->",
+		".html": " -->",
+		".css":  " */",
+	}
+}
+
 // DefaultConfig returns default configuration
 func DefaultConfig() Config {
 	return Config{
@@ -51,6 +62,7 @@ func DefaultConfig() Config {
 		SrcDir:          "src",
 		CodeExtensions:  []string{".go", ".ts", ".js", ".lua", ".py", ".c", ".h", ".cpp", ".sh"},
 		CommentPatterns: DefaultCommentPatterns(),
+		CommentClosers:  DefaultCommentClosers(),
 	}
 }
 
@@ -105,6 +117,10 @@ func loadProject(rootPath string) (*Project, error) {
 		for ext, pattern := range userConfig.CommentPatterns {
 			config.CommentPatterns[ext] = pattern
 		}
+		// Merge comment closers: user closers override defaults
+		for ext, closer := range userConfig.CommentClosers {
+			config.CommentClosers[ext] = closer
+		}
 	}
 
 	return &Project{
@@ -144,4 +160,10 @@ func (p *Project) GlobCRCCards() ([]string, error) {
 // Returns empty string if no pattern is configured for the extension.
 func (p *Project) CommentPattern(ext string) string {
 	return p.Config.CommentPatterns[ext]
+}
+
+// CommentCloser returns the closing delimiter for the given file extension.
+// Returns empty string if the extension uses line-terminating comments.
+func (p *Project) CommentCloser(ext string) string {
+	return p.Config.CommentClosers[ext]
 }

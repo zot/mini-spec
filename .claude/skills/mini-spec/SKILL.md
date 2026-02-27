@@ -193,12 +193,15 @@ Add traceability comments:
 // CRC: crc-Store.md | Seq: seq-crud.md
 add(data): Item {
 ```
+
+**Block-comment languages:** The `minispec query comment-patterns` output lists any `comment_closers`. If a closer exists for the file extension, you MUST append it to every traceability comment. An unclosed block comment silently swallows all subsequent code. See `config-reference.md` (in this skill directory) if you need to configure closers for a new language.
+
 Mark implemented using minispec:
 ```bash
 ~/.claude/bin/minispec update check design.md crc-Store.md
 ```
 
-Look out for language-specific "gotchas" like mixing functions an methods in Lua.
+Look out for language-specific "gotchas" like mixing functions and methods in Lua.
 
 **Upon completion**, run `~/.claude/bin/minispec phase implementation` to verify traceability, then run the Simplification Phase.
 

@@ -272,7 +272,8 @@ func (v *Validate) validateTraceability(result *ValidationResult) {
 			fullPath := filepath.Join(v.Project.RootPath, cf.Path)
 			ext := filepath.Ext(cf.Path)
 			pattern := v.Project.CommentPattern(ext)
-			trace, err := parser.ParseTraceability(fullPath, pattern)
+			closer := v.Project.CommentCloser(ext)
+			trace, err := parser.ParseTraceability(fullPath, pattern, closer)
 			if err != nil {
 				continue
 			}

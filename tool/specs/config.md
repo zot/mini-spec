@@ -59,6 +59,11 @@ comment_patterns:
   .c: "//\\s*"
   .h: "//\\s*"
   .sh: "#\\s*"
+  .pas: "\\{\\s*"
+  .dpr: "\\{\\s*"
+comment_closers:
+  .pas: " }"
+  .dpr: " }"
 ```
 
 ## Comment Patterns
@@ -79,6 +84,29 @@ Default patterns (built-in):
 | `.css` | `/\*\s*` | CSS |
 
 Custom patterns override defaults for matching extensions.
+
+## Comment Closers
+
+The `comment_closers` map defines closing delimiters for block-comment languages. Extensions not listed use line-terminating comments (no closer needed).
+
+Default closers (built-in):
+| Extension | Closer | Languages |
+|-----------|--------|-----------|
+| `.md` | ` -->` | Markdown (HTML comments) |
+| `.html` | ` -->` | HTML |
+| `.css` | ` */` | CSS |
+
+Custom closers override defaults for matching extensions. Example for Pascal:
+
+```yaml
+comment_closers:
+  .pas: " }"
+  .dpr: " }"
+```
+
+The closer string is stripped from the end of parsed traceability refs. This is necessary because block-comment languages require a closing delimiter after the traceability comment content, and without stripping, the closer would become part of the ref (e.g., `seq-compile.md }` instead of `seq-compile.md`).
+
+**Danger:** Extensions with closers use block comments. An unclosed comment will silently swallow all subsequent code. The `query comment-patterns` command displays a WARNING when closers are configured to alert users to this risk.
 
 ## Version
 

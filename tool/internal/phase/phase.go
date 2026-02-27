@@ -262,7 +262,8 @@ func (ph *Phase) RunImplementation() *Result {
 			if exists {
 				ext := filepath.Ext(cf.Path)
 				pattern := ph.Project.CommentPattern(ext)
-				trace, err := parser.ParseTraceability(fullPath, pattern)
+				closer := ph.Project.CommentCloser(ext)
+				trace, err := parser.ParseTraceability(fullPath, pattern, closer)
 				if err == nil {
 					fileInfo["crc_refs"] = trace.CRCRefs
 					fileInfo["seq_refs"] = trace.SeqRefs

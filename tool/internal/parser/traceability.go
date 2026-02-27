@@ -12,7 +12,9 @@ import (
 // ParseTraceability scans a code file for traceability comments.
 // The commentPattern is a regex for the comment prefix (e.g., `//\s*` for Go).
 // If commentPattern is empty, a default pattern matching // or -- is used.
-func ParseTraceability(path string, commentPattern string) (Traceability, error) {
+// The commentCloser is the closing delimiter for block-comment languages (e.g., "}" for Pascal).
+// If empty, only the built-in closers (-->, */) are stripped.
+func ParseTraceability(path string, commentPattern string, commentCloser string) (Traceability, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Traceability{}, err
@@ -36,9 +38,9 @@ func ParseTraceability(path string, commentPattern string) (Traceability, error)
 		line := scanner.Text()
 
 		if matches := traceRe.FindStringSubmatch(line); matches != nil {
-			trace.CRCRefs = append(trace.CRCRefs, splitRefs(matches[1])...)
+			trace.CRCRefs = append(trace.CRCRefs, splitRefs(matches[1], commentCloser)...)
 			if len(matches) > 2 && matches[2] != "" {
-				trace.SeqRefs = append(trace.SeqRefs, splitRefs(matches[2])...)
+				trace.SeqRefs = append(trace.SeqRefs, splitRefs(matches[2], commentCloser)...)
 			}
 		}
 	}
@@ -46,14 +48,15 @@ func ParseTraceability(path string, commentPattern string) (Traceability, error)
 	return trace, scanner.Err()
 }
 
-// splitRefs splits a comma-separated ref string into trimmed, non-empty parts
-func splitRefs(s string) []string {
+// splitRefs splits a comma-separated ref string into trimmed, non-empty parts.
+// It strips the comment closer (from config) if provided.
+func splitRefs(s string, commentCloser string) []string {
 	var refs []string
 	for _, ref := range strings.Split(s, ",") {
 		ref = strings.TrimSpace(ref)
-		// Trim comment-ending sequences (HTML: -->, CSS: */)
-		ref = strings.TrimSuffix(ref, "-->")
-		ref = strings.TrimSuffix(ref, "*/")
+		if commentCloser != "" {
+			ref = strings.TrimSuffix(ref, strings.TrimSpace(commentCloser))
+		}
 		ref = strings.TrimSpace(ref)
 		if ref != "" {
 			refs = append(refs, ref)

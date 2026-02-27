@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60
 
 Command-line interface handling.
 
@@ -34,3 +34,6 @@ minispec update <subcommand>
 minispec validate
 minispec phase <spec|requirements|design|implementation|gaps>
 ```
+
+## Notes
+`query comment-patterns` output includes a closers section when closers are configured, with a WARNING that unclosed block comments silently swallow code.

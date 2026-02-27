@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59
 
 Parses mini-spec design file formats into structured data.
 
@@ -20,13 +20,13 @@ Parses mini-spec design file formats into structured data.
   - Parses comma-separated code files after `→`
   - Strips backticks from code file paths
 - ParseGaps(path): parse design.md Gaps section -> []Gap
-- ParseTraceability(path, commentPattern): scan code file for CRC: comments using the provided pattern -> Traceability
+- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs -> Traceability
 
 ## Collaborators
 - os: file reading
 - regexp: pattern matching
 - bufio: line-by-line scanning
-- Project: provides comment patterns for file extensions
+- Project: provides comment patterns and closers for file extensions
 
 ## Sequences
 - seq-parse.md
