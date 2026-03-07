@@ -99,3 +99,11 @@
 - **R58:** Default comment closers for block-comment languages (.md, .html, .css)
 - **R59:** Parser strips config-provided comment closer from traceability refs
 - **R60:** `query comment-patterns` shows closers section with WARNING when closers are configured
+
+## Feature: Approved Gaps
+**Source:** specs/updates.md
+
+- **R61:** Tool parses gap type "A" (approved) in addition to S/R/D/C/O
+- **R62:** `update approve-gap [id]` converts existing gap to approved type with new A-number, preserving description
+- **R63:** Approved gaps are reported separately from open/resolved in phase and validate output
+- **R64:** Approved gaps do not cause validation failure (not counted as open)

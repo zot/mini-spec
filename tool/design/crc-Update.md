@@ -1,5 +1,5 @@
 # Update
-**Requirements:** R18, R19, R20, R21, R22, R23, R4
+**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62
 
 Atomic modifications to structured parts of design files.
 
@@ -13,6 +13,7 @@ Atomic modifications to structured parts of design files.
 - RemoveRef(crcFile, reqID): remove Rn from CRC card's Requirements field
 - AddGap(gapType, desc): add new gap with auto-numbered ID
 - ResolveGap(gapID): mark gap as resolved (check its checkbox)
+- ApproveGap(gapID): convert existing gap to A type with next A-number, preserve description
 
 ## Collaborators
 - Project: to locate files

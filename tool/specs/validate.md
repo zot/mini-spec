@@ -27,7 +27,7 @@ Run all validations and report issues.
 
 ### Gaps Structure
 - design.md has Gaps section
-- Gap IDs follow S/R/D/C/O + number format
+- Gap IDs follow S/R/D/C/O/A + number format
 - No duplicate gap IDs
 
 ### Traceability Comments

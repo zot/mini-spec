@@ -432,7 +432,11 @@ func (r *ValidationResult) FormatText() string {
 			if g.Resolved {
 				mark = "x"
 			}
-			sb.WriteString(fmt.Sprintf("  [%s] %s: %s\n", mark, g.ID, g.Description))
+			suffix := ""
+			if g.Type == "A" {
+				suffix = " (approved)"
+			}
+			sb.WriteString(fmt.Sprintf("  [%s] %s: %s%s\n", mark, g.ID, g.Description, suffix))
 		}
 	}
 

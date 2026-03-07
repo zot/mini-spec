@@ -35,7 +35,7 @@ type CodeFile struct {
 // Gap represents an item in the Gaps section
 type Gap struct {
 	ID          string // e.g., "D1", "R2", "S1"
-	Type        string // S, R, D, C, O
+	Type        string // S, R, D, C, O, A
 	Description string
 	Resolved    bool
 	Line        int

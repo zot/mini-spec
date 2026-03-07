@@ -309,7 +309,7 @@ func (ph *Phase) RunGaps() *Result {
 		return result
 	}
 
-	var open, resolved []string
+	var open, resolved, approved []string
 	seen := make(map[string]bool)
 
 	for _, g := range gaps {
@@ -318,7 +318,9 @@ func (ph *Phase) RunGaps() *Result {
 		}
 		seen[g.ID] = true
 
-		if g.Resolved {
+		if g.Type == "A" {
+			approved = append(approved, g.ID)
+		} else if g.Resolved {
 			resolved = append(resolved, g.ID)
 		} else {
 			open = append(open, g.ID)
@@ -328,6 +330,7 @@ func (ph *Phase) RunGaps() *Result {
 	result.Findings = map[string]any{
 		"open":     open,
 		"resolved": resolved,
+		"approved": approved,
 		"total":    len(gaps),
 	}
 	result.Passed = len(result.Issues) == 0

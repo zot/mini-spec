@@ -13,7 +13,7 @@ var (
 	subsectionRe     = regexp.MustCompile(`^### .+`)
 	designFileRe     = regexp.MustCompile(`^- (.+\.md)`)
 	codeFileRe       = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCO])(\d+):\s*(.+)`)
+	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCOA])(\d+):\s*(.+)`)
 	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 

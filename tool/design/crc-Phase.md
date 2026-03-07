@@ -1,5 +1,5 @@
 # Phase
-**Requirements:** R44, R45, R46, R47, R48, R49, R50
+**Requirements:** R44, R45, R46, R47, R48, R49, R50, R63
 
 Phase-specific validation for post-phase checks in the mini-spec workflow.
 
@@ -11,7 +11,7 @@ Phase-specific validation for post-phase checks in the mini-spec workflow.
 - RunRequirements(): validate requirements.md format and spec sources
 - RunDesign(): validate design files, CRC cards, requirement coverage
 - RunImplementation(): validate code files and traceability comments
-- RunGaps(): validate gaps section structure
+- RunGaps(): validate gaps section structure, report open/resolved/approved separately
 - FormatResult(): format phase-specific output with pass/fail status
 
 ## Collaborators

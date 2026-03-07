@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60, R62
 
 Command-line interface handling.
 

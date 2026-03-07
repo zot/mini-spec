@@ -35,7 +35,7 @@ Remove a requirement reference from a CRC card.
 
 Add a new gap item to design.md Gaps section with auto-numbered ID.
 
-Types: S (spec), R (requirement), D (design), C (code), O (oversight)
+Types: S (spec), R (requirement), D (design), C (code), O (oversight), A (approved)
 
 Example:
 ```
@@ -49,3 +49,15 @@ minispec update add-gap R "Requirement R5 has no design coverage"
 Mark a gap as resolved (check its checkbox).
 
 Alias for `minispec update check design.md [id]`
+
+## minispec update approve-gap [id]
+
+Convert an existing gap to approved (A) type. The gap's type changes to A with a new auto-numbered A-ID. The description is preserved. Approved gaps are always unchecked (`[ ]`).
+
+Example:
+```
+minispec update approve-gap D3
+# Changes: - [ ] D3: Some design gap
+# To:      - [ ] A1: Some design gap
+# (assuming no A gaps exist yet)
+```

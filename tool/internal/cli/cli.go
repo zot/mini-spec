@@ -119,8 +119,9 @@ Update subcommands:
   uncheck <file> <item>     Uncheck a checkbox
   add-ref <crc> <Rn>        Add requirement to CRC card
   remove-ref <crc> <Rn>     Remove requirement from CRC card
-  add-gap <type> <desc>     Add new gap (type: S/R/D/C/O)
+  add-gap <type> <desc>     Add new gap (type: S/R/D/C/O/A)
   resolve-gap <id>          Mark gap as resolved
+  approve-gap <id>          Convert gap to approved (A) type
 
 Phase subcommands:
   spec                  Validate spec files exist
@@ -485,8 +486,8 @@ func (c *CLI) runUpdate(args []string) int {
 			return 1
 		}
 		gapType := strings.ToUpper(args[1])
-		if !strings.Contains("SRDCO", gapType) || len(gapType) != 1 {
-			fmt.Fprintln(os.Stderr, "Gap type must be one of: S, R, D, C, O")
+		if !strings.Contains("SRDCOA", gapType) || len(gapType) != 1 {
+			fmt.Fprintln(os.Stderr, "Gap type must be one of: S, R, D, C, O, A")
 			return 1
 		}
 		desc := strings.Join(args[2:], " ")
@@ -510,6 +511,20 @@ func (c *CLI) runUpdate(args []string) int {
 		}
 		if !c.Quiet {
 			fmt.Printf("Resolved %s\n", args[1])
+		}
+
+	case "approve-gap":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "Usage: minispec update approve-gap <id>")
+			return 1
+		}
+		newID, err := u.ApproveGap(args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		if !c.Quiet {
+			fmt.Printf("Approved %s -> %s\n", args[1], newID)
 		}
 
 	default:

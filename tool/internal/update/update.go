@@ -204,6 +204,56 @@ func (u *Update) ResolveGap(gapID string) error {
 	return u.Check("design.md", gapID)
 }
 
+// ApproveGap converts an existing gap to approved (A) type with a new A-number
+func (u *Update) ApproveGap(gapID string) (string, error) {
+	path := u.Project.DesignMdPath()
+	gaps, err := parser.ParseGaps(path)
+	if err != nil {
+		return "", err
+	}
+
+	// Find the target gap
+	var target *parser.Gap
+	for i := range gaps {
+		if gaps[i].ID == gapID {
+			target = &gaps[i]
+			break
+		}
+	}
+	if target == nil {
+		return "", fmt.Errorf("gap %s not found", gapID)
+	}
+
+	if target.Type == "A" {
+		return target.ID, nil // Already approved
+	}
+
+	// Find next A number
+	maxA := 0
+	for _, g := range gaps {
+		if g.Type == "A" {
+			numStr := strings.TrimPrefix(g.ID, "A")
+			if num, err := strconv.Atoi(numStr); err == nil && num > maxA {
+				maxA = num
+			}
+		}
+	}
+	newID := fmt.Sprintf("A%d", maxA+1)
+
+	// Replace the gap line
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	if target.Line > 0 && target.Line <= len(lines) {
+		lines[target.Line-1] = fmt.Sprintf("- [ ] %s: %s", newID, target.Description)
+	}
+
+	return newID, os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+}
+
 // SortRequirements sorts a comma-separated list of requirements numerically
 func SortRequirements(reqs []string) []string {
 	sorted := make([]string, len(reqs))

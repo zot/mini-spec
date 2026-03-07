@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61
 
 Parses mini-spec design file formats into structured data.
 
@@ -19,7 +19,7 @@ Parses mini-spec design file formats into structured data.
   - Skips subsection headers (`### CRC Cards`, etc.)
   - Parses comma-separated code files after `→`
   - Strips backticks from code file paths
-- ParseGaps(path): parse design.md Gaps section -> []Gap
+- ParseGaps(path): parse design.md Gaps section -> []Gap (types: S/R/D/C/O/A)
 - ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs -> Traceability
 
 ## Collaborators
