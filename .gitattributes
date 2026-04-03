@@ -1,0 +1,2 @@
+# Store and check out text as LF so clones match regardless of OS (avoids CRLF/LF churn in diffs).
+* text=auto eol=lf

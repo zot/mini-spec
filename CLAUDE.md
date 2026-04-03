@@ -21,3 +21,9 @@ Release process:
 9. Include in release notes: `claude plugin install code-simplifier`
 
 Note: Binaries must be rebuilt for each release because they embed the version via `--version`.
+
+## Cursor
+
+If `.claude/skills/mini-spec/SKILL.md` changes, regenerate `.cursor/rules/mini-spec.mdc` so Cursor stays aligned:
+
+`python tool/gen_cursor_rule.py`
