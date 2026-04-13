@@ -18,7 +18,7 @@ Run after Spec Phase. Validates:
 
 Run after Requirements Phase. Validates:
 - requirements.md exists and is parseable
-- All requirements have Rn format with sequential numbering
+- All requirements have Rn format with unique numbering (no duplicates, no gaps; file order doesn't matter)
 - Each Source field references an existing spec file (R41)
 - Reports requirements found and their sources
 
@@ -68,7 +68,7 @@ requirements.md:
   sources: specs/overview.md (R1-R2, R4)
 
 issues:
-  - non-sequential: expected R3, found R4
+  - gap in numbering: R3 missing (have R1, R2, R4)
   - specs/missing.md: referenced as Source but file missing
 
 phase: requirements FAILED

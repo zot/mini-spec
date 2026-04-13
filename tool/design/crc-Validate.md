@@ -1,5 +1,5 @@
 # Validate
-**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64
+**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65
 
 Runs structural validations and reports findings.
 
@@ -10,10 +10,11 @@ Runs structural validations and reports findings.
 
 ## Does
 - Run(): execute all validations, return ValidationResult
-- ValidateRequirements(): check format, sequential numbering
+- ValidateRequirements(): check format, unique numbering (no duplicates/gaps, order-independent)
 - ValidateCRCCards(): check Requirements fields, valid Rn refs
 - ValidateArtifacts(): check structure, file existence
 - ValidateGaps(): check ID format (S/R/D/C/O/A), no duplicates, exclude A from open count
+- approvedGapReqs(): extract Rn references (individual and ranges) from approved gap descriptions
 - ValidateTraceability(): check code files have CRC comments, refs exist
 - ValidateArtifactsCompleteness(): check all design files are listed in Artifacts
 - ValidateSpecSources(): check Source fields reference existing spec files

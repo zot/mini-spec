@@ -43,4 +43,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 
 ## Gaps
 
-- [ ] O1: R37 (MCP server mode) deferred to future version
+- [ ] A1: R37 (MCP server mode) deferred to future version

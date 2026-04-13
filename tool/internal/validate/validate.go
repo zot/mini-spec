@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -93,17 +94,17 @@ func (v *Validate) Run() (*ValidationResult, error) {
 		result.Issues = append(result.Issues, fmt.Sprintf("CRC cards: %v", err))
 	}
 
-	// Compute coverage
+	// Validate gaps (before coverage so approved gaps can suppress uncovered)
+	if err := v.validateGaps(result); err != nil {
+		result.Issues = append(result.Issues, fmt.Sprintf("gaps: %v", err))
+	}
+
+	// Compute coverage (uses approved gaps to suppress uncovered requirements)
 	v.computeCoverage(result)
 
 	// Validate artifacts
 	if err := v.validateArtifacts(result); err != nil {
 		result.Issues = append(result.Issues, fmt.Sprintf("artifacts: %v", err))
-	}
-
-	// Validate gaps
-	if err := v.validateGaps(result); err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("gaps: %v", err))
 	}
 
 	// Validate traceability (R29, R42)
@@ -128,7 +129,8 @@ func (v *Validate) validateRequirements(result *ValidationResult) error {
 	}
 
 	// Build findings
-	expectedNum := 1
+	seen := make(map[int]bool)
+	var nums []int
 	for _, r := range reqs {
 		result.Requirements.Found = append(result.Requirements.Found, r.ID)
 		if r.Inferred {
@@ -138,13 +140,28 @@ func (v *Validate) validateRequirements(result *ValidationResult) error {
 			result.Requirements.Sources[r.Source] = append(result.Requirements.Sources[r.Source], r.ID)
 		}
 
-		// Check sequential numbering
 		numStr := strings.TrimPrefix(r.ID, "R")
 		num, _ := strconv.Atoi(numStr)
-		if num != expectedNum {
-			result.Issues = append(result.Issues, fmt.Sprintf("non-sequential: expected R%d, found %s", expectedNum, r.ID))
+		if seen[num] {
+			result.Issues = append(result.Issues, fmt.Sprintf("duplicate requirement: R%d", num))
 		}
-		expectedNum = num + 1
+		seen[num] = true
+		nums = append(nums, num)
+	}
+
+	// Check for gaps (order-independent)
+	if len(nums) > 0 {
+		sort.Ints(nums)
+		// Must start at 1
+		for missing := 1; missing < nums[0]; missing++ {
+			result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+		}
+		// Check between consecutive pairs
+		for i := 1; i < len(nums); i++ {
+			for missing := nums[i-1] + 1; missing < nums[i]; missing++ {
+				result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+			}
+		}
 	}
 
 	return nil
@@ -187,6 +204,30 @@ func (v *Validate) validateCRCCards(result *ValidationResult) error {
 	return nil
 }
 
+// approvedGapReqRe matches Rn or Rn-Rm in gap descriptions
+var approvedGapReqRe = regexp.MustCompile(`R(\d+)(?:-R(\d+))?`)
+
+// approvedGapReqs extracts requirement IDs referenced by approved (A-type) gaps (R65)
+func approvedGapReqs(gaps []parser.Gap) map[string]bool {
+	reqs := make(map[string]bool)
+	for _, g := range gaps {
+		if g.Type != "A" {
+			continue
+		}
+		for _, m := range approvedGapReqRe.FindAllStringSubmatch(g.Description, -1) {
+			lo, _ := strconv.Atoi(m[1])
+			hi := lo
+			if m[2] != "" {
+				hi, _ = strconv.Atoi(m[2])
+			}
+			for n := lo; n <= hi; n++ {
+				reqs[fmt.Sprintf("R%d", n)] = true
+			}
+		}
+	}
+	return reqs
+}
+
 func (v *Validate) computeCoverage(result *ValidationResult) {
 	covered := make(map[string]bool)
 
@@ -194,6 +235,11 @@ func (v *Validate) computeCoverage(result *ValidationResult) {
 		for _, reqID := range reqs {
 			covered[reqID] = true
 		}
+	}
+
+	// Approved gaps cover their referenced requirements (R65)
+	for id := range approvedGapReqs(result.Gaps.Gaps) {
+		covered[id] = true
 	}
 
 	for _, id := range result.Requirements.Found {

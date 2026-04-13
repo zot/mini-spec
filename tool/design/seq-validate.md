@@ -11,7 +11,7 @@ CLI -> Validate: Run(project)
 
 Validate -> Parser: ParseRequirements(requirements.md)
 Parser --> Validate: []Requirement
-Validate -> Validate: check sequential numbering
+Validate -> Validate: collect all Rn numbers, sort, check for duplicates and gaps
 Validate -> Validate: record findings: "found: R1, R2, ..."
 
 Validate -> Project: glob(design/crc-*.md)
@@ -23,8 +23,14 @@ loop each CRC file
     Validate -> Validate: record findings: "crc-X.md: R1, R3"
 end
 
+Validate -> Parser: ParseGaps(design.md)
+Parser --> Validate: []Gap
+Validate -> Validate: check ID format, no duplicates
+Validate -> Validate: extract Rn refs from approved (A-type) gap descriptions
+
 Validate -> Query: Coverage()
 Query --> Validate: map[Rn][]files
+Validate -> Validate: merge approved-gap Rn refs into covered set
 Validate -> Validate: record coverage, find uncovered
 
 Validate -> Parser: ParseArtifacts(design.md)
@@ -34,10 +40,7 @@ loop each code file
     Validate -> Validate: record: "[x] path" or "(missing)"
 end
 
-Validate -> Parser: ParseGaps(design.md)
-Parser --> Validate: []Gap
-Validate -> Validate: check ID format, no duplicates
-Validate -> Validate: record findings
+Validate -> Validate: record gap findings
 
 loop each code file in artifacts
     Validate -> Project: CommentPattern(ext)

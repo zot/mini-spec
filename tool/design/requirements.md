@@ -39,7 +39,7 @@
 **Source:** specs/validate.md
 
 - **R24:** `validate` runs all structural validations
-- **R25:** Validates requirements.md format and sequential Rn numbering
+- **R25:** Validates requirements.md format: unique Rn numbering with no duplicates or gaps (file order doesn't matter)
 - **R26:** Validates CRC cards have Requirements field with valid Rn refs
 - **R27:** Validates Artifacts section structure and file existence
 - **R28:** Validates Gaps section structure and ID format
@@ -107,3 +107,4 @@
 - **R62:** `update approve-gap [id]` converts existing gap to approved type with new A-number, preserving description
 - **R63:** Approved gaps are reported separately from open/resolved in phase and validate output
 - **R64:** Approved gaps do not cause validation failure (not counted as open)
+- **R65:** Requirements referenced by approved gaps (via Rn or Rn-Rm ranges in description) are treated as covered and excluded from uncovered-requirements issues

@@ -184,7 +184,7 @@ minispec phase gaps
 | Phase | Validates |
 |-------|-----------|
 | `spec` | Spec files exist in `specs/` and are non-empty |
-| `requirements` | requirements.md format, sequential Rn numbering, spec sources exist |
+| `requirements` | requirements.md format, unique Rn numbering (no duplicates/gaps), spec sources exist |
 | `design` | Design files, CRC cards have Requirements field, requirement coverage |
 | `implementation` | Code files exist, have traceability comments, refs point to existing files |
 | `gaps` | Gaps section structure, ID format, no duplicates |

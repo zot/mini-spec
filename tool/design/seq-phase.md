@@ -12,7 +12,7 @@ CLI -> Phase: RunRequirements(project)
 Phase -> Parser: ParseRequirements(requirements.md)
 Parser --> Phase: []Requirement
 
-Phase -> Phase: check sequential numbering
+Phase -> Phase: collect all Rn numbers, sort, check for duplicates and gaps
 Phase -> Phase: check spec sources exist
 
 Phase -> Phase: build findings

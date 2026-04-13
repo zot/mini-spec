@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/zot/minispec/internal/parser"
@@ -85,11 +87,12 @@ func (ph *Phase) RunRequirements() *Result {
 		return result
 	}
 
-	// Check sequential numbering
+	// Check numbering (order-independent: no duplicates, no gaps)
 	var found []string
 	var inferred []string
 	sources := make(map[string][]string)
-	expectedNum := 1
+	seen := make(map[int]bool)
+	var nums []int
 
 	for _, r := range reqs {
 		found = append(found, r.ID)
@@ -100,13 +103,26 @@ func (ph *Phase) RunRequirements() *Result {
 			sources[r.Source] = append(sources[r.Source], r.ID)
 		}
 
-		// Check sequential
-		var num int
-		fmt.Sscanf(r.ID, "R%d", &num)
-		if num != expectedNum {
-			result.Issues = append(result.Issues, fmt.Sprintf("non-sequential: expected R%d, found %s", expectedNum, r.ID))
+		numStr := strings.TrimPrefix(r.ID, "R")
+		num, _ := strconv.Atoi(numStr)
+		if seen[num] {
+			result.Issues = append(result.Issues, fmt.Sprintf("duplicate requirement: R%d", num))
 		}
-		expectedNum = num + 1
+		seen[num] = true
+		nums = append(nums, num)
+	}
+
+	// Check for gaps
+	if len(nums) > 0 {
+		sort.Ints(nums)
+		for missing := 1; missing < nums[0]; missing++ {
+			result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+		}
+		for i := 1; i < len(nums); i++ {
+			for missing := nums[i-1] + 1; missing < nums[i]; missing++ {
+				result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+			}
+		}
 	}
 
 	// Check spec sources exist (R41)

@@ -10,7 +10,7 @@ Run all validations and report issues.
 
 ### Requirements Format
 - requirements.md exists
-- All requirements have Rn format with sequential numbering
+- All requirements have Rn format with unique numbering (no duplicates, no gaps; file order doesn't matter)
 - Each requirement has a Source spec reference
 - Inferred requirements are marked
 
@@ -29,6 +29,11 @@ Run all validations and report issues.
 - design.md has Gaps section
 - Gap IDs follow S/R/D/C/O/A + number format
 - No duplicate gap IDs
+
+### Approved Gap Coverage
+- Approved (A-type) gaps may reference requirements via Rn or Rn-Rm ranges in their description
+- Requirements referenced by approved gaps are treated as covered for validation purposes
+- These requirements do not appear in the "uncovered" list or trigger "uncovered requirements" issues
 
 ### Traceability Comments
 - Code files in Artifacts have `// CRC:` comments
