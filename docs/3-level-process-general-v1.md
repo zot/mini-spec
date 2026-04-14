@@ -92,7 +92,7 @@ You don't need special tools but you do need an AI assistant that can edit files
 
 > I'm working on [describe your project]. I want to use a 3-level process to anchor our results as we iterate. Read this article and let's make
 > a process and store it in CLAUDE.md so we can keep using it:
-> http://linkedin.com/...
+> https://github.com/zot/mini-spec/blob/main/docs/3-level-process-general-v1.md
 >
 > Help me create:
 >
