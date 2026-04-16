@@ -1,0 +1,18 @@
+---
+description: Mini-spec spec-agent parity — design, implement, or reverse-engineer using the full methodology (invoke for focused architecture work).
+alwaysApply: false
+---
+
+# Spec agent (mini-spec)
+
+Use for the same situations as Claude’s **spec-agent**: designing features, implementing from design, updating design after code, or reverse-engineering with CRC/sequence/test artifacts.
+
+The full methodology lives in **mini-spec** (always-on project rule). In this chat:
+
+1. Confirm `minispec check-version` matches `.claude/skills/mini-spec/README.md`.
+2. Use **todos** for phases and per-file work (same intent as Claude tasks).
+3. **Design-only** when the user asks for design — no code until they approve.
+4. **Implementation** only with traceability comments and `minispec update check` / `uncheck` as required.
+5. On code changes without prior design sync: uncheck artifacts and ask whether to update design, specs, or defer.
+
+MIT License: see `.claude/skills/mini-spec/LICENSE`.
