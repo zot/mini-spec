@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71
 
 Parses mini-spec design file formats into structured data.
 
@@ -9,7 +9,7 @@ Parses mini-spec design file formats into structured data.
 - Artifact: {DesignFile, CodeFiles []CodeFile}
 - CodeFile: {Path, Checked bool, Line int}
 - Gap: {ID, Type, Description, Resolved bool, Line int}
-- Traceability: {CRCRefs []string, SeqRefs []string}
+- Traceability: {CRCRefs []string, SeqRefs []string, ReqRefs []string}
 
 ## Does
 - ParseRequirements(path): parse requirements.md -> []Requirement
@@ -19,8 +19,8 @@ Parses mini-spec design file formats into structured data.
   - Skips subsection headers (`### CRC Cards`, etc.)
   - Parses comma-separated code files after `→`
   - Strips backticks from code file paths
-- ParseGaps(path): parse design.md Gaps section -> []Gap (types: S/R/D/C/O/A)
-- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs -> Traceability
+- ParseGaps(path): parse design.md Gaps section -> []Gap (types: S/R/D/C/I/O/A)
+- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs; stops each section at next `|` delimiter; extracts Rn refs from optional third section -> Traceability
 
 ## Collaborators
 - os: file reading

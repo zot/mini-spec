@@ -1,4 +1,4 @@
-// CRC: crc-Parser.md | Seq: seq-parse.md
+// CRC: crc-Parser.md | Seq: seq-parse.md | R71
 package parser
 
 import (
@@ -13,7 +13,7 @@ var (
 	subsectionRe     = regexp.MustCompile(`^### .+`)
 	designFileRe     = regexp.MustCompile(`^- (.+\.md)`)
 	codeFileRe       = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCOA])(\d+):\s*(.+)`)
+	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCIOA])(\d+):\s*(.+)`)
 	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 

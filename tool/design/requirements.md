@@ -108,3 +108,18 @@
 - **R63:** Approved gaps are reported separately from open/resolved in phase and validate output
 - **R64:** Approved gaps do not cause validation failure (not counted as open)
 - **R65:** Requirements referenced by approved gaps (via Rn or Rn-Rm ranges in description) are treated as covered and excluded from uncovered-requirements issues
+
+## Feature: Traceability Robustness
+**Source:** specs/validate.md
+
+- **R66:** Traceability parser stops each pipe-delimited section (CRC, Seq) at the next `|` delimiter
+
+## Feature: Inline Requirement Traceability
+**Source:** specs/validate.md
+
+- **R67:** Traceability parser extracts Rn refs from an optional third pipe-delimited section (e.g. `| R5, R12`) into a ReqRefs field
+- **R68:** Validate checks that inline Rn refs in code files exist in requirements.md
+- **R69:** Validate checks implementation coverage: every requirement should appear as an inline Rn ref in at least one code file (requirements covered by approved gaps are excluded)
+- **R70:** Requirements with design coverage but no implementation coverage are reported as I-type (implementation) gaps
+- **R71:** Tool parses gap type "I" (implementation) in addition to S/R/D/C/O/A
+- **R72:** Validate output includes an implementation coverage section showing which requirements have code-level refs

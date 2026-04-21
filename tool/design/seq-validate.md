@@ -47,8 +47,15 @@ loop each code file in artifacts
     Project --> Validate: pattern
     Validate -> Parser: ParseTraceability(path, pattern)
     Parser --> Validate: Traceability
-    Validate -> Validate: check CRC refs exist
+    Validate -> Validate: check CRC/Seq refs exist
+    Validate -> Validate: check inline Rn refs exist in requirements
+    Validate -> Validate: collect all inline Rn refs across code files
 end
+
+Validate -> Validate: compute implementation coverage
+note: each requirement should appear in at least one code file's inline Rn refs
+note: exclude requirements covered by approved gaps
+Validate -> Validate: report uncovered as I-type implementation gaps
 
 Validate -> Validate: compile issues list
 Validate --> CLI: ValidationResult

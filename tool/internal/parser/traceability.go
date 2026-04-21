@@ -1,4 +1,4 @@
-// CRC: crc-Parser.md | Seq: seq-parse.md
+// CRC: crc-Parser.md | Seq: seq-parse.md | R67, R71
 package parser
 
 import (
@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 )
+
+var reqRefRe = regexp.MustCompile(`R\d+`)
 
 // ParseTraceability scans a code file for traceability comments.
 // The commentPattern is a regex for the comment prefix (e.g., `//\s*` for Go).
@@ -21,11 +23,10 @@ func ParseTraceability(path string, commentPattern string, commentCloser string)
 	}
 	defer file.Close()
 
-	// Build the traceability regex from the comment pattern
 	if commentPattern == "" {
 		commentPattern = `(?://|--|#)\s*`
 	}
-	pattern := fmt.Sprintf(`%sCRC:\s*([^\|]+)(?:\|\s*Seq:\s*(.+))?`, commentPattern)
+	pattern := fmt.Sprintf(`%sCRC:\s*([^\|]+)(?:\|\s*Seq:\s*([^\|]+))?(.*)`, commentPattern)
 	traceRe, err := regexp.Compile(pattern)
 	if err != nil {
 		return Traceability{}, fmt.Errorf("invalid comment pattern %q: %w", commentPattern, err)
@@ -39,13 +40,23 @@ func ParseTraceability(path string, commentPattern string, commentCloser string)
 
 		if matches := traceRe.FindStringSubmatch(line); matches != nil {
 			trace.CRCRefs = append(trace.CRCRefs, splitRefs(matches[1], commentCloser)...)
-			if len(matches) > 2 && matches[2] != "" {
+			if matches[2] != "" {
 				trace.SeqRefs = append(trace.SeqRefs, splitRefs(matches[2], commentCloser)...)
+			}
+			if matches[3] != "" {
+				trace.ReqRefs = append(trace.ReqRefs, extractReqRefs(matches[3], commentCloser)...)
 			}
 		}
 	}
 
 	return trace, scanner.Err()
+}
+
+func extractReqRefs(s string, commentCloser string) []string {
+	if commentCloser != "" {
+		s = strings.TrimSuffix(s, strings.TrimSpace(commentCloser))
+	}
+	return reqRefRe.FindAllString(s, -1)
 }
 
 // splitRefs splits a comma-separated ref string into trimmed, non-empty parts.

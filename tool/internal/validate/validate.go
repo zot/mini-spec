@@ -1,4 +1,4 @@
-// CRC: crc-Validate.md | Seq: seq-validate.md
+// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72
 package validate
 
 import (
@@ -17,12 +17,13 @@ import (
 
 // ValidationResult contains all findings from validation
 type ValidationResult struct {
-	Requirements RequirementsFindings
-	CRCCards     CRCFindings
-	Coverage     CoverageFindings
-	Artifacts    ArtifactsFindings
-	Gaps         GapsFindings
-	Issues       []string
+	Requirements  RequirementsFindings
+	CRCCards      CRCFindings
+	Coverage      CoverageFindings
+	ImplCoverage  ImplCoverageFindings
+	Artifacts     ArtifactsFindings
+	Gaps          GapsFindings
+	Issues        []string
 }
 
 type RequirementsFindings struct {
@@ -36,6 +37,11 @@ type CRCFindings struct {
 }
 
 type CoverageFindings struct {
+	Covered   []string
+	Uncovered []string
+}
+
+type ImplCoverageFindings struct {
 	Covered   []string
 	Uncovered []string
 }
@@ -309,6 +315,13 @@ func (v *Validate) validateGaps(result *ValidationResult) error {
 }
 
 func (v *Validate) validateTraceability(result *ValidationResult) {
+	validReqs := make(map[string]bool)
+	for _, id := range result.Requirements.Found {
+		validReqs[id] = true
+	}
+
+	implCovered := make(map[string]bool)
+
 	for _, art := range result.Artifacts.Artifacts {
 		for _, cf := range art.CodeFiles {
 			if !cf.Exists {
@@ -329,14 +342,44 @@ func (v *Validate) validateTraceability(result *ValidationResult) {
 			}
 
 			// R42: Check that referenced design files exist
-			allRefs := append(trace.CRCRefs, trace.SeqRefs...)
-			for _, ref := range allRefs {
+			for _, ref := range trace.CRCRefs {
 				refPath := v.Project.DesignPath(ref)
 				if _, err := os.Stat(refPath); os.IsNotExist(err) {
 					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
 				}
 			}
+			for _, ref := range trace.SeqRefs {
+				refPath := v.Project.DesignPath(ref)
+				if _, err := os.Stat(refPath); os.IsNotExist(err) {
+					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
+				}
+			}
+
+			// R68: Check inline Rn refs exist in requirements.md
+			for _, ref := range trace.ReqRefs {
+				if !validReqs[ref] {
+					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
+				}
+				implCovered[ref] = true
+			}
 		}
+	}
+
+	// R69, R70, R72: Compute implementation coverage
+	approvedReqs := approvedGapReqs(result.Gaps.Gaps)
+	for _, id := range result.Requirements.Found {
+		if approvedReqs[id] {
+			continue
+		}
+		if implCovered[id] {
+			result.ImplCoverage.Covered = append(result.ImplCoverage.Covered, id)
+		} else {
+			result.ImplCoverage.Uncovered = append(result.ImplCoverage.Uncovered, id)
+		}
+	}
+
+	if len(result.ImplCoverage.Uncovered) > 0 {
+		result.Issues = append(result.Issues, fmt.Sprintf("missing implementation coverage: %s", strings.Join(result.ImplCoverage.Uncovered, ", ")))
 	}
 }
 
@@ -453,6 +496,17 @@ func (r *ValidationResult) FormatText() string {
 	sb.WriteString(fmt.Sprintf("  covered: %s\n", strings.Join(r.Coverage.Covered, ", ")))
 	if len(r.Coverage.Uncovered) > 0 {
 		sb.WriteString(fmt.Sprintf("  uncovered: %s\n", strings.Join(r.Coverage.Uncovered, ", ")))
+	}
+
+	sb.WriteString("\nimplementation coverage:\n")
+	if len(r.ImplCoverage.Covered) > 0 {
+		sb.WriteString(fmt.Sprintf("  covered: %s\n", strings.Join(r.ImplCoverage.Covered, ", ")))
+	}
+	if len(r.ImplCoverage.Uncovered) > 0 {
+		sb.WriteString(fmt.Sprintf("  uncovered: %s\n", strings.Join(r.ImplCoverage.Uncovered, ", ")))
+	}
+	if len(r.ImplCoverage.Covered) == 0 && len(r.ImplCoverage.Uncovered) == 0 {
+		sb.WriteString("  (no inline requirement refs found in code)\n")
 	}
 
 	sb.WriteString("\nartifacts:\n")

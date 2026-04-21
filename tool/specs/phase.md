@@ -43,7 +43,7 @@ Run after Implementation Phase. Validates:
 
 Run after Gaps Phase. Validates:
 - Gaps section exists in design.md
-- Gap IDs follow S/R/D/C/O/A + number format
+- Gap IDs follow S/R/D/C/I/O/A + number format
 - No duplicate gap IDs
 - Reports open, resolved, and approved gaps separately
 

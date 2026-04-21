@@ -35,7 +35,7 @@ Remove a requirement reference from a CRC card.
 
 Add a new gap item to design.md Gaps section with auto-numbered ID.
 
-Types: S (spec), R (requirement), D (design), C (code), O (oversight), A (approved)
+Types: S (spec), R (requirement), D (design), C (code), I (implementation), O (oversight), A (approved)
 
 Example:
 ```

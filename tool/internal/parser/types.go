@@ -45,4 +45,5 @@ type Gap struct {
 type Traceability struct {
 	CRCRefs []string
 	SeqRefs []string
+	ReqRefs []string
 }

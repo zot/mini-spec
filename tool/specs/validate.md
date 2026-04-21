@@ -27,7 +27,7 @@ Run all validations and report issues.
 
 ### Gaps Structure
 - design.md has Gaps section
-- Gap IDs follow S/R/D/C/O/A + number format
+- Gap IDs follow S/R/D/C/I/O/A + number format
 - No duplicate gap IDs
 
 ### Approved Gap Coverage
@@ -38,6 +38,15 @@ Run all validations and report issues.
 ### Traceability Comments
 - Code files in Artifacts have `// CRC:` comments
 - Referenced CRC and Seq files in code comments exist in design/
+- Optional third pipe-delimited section contains inline requirement refs: `// CRC: crc-X.md | Seq: seq-Y.md | R5, R12`
+- Parser extracts Rn refs from the third section (comma-separated)
+- Inline Rn refs are validated: each must exist in requirements.md
+
+### Implementation Coverage
+- Every requirement in requirements.md should appear as an inline Rn ref in at least one code file's traceability comment
+- Requirements covered only at the design level (CRC card) but not in any code file are reported as implementation gaps (I-type)
+- Requirements covered by approved gaps (A-type) are excluded from this check
+- Implementation coverage is reported in validate output alongside design coverage
 
 ### Artifacts Manifest Completeness
 - All `crc-*.md`, `seq-*.md`, `ui-*.md`, `test-*.md`, `manifest-*.md` files in `design/` are listed in Artifacts section
