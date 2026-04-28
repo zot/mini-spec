@@ -7,6 +7,7 @@ type Requirement struct {
 	Text     string
 	Source   string // spec file path
 	Inferred bool
+	Retired  bool // R77: marked with strikethrough/Retired prefix
 	Line     int
 }
 
@@ -34,10 +35,11 @@ type CodeFile struct {
 
 // Gap represents an item in the Gaps section
 type Gap struct {
-	ID          string // e.g., "D1", "R2", "S1"
-	Type        string // S, R, D, C, O, A
+	ID          string // e.g., "D1", "R2", "S1", "T3"
+	Type        string // S, R, D, C, I, O, A, T
 	Description string
-	Resolved    bool
+	Resolved    bool // checkbox state when HasCheckbox=true; ignored otherwise
+	HasCheckbox bool // R74, R75: A/T entries should not have checkboxes
 	Line        int
 }
 

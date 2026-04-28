@@ -2,7 +2,10 @@
 package query
 
 import (
+	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
@@ -109,6 +112,34 @@ func (q *Query) Artifacts() ([]parser.Artifact, error) {
 // Gaps lists all gap items from design.md
 func (q *Query) Gaps() ([]parser.Gap, error) {
 	return parser.ParseGaps(q.Project.DesignMdPath())
+}
+
+// Migrations lists in-flight migration spec files (specs/migrations/*.md, R79).
+// Excludes specs/migrations/complete/. Returns relative paths from project root,
+// sorted lexically. Returns an empty slice (not error) when no migrations dir exists.
+func (q *Query) Migrations() ([]string, error) {
+	dir := q.Project.MigrationsDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var paths []string
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		rel, err := filepath.Rel(q.Project.RootPath, filepath.Join(dir, e.Name()))
+		if err != nil {
+			rel = filepath.Join("specs", "migrations", e.Name())
+		}
+		paths = append(paths, rel)
+	}
+	sort.Strings(paths)
+	return paths, nil
 }
 
 // Traceability checks a code file for CRC/Seq comments

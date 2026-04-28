@@ -1,4 +1,4 @@
-// CRC: crc-Parser.md | Seq: seq-parse.md
+// CRC: crc-Parser.md | Seq: seq-parse.md | R77
 package parser
 
 import (
@@ -9,10 +9,12 @@ import (
 )
 
 var (
-	featureRe     = regexp.MustCompile(`^## Feature:\s*(.+)`)
-	sourceRe      = regexp.MustCompile(`^\*\*Source:\*\*\s*(.+)`)
-	requirementRe = regexp.MustCompile(`^- \*\*R(\d+):\*\*\s*(.+)`)
+	featureRe = regexp.MustCompile(`^## Feature:\s*(.+)`)
+	sourceRe  = regexp.MustCompile(`^\*\*Source:\*\*\s*(.+)`)
+	// requirementRe matches `- **R1:** text` and `- **~~R1:~~** text` (retired form).
+	requirementRe = regexp.MustCompile(`^- \*\*(~~)?R(\d+):(?:~~)?\*\*\s*(.+)`)
 	inferredRe    = regexp.MustCompile(`^\(inferred\)\s*`)
+	retiredPrefix = regexp.MustCompile(`^\(Retired\s+T\d+[^)]*\)\s*`)
 )
 
 // ParseRequirements parses a requirements.md file
@@ -32,36 +34,43 @@ func ParseRequirements(path string) ([]Requirement, error) {
 		lineNum++
 		line := scanner.Text()
 
-		// Check for Feature header (resets source)
 		if featureRe.MatchString(line) {
 			currentSource = ""
 			continue
 		}
 
-		// Check for Source line
 		if matches := sourceRe.FindStringSubmatch(line); matches != nil {
 			currentSource = strings.TrimSpace(matches[1])
 			continue
 		}
 
-		// Check for requirement line
-		if matches := requirementRe.FindStringSubmatch(line); matches != nil {
-			text := strings.TrimSpace(matches[2])
-			inferred := false
-
-			if inferredRe.MatchString(text) {
-				inferred = true
-				text = inferredRe.ReplaceAllString(text, "")
-			}
-
-			requirements = append(requirements, Requirement{
-				ID:       "R" + matches[1],
-				Text:     text,
-				Source:   currentSource,
-				Inferred: inferred,
-				Line:     lineNum,
-			})
+		matches := requirementRe.FindStringSubmatch(line)
+		if matches == nil {
+			continue
 		}
+
+		retired := matches[1] != ""
+		text := strings.TrimSpace(matches[3])
+		// R77: strip a leading "(Retired Tn — see Rxxx)" or "(Retired Tn — no replacement)"
+		// marker if present, leaving the original text.
+		if retired {
+			text = retiredPrefix.ReplaceAllString(text, "")
+		}
+
+		inferred := false
+		if inferredRe.MatchString(text) {
+			inferred = true
+			text = inferredRe.ReplaceAllString(text, "")
+		}
+
+		requirements = append(requirements, Requirement{
+			ID:       "R" + matches[2],
+			Text:     text,
+			Source:   currentSource,
+			Inferred: inferred,
+			Retired:  retired,
+			Line:     lineNum,
+		})
 	}
 
 	return requirements, scanner.Err()

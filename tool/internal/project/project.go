@@ -156,6 +156,21 @@ func (p *Project) GlobCRCCards() ([]string, error) {
 	return filepath.Glob(p.DesignPath("crc-*.md"))
 }
 
+// SpecsDir returns the absolute specs/ path. R79
+func (p *Project) SpecsDir() string {
+	return filepath.Join(p.RootPath, "specs")
+}
+
+// MigrationsDir returns the in-flight migrations directory. R79
+func (p *Project) MigrationsDir() string {
+	return filepath.Join(p.SpecsDir(), "migrations")
+}
+
+// MigrationsCompleteDir returns the migrations history directory. R81
+func (p *Project) MigrationsCompleteDir() string {
+	return filepath.Join(p.MigrationsDir(), "complete")
+}
+
 // CommentPattern returns the comment regex pattern for the given file extension.
 // Returns empty string if no pattern is configured for the extension.
 func (p *Project) CommentPattern(ext string) string {

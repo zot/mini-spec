@@ -1,4 +1,4 @@
-// CRC: crc-CLI.md
+// CRC: crc-CLI.md | R79, R80, R81, R82, R83
 package cli
 
 import (
@@ -110,18 +110,21 @@ Query subcommands:
   orphan-designs        List CRC cards missing Requirements field
   artifacts             List artifacts with checkbox states
   gaps                  List gap items
+  migrations            List in-flight migration specs
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
   comment-patterns      Show recognized comment patterns per file extension
 
 Update subcommands:
-  check <file> <item>       Check a checkbox
-  uncheck <file> <item>     Uncheck a checkbox
-  add-ref <crc> <Rn>        Add requirement to CRC card
-  remove-ref <crc> <Rn>     Remove requirement from CRC card
-  add-gap <type> <desc>     Add new gap (type: S/R/D/C/I/O/A)
-  resolve-gap <id>          Mark gap as resolved
-  approve-gap <id>          Convert gap to approved (A) type
+  check <file> <item>           Check a checkbox
+  uncheck <file> <item>         Uncheck a checkbox
+  add-ref <crc> <Rn>            Add requirement to CRC card
+  remove-ref <crc> <Rn>         Remove requirement from CRC card
+  add-gap <type> <desc>         Add new gap (type: S/R/D/C/I/O/A/T)
+  resolve-gap <id>              Mark gap as resolved (S/R/D/C/I/O only)
+  approve-gap <id>              Convert gap to approved (A) type
+  retire <Rold> <Rnew|-> <reason>  Retire a requirement, append a Tn gap
+  migration-complete <name>     Move migration spec to complete/ with NNN- prefix
 
 Phase subcommands:
   spec                  Validate spec files exist
@@ -324,11 +327,29 @@ func (c *CLI) runQuery(args []string) int {
 			c.output(gaps)
 		} else {
 			for _, g := range gaps {
+				if !g.HasCheckbox {
+					fmt.Printf("    %s: %s\n", g.ID, g.Description)
+					continue
+				}
 				mark := " "
 				if g.Resolved {
 					mark = "x"
 				}
 				fmt.Printf("[%s] %s: %s\n", mark, g.ID, g.Description)
+			}
+		}
+
+	case "migrations":
+		migs, err := q.Migrations()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		if c.JSON {
+			c.output(migs)
+		} else {
+			for _, m := range migs {
+				fmt.Println(m)
 			}
 		}
 
@@ -486,8 +507,8 @@ func (c *CLI) runUpdate(args []string) int {
 			return 1
 		}
 		gapType := strings.ToUpper(args[1])
-		if !strings.Contains("SRDCIOA", gapType) || len(gapType) != 1 {
-			fmt.Fprintln(os.Stderr, "Gap type must be one of: S, R, D, C, I, O, A")
+		if !strings.Contains("SRDCIOAT", gapType) || len(gapType) != 1 {
+			fmt.Fprintln(os.Stderr, "Gap type must be one of: S, R, D, C, I, O, A, T")
 			return 1
 		}
 		desc := strings.Join(args[2:], " ")
@@ -526,6 +547,31 @@ func (c *CLI) runUpdate(args []string) int {
 		if !c.Quiet {
 			fmt.Printf("Approved %s -> %s\n", args[1], newID)
 		}
+
+	case "retire":
+		if len(args) < 4 {
+			fmt.Fprintln(os.Stderr, "Usage: minispec update retire <Rold> <Rnew|-> <reason>")
+			return 1
+		}
+		reason := strings.Join(args[3:], " ")
+		tn, err := u.Retire(args[1], args[2], reason)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		fmt.Println(tn)
+
+	case "migration-complete":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "Usage: minispec update migration-complete <name>")
+			return 1
+		}
+		newPath, err := u.MigrationComplete(args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		fmt.Println(newPath)
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown update subcommand: %s\n", subcmd)

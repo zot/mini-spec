@@ -1,4 +1,4 @@
-// CRC: crc-Parser.md | Seq: seq-parse.md | R71
+// CRC: crc-Parser.md | Seq: seq-parse.md | R71, R73, R74, R75
 package parser
 
 import (
@@ -13,7 +13,8 @@ var (
 	subsectionRe     = regexp.MustCompile(`^### .+`)
 	designFileRe     = regexp.MustCompile(`^- (.+\.md)`)
 	codeFileRe       = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	gapRe            = regexp.MustCompile(`^- \[([ x])\] ([SRDCIOA])(\d+):\s*(.+)`)
+	checkboxedGapRe  = regexp.MustCompile(`^- \[([ x])\] ([SRDCIOAT])(\d+):\s*(.+)`)
+	plainGapRe       = regexp.MustCompile(`^- ([SRDCIOAT])(\d+):\s*(.+)`)
 	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 
@@ -38,14 +39,12 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 		lineNum++
 		line := scanner.Text()
 
-		// Check for section headers (## ...)
 		if matches := sectionRe.FindStringSubmatch(line); matches != nil {
 			section := strings.TrimSpace(matches[1])
 			if section == "Artifacts" {
 				inArtifacts = true
 				continue
 			} else if inArtifacts {
-				// End of Artifacts section
 				break
 			}
 			continue
@@ -55,18 +54,15 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			continue
 		}
 
-		// Skip subsection headers (### CRC Cards, etc.)
 		if subsectionRe.MatchString(line) {
 			continue
 		}
 
-		// Try new inline format first: - [x] design.md → code.ts, code2.ts
 		if matches := inlineArtifactRe.FindStringSubmatch(line); matches != nil {
 			checked := matches[1] == "x"
 			designFile := matches[2]
 			codeFilesStr := matches[3]
 
-			// Save any pending artifact from legacy format
 			if current != nil {
 				artifacts = append(artifacts, *current)
 				current = nil
@@ -75,7 +71,6 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			artifact := Artifact{DesignFile: designFile}
 
 			if codeFilesStr != "" {
-				// Split on comma, strip backticks and whitespace
 				for _, cf := range strings.Split(codeFilesStr, ",") {
 					cf = strings.TrimSpace(cf)
 					cf = strings.Trim(cf, "`")
@@ -93,7 +88,6 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			continue
 		}
 
-		// Legacy format: design file line without checkbox
 		if matches := designFileRe.FindStringSubmatch(line); matches != nil {
 			if current != nil {
 				artifacts = append(artifacts, *current)
@@ -102,7 +96,6 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 			continue
 		}
 
-		// Legacy format: code file checkbox (indented)
 		if matches := codeFileRe.FindStringSubmatch(line); matches != nil && current != nil {
 			current.CodeFiles = append(current.CodeFiles, CodeFile{
 				Path:    strings.TrimSpace(matches[2]),
@@ -112,7 +105,6 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 		}
 	}
 
-	// Don't forget the last artifact (legacy format)
 	if current != nil {
 		artifacts = append(artifacts, *current)
 	}
@@ -120,7 +112,10 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 	return artifacts, scanner.Err()
 }
 
-// ParseGaps parses the Gaps section of design.md
+// ParseGaps parses the Gaps section of design.md.
+// Recognizes both checkboxed and checkbox-less forms; A and T entries
+// are written without checkboxes (R74, R75) but legacy `- [ ] A1: ...`
+// is still parsed for back-compat with HasCheckbox=true.
 func ParseGaps(path string) ([]Gap, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -137,14 +132,12 @@ func ParseGaps(path string) ([]Gap, error) {
 		lineNum++
 		line := scanner.Text()
 
-		// Check for section headers
 		if matches := sectionRe.FindStringSubmatch(line); matches != nil {
 			section := strings.TrimSpace(matches[1])
 			if section == "Gaps" {
 				inGaps = true
 				continue
 			} else if inGaps {
-				// End of Gaps section
 				break
 			}
 			continue
@@ -154,13 +147,25 @@ func ParseGaps(path string) ([]Gap, error) {
 			continue
 		}
 
-		// Check for gap line
-		if matches := gapRe.FindStringSubmatch(line); matches != nil {
+		if matches := checkboxedGapRe.FindStringSubmatch(line); matches != nil {
 			gaps = append(gaps, Gap{
 				ID:          matches[2] + matches[3],
 				Type:        matches[2],
 				Description: strings.TrimSpace(matches[4]),
 				Resolved:    matches[1] == "x",
+				HasCheckbox: true,
+				Line:        lineNum,
+			})
+			continue
+		}
+
+		if matches := plainGapRe.FindStringSubmatch(line); matches != nil {
+			gaps = append(gaps, Gap{
+				ID:          matches[1] + matches[2],
+				Type:        matches[1],
+				Description: strings.TrimSpace(matches[3]),
+				Resolved:    false,
+				HasCheckbox: false,
 				Line:        lineNum,
 			})
 		}

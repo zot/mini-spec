@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60, R62
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60, R62, R79, R80, R81, R82, R83
 
 Command-line interface handling.
 
@@ -29,8 +29,8 @@ Command-line interface handling.
 ## Subcommands
 ```
 minispec check-version
-minispec query <subcommand>
-minispec update <subcommand>
+minispec query <subcommand>          # ... migrations
+minispec update <subcommand>         # ... retire, migration-complete
 minispec validate
 minispec phase <spec|requirements|design|implementation|gaps>
 ```

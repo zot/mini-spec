@@ -1,25 +1,23 @@
-// CRC: crc-Phase.md | Seq: seq-phase.md
+// CRC: crc-Phase.md | Seq: seq-phase.md | R44, R45, R46, R47, R48, R49, R50, R76, R87
 package phase
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 
-	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
+	"github.com/zot/minispec/internal/validate"
 )
 
-// Result contains the output of a phase validation
+// Result is the output of a phase validation. Body is the issues-only block
+// (without trailing status line); Passed signals success.
 type Result struct {
-	Phase    string   `json:"phase"`
-	Passed   bool     `json:"passed"`
-	Findings any      `json:"findings,omitempty"`
-	Issues   []string `json:"issues,omitempty"`
+	Phase  string `json:"phase"`
+	Passed bool   `json:"passed"`
+	Body   string `json:"body,omitempty"`
 }
 
 // Phase runs phase-specific validations
@@ -30,351 +28,140 @@ type Phase struct {
 
 // New creates a new Phase instance
 func New(p *project.Project) *Phase {
-	return &Phase{
-		Project: p,
-		Query:   query.New(p),
-	}
+	return &Phase{Project: p, Query: query.New(p)}
 }
 
 // RunSpec validates spec files exist and are non-empty (R44)
 func (ph *Phase) RunSpec() *Result {
-	result := &Result{Phase: "spec"}
-
 	specsDir := filepath.Join(ph.Project.RootPath, "specs")
 	entries, err := os.ReadDir(specsDir)
 	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("specs/ directory: %v", err))
-		return result
+		return &Result{Phase: "spec", Body: fmt.Sprintf("  specs/ directory: %v\n", err)}
 	}
 
-	var specFiles []string
+	var issues []string
+	specCount := 0
 	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".md") {
-			specFiles = append(specFiles, e.Name())
-
-			// Check non-empty
-			path := filepath.Join(specsDir, e.Name())
-			info, err := os.Stat(path)
-			if err == nil && info.Size() == 0 {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: empty file", e.Name()))
-			}
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		specCount++
+		info, err := os.Stat(filepath.Join(specsDir, e.Name()))
+		if err == nil && info.Size() == 0 {
+			issues = append(issues, fmt.Sprintf("  empty spec: %s", e.Name()))
 		}
 	}
-
-	if len(specFiles) == 0 {
-		result.Issues = append(result.Issues, "no spec files found in specs/")
+	if specCount == 0 {
+		issues = append(issues, "  no spec files found in specs/")
 	}
 
-	result.Findings = map[string]any{
-		"specs_found": specFiles,
+	r := &Result{Phase: "spec", Passed: len(issues) == 0}
+	if !r.Passed {
+		r.Body = strings.Join(issues, "\n") + "\n"
 	}
-	result.Passed = len(result.Issues) == 0
-	return result
+	return r
 }
 
-// RunRequirements validates requirements.md format and spec sources (R45)
+// runSubset runs full validation and emits only the issue categories listed.
+func (ph *Phase) runSubset(name string, categories []string) *Result {
+	v := validate.New(ph.Project)
+	full, err := v.Run()
+	if err != nil {
+		return &Result{Phase: name, Body: fmt.Sprintf("  %v\n", err)}
+	}
+	filtered := filterResult(full, categories)
+	r := &Result{Phase: name, Passed: !filtered.HasIssues()}
+	if !r.Passed {
+		body := filtered.FormatText()
+		body = strings.TrimSuffix(body, "\nphase: validate FAILED\n")
+		body = strings.TrimPrefix(body, "issues:\n")
+		r.Body = body
+	}
+	return r
+}
+
+// RunRequirements validates requirement-level issues (R45, R87).
 func (ph *Phase) RunRequirements() *Result {
-	result := &Result{Phase: "requirements"}
-
-	reqs, err := ph.Query.Requirements()
-	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("requirements.md: %v", err))
-		return result
-	}
-
-	if len(reqs) == 0 {
-		result.Issues = append(result.Issues, "no requirements found")
-		return result
-	}
-
-	// Check numbering (order-independent: no duplicates, no gaps)
-	var found []string
-	var inferred []string
-	sources := make(map[string][]string)
-	seen := make(map[int]bool)
-	var nums []int
-
-	for _, r := range reqs {
-		found = append(found, r.ID)
-		if r.Inferred {
-			inferred = append(inferred, r.ID)
-		}
-		if r.Source != "" {
-			sources[r.Source] = append(sources[r.Source], r.ID)
-		}
-
-		numStr := strings.TrimPrefix(r.ID, "R")
-		num, _ := strconv.Atoi(numStr)
-		if seen[num] {
-			result.Issues = append(result.Issues, fmt.Sprintf("duplicate requirement: R%d", num))
-		}
-		seen[num] = true
-		nums = append(nums, num)
-	}
-
-	// Check for gaps
-	if len(nums) > 0 {
-		sort.Ints(nums)
-		for missing := 1; missing < nums[0]; missing++ {
-			result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
-		}
-		for i := 1; i < len(nums); i++ {
-			for missing := nums[i-1] + 1; missing < nums[i]; missing++ {
-				result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
-			}
-		}
-	}
-
-	// Check spec sources exist (R41)
-	checked := make(map[string]bool)
-	for _, r := range reqs {
-		if r.Source == "" || checked[r.Source] {
-			continue
-		}
-		checked[r.Source] = true
-
-		specPath := filepath.Join(ph.Project.RootPath, r.Source)
-		if _, err := os.Stat(specPath); os.IsNotExist(err) {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: referenced as Source but file missing", r.Source))
-		}
-	}
-
-	result.Findings = map[string]any{
-		"found":    found,
-		"sources":  sources,
-		"inferred": inferred,
-	}
-	result.Passed = len(result.Issues) == 0
-	return result
+	return ph.runSubset("requirements",
+		[]string{"DuplicateReqs", "ReqNumberingGaps", "MissingSpecSources"})
 }
 
-// RunDesign validates design files, CRC cards, and requirement coverage (R46)
+// RunDesign validates design-level issues (R46, R87).
 func (ph *Phase) RunDesign() *Result {
-	result := &Result{Phase: "design"}
-
-	// Get requirements for validation
-	reqs, err := ph.Query.Requirements()
-	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("requirements.md: %v", err))
-		return result
-	}
-
-	validReqs := make(map[string]bool)
-	for _, r := range reqs {
-		validReqs[r.ID] = true
-	}
-
-	// Parse artifacts
-	artifacts, err := ph.Query.Artifacts()
-	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("design.md Artifacts: %v", err))
-		return result
-	}
-
-	// Get CRC cards and check requirements
-	crcCards := make(map[string][]string)
-	files, _ := ph.Project.GlobCRCCards()
-	for _, path := range files {
-		card, err := parser.ParseCRCCard(path)
-		if err != nil {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: parse error", filepath.Base(path)))
-			continue
-		}
-
-		relPath := filepath.Base(path)
-		crcCards[relPath] = card.Requirements
-
-		if len(card.Requirements) == 0 {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: no Requirements field", relPath))
-		}
-
-		for _, reqID := range card.Requirements {
-			if !validReqs[reqID] {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: references unknown %s", relPath, reqID))
-			}
-		}
-	}
-
-	// Compute coverage
-	covered := make(map[string]bool)
-	for _, reqs := range crcCards {
-		for _, reqID := range reqs {
-			covered[reqID] = true
-		}
-	}
-
-	var coveredList, uncoveredList []string
-	for _, r := range reqs {
-		if covered[r.ID] {
-			coveredList = append(coveredList, r.ID)
-		} else {
-			uncoveredList = append(uncoveredList, r.ID)
-		}
-	}
-
-	if len(uncoveredList) > 0 {
-		result.Issues = append(result.Issues, fmt.Sprintf("uncovered requirements: %s", strings.Join(uncoveredList, ", ")))
-	}
-
-	// Check all design files are listed in Artifacts (R40)
-	patterns := []string{"crc-*.md", "seq-*.md", "ui-*.md", "test-*.md", "manifest-*.md"}
-	designFiles := make(map[string]bool)
-	for _, pattern := range patterns {
-		matches, _ := filepath.Glob(ph.Project.DesignPath(pattern))
-		for _, m := range matches {
-			designFiles[filepath.Base(m)] = true
-		}
-	}
-
-	listedFiles := make(map[string]bool)
-	for _, art := range artifacts {
-		listedFiles[art.DesignFile] = true
-	}
-
-	for file := range designFiles {
-		if !listedFiles[file] {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: not listed in Artifacts", file))
-		}
-	}
-
-	result.Findings = map[string]any{
-		"crc_cards":    crcCards,
-		"covered":      coveredList,
-		"uncovered":    uncoveredList,
-		"design_files": len(designFiles),
-	}
-	result.Passed = len(result.Issues) == 0
-	return result
+	return ph.runSubset("design",
+		[]string{"UncoveredReqs", "UnknownCRCRefs", "UnlistedDesignFiles",
+			"MissingCRCSequences", "OrphanCRCNoReqField"})
 }
 
-// RunImplementation validates code files and traceability comments (R47)
+// RunImplementation validates code-level issues (R47, R87).
 func (ph *Phase) RunImplementation() *Result {
-	result := &Result{Phase: "implementation"}
-
-	artifacts, err := ph.Query.Artifacts()
-	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("design.md Artifacts: %v", err))
-		return result
-	}
-
-	var codeFiles []map[string]any
-
-	for _, art := range artifacts {
-		for _, cf := range art.CodeFiles {
-			fileInfo := map[string]any{
-				"path":    cf.Path,
-				"checked": cf.Checked,
-			}
-
-			fullPath := filepath.Join(ph.Project.RootPath, cf.Path)
-			_, err := os.Stat(fullPath)
-			exists := err == nil
-			fileInfo["exists"] = exists
-
-			if !exists && cf.Checked {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: checked but file missing", cf.Path))
-			}
-
-			if exists {
-				ext := filepath.Ext(cf.Path)
-				pattern := ph.Project.CommentPattern(ext)
-				closer := ph.Project.CommentCloser(ext)
-				trace, err := parser.ParseTraceability(fullPath, pattern, closer)
-				if err == nil {
-					fileInfo["crc_refs"] = trace.CRCRefs
-					fileInfo["seq_refs"] = trace.SeqRefs
-
-					if len(trace.CRCRefs) == 0 {
-						result.Issues = append(result.Issues, fmt.Sprintf("%s: missing traceability comment", cf.Path))
-					}
-
-					// Check refs exist (R42)
-					for _, ref := range trace.CRCRefs {
-						refPath := ph.Project.DesignPath(ref)
-						if _, err := os.Stat(refPath); os.IsNotExist(err) {
-							result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
-						}
-					}
-					for _, ref := range trace.SeqRefs {
-						refPath := ph.Project.DesignPath(ref)
-						if _, err := os.Stat(refPath); os.IsNotExist(err) {
-							result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
-						}
-					}
-				}
-			}
-
-			codeFiles = append(codeFiles, fileInfo)
-		}
-	}
-
-	result.Findings = map[string]any{
-		"code_files": codeFiles,
-	}
-	result.Passed = len(result.Issues) == 0
-	return result
+	return ph.runSubset("implementation",
+		[]string{"MissingArtifacts", "MissingTraceability", "MissingDesignRefs", "MissingImplCoverage"})
 }
 
-// RunGaps validates gaps section structure (R48)
+// RunGaps validates Gaps section structure (R48, R76, R87).
 func (ph *Phase) RunGaps() *Result {
-	result := &Result{Phase: "gaps"}
-
-	gaps, err := ph.Query.Gaps()
-	if err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("design.md Gaps: %v", err))
-		return result
-	}
-
-	var open, resolved, approved []string
-	seen := make(map[string]bool)
-
-	for _, g := range gaps {
-		if seen[g.ID] {
-			result.Issues = append(result.Issues, fmt.Sprintf("duplicate gap ID: %s", g.ID))
-		}
-		seen[g.ID] = true
-
-		if g.Type == "A" {
-			approved = append(approved, g.ID)
-		} else if g.Resolved {
-			resolved = append(resolved, g.ID)
-		} else {
-			open = append(open, g.ID)
-		}
-	}
-
-	result.Findings = map[string]any{
-		"open":     open,
-		"resolved": resolved,
-		"approved": approved,
-		"total":    len(gaps),
-	}
-	result.Passed = len(result.Issues) == 0
-	return result
+	return ph.runSubset("gaps",
+		[]string{"DuplicateGapIDs", "CheckboxedPermanent"})
 }
 
-// FormatText returns a human-readable text representation
+// filterResult returns a copy of r with only the listed categories preserved.
+func filterResult(r *validate.ValidationResult, keep []string) *validate.ValidationResult {
+	out := &validate.ValidationResult{
+		UnknownCRCRefs:      map[string][]string{},
+		MissingDesignRefs:   map[string][]string{},
+		MissingCRCSequences: map[string][]string{},
+	}
+	for _, k := range keep {
+		switch k {
+		case "UncoveredReqs":
+			out.UncoveredReqs = r.UncoveredReqs
+		case "MissingImplCoverage":
+			out.MissingImplCoverage = r.MissingImplCoverage
+		case "DuplicateReqs":
+			out.DuplicateReqs = r.DuplicateReqs
+		case "ReqNumberingGaps":
+			out.ReqNumberingGaps = r.ReqNumberingGaps
+		case "UnknownCRCRefs":
+			out.UnknownCRCRefs = r.UnknownCRCRefs
+		case "MissingArtifacts":
+			out.MissingArtifacts = r.MissingArtifacts
+		case "MissingTraceability":
+			out.MissingTraceability = r.MissingTraceability
+		case "MissingDesignRefs":
+			out.MissingDesignRefs = r.MissingDesignRefs
+		case "UnlistedDesignFiles":
+			out.UnlistedDesignFiles = r.UnlistedDesignFiles
+		case "MissingSpecSources":
+			out.MissingSpecSources = r.MissingSpecSources
+		case "MissingCRCSequences":
+			out.MissingCRCSequences = r.MissingCRCSequences
+		case "CheckboxedPermanent":
+			out.CheckboxedPermanent = r.CheckboxedPermanent
+		case "DuplicateGapIDs":
+			out.DuplicateGapIDs = r.DuplicateGapIDs
+		case "OrphanCRCNoReqField":
+			out.OrphanCRCNoReqField = r.OrphanCRCNoReqField
+		}
+	}
+	return out
+}
+
+// FormatText returns the phase output: issues block (if any) plus status line.
 func (r *Result) FormatText() string {
-	var sb strings.Builder
-
-	if findings, ok := r.Findings.(map[string]any); ok {
-		for key, val := range findings {
-			sb.WriteString(fmt.Sprintf("%s: %v\n", key, val))
-		}
-	}
-
-	if len(r.Issues) > 0 {
-		sb.WriteString("\nissues:\n")
-		for _, issue := range r.Issues {
-			sb.WriteString(fmt.Sprintf("  - %s\n", issue))
-		}
-	}
-
 	status := "OK"
 	if !r.Passed {
 		status = "FAILED"
 	}
-	sb.WriteString(fmt.Sprintf("\nphase: %s %s\n", r.Phase, status))
-
+	if r.Body == "" {
+		return fmt.Sprintf("phase: %s %s\n", r.Phase, status)
+	}
+	var sb strings.Builder
+	sb.WriteString("issues:\n")
+	sb.WriteString(r.Body)
+	if !strings.HasSuffix(r.Body, "\n") {
+		sb.WriteString("\n")
+	}
+	fmt.Fprintf(&sb, "\nphase: %s %s\n", r.Phase, status)
 	return sb.String()
 }

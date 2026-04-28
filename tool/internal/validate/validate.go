@@ -1,4 +1,4 @@
-// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72
+// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88
 package validate
 
 import (
@@ -15,54 +15,22 @@ import (
 	"github.com/zot/minispec/internal/query"
 )
 
-// ValidationResult contains all findings from validation
+// ValidationResult contains issues bucketed by category. R84
 type ValidationResult struct {
-	Requirements  RequirementsFindings
-	CRCCards      CRCFindings
-	Coverage      CoverageFindings
-	ImplCoverage  ImplCoverageFindings
-	Artifacts     ArtifactsFindings
-	Gaps          GapsFindings
-	Issues        []string
-}
-
-type RequirementsFindings struct {
-	Found    []string            // List of Rn IDs found
-	Sources  map[string][]string // source -> []Rn
-	Inferred []string            // List of inferred Rn IDs
-}
-
-type CRCFindings struct {
-	Cards map[string][]string // file -> []Rn
-}
-
-type CoverageFindings struct {
-	Covered   []string
-	Uncovered []string
-}
-
-type ImplCoverageFindings struct {
-	Covered   []string
-	Uncovered []string
-}
-
-type ArtifactsFindings struct {
-	Artifacts []ArtifactFinding
-}
-
-type ArtifactFinding struct {
-	DesignFile string
-	CodeFiles  []CodeFileFinding
-}
-
-type CodeFileFinding struct {
-	Path    string
-	Checked bool
-	Exists  bool
-}
-
-type GapsFindings struct {
-	Gaps []parser.Gap
+	UncoveredReqs        []string            // R numbers
+	MissingImplCoverage  []string            // R numbers
+	DuplicateReqs        []string            // R numbers
+	ReqNumberingGaps     []string            // R numbers (missing in sequence)
+	UnknownCRCRefs       map[string][]string // file -> []Rn
+	MissingArtifacts     []string            // code paths
+	MissingTraceability  []string            // code paths
+	MissingDesignRefs    map[string][]string // code path -> []missing-ref
+	UnlistedDesignFiles  []string            // design filenames
+	MissingSpecSources   []string            // spec paths
+	MissingCRCSequences  map[string][]string // crc filename -> []seq-ref
+	CheckboxedPermanent  []string            // gap IDs
+	DuplicateGapIDs      []string            // gap IDs
+	OrphanCRCNoReqField  []string            // crc filenames
 }
 
 // Validate runs all structural validations
@@ -73,147 +41,234 @@ type Validate struct {
 
 // New creates a new Validate instance
 func New(p *project.Project) *Validate {
-	return &Validate{
-		Project: p,
-		Query:   query.New(p),
-	}
+	return &Validate{Project: p, Query: query.New(p)}
 }
 
-// Run executes all validations and returns results
+// Run executes all validations and returns the bucketed result.
 func (v *Validate) Run() (*ValidationResult, error) {
 	result := &ValidationResult{
-		Requirements: RequirementsFindings{
-			Sources: make(map[string][]string),
-		},
-		CRCCards: CRCFindings{
-			Cards: make(map[string][]string),
-		},
+		UnknownCRCRefs:      make(map[string][]string),
+		MissingDesignRefs:   make(map[string][]string),
+		MissingCRCSequences: make(map[string][]string),
 	}
 
-	// Validate requirements
-	if err := v.validateRequirements(result); err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("requirements.md: %v", err))
+	reqs, err := v.Query.Requirements()
+	if err != nil {
+		return nil, fmt.Errorf("requirements.md: %w", err)
+	}
+	validReqs, retired, dups, numberingGaps := summarizeRequirements(reqs)
+	result.DuplicateReqs = dups
+	result.ReqNumberingGaps = numberingGaps
+
+	cards, err := v.parseAllCRCCards()
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range cards {
+		if len(c.Requirements) == 0 {
+			result.OrphanCRCNoReqField = append(result.OrphanCRCNoReqField, filepath.Base(c.Path))
+			continue
+		}
+		for _, ref := range c.Requirements {
+			if !validReqs[ref] {
+				name := filepath.Base(c.Path)
+				result.UnknownCRCRefs[name] = append(result.UnknownCRCRefs[name], ref)
+			}
+		}
 	}
 
-	// Validate CRC cards
-	if err := v.validateCRCCards(result); err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("CRC cards: %v", err))
+	gaps, err := v.Query.Gaps()
+	if err != nil {
+		return nil, fmt.Errorf("design.md Gaps: %w", err)
+	}
+	approvedReqs := approvedGapReqs(gaps)
+	seenGap := make(map[string]bool)
+	for _, g := range gaps {
+		if seenGap[g.ID] {
+			result.DuplicateGapIDs = append(result.DuplicateGapIDs, g.ID)
+		}
+		seenGap[g.ID] = true
+		if g.HasCheckbox && (g.Type == "A" || g.Type == "T") {
+			result.CheckboxedPermanent = append(result.CheckboxedPermanent, g.ID)
+		}
 	}
 
-	// Validate gaps (before coverage so approved gaps can suppress uncovered)
-	if err := v.validateGaps(result); err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("gaps: %v", err))
+	covered := make(map[string]bool)
+	for _, c := range cards {
+		for _, ref := range c.Requirements {
+			covered[ref] = true
+		}
+	}
+	for id := range approvedReqs {
+		covered[id] = true
+	}
+	for _, r := range reqs {
+		if r.Retired || covered[r.ID] {
+			continue
+		}
+		result.UncoveredReqs = append(result.UncoveredReqs, r.ID)
 	}
 
-	// Compute coverage (uses approved gaps to suppress uncovered requirements)
-	v.computeCoverage(result)
+	artifacts, err := v.Query.Artifacts()
+	if err != nil {
+		return nil, fmt.Errorf("design.md Artifacts: %w", err)
+	}
+	result.UnlistedDesignFiles = v.unlistedDesignFiles(artifacts)
+	result.MissingSpecSources = v.missingSpecSources(reqs)
 
-	// Validate artifacts
-	if err := v.validateArtifacts(result); err != nil {
-		result.Issues = append(result.Issues, fmt.Sprintf("artifacts: %v", err))
+	for _, c := range cards {
+		for _, seq := range c.Sequences {
+			if _, err := os.Stat(v.Project.DesignPath(seq)); os.IsNotExist(err) {
+				name := filepath.Base(c.Path)
+				result.MissingCRCSequences[name] = append(result.MissingCRCSequences[name], seq)
+			}
+		}
 	}
 
-	// Validate traceability (R29, R42)
-	v.validateTraceability(result)
+	implCovered := make(map[string]bool)
+	for _, art := range artifacts {
+		for _, cf := range art.CodeFiles {
+			fullPath := filepath.Join(v.Project.RootPath, cf.Path)
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				if cf.Checked {
+					result.MissingArtifacts = append(result.MissingArtifacts, cf.Path)
+				}
+				continue
+			}
 
-	// Validate artifacts completeness (R40)
-	v.validateArtifactsCompleteness(result)
+			ext := filepath.Ext(cf.Path)
+			pattern := v.Project.CommentPattern(ext)
+			closer := v.Project.CommentCloser(ext)
+			trace, err := parser.ParseTraceability(fullPath, pattern, closer)
+			if err != nil {
+				continue
+			}
+			if len(trace.CRCRefs) == 0 {
+				result.MissingTraceability = append(result.MissingTraceability, cf.Path)
+			}
 
-	// Validate spec sources (R41)
-	v.validateSpecSources(result)
+			// CRC and Seq refs must resolve to files in design/.
+			// dedupAndSortAll handles deduplication of the result list.
+			for _, ref := range trace.CRCRefs {
+				if _, err := os.Stat(v.Project.DesignPath(ref)); os.IsNotExist(err) {
+					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+				}
+			}
+			for _, ref := range trace.SeqRefs {
+				if _, err := os.Stat(v.Project.DesignPath(ref)); os.IsNotExist(err) {
+					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+				}
+			}
 
-	// Validate CRC sequences (R43)
-	v.validateCRCSequences(result)
+			for _, ref := range trace.ReqRefs {
+				if !validReqs[ref] && !retired[ref] {
+					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+				}
+				implCovered[ref] = true
+			}
+		}
+	}
 
+	for _, r := range reqs {
+		if r.Retired || approvedReqs[r.ID] || implCovered[r.ID] {
+			continue
+		}
+		result.MissingImplCoverage = append(result.MissingImplCoverage, r.ID)
+	}
+
+	dedupAndSortAll(result)
 	return result, nil
 }
 
-func (v *Validate) validateRequirements(result *ValidationResult) error {
-	reqs, err := v.Query.Requirements()
-	if err != nil {
-		return err
-	}
-
-	// Build findings
+// summarizeRequirements returns a set of valid Rn IDs (any), the subset that are
+// retired, the list of duplicates, and the list of missing numbers in sequence.
+func summarizeRequirements(reqs []parser.Requirement) (valid map[string]bool, retired map[string]bool, dups []string, numGaps []string) {
+	valid = make(map[string]bool)
+	retired = make(map[string]bool)
 	seen := make(map[int]bool)
 	var nums []int
 	for _, r := range reqs {
-		result.Requirements.Found = append(result.Requirements.Found, r.ID)
-		if r.Inferred {
-			result.Requirements.Inferred = append(result.Requirements.Inferred, r.ID)
+		valid[r.ID] = true
+		if r.Retired {
+			retired[r.ID] = true
 		}
-		if r.Source != "" {
-			result.Requirements.Sources[r.Source] = append(result.Requirements.Sources[r.Source], r.ID)
+		n, _ := strconv.Atoi(strings.TrimPrefix(r.ID, "R"))
+		if seen[n] {
+			dups = append(dups, r.ID)
 		}
-
-		numStr := strings.TrimPrefix(r.ID, "R")
-		num, _ := strconv.Atoi(numStr)
-		if seen[num] {
-			result.Issues = append(result.Issues, fmt.Sprintf("duplicate requirement: R%d", num))
-		}
-		seen[num] = true
-		nums = append(nums, num)
+		seen[n] = true
+		nums = append(nums, n)
 	}
-
-	// Check for gaps (order-independent)
 	if len(nums) > 0 {
 		sort.Ints(nums)
-		// Must start at 1
 		for missing := 1; missing < nums[0]; missing++ {
-			result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+			numGaps = append(numGaps, fmt.Sprintf("R%d", missing))
 		}
-		// Check between consecutive pairs
 		for i := 1; i < len(nums); i++ {
 			for missing := nums[i-1] + 1; missing < nums[i]; missing++ {
-				result.Issues = append(result.Issues, fmt.Sprintf("gap in numbering: R%d missing", missing))
+				numGaps = append(numGaps, fmt.Sprintf("R%d", missing))
 			}
 		}
 	}
-
-	return nil
+	return
 }
 
-func (v *Validate) validateCRCCards(result *ValidationResult) error {
+// parseAllCRCCards walks design/crc-*.md and returns parsed cards.
+func (v *Validate) parseAllCRCCards() ([]parser.CRCCard, error) {
 	files, err := v.Project.GlobCRCCards()
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	// Build set of valid Rn IDs
-	validReqs := make(map[string]bool)
-	for _, id := range result.Requirements.Found {
-		validReqs[id] = true
-	}
-
-	for _, path := range files {
-		card, err := parser.ParseCRCCard(path)
+	cards := make([]parser.CRCCard, 0, len(files))
+	for _, p := range files {
+		c, err := parser.ParseCRCCard(p)
 		if err != nil {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: parse error: %v", filepath.Base(path), err))
 			continue
 		}
+		cards = append(cards, c)
+	}
+	return cards, nil
+}
 
-		relPath := filepath.Base(path)
-		result.CRCCards.Cards[relPath] = card.Requirements
-
-		if len(card.Requirements) == 0 {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: no Requirements field", relPath))
-		}
-
-		// Check for invalid references
-		for _, reqID := range card.Requirements {
-			if !validReqs[reqID] {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: references unknown %s", relPath, reqID))
+func (v *Validate) unlistedDesignFiles(artifacts []parser.Artifact) []string {
+	patterns := []string{"crc-*.md", "seq-*.md", "ui-*.md", "test-*.md", "manifest-*.md"}
+	listed := make(map[string]bool)
+	for _, a := range artifacts {
+		listed[a.DesignFile] = true
+	}
+	var unlisted []string
+	for _, pat := range patterns {
+		matches, _ := filepath.Glob(v.Project.DesignPath(pat))
+		for _, m := range matches {
+			base := filepath.Base(m)
+			if !listed[base] {
+				unlisted = append(unlisted, base)
 			}
 		}
 	}
-
-	return nil
+	return unlisted
 }
 
-// approvedGapReqRe matches Rn or Rn-Rm in gap descriptions
+func (v *Validate) missingSpecSources(reqs []parser.Requirement) []string {
+	checked := make(map[string]bool)
+	var missing []string
+	for _, r := range reqs {
+		if r.Source == "" || checked[r.Source] {
+			continue
+		}
+		checked[r.Source] = true
+		if _, err := os.Stat(filepath.Join(v.Project.RootPath, r.Source)); os.IsNotExist(err) {
+			missing = append(missing, r.Source)
+		}
+	}
+	return missing
+}
+
+// approvedGapReqRe matches Rn or Rn-Rm in approved-gap descriptions.
 var approvedGapReqRe = regexp.MustCompile(`R(\d+)(?:-R(\d+))?`)
 
-// approvedGapReqs extracts requirement IDs referenced by approved (A-type) gaps (R65)
+// approvedGapReqs extracts requirement IDs referenced by approved (A-type)
+// gaps. R65
 func approvedGapReqs(gaps []parser.Gap) map[string]bool {
 	reqs := make(map[string]bool)
 	for _, g := range gaps {
@@ -234,328 +289,189 @@ func approvedGapReqs(gaps []parser.Gap) map[string]bool {
 	return reqs
 }
 
-func (v *Validate) computeCoverage(result *ValidationResult) {
-	covered := make(map[string]bool)
-
-	for _, reqs := range result.CRCCards.Cards {
-		for _, reqID := range reqs {
-			covered[reqID] = true
-		}
+// dedupAndSortAll deduplicates and sorts every list field in the result.
+func dedupAndSortAll(r *ValidationResult) {
+	r.UncoveredReqs = dedupReqIDs(r.UncoveredReqs)
+	r.MissingImplCoverage = dedupReqIDs(r.MissingImplCoverage)
+	r.DuplicateReqs = dedupReqIDs(r.DuplicateReqs)
+	r.ReqNumberingGaps = dedupReqIDs(r.ReqNumberingGaps)
+	r.MissingArtifacts = dedupStrings(r.MissingArtifacts)
+	r.MissingTraceability = dedupStrings(r.MissingTraceability)
+	r.UnlistedDesignFiles = dedupStrings(r.UnlistedDesignFiles)
+	r.MissingSpecSources = dedupStrings(r.MissingSpecSources)
+	r.CheckboxedPermanent = dedupStrings(r.CheckboxedPermanent)
+	r.DuplicateGapIDs = dedupStrings(r.DuplicateGapIDs)
+	r.OrphanCRCNoReqField = dedupStrings(r.OrphanCRCNoReqField)
+	for k, v := range r.UnknownCRCRefs {
+		r.UnknownCRCRefs[k] = dedupReqIDs(v)
 	}
-
-	// Approved gaps cover their referenced requirements (R65)
-	for id := range approvedGapReqs(result.Gaps.Gaps) {
-		covered[id] = true
+	for k, v := range r.MissingDesignRefs {
+		r.MissingDesignRefs[k] = dedupStrings(v)
 	}
-
-	for _, id := range result.Requirements.Found {
-		if covered[id] {
-			result.Coverage.Covered = append(result.Coverage.Covered, id)
-		} else {
-			result.Coverage.Uncovered = append(result.Coverage.Uncovered, id)
-		}
-	}
-
-	if len(result.Coverage.Uncovered) > 0 {
-		result.Issues = append(result.Issues, fmt.Sprintf("uncovered requirements: %s", strings.Join(result.Coverage.Uncovered, ", ")))
+	for k, v := range r.MissingCRCSequences {
+		r.MissingCRCSequences[k] = dedupStrings(v)
 	}
 }
 
-func (v *Validate) validateArtifacts(result *ValidationResult) error {
-	artifacts, err := v.Query.Artifacts()
-	if err != nil {
-		return err
-	}
-
-	for _, art := range artifacts {
-		finding := ArtifactFinding{DesignFile: art.DesignFile}
-
-		for _, cf := range art.CodeFiles {
-			cfFinding := CodeFileFinding{
-				Path:    cf.Path,
-				Checked: cf.Checked,
-			}
-
-			// Check if file exists
-			fullPath := filepath.Join(v.Project.RootPath, cf.Path)
-			_, err := os.Stat(fullPath)
-			cfFinding.Exists = err == nil
-
-			if !cfFinding.Exists && cf.Checked {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: listed but not found", cf.Path))
-			}
-
-			finding.CodeFiles = append(finding.CodeFiles, cfFinding)
-		}
-
-		result.Artifacts.Artifacts = append(result.Artifacts.Artifacts, finding)
-	}
-
-	return nil
-}
-
-func (v *Validate) validateGaps(result *ValidationResult) error {
-	gaps, err := v.Query.Gaps()
-	if err != nil {
-		return err
-	}
-
-	result.Gaps.Gaps = gaps
-
-	// Check for duplicate IDs
-	seen := make(map[string]bool)
-	for _, g := range gaps {
-		if seen[g.ID] {
-			result.Issues = append(result.Issues, fmt.Sprintf("duplicate gap ID: %s", g.ID))
-		}
-		seen[g.ID] = true
-	}
-
-	return nil
-}
-
-func (v *Validate) validateTraceability(result *ValidationResult) {
-	validReqs := make(map[string]bool)
-	for _, id := range result.Requirements.Found {
-		validReqs[id] = true
-	}
-
-	implCovered := make(map[string]bool)
-
-	for _, art := range result.Artifacts.Artifacts {
-		for _, cf := range art.CodeFiles {
-			if !cf.Exists {
-				continue
-			}
-
-			fullPath := filepath.Join(v.Project.RootPath, cf.Path)
-			ext := filepath.Ext(cf.Path)
-			pattern := v.Project.CommentPattern(ext)
-			closer := v.Project.CommentCloser(ext)
-			trace, err := parser.ParseTraceability(fullPath, pattern, closer)
-			if err != nil {
-				continue
-			}
-
-			if len(trace.CRCRefs) == 0 {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s: missing traceability comment", cf.Path))
-			}
-
-			// R42: Check that referenced design files exist
-			for _, ref := range trace.CRCRefs {
-				refPath := v.Project.DesignPath(ref)
-				if _, err := os.Stat(refPath); os.IsNotExist(err) {
-					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
-				}
-			}
-			for _, ref := range trace.SeqRefs {
-				refPath := v.Project.DesignPath(ref)
-				if _, err := os.Stat(refPath); os.IsNotExist(err) {
-					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
-				}
-			}
-
-			// R68: Check inline Rn refs exist in requirements.md
-			for _, ref := range trace.ReqRefs {
-				if !validReqs[ref] {
-					result.Issues = append(result.Issues, fmt.Sprintf("%s: references %s which does not exist", cf.Path, ref))
-				}
-				implCovered[ref] = true
-			}
-		}
-	}
-
-	// R69, R70, R72: Compute implementation coverage
-	approvedReqs := approvedGapReqs(result.Gaps.Gaps)
-	for _, id := range result.Requirements.Found {
-		if approvedReqs[id] {
+func dedupStrings(in []string) []string {
+	seen := make(map[string]bool, len(in))
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if seen[s] {
 			continue
 		}
-		if implCovered[id] {
-			result.ImplCoverage.Covered = append(result.ImplCoverage.Covered, id)
-		} else {
-			result.ImplCoverage.Uncovered = append(result.ImplCoverage.Uncovered, id)
-		}
+		seen[s] = true
+		out = append(out, s)
 	}
-
-	if len(result.ImplCoverage.Uncovered) > 0 {
-		result.Issues = append(result.Issues, fmt.Sprintf("missing implementation coverage: %s", strings.Join(result.ImplCoverage.Uncovered, ", ")))
-	}
+	sort.Strings(out)
+	return out
 }
 
-// R40: Check all design files in design/ are listed in Artifacts
-func (v *Validate) validateArtifactsCompleteness(result *ValidationResult) {
-	// Get all design files that should be tracked
-	patterns := []string{"crc-*.md", "seq-*.md", "ui-*.md", "test-*.md", "manifest-*.md"}
-	designFiles := make(map[string]bool)
+func dedupReqIDs(in []string) []string {
+	seen := make(map[int]bool, len(in))
+	nums := make([]int, 0, len(in))
+	for _, id := range in {
+		n, err := strconv.Atoi(strings.TrimPrefix(id, "R"))
+		if err != nil || seen[n] {
+			continue
+		}
+		seen[n] = true
+		nums = append(nums, n)
+	}
+	sort.Ints(nums)
+	out := make([]string, len(nums))
+	for i, n := range nums {
+		out[i] = fmt.Sprintf("R%d", n)
+	}
+	return out
+}
 
-	for _, pattern := range patterns {
-		matches, err := filepath.Glob(v.Project.DesignPath(pattern))
+// FormatRanges collapses consecutive Rn IDs into hyphenated ranges. R85
+// Inputs are expected to be deduplicated and sorted; non-Rn entries are ignored.
+func FormatRanges(ids []string) string {
+	if len(ids) == 0 {
+		return ""
+	}
+	nums := make([]int, 0, len(ids))
+	for _, id := range ids {
+		n, err := strconv.Atoi(strings.TrimPrefix(id, "R"))
 		if err != nil {
 			continue
 		}
-		for _, m := range matches {
-			designFiles[filepath.Base(m)] = true
+		nums = append(nums, n)
+	}
+	if len(nums) == 0 {
+		return ""
+	}
+
+	var parts []string
+	start, prev := nums[0], nums[0]
+	flush := func() {
+		if start == prev {
+			parts = append(parts, fmt.Sprintf("R%d", start))
+		} else {
+			parts = append(parts, fmt.Sprintf("R%d-%d", start, prev))
 		}
 	}
-
-	// Build set of files listed in Artifacts
-	listedFiles := make(map[string]bool)
-	for _, art := range result.Artifacts.Artifacts {
-		listedFiles[art.DesignFile] = true
-	}
-
-	// Check for unlisted design files
-	for file := range designFiles {
-		if !listedFiles[file] {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: not listed in Artifacts", file))
-		}
-	}
-}
-
-// R41: Check Source fields reference existing spec files
-func (v *Validate) validateSpecSources(result *ValidationResult) {
-	reqs, err := v.Query.Requirements()
-	if err != nil {
-		return
-	}
-
-	checked := make(map[string]bool)
-	for _, r := range reqs {
-		if r.Source == "" || checked[r.Source] {
+	for i := 1; i < len(nums); i++ {
+		if nums[i] == prev+1 {
+			prev = nums[i]
 			continue
 		}
-		checked[r.Source] = true
-
-		specPath := filepath.Join(v.Project.RootPath, r.Source)
-		if _, err := os.Stat(specPath); os.IsNotExist(err) {
-			result.Issues = append(result.Issues, fmt.Sprintf("%s: referenced as Source but file missing", r.Source))
-		}
+		flush()
+		start, prev = nums[i], nums[i]
 	}
+	flush()
+	return strings.Join(parts, ", ")
 }
 
-// R43: Check files in CRC Sequences sections exist
-func (v *Validate) validateCRCSequences(result *ValidationResult) {
-	files, err := v.Project.GlobCRCCards()
-	if err != nil {
-		return
-	}
-
-	for _, path := range files {
-		card, err := parser.ParseCRCCard(path)
-		if err != nil {
-			continue
-		}
-
-		relPath := filepath.Base(path)
-		for _, seq := range card.Sequences {
-			seqPath := v.Project.DesignPath(seq)
-			if _, err := os.Stat(seqPath); os.IsNotExist(err) {
-				result.Issues = append(result.Issues, fmt.Sprintf("%s Sequences: %s does not exist", relPath, seq))
-			}
-		}
-	}
-}
-
-// HasIssues returns true if any issues were found
+// HasIssues returns true if any issues were found.
 func (r *ValidationResult) HasIssues() bool {
-	return len(r.Issues) > 0
+	return len(r.UncoveredReqs) > 0 ||
+		len(r.MissingImplCoverage) > 0 ||
+		len(r.DuplicateReqs) > 0 ||
+		len(r.ReqNumberingGaps) > 0 ||
+		len(r.UnknownCRCRefs) > 0 ||
+		len(r.MissingArtifacts) > 0 ||
+		len(r.MissingTraceability) > 0 ||
+		len(r.MissingDesignRefs) > 0 ||
+		len(r.UnlistedDesignFiles) > 0 ||
+		len(r.MissingSpecSources) > 0 ||
+		len(r.MissingCRCSequences) > 0 ||
+		len(r.CheckboxedPermanent) > 0 ||
+		len(r.DuplicateGapIDs) > 0 ||
+		len(r.OrphanCRCNoReqField) > 0
 }
 
-// FormatText returns a human-readable text representation
+// FormatText returns the issues-only text report. R84, R88
 func (r *ValidationResult) FormatText() string {
+	if !r.HasIssues() {
+		return "phase: validate OK\n"
+	}
+
 	var sb strings.Builder
+	sb.WriteString("issues:\n")
 
-	sb.WriteString("requirements.md:\n")
-	sb.WriteString(fmt.Sprintf("  found: %s\n", strings.Join(r.Requirements.Found, ", ")))
-	if len(r.Requirements.Inferred) > 0 {
-		sb.WriteString(fmt.Sprintf("  inferred: %s\n", strings.Join(r.Requirements.Inferred, ", ")))
+	if s := FormatRanges(r.UncoveredReqs); s != "" {
+		fmt.Fprintf(&sb, "  uncovered requirements: %s\n", s)
 	}
-
-	// Sources
-	var sources []string
-	for src := range r.Requirements.Sources {
-		sources = append(sources, src)
+	if s := FormatRanges(r.MissingImplCoverage); s != "" {
+		fmt.Fprintf(&sb, "  missing impl coverage: %s\n", s)
 	}
-	sort.Strings(sources)
-	for _, src := range sources {
-		reqs := r.Requirements.Sources[src]
-		sb.WriteString(fmt.Sprintf("  source %s: %s\n", src, formatRange(reqs)))
+	if s := FormatRanges(r.DuplicateReqs); s != "" {
+		fmt.Fprintf(&sb, "  duplicate requirements: %s\n", s)
 	}
-
-	sb.WriteString("\ndesign files:\n")
-	for file, reqs := range r.CRCCards.Cards {
-		if len(reqs) > 0 {
-			sb.WriteString(fmt.Sprintf("  %s: %s\n", file, strings.Join(reqs, ", ")))
-		} else {
-			sb.WriteString(fmt.Sprintf("  %s: (no Requirements field)\n", file))
-		}
+	if s := FormatRanges(r.ReqNumberingGaps); s != "" {
+		fmt.Fprintf(&sb, "  numbering gaps: %s\n", s)
 	}
-
-	sb.WriteString("\ncoverage:\n")
-	sb.WriteString(fmt.Sprintf("  covered: %s\n", strings.Join(r.Coverage.Covered, ", ")))
-	if len(r.Coverage.Uncovered) > 0 {
-		sb.WriteString(fmt.Sprintf("  uncovered: %s\n", strings.Join(r.Coverage.Uncovered, ", ")))
+	if len(r.UnknownCRCRefs) > 0 {
+		fmt.Fprintf(&sb, "  unknown CRC refs: %s\n", formatFileMap(r.UnknownCRCRefs, FormatRanges))
 	}
-
-	sb.WriteString("\nimplementation coverage:\n")
-	if len(r.ImplCoverage.Covered) > 0 {
-		sb.WriteString(fmt.Sprintf("  covered: %s\n", strings.Join(r.ImplCoverage.Covered, ", ")))
+	if len(r.MissingArtifacts) > 0 {
+		fmt.Fprintf(&sb, "  missing artifacts: %s\n", strings.Join(r.MissingArtifacts, ", "))
 	}
-	if len(r.ImplCoverage.Uncovered) > 0 {
-		sb.WriteString(fmt.Sprintf("  uncovered: %s\n", strings.Join(r.ImplCoverage.Uncovered, ", ")))
+	if len(r.MissingTraceability) > 0 {
+		fmt.Fprintf(&sb, "  missing traceability: %s\n", strings.Join(r.MissingTraceability, ", "))
 	}
-	if len(r.ImplCoverage.Covered) == 0 && len(r.ImplCoverage.Uncovered) == 0 {
-		sb.WriteString("  (no inline requirement refs found in code)\n")
+	if len(r.MissingDesignRefs) > 0 {
+		fmt.Fprintf(&sb, "  missing design refs: %s\n", formatFileMap(r.MissingDesignRefs, joinComma))
 	}
-
-	sb.WriteString("\nartifacts:\n")
-	for _, art := range r.Artifacts.Artifacts {
-		sb.WriteString(fmt.Sprintf("  %s:\n", art.DesignFile))
-		for _, cf := range art.CodeFiles {
-			mark := " "
-			if cf.Checked {
-				mark = "x"
-			}
-			suffix := ""
-			if !cf.Exists {
-				suffix = " (missing)"
-			}
-			sb.WriteString(fmt.Sprintf("    [%s] %s%s\n", mark, cf.Path, suffix))
-		}
+	if len(r.UnlistedDesignFiles) > 0 {
+		fmt.Fprintf(&sb, "  unlisted design files: %s\n", strings.Join(r.UnlistedDesignFiles, ", "))
+	}
+	if len(r.MissingSpecSources) > 0 {
+		fmt.Fprintf(&sb, "  missing spec sources: %s\n", strings.Join(r.MissingSpecSources, ", "))
+	}
+	if len(r.MissingCRCSequences) > 0 {
+		fmt.Fprintf(&sb, "  CRC sequences not found: %s\n", formatFileMap(r.MissingCRCSequences, joinComma))
+	}
+	if len(r.OrphanCRCNoReqField) > 0 {
+		fmt.Fprintf(&sb, "  CRCs without Requirements field: %s\n", strings.Join(r.OrphanCRCNoReqField, ", "))
+	}
+	if len(r.CheckboxedPermanent) > 0 {
+		fmt.Fprintf(&sb, "  permanent gaps with checkbox: %s\n", strings.Join(r.CheckboxedPermanent, ", "))
+	}
+	if len(r.DuplicateGapIDs) > 0 {
+		fmt.Fprintf(&sb, "  duplicate gap IDs: %s\n", strings.Join(r.DuplicateGapIDs, ", "))
 	}
 
-	if len(r.Gaps.Gaps) > 0 {
-		sb.WriteString("\ngaps:\n")
-		for _, g := range r.Gaps.Gaps {
-			mark := " "
-			if g.Resolved {
-				mark = "x"
-			}
-			suffix := ""
-			if g.Type == "A" {
-				suffix = " (approved)"
-			}
-			sb.WriteString(fmt.Sprintf("  [%s] %s: %s%s\n", mark, g.ID, g.Description, suffix))
-		}
-	}
-
-	if len(r.Issues) > 0 {
-		sb.WriteString("\nissues:\n")
-		for _, issue := range r.Issues {
-			sb.WriteString(fmt.Sprintf("  - %s\n", issue))
-		}
-	}
-
+	sb.WriteString("\nphase: validate FAILED\n")
 	return sb.String()
 }
 
-func formatRange(reqs []string) string {
-	if len(reqs) == 0 {
-		return "(none)"
+// formatFileMap renders a map of file -> []ref entries, sorted by key, using
+// the supplied renderer to stringify each value list.
+func formatFileMap(m map[string][]string, render func([]string) string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
 	}
-	if len(reqs) == 1 {
-		return reqs[0]
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s → %s", k, render(m[k])))
 	}
-	return fmt.Sprintf("%s-%s", reqs[0], reqs[len(reqs)-1])
+	return strings.Join(parts, "; ")
 }
+
+func joinComma(s []string) string { return strings.Join(s, ", ") }
