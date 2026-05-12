@@ -1,10 +1,11 @@
-// CRC: crc-Project.md | Seq: seq-init.md
+// CRC: crc-Project.md | Seq: seq-init.md | R93
 package project
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -169,6 +170,48 @@ func (p *Project) MigrationsDir() string {
 // MigrationsCompleteDir returns the migrations history directory. R81
 func (p *Project) MigrationsCompleteDir() string {
 	return filepath.Join(p.MigrationsDir(), "complete")
+}
+
+// ResolveSpecSource returns the absolute on-disk path for a Source value,
+// accounting for the migration-completion naming convention. If the literal
+// path exists, that wins. Otherwise, if the source is `specs/migrations/X.md`,
+// a `specs/migrations/complete/<NNN>-X.md` match (NNN = one or more digits)
+// is treated as the resolved file — `update migration-complete` renames the
+// file but does not rewrite Source lines in requirements.md. R93
+func (p *Project) ResolveSpecSource(src string) (resolved string, ok bool) {
+	direct := filepath.Join(p.RootPath, src)
+	if _, err := os.Stat(direct); err == nil {
+		return direct, true
+	}
+
+	const migPrefix = "specs/migrations/"
+	const completePrefix = migPrefix + "complete/"
+	if !strings.HasPrefix(src, migPrefix) || strings.HasPrefix(src, completePrefix) {
+		return direct, false
+	}
+	name := strings.TrimPrefix(src, migPrefix)
+	if name == "" || strings.ContainsRune(name, '/') {
+		return direct, false
+	}
+	matches, _ := filepath.Glob(filepath.Join(p.MigrationsCompleteDir(), "*-"+name))
+	for _, m := range matches {
+		base := filepath.Base(m)
+		dash := strings.IndexByte(base, '-')
+		if dash <= 0 {
+			continue
+		}
+		allDigits := true
+		for _, ch := range base[:dash] {
+			if ch < '0' || ch > '9' {
+				allDigits = false
+				break
+			}
+		}
+		if allDigits {
+			return m, true
+		}
+	}
+	return direct, false
 }
 
 // CommentPattern returns the comment regex pattern for the given file extension.

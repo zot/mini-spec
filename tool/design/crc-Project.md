@@ -1,5 +1,5 @@
 # Project
-**Requirements:** R32, R33, R34, R35, R38, R39, R57, R58
+**Requirements:** R32, R33, R34, R35, R38, R39, R57, R58, R93
 
 Finds and loads a mini-spec project's configuration and design files.
 
@@ -18,6 +18,7 @@ Finds and loads a mini-spec project's configuration and design files.
 - SrcPath(filename): resolve path within src dir
 - CommentPattern(ext): return regex pattern for the given extension (with defaults)
 - CommentCloser(ext): return closing delimiter for the given extension (empty if line-terminating)
+- ResolveSpecSource(src): map a Source value to its on-disk path; for `specs/migrations/X.md` falls back to `specs/migrations/complete/<NNN>-X.md` (NNN digits) so requirements pointing at migrated-completed specs still resolve
 
 ## Collaborators
 - Parser: to load and parse design files

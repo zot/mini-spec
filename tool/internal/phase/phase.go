@@ -80,10 +80,11 @@ func (ph *Phase) runSubset(name string, categories []string) *Result {
 	return r
 }
 
-// RunRequirements validates requirement-level issues (R45, R87).
+// RunRequirements validates requirement-level issues (R45, R87, R90, R91, R92).
 func (ph *Phase) RunRequirements() *Result {
 	return ph.runSubset("requirements",
-		[]string{"DuplicateReqs", "ReqNumberingGaps", "MissingSpecSources"})
+		[]string{"DuplicateReqs", "ReqNumberingGaps", "MissingSpecSources",
+			"MalformedSpecSources", "SuspiciousSourceLines"})
 }
 
 // RunDesign validates design-level issues (R46, R87).
@@ -134,6 +135,10 @@ func filterResult(r *validate.ValidationResult, keep []string) *validate.Validat
 			out.UnlistedDesignFiles = r.UnlistedDesignFiles
 		case "MissingSpecSources":
 			out.MissingSpecSources = r.MissingSpecSources
+		case "MalformedSpecSources":
+			out.MalformedSpecSources = r.MalformedSpecSources
+		case "SuspiciousSourceLines":
+			out.SuspiciousSourceLines = r.SuspiciousSourceLines
 		case "MissingCRCSequences":
 			out.MissingCRCSequences = r.MissingCRCSequences
 		case "CheckboxedPermanent":

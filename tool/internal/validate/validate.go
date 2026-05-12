@@ -1,4 +1,4 @@
-// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88
+// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93
 package validate
 
 import (
@@ -27,6 +27,8 @@ type ValidationResult struct {
 	MissingDesignRefs    map[string][]string // code path -> []missing-ref
 	UnlistedDesignFiles  []string            // design filenames
 	MissingSpecSources   []string            // spec paths
+	MalformedSpecSources []string            // Source values that don't look like clean .md paths (R91)
+	SuspiciousSourceLines []string           // lines that look like Source markers but don't match the canonical pattern (R91)
 	MissingCRCSequences  map[string][]string // crc filename -> []seq-ref
 	CheckboxedPermanent  []string            // gap IDs
 	DuplicateGapIDs      []string            // gap IDs
@@ -114,7 +116,13 @@ func (v *Validate) Run() (*ValidationResult, error) {
 		return nil, fmt.Errorf("design.md Artifacts: %w", err)
 	}
 	result.UnlistedDesignFiles = v.unlistedDesignFiles(artifacts)
-	result.MissingSpecSources = v.missingSpecSources(reqs)
+	result.MissingSpecSources, result.MalformedSpecSources = v.checkSpecSources(reqs)
+	if issues, err := parser.ScanSourceLineIssues(v.Project.RequirementsPath()); err == nil {
+		for _, iss := range issues {
+			result.SuspiciousSourceLines = append(result.SuspiciousSourceLines,
+				fmt.Sprintf("line %d: %s", iss.LineNum, strings.TrimSpace(iss.Line)))
+		}
+	}
 
 	for _, c := range cards {
 		for _, seq := range c.Sequences {
@@ -249,19 +257,52 @@ func (v *Validate) unlistedDesignFiles(artifacts []parser.Artifact) []string {
 	return unlisted
 }
 
-func (v *Validate) missingSpecSources(reqs []parser.Requirement) []string {
-	checked := make(map[string]bool)
-	var missing []string
-	for _, r := range reqs {
-		if r.Source == "" || checked[r.Source] {
-			continue
-		}
-		checked[r.Source] = true
-		if _, err := os.Stat(filepath.Join(v.Project.RootPath, r.Source)); os.IsNotExist(err) {
-			missing = append(missing, r.Source)
+// isCleanSpecPath reports whether s looks like a relative .md path with no
+// embedded annotations. Allowed: A-Z, a-z, 0-9, `_`, `.`, `/`, `-`. Rejected:
+// leading `/`, leading `-`, missing `.md` suffix, any other character (spaces,
+// parens, backticks, etc.). R91
+func isCleanSpecPath(s string) bool {
+	if s == "" || !strings.HasSuffix(s, ".md") {
+		return false
+	}
+	if s[0] == '/' || s[0] == '-' {
+		return false
+	}
+	for _, ch := range s {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+		case ch >= 'a' && ch <= 'z':
+		case ch >= '0' && ch <= '9':
+		case ch == '_', ch == '.', ch == '/', ch == '-':
+		default:
+			return false
 		}
 	}
-	return missing
+	return true
+}
+
+// checkSpecSources walks every Source path in every requirement and bins them
+// into "missing" (clean path but file not on disk) and "malformed" (path
+// shape doesn't match — has spaces, parens, absolute leading slash, missing
+// .md suffix, etc.). R90, R91
+func (v *Validate) checkSpecSources(reqs []parser.Requirement) (missing, malformed []string) {
+	checked := make(map[string]bool)
+	for _, r := range reqs {
+		for _, src := range r.Sources {
+			if checked[src] {
+				continue
+			}
+			checked[src] = true
+			if !isCleanSpecPath(src) {
+				malformed = append(malformed, src)
+				continue
+			}
+			if _, ok := v.Project.ResolveSpecSource(src); !ok {
+				missing = append(missing, src)
+			}
+		}
+	}
+	return
 }
 
 // approvedGapReqRe matches Rn or Rn-Rm in approved-gap descriptions.
@@ -299,6 +340,8 @@ func dedupAndSortAll(r *ValidationResult) {
 	r.MissingTraceability = dedupStrings(r.MissingTraceability)
 	r.UnlistedDesignFiles = dedupStrings(r.UnlistedDesignFiles)
 	r.MissingSpecSources = dedupStrings(r.MissingSpecSources)
+	r.MalformedSpecSources = dedupStrings(r.MalformedSpecSources)
+	r.SuspiciousSourceLines = dedupStrings(r.SuspiciousSourceLines)
 	r.CheckboxedPermanent = dedupStrings(r.CheckboxedPermanent)
 	r.DuplicateGapIDs = dedupStrings(r.DuplicateGapIDs)
 	r.OrphanCRCNoReqField = dedupStrings(r.OrphanCRCNoReqField)
@@ -397,6 +440,8 @@ func (r *ValidationResult) HasIssues() bool {
 		len(r.MissingDesignRefs) > 0 ||
 		len(r.UnlistedDesignFiles) > 0 ||
 		len(r.MissingSpecSources) > 0 ||
+		len(r.MalformedSpecSources) > 0 ||
+		len(r.SuspiciousSourceLines) > 0 ||
 		len(r.MissingCRCSequences) > 0 ||
 		len(r.CheckboxedPermanent) > 0 ||
 		len(r.DuplicateGapIDs) > 0 ||
@@ -442,6 +487,12 @@ func (r *ValidationResult) FormatText() string {
 	if len(r.MissingSpecSources) > 0 {
 		fmt.Fprintf(&sb, "  missing spec sources: %s\n", strings.Join(r.MissingSpecSources, ", "))
 	}
+	if len(r.MalformedSpecSources) > 0 {
+		fmt.Fprintf(&sb, "  malformed Source values: %s\n", strings.Join(r.MalformedSpecSources, "; "))
+	}
+	if len(r.SuspiciousSourceLines) > 0 {
+		fmt.Fprintf(&sb, "  suspicious Source lines: %s\n", strings.Join(r.SuspiciousSourceLines, "; "))
+	}
 	if len(r.MissingCRCSequences) > 0 {
 		fmt.Fprintf(&sb, "  CRC sequences not found: %s\n", formatFileMap(r.MissingCRCSequences, joinComma))
 	}
@@ -455,8 +506,29 @@ func (r *ValidationResult) FormatText() string {
 		fmt.Fprintf(&sb, "  duplicate gap IDs: %s\n", strings.Join(r.DuplicateGapIDs, ", "))
 	}
 
+	if len(r.MalformedSpecSources) > 0 || len(r.SuspiciousSourceLines) > 0 {
+		sb.WriteString(sourceFixInstructions())
+	}
+
 	sb.WriteString("\nphase: validate FAILED\n")
 	return sb.String()
+}
+
+// sourceFixInstructions returns a crank-handle block describing the canonical
+// `**Source:**` format. Emitted when malformed Source values or suspicious
+// near-miss lines are detected. R92
+func sourceFixInstructions() string {
+	return `
+fix instructions:
+  Source lines in requirements.md must match this exact format:
+    **Source:** path/to/spec.md
+  Multiple sources are allowed, comma-separated:
+    **Source:** path/a.md, path/b.md
+  Each path must be relative (no leading slash), end in ` + "`.md`" + `, and
+  contain no annotations, parenthetical comments, spaces, or backticks. If
+  context about a source needs to be recorded, put it in the requirement
+  text or in the spec file itself, not the Source line.
+`
 }
 
 // formatFileMap renders a map of file -> []ref entries, sorted by key, using

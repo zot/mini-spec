@@ -1,5 +1,5 @@
 # Phase
-**Requirements:** R44, R45, R46, R47, R48, R49, R50, R63, R76, R87
+**Requirements:** R44, R45, R46, R47, R48, R49, R50, R63, R76, R87, R90, R91, R92, R93
 
 Phase-specific validation for post-phase checks in the mini-spec workflow.
 

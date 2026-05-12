@@ -55,6 +55,11 @@ Run all validations and report issues.
 ### Spec Source Validation
 - `**Source:**` fields in requirements.md reference files that exist in `specs/`
 - Validates the requirements→specs traceability link
+- A Source line may carry a comma-separated list of paths (`**Source:** a.md, b.md`); each is validated independently
+- Source values are checked for clean shape: relative path, ends in `.md`, no whitespace/parens/backticks/leading-slash/annotations. Malformed values are reported separately from missing files.
+- Lines that look like Source markers but don't match the canonical pattern (e.g. `**Source**:`, `*Source:*`, `Source:`) are reported as suspicious so the author can fix them.
+- When malformed values or suspicious lines are present, validate appends a `fix instructions:` block at the bottom of the output describing the canonical Source format.
+- Migration-completion fallback: a Source value like `specs/migrations/X.md` resolves to `specs/migrations/complete/<NNN>-X.md` (NNN digits) when the literal path is missing but the renumbered completed file exists. This means `update migration-complete` does not require rewriting `**Source:**` lines in requirements.md.
 
 ### CRC Sequences Validation
 - Files listed in CRC card `## Sequences` sections exist in `design/`

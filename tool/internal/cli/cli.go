@@ -1,4 +1,4 @@
-// CRC: crc-CLI.md | R79, R80, R81, R82, R83
+// CRC: crc-CLI.md | R79, R80, R81, R82, R83, R89
 package cli
 
 import (
@@ -104,6 +104,7 @@ Commands:
   phase <phase-name>    Run phase-specific validation
 
 Query subcommands:
+  project               Show resolved project paths (root, design, src, specs)
   requirements          List all requirements
   coverage              Show requirement coverage by design files
   uncovered             List requirements with no design coverage
@@ -232,6 +233,22 @@ func (c *CLI) runQuery(args []string) int {
 	subcmd := args[0]
 
 	switch subcmd {
+	case "project":
+		info := map[string]string{
+			"root":   p.RootPath,
+			"design": p.DesignDir,
+			"src":    p.SrcDir,
+			"specs":  p.SpecsDir(),
+		}
+		if c.JSON {
+			c.output(info)
+		} else {
+			fmt.Printf("root:   %s\n", info["root"])
+			fmt.Printf("design: %s\n", info["design"])
+			fmt.Printf("src:    %s\n", info["src"])
+			fmt.Printf("specs:  %s\n", info["specs"])
+		}
+
 	case "requirements":
 		reqs, err := q.Requirements()
 		if err != nil {

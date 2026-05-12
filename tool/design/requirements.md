@@ -24,6 +24,7 @@
 - **R15:** `query gaps` lists gap items from design.md
 - **R16:** `query traceability [file]` checks a code file for CRC/Seq comments
 - **R17:** `query traceability --all` scans all code files in Artifacts
+- **R89:** `query project` reports resolved project paths (root, design, src, specs) so the AI can verify which project the tool detected when results look surprising
 
 ## Feature: Updates
 **Source:** specs/updates.md
@@ -147,3 +148,11 @@
 - **R86:** Validate output deduplicates identical issue messages (a code file with multiple matches against a missing design ref reports the broken ref once)
 - **R87:** Phase subcommand output uses the same ranging and dedup rules as validate everywhere Rn lists appear, including findings sections (`found:`, per-source listings, covered/uncovered, etc.). Successful phase output stays brief (one summary line plus any sparse findings) and skips full-list enumerations
 - **R88:** Validate and phase output category labels are stable, lowercase, machine-greppable strings (e.g. `uncovered requirements:`, `missing impl coverage:`, `permanent gaps with checkbox:`)
+
+## Feature: Source Line Diagnostics
+**Source:** specs/validate.md
+
+- **R90:** Requirements parser accepts a comma-separated list of paths on a `**Source:**` line and exposes them via a `Sources []string` field; validate iterates each path independently
+- **R91:** Validate detects malformed Source values (entries that don't match a clean relative `.md` path) and near-miss Source-like lines that don't match the canonical pattern, reporting them in `malformed Source values:` and `suspicious Source lines:` categories
+- **R92:** Validate output appends a `fix instructions:` block at the bottom describing the canonical `**Source:**` format whenever malformed values or suspicious lines are detected (crank-handle pattern)
+- **R93:** Spec-source resolver recognizes the migration-completion convention: a Source value `specs/migrations/X.md` resolves to `specs/migrations/complete/<NNN>-X.md` if the literal path does not exist but a digit-prefixed match does, so requirements pointing at migrated specs do not flag as missing after `update migration-complete`

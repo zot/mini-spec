@@ -1,10 +1,11 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91
 
 Parses mini-spec design file formats into structured data.
 
 ## Knows
-- Requirement: {ID, Text, Source, Inferred bool, Retired bool, Line int}
+- Requirement: {ID, Text, Sources []string, Inferred bool, Retired bool, Line int}
+- SourceLineIssue: {LineNum int, Line string}
 - CRCCard: {Name, Requirements []string, Sequences []string, Path string}
 - Artifact: {DesignFile, CodeFiles []CodeFile}
 - CodeFile: {Path, Checked bool, Line int}
@@ -14,6 +15,8 @@ Parses mini-spec design file formats into structured data.
 ## Does
 - ParseRequirements(path): parse requirements.md -> []Requirement
   - Accepts strikethrough retired form `- **~~Rn:~~** (Retired Tk — see Rxxx) <text>`; sets Retired flag
+  - Splits comma-separated paths on `**Source:**` line into Sources []string
+- ScanSourceLineIssues(path): re-scan requirements.md for lines that look like Source markers but don't match the canonical `**Source:** ...` pattern -> []SourceLineIssue
 - ParseCRCCard(path): parse crc-*.md -> CRCCard
 - ParseArtifacts(path): parse design.md Artifacts section -> []Artifact
   - Supports inline format: `- [x] design.md → code.ts, code2.ts`

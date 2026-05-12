@@ -2,6 +2,23 @@
 
 All queries read from design files and output results. No modifications.
 
+## minispec query project
+
+Show the project paths resolved by the tool: root, design directory, src
+directory, and specs directory. Useful for verifying which project the tool
+detected (especially when running from a subdirectory or when reported missing
+paths look correct).
+
+Output:
+```
+root:   /home/me/work/ark
+design: /home/me/work/ark/design
+src:    /home/me/work/ark/src
+specs:  /home/me/work/ark/specs
+```
+
+JSON output uses keys `root`, `design`, `src`, `specs`.
+
 ## minispec query requirements
 
 List all requirements from requirements.md.

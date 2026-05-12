@@ -1,5 +1,5 @@
 # Validate
-**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88
+**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93
 
 Runs structural validations and reports findings.
 
@@ -19,7 +19,8 @@ Runs structural validations and reports findings.
 - ValidateTraceability(): check code files have CRC comments, CRC/Seq refs exist, inline Rn refs exist in requirements.md
 - ValidateImplementationCoverage(): check every non-retired, non-approved requirement appears as inline Rn ref in at least one code file
 - ValidateArtifactsCompleteness(): check all design files are listed in Artifacts
-- ValidateSpecSources(): check Source fields reference existing spec files
+- ValidateSpecSources(): for each path in each Requirement's Sources list, classify as malformed (bad shape) or missing (clean but not on disk); also scan requirements.md for suspicious Source-like lines that don't match the canonical pattern
+- SourceFixInstructions(): canonical-format crank-handle block appended to validate output when malformed or suspicious Source diagnostics fire
 - ValidateCRCSequences(): check files in CRC Sequences sections exist
 - FormatText(): emit issues-only output with Rn ranges, deduplicated; on success a single `phase: validate OK` line
 
