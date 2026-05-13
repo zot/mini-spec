@@ -156,3 +156,16 @@
 - **R91:** Validate detects malformed Source values (entries that don't match a clean relative `.md` path) and near-miss Source-like lines that don't match the canonical pattern, reporting them in `malformed Source values:` and `suspicious Source lines:` categories
 - **R92:** Validate output appends a `fix instructions:` block at the bottom describing the canonical `**Source:**` format whenever malformed values or suspicious lines are detected (crank-handle pattern)
 - **R93:** Spec-source resolver recognizes the migration-completion convention: a Source value `specs/migrations/X.md` resolves to `specs/migrations/complete/<NNN>-X.md` if the literal path does not exist but a digit-prefixed match does, so requirements pointing at migrated specs do not flag as missing after `update migration-complete`
+
+
+## Feature: Sequence Anchors
+**Source:** specs/overview.md, specs/validate.md
+
+- **R94:** Traceability parser splits each `Seq:` reference into a filename and an optional `#K.x.y` fragment; file-only references remain valid
+- **R95:** Tool parses numbered items in sequence-diagram files — lines whose first non-whitespace, non-lane content is a dotted-number token (`1.`, `1.1`, `1.1.1.`), allowing the lane characters `│ ├ └ ─ |` and ASCII tree connectors before the number
+- **R96:** Sequence-doc parser groups dotted IDs by their first segment K (diagram index) and exposes a `Has(id)` lookup, the set of K values present, and the tree under each K
+- **R97:** Validate resolves each `Seq:` fragment against the parsed sequence file and reports unresolved fragments per code file
+- **R98:** Validate checks per-K tree contiguity in every numbered sequence file: at each tree level under K, children must be 1..N with no holes
+- **R99:** Validate checks K-sequence contiguity within each numbered sequence file: the set of K values present must be contiguous starting at 1
+- **R100:** Validate checks intra-file dotted-ID uniqueness: every dotted ID appears at most once per sequence file
+- **R101:** Unnumbered sequence files (no dotted items found) are silently skipped by sequence-numbering validation — numbering is opt-in per file

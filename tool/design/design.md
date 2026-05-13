@@ -16,10 +16,10 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 
 ### CRC Cards
 - [x] crc-Project.md → `cmd/minispec/main.go`, `internal/project/project.go`
-- [x] crc-Parser.md → `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`
+- [ ] crc-Parser.md → `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
 - [x] crc-Query.md → `internal/query/query.go`
 - [x] crc-Update.md → `internal/update/update.go`
-- [x] crc-Validate.md → `internal/validate/validate.go`
+- [ ] crc-Validate.md → `internal/validate/validate.go`
 - [x] crc-CLI.md → `internal/cli/cli.go`
 - [x] crc-Phase.md → `internal/phase/phase.go`
 

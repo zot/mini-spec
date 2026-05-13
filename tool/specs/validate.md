@@ -65,6 +65,21 @@ Run all validations and report issues.
 - Files listed in CRC card `## Sequences` sections exist in `design/`
 - Validates CRC→sequence traceability
 
+### Sequence Anchor Validation
+- A `Seq:` reference may carry a `#K.x.y` fragment pointing at a numbered step.
+- When a fragment is present, the referenced sequence file is parsed for numbered items and the fragment must resolve to one of them.
+- Missing fragments are reported per code file alongside other missing design refs.
+
+### Sequence Numbering Validation
+- A sequence file is "numbered" if it contains any line whose first non-whitespace, non-lane content is a dotted-number token (`1.`, `1.1`, `1.1.1.`, etc.). Lane characters allowed before the number: `│ ├ └ ─ |` and ASCII tree connectors.
+- For each numbered sequence file, the tool:
+  - Groups all dotted IDs by their first segment K (the diagram index).
+  - Verifies the set of K values is contiguous starting at 1 (no gap between diagrams).
+  - For each K, verifies the tree of children is contiguous at every level (K.1, K.2, ..., K.N with no holes; under K.x, children must be K.x.1, K.x.2, ...).
+  - Verifies every dotted ID appears at most once in the file.
+- Unnumbered sequence files are silently skipped — numbering is opt-in per file.
+- Numbering gaps and duplicates are reported per sequence file.
+
 ## Output
 
 Show what was found so the AI can verify assumptions and correct mismatches:

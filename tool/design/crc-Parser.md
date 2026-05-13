@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96
 
 Parses mini-spec design file formats into structured data.
 
@@ -10,7 +10,10 @@ Parses mini-spec design file formats into structured data.
 - Artifact: {DesignFile, CodeFiles []CodeFile}
 - CodeFile: {Path, Checked bool, Line int}
 - Gap: {ID, Type, Description, Resolved bool, HasCheckbox bool, Line int}
-- Traceability: {CRCRefs []string, SeqRefs []string, ReqRefs []string}
+- Traceability: {CRCRefs []string, SeqRefs []SeqRef, ReqRefs []string}
+- SeqRef: {File string, Fragment string} — Fragment is "" for file-only refs
+- SeqDoc: {Path string, Items map[string]int (id -> line), Ks []int, Trees map[int]*SeqNode}
+- SeqNode: {ID string, Children []*SeqNode}
 
 ## Does
 - ParseRequirements(path): parse requirements.md -> []Requirement
@@ -26,7 +29,8 @@ Parses mini-spec design file formats into structured data.
 - ParseGaps(path): parse design.md Gaps section -> []Gap (types: S/R/D/C/I/O/A/T)
   - Tn entries always have no checkbox; HasCheckbox=false
   - An entries: prefer no checkbox; legacy `- [ ] An` form still accepted with HasCheckbox=true
-- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs; stops each section at next `|` delimiter; extracts Rn refs from optional third section -> Traceability
+- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs; stops each section at next `|` delimiter; extracts Rn refs from optional third section; splits each Seq ref at `#` into SeqRef{File, Fragment} -> Traceability
+- ParseSeqDoc(path): scan a sequence-diagram file for dotted-number items (allowing lane characters `│ ├ └ ─ |` before the number); group IDs by first segment K; build per-K trees -> SeqDoc
 
 ## Collaborators
 - os: file reading

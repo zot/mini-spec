@@ -1,4 +1,4 @@
-// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93
+// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101
 package validate
 
 import (
@@ -30,6 +30,9 @@ type ValidationResult struct {
 	MalformedSpecSources []string            // Source values that don't look like clean .md paths (R91)
 	SuspiciousSourceLines []string           // lines that look like Source markers but don't match the canonical pattern (R91)
 	MissingCRCSequences  map[string][]string // crc filename -> []seq-ref
+	MissingSeqFragments  map[string][]string // code path -> []ref with unresolved #fragment (R97)
+	SeqNumberingGaps     map[string][]string // seq filename -> []missing dotted id (R98, R99)
+	SeqDuplicateIDs      map[string][]string // seq filename -> []duplicated dotted id (R100)
 	CheckboxedPermanent  []string            // gap IDs
 	DuplicateGapIDs      []string            // gap IDs
 	OrphanCRCNoReqField  []string            // crc filenames
@@ -52,6 +55,9 @@ func (v *Validate) Run() (*ValidationResult, error) {
 		UnknownCRCRefs:      make(map[string][]string),
 		MissingDesignRefs:   make(map[string][]string),
 		MissingCRCSequences: make(map[string][]string),
+		MissingSeqFragments: make(map[string][]string),
+		SeqNumberingGaps:    make(map[string][]string),
+		SeqDuplicateIDs:     make(map[string][]string),
 	}
 
 	reqs, err := v.Query.Requirements()
@@ -163,8 +169,17 @@ func (v *Validate) Run() (*ValidationResult, error) {
 				}
 			}
 			for _, ref := range trace.SeqRefs {
-				if _, err := os.Stat(v.Project.DesignPath(ref)); os.IsNotExist(err) {
+				file, fragment := parser.SplitSeqRef(ref)
+				if _, err := os.Stat(v.Project.DesignPath(file)); os.IsNotExist(err) {
 					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+					continue
+				}
+				if fragment == "" {
+					continue
+				}
+				doc, err := parser.ParseSeqDoc(v.Project.DesignPath(file))
+				if err != nil || !doc.Has(fragment) {
+					result.MissingSeqFragments[cf.Path] = append(result.MissingSeqFragments[cf.Path], ref)
 				}
 			}
 
@@ -184,8 +199,33 @@ func (v *Validate) Run() (*ValidationResult, error) {
 		result.MissingImplCoverage = append(result.MissingImplCoverage, r.ID)
 	}
 
+	v.validateSeqNumbering(result)
+
 	dedupAndSortAll(result)
 	return result, nil
+}
+
+// validateSeqNumbering parses every seq-*.md file and records per-K
+// contiguity gaps and duplicate dotted ids. Unnumbered files are skipped.
+// R98, R99, R100, R101
+func (v *Validate) validateSeqNumbering(result *ValidationResult) {
+	matches, err := filepath.Glob(v.Project.DesignPath("seq-*.md"))
+	if err != nil {
+		return
+	}
+	for _, path := range matches {
+		doc, err := parser.ParseSeqDoc(path)
+		if err != nil || !doc.Numbered() {
+			continue
+		}
+		name := filepath.Base(path)
+		if gaps := doc.NumberingGaps(); len(gaps) > 0 {
+			result.SeqNumberingGaps[name] = append(result.SeqNumberingGaps[name], gaps...)
+		}
+		if len(doc.Dupes) > 0 {
+			result.SeqDuplicateIDs[name] = append(result.SeqDuplicateIDs[name], doc.Dupes...)
+		}
+	}
 }
 
 // summarizeRequirements returns a set of valid Rn IDs (any), the subset that are
@@ -354,6 +394,15 @@ func dedupAndSortAll(r *ValidationResult) {
 	for k, v := range r.MissingCRCSequences {
 		r.MissingCRCSequences[k] = dedupStrings(v)
 	}
+	for k, v := range r.MissingSeqFragments {
+		r.MissingSeqFragments[k] = dedupStrings(v)
+	}
+	for k, v := range r.SeqNumberingGaps {
+		r.SeqNumberingGaps[k] = dedupStrings(v)
+	}
+	for k, v := range r.SeqDuplicateIDs {
+		r.SeqDuplicateIDs[k] = dedupStrings(v)
+	}
 }
 
 func dedupStrings(in []string) []string {
@@ -443,6 +492,9 @@ func (r *ValidationResult) HasIssues() bool {
 		len(r.MalformedSpecSources) > 0 ||
 		len(r.SuspiciousSourceLines) > 0 ||
 		len(r.MissingCRCSequences) > 0 ||
+		len(r.MissingSeqFragments) > 0 ||
+		len(r.SeqNumberingGaps) > 0 ||
+		len(r.SeqDuplicateIDs) > 0 ||
 		len(r.CheckboxedPermanent) > 0 ||
 		len(r.DuplicateGapIDs) > 0 ||
 		len(r.OrphanCRCNoReqField) > 0
@@ -495,6 +547,15 @@ func (r *ValidationResult) FormatText() string {
 	}
 	if len(r.MissingCRCSequences) > 0 {
 		fmt.Fprintf(&sb, "  CRC sequences not found: %s\n", formatFileMap(r.MissingCRCSequences, joinComma))
+	}
+	if len(r.MissingSeqFragments) > 0 {
+		fmt.Fprintf(&sb, "  missing seq anchors: %s\n", formatFileMap(r.MissingSeqFragments, joinComma))
+	}
+	if len(r.SeqNumberingGaps) > 0 {
+		fmt.Fprintf(&sb, "  seq numbering gaps: %s\n", formatFileMap(r.SeqNumberingGaps, joinComma))
+	}
+	if len(r.SeqDuplicateIDs) > 0 {
+		fmt.Fprintf(&sb, "  seq duplicate IDs: %s\n", formatFileMap(r.SeqDuplicateIDs, joinComma))
 	}
 	if len(r.OrphanCRCNoReqField) > 0 {
 		fmt.Fprintf(&sb, "  CRCs without Requirements field: %s\n", strings.Join(r.OrphanCRCNoReqField, ", "))

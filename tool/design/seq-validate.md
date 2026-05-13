@@ -48,8 +48,25 @@ loop each code file in artifacts
     Validate -> Parser: ParseTraceability(path, pattern)
     Parser --> Validate: Traceability
     Validate -> Validate: check CRC/Seq refs exist
+    alt SeqRef has Fragment
+        Validate -> Parser: ParseSeqDoc(seq-file)
+        Parser --> Validate: SeqDoc
+        Validate -> Validate: check Fragment is in SeqDoc.Items
+    end
     Validate -> Validate: check inline Rn refs exist in requirements
     Validate -> Validate: collect all inline Rn refs across code files
+end
+
+loop each seq-*.md in design/
+    Validate -> Parser: ParseSeqDoc(path)
+    Parser --> Validate: SeqDoc
+    alt SeqDoc has no items
+        Validate -> Validate: skip (unnumbered file)
+    else SeqDoc is numbered
+        Validate -> Validate: check Ks contiguous starting at 1
+        Validate -> Validate: check per-K tree contiguity (children 1..N at each level)
+        Validate -> Validate: check no duplicate ids
+    end
 end
 
 Validate -> Validate: compute implementation coverage

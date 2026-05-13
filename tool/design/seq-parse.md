@@ -34,6 +34,28 @@ Parser -> Parser: split on comma, trim whitespace
 Parser --> Caller: CRCCard{Name, Requirements, Path}
 ```
 
+# Sequence: Parse Sequence Document
+
+```
+Caller -> Parser: ParseSeqDoc(path)
+
+Parser -> os: ReadFile(path)
+Parser -> bufio: NewScanner(content)
+
+loop each line
+    Parser -> Parser: strip leading whitespace and lane chars (│ ├ └ ─ |)
+    alt remaining text begins with dotted-number token
+        Parser -> Parser: extract id (1, 1.1, 1.1.1, etc.), strip trailing dot
+        Parser -> Parser: append to Items[id] = lineNum
+    end
+end
+
+Parser -> Parser: group ids by first segment K -> Trees[K]
+Parser -> Parser: build child trees per K from sorted ids
+
+Parser --> Caller: SeqDoc{Path, Items, Ks, Trees}
+```
+
 # Sequence: Parse Artifacts
 
 ```
