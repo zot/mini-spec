@@ -1,4 +1,4 @@
-**Don't sit back and watch as vibe-coding creates an unintentional system.**
+# Don't sit back and watch as vibe-coding creates an unintentional system
 
 ![unintentional vs. intentional systems](unintentional.png)
 
