@@ -123,9 +123,3 @@ All commands accept:
 - `--quiet` - minimal output
 - `--json` - output as JSON (for tooling integration)
 - `--version` - display version and exit
-
-## MCP Server Mode
-
-`minispec serve` runs as an MCP server for direct AI integration.
-
-Exposes all query and update operations as MCP tools.
