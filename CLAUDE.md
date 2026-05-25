@@ -27,3 +27,14 @@ Note: Binaries must be rebuilt for each release because they embed the version v
 If `.claude/skills/mini-spec/SKILL.md` changes, regenerate `.cursor/rules/mini-spec.mdc` so Cursor stays aligned:
 
 `python tool/gen_cursor_rule.py`
+
+## Summary specs
+
+The Go tool's specs live in `tool/specs/`. Summary specs there index per-feature specs along a cross-cutting axis (CLI surface, storage layout, API set, capabilities). Mini-spec's normal anchoring doesn't catch drift in them, so when you add, rename, or retire something along one of these axes, update the matching summary spec by hand.
+
+Summary specs in `tool/specs/`:
+
+- [`cli-commands.md`](tool/specs/cli-commands.md) — full inventory of `minispec` subcommands and global flags. Update whenever a subcommand is added, renamed, or retired.
+- [`file-formats.md`](tool/specs/file-formats.md) — every file the tool reads or writes, with links to the per-feature spec that defines each format. Update when a file format is added, changed, or retired.
+
+When you create another, list it here so future maintainers know which summary specs to keep in sync.
