@@ -7,7 +7,7 @@ description: "**MANDATORY: Invoke BEFORE writing or modifying any code.** Withou
 
 ## Design Docs First — Not Code
 
-**When understanding a feature or planning a change, start with `design/design.md` and the relevant CRC cards/sequences BEFORE using code exploration tools.** Design docs are the project index — they show component relationships, responsibilities, and code file mappings more efficiently than code search. Only drop into code-level tools (Serena, Grep, etc.) after the design docs have oriented you.
+**When understanding a feature or planning a change, start with `design/design.md` and the relevant CRC cards/sequences BEFORE using code exploration tools.** Design docs are the project index — they show component relationships, responsibilities, and code file mappings more efficiently than code search. Only drop into code-level tools (Serena, Grep, etc.) after the design docs have oriented you. And when the project keeps a **root spec index** (see *The root spec index* below), read that first of all — it maps every spec in one file, so you orient at session start without grepping the `specs/` tree.
 
 ## Prerequisite: Version Check and Comment Patterns
 
@@ -97,6 +97,29 @@ Each level exists because skipping it has a concrete cost:
 - **Traceability** — The specs→requirements→design chain ensures nothing is lost between what the user asked for and what gets built. When something breaks, you can trace backward to find out why.
 
 The phases are not ceremony. They are cheaper than debugging a misunderstood requirement after 500 lines of code.
+
+### The root spec index
+
+A project with many specs needs a **root index** — one file (e.g.
+`specs/index.md`) that maps every per-feature spec by **system**, registers
+the **summary specs**, and names the **cross-cutting themes**. The
+per-feature specs are the leaves; the index is the root that says where to
+look.
+
+**Use it to orient cheaply.** Read the root index *first* — at session
+start, or before working in an unfamiliar area — then open only the specs it
+points you to. One small read replaces grepping the whole `specs/` tree or
+opening files just to learn what they cover; orientation drops from
+O(corpus) toward O(1) tokens. This is the spec-level companion to *Design
+Docs First — Not Code*.
+
+**Keep it complete.** Every per-feature spec gets an entry — a spec missing
+from the index is drift (the `minispec query unindexed-specs` check flags
+it; see the Spec Phase and Quality Checklist). Entries are *pointers, not
+copies*: the named spec stays canonical, the index mirrors it. A **theme**
+gathers every spec a cross-cutting concern touches and states its invariant
+once, so contradictions between leaves become visible; themes are earned
+from real navigation failures, not enumerated up front.
 
 ### Summary specs
 
@@ -215,6 +238,14 @@ this means behavior and user-facing concepts. For libraries, include
 the public API signatures — they are the contract that design must
 satisfy. Do not include internal structure or implementation choices.
 
+**Reconcile the root spec index.** Whenever you add, rename, or retire a
+per-feature spec, straighten out the root index (the project's
+`specs/index.md`) in the same pass: create it if it doesn't exist yet, then
+make sure every spec has an entry under a system, with new summary specs and
+themes registered. Run `~/.claude/bin/minispec query unindexed-specs` — it
+lists any per-feature spec missing from the index (the spec-level analog of
+`query uncovered`); the pass is clean when that list is empty.
+
 **Upon completion**, run `~/.claude/bin/minispec phase spec` to verify spec files exist, then offer Requirements Phase. Do not jump to Design.
 
 2. Requirements Phase
@@ -264,6 +295,20 @@ Use minispec to add requirement references:
 ```bash
 ~/.claude/bin/minispec update add-ref crc-Store.md R5
 ```
+
+**Where requirement refs count.** `minispec validate` computes
+requirements→design coverage from each CRC card's **top-line
+`**Requirements:**` field only** (plus approved gaps). Refs written
+anywhere else in the card body — e.g. a per-method `(R5, R6)`
+annotation on a `## Does` bullet — are documentation; the validator
+does not parse them, so they earn a requirement no coverage. A
+requirement counts as covered only when it appears in some artifact's
+top-line field, which is what `add-ref` maintains. Body-level
+annotations are fine as human notes, but never let them be the *only*
+home for a ref. (Requirements→code coverage is separate: it comes
+from inline `Rn` refs in code traceability comments. Retired
+requirements are skipped by both coverage checks yet still resolve as
+references, so a ref to a retired Rn is never flagged as unknown.)
 
 **Artifacts Format** (must be exact for `minispec` tool parsing):
 ```markdown
@@ -421,7 +466,22 @@ To keep `specs/` from accumulating stale migration narratives:
    code that was removed are fine — the comment went with the
    code.)
 
-6. **Move the migration spec(s)** by running:
+6. **Reconcile obsoleted design prose.** Retiring a requirement has a
+   forcing function — the `retire` command, the Tn entry, the
+   `~~Rn:~~` marker. Design *prose* has none. CRC `## Does`
+   descriptions, method signatures, and sequence diagrams that
+   described state A do not flag themselves as stale; they rot
+   silently until someone reads them, long after the migration looks
+   done. Before moving the migration spec, grep `design/` for the
+   changed method names, old signatures, and renamed types, and
+   rewrite every CRC bullet and seq diagram that still describes the
+   old behavior to match state B. `minispec validate` cannot catch
+   this: it checks that requirements are *referenced*, not that the
+   prose around the reference is accurate. (Step 5 reconciles the
+   *Rn references*; this step reconciles the *descriptions* those
+   references annotate — a distinct, easily-missed pass.)
+
+7. **Move the migration spec(s)** by running:
 
    ```
    ~/.claude/bin/minispec update migration-complete <name>
@@ -437,6 +497,104 @@ To keep `specs/` from accumulating stale migration narratives:
 `specs/migrations/complete/` is the migration history — a
 chronological record of what changed and why. `specs/` always
 reflects the present.
+
+## Trajectory Tracking (PENDING / CURRENT / DONE)
+
+Specs → design → code anchor the project's **structure** — what exists and
+why. They do not track its **trajectory**: what's queued, what's in flight,
+what just landed. The harness task tool (`TaskCreate`/`TaskUpdate`) is
+session-local and dies with the session. Trajectory tracking is the durable,
+cross-session spine the structural docs and the ephemeral tasks both lack.
+
+It is **tool-agnostic**: it tracks any kind of work — a mini-spec pass, a UI
+pass, a plain investigation — each item naming the skill that runs it, or
+none. It ships with mini-spec but is not about mini-spec.
+
+### The three files
+
+Named for the states an item passes through: **pending → current → done**
+(future → present → past). Default location
+`specs/migrations/{PENDING,CURRENT,DONE}.md`; a project may site them
+elsewhere (e.g. at top level) and keep a project prefix. The vocabulary
+below refers to the project's files **wherever they live**, so a path never
+needs qualifying:
+
+- **the pending file** — the work queue.
+- **the current file** — working context for the active item.
+- **the done file** — the completion ledger.
+
+The standing ledger (exactly one PENDING, one CURRENT, one DONE) sits in the
+same `migrations/` directory as the in-flight migration specs. Two kinds of
+file share that directory — say so, so `PENDING.md` is never mistaken for a
+migration spec.
+
+### Lifecycle rules
+
+- **The pending file is ordered by intent** — the top item is active. Each
+  item is a `##` heading, so a paused item's context can nest as a sub-item
+  beneath it.
+- **Finishing an item:** first mark it done in its **source file** (the
+  plan/spec/design doc where the work lives); then reset the current file;
+  then move the item from the pending file to the done file.
+- **The current file is for the active item only** — never a log of finished
+  work (that is the done file). With nothing active, it holds a one-line
+  placeholder.
+- **Entries are status indicators only** — the source file holds the
+  content, design, and rules. No instructions in entries.
+- **The done file is most-recent-first.** Each entry records date, title,
+  and what landed (commit, requirement ranges, gaps banked, sources) —
+  enough to reconstruct the change without re-reading the code.
+- **The pending file is the index** back to the roadmap, planning scratch,
+  and feature designs.
+
+### File shapes
+
+```markdown
+# Pending
+<lifecycle rules>
+---
+## 1. **<title>** (<skill that runs it — or omit>). <one-line status>.
+   Source: [<doc>](<path>). Next: <next action>.
+## 2. **<title>** …
+```
+```markdown
+# Current
+Working context for the active item only — never a log (that's the done
+file). To pause: lift this into a sub-item under that item's `##` heading in
+the pending file, then reset here, freeing it for what you pick up next.
+---
+_No active item._
+```
+```markdown
+# Done
+Completed items, most-recent first.
+- **YYYY-MM-DD — <title>.** <commit, R-range, gaps banked, sources touched>.
+```
+
+### Interleaving with migrations
+
+A **state item** and a **migration** are two orthogonal lifecycles,
+composable as the work demands:
+
+- A **migration** distills a brainstorm into a concise A→B document that may
+  span several steps; it runs the phases and lands in `complete/NNN-`. It
+  can be done all-at-once and may never enter the pending queue.
+- A **state item** is a unit of queued work, paused and resumed via the
+  current file.
+
+They compose; they do not nest by rule. The current file is a **resume
+buffer**: to change styles mid-flight, park the active item's context as a
+sub-item under its `##` heading (the pending file is a stack you can push
+onto), freeing the current file for the migration, then resume later from the
+parked sub-item. The freedom to intermix is the point — neither style is
+imposed.
+
+### What's reusable vs. project-specific
+
+Reusable core: the three files, the lifecycle, the interleaving model. Each
+project parameterizes the rest — routing labels (which skill runs an item),
+the planning-scratch location, any batching rules, file siting and case
+convention, and whether the files carry a project prefix.
 
 ## CRC Card Format
 ```markdown
@@ -476,6 +634,7 @@ Cover: happy path, errors, edge cases.
 - [ ] Traceability: design files in Artifacts, code files have checkboxes, all Rn referenced
 - [ ] Tests: test-*.md for key behaviors
 - [ ] Summary specs: any cross-cutting axis touched by this change has been mirrored in the relevant summary spec (CLI inventory, storage layout, API surface, capabilities, …) — see the project's pinned list
+- [ ] Root spec index: every per-feature spec is mapped under a system in the root index (created if absent); `~/.claude/bin/minispec query unindexed-specs` returns empty
 - [ ] Phase validation: `~/.claude/bin/minispec phase <phase>` passes after each phase
 - [ ] Full validation: `~/.claude/bin/minispec validate` passes
 

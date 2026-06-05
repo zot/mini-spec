@@ -112,6 +112,7 @@ Query subcommands:
   artifacts             List artifacts with checkbox states
   gaps                  List gap items
   migrations            List in-flight migration specs
+  unindexed-specs       List specs not referenced in the root index (specs/index.md)
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
   comment-patterns      Show recognized comment patterns per file extension
@@ -367,6 +368,20 @@ func (c *CLI) runQuery(args []string) int {
 		} else {
 			for _, m := range migs {
 				fmt.Println(m)
+			}
+		}
+
+	case "unindexed-specs":
+		specs, err := q.UnindexedSpecs()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		if c.JSON {
+			c.output(specs)
+		} else {
+			for _, s := range specs {
+				fmt.Println(s)
 			}
 		}
 

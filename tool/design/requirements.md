@@ -135,6 +135,7 @@
 - **R77:** Requirements parser accepts the strikethrough retired form `- **~~Rn:~~** (Retired Tk — see Rxxx) <text>` (or `... no replacement) <text>`) and exposes it via a `Retired` flag on the parsed Requirement
 - **R78:** Retired requirements are excluded from coverage uncovered and implementation-coverage uncovered lists; their Rn IDs remain valid for cross-reference resolution
 - **R79:** `query migrations` lists in-flight migration spec files (specs/migrations/*.md, non-recursive); empty output and exit 0 when none exist
+- **R102:** `query unindexed-specs` lists per-feature specs (specs/*.md, non-recursive, excluding index.md) not referenced in the root index specs/index.md, matched by exact `.md` token; lists every spec when index.md is absent; empty output and exit 0 when all specs are indexed
 - **R80:** `update retire R<old> <R<new>|-> "<reason>"` rewrites the R<old> line in requirements.md with the strikethrough/Retired marker AND appends a new Tn entry to the Gaps section of design.md, atomically; outputs the assigned Tn
 - **R81:** `update migration-complete <name>` moves specs/migrations/<name>.md to specs/migrations/complete/<NNN>-<name>.md where NNN is the next zero-padded three-digit number, and outputs the new path
 - **R82:** `update add-gap T <reason>` adds a checkbox-less T-typed gap line with auto-numbered ID

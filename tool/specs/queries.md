@@ -81,3 +81,14 @@ Output: CRC and Seq references found, or "missing" indicator.
 ## minispec query traceability --all
 
 Scan all code files listed in Artifacts and report traceability status.
+
+## minispec query unindexed-specs
+
+List per-feature specs (`specs/*.md`, non-recursive) that are not referenced
+anywhere in the root spec index `specs/index.md`. The index file itself and
+anything under `specs/migrations/` are excluded. Matching is by exact `.md`
+token, so `search.md` is not treated as indexed merely because
+`fuzzy-search.md` appears. When `specs/index.md` does not exist, every
+per-feature spec is listed (nothing is indexed yet).
+
+Output: relative spec paths, sorted; empty (exit 0) when every spec is indexed.

@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102
 
 Read-only operations that query parsed design data.
 
@@ -18,6 +18,7 @@ Read-only operations that query parsed design data.
 - Artifacts(): list artifacts with checkbox states
 - Gaps(): list gap items
 - Migrations(): list specs/migrations/*.md (non-recursive, excludes complete/)
+- UnindexedSpecs(): list specs/*.md not referenced in specs/index.md (exact .md-token match; all specs when index absent)
 - Traceability(path): check single file for CRC/Seq comments (passes pattern+closer from Project)
 - TraceabilityAll(): check all code files in Artifacts
 - CommentPatterns(): return configured comment patterns map

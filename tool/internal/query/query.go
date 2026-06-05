@@ -1,9 +1,10 @@
-// CRC: crc-Query.md | Seq: seq-query.md
+// CRC: crc-Query.md | Seq: seq-query.md | R102
 package query
 
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -135,6 +136,52 @@ func (q *Query) Migrations() ([]string, error) {
 		rel, err := filepath.Rel(q.Project.RootPath, filepath.Join(dir, e.Name()))
 		if err != nil {
 			rel = filepath.Join("specs", "migrations", e.Name())
+		}
+		paths = append(paths, rel)
+	}
+	sort.Strings(paths)
+	return paths, nil
+}
+
+// specMDToken matches a per-feature spec filename as a whole token, so a
+// short name (search.md) is not matched inside a longer one (fuzzy-search.md).
+var specMDToken = regexp.MustCompile(`[A-Za-z0-9_-]+[.]md`)
+
+// UnindexedSpecs lists per-feature specs (specs/*.md, non-recursive) not
+// referenced in the root index specs/index.md (R102). The index file itself
+// and files under specs/migrations/ are excluded; matching is by exact .md
+// token. Returns every spec when specs/index.md is absent (nothing indexed
+// yet). Relative paths from project root, sorted; empty when all are indexed.
+func (q *Query) UnindexedSpecs() ([]string, error) {
+	dir := q.Project.SpecsDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	indexBytes, err := os.ReadFile(filepath.Join(dir, "index.md"))
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	indexed := make(map[string]bool)
+	for _, tok := range specMDToken.FindAllString(string(indexBytes), -1) {
+		indexed[tok] = true
+	}
+
+	var paths []string
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") || e.Name() == "index.md" {
+			continue
+		}
+		if indexed[e.Name()] {
+			continue
+		}
+		rel, err := filepath.Rel(q.Project.RootPath, filepath.Join(dir, e.Name()))
+		if err != nil {
+			rel = filepath.Join("specs", e.Name())
 		}
 		paths = append(paths, rel)
 	}

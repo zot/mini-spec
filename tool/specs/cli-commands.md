@@ -29,6 +29,7 @@
 | `query traceability --all` | [queries.md](queries.md) | Scan all artifact code files and report traceability status. |
 | `query migrations` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | List in-flight migration specs under `specs/migrations/` (non-recursive). |
 | `query comment-patterns` | [config.md](config.md) | Show recognized comment patterns and closers per file extension. |
+| `query unindexed-specs` | [queries.md](queries.md) | List per-feature specs not referenced in the root index `specs/index.md` (exact `.md`-token match; lists all when index absent). |
 
 ## `update` subcommands
 
