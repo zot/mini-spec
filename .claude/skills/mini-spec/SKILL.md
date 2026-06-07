@@ -5,9 +5,9 @@ description: "**MANDATORY: Invoke BEFORE writing or modifying any code.** Withou
 
 # Mini-spec
 
-## Design Docs First — Not Code
+## Load the model first
 
-**When understanding a feature or planning a change, start with `design/design.md` and the relevant CRC cards/sequences BEFORE using code exploration tools.** Design docs are the project index — they show component relationships, responsibilities, and code file mappings more efficiently than code search. Only drop into code-level tools (Serena, Grep, etc.) after the design docs have oriented you. And when the project keeps a **root spec index** (see *The root spec index* below), read that first of all — it maps every spec in one file, so you orient at session start without grepping the `specs/` tree.
+**IMMEDIATELY invoke `/minimap` using the Skill tool before doing anything else.** It carries the structural *model* this skill builds on: the 3-level spec→design→code layout, what each level is for, where artifacts live, the **root spec index**, what a **summary spec** is, and the **traceability links** (`Rn` → CRC card → code `// CRC:/Seq:` comment) that stitch the levels together. Start at the design docs and the root index, not at code — drop into code-level tools (Serena, Grep, etc.) only after they've oriented you. This skill adds the **process** — phases, traceability *maintenance*, gaps, migrations, trajectory tracking — on top of that model.
 
 ## Prerequisite: Version Check and Comment Patterns
 
@@ -47,46 +47,11 @@ Migrations are temporary by design — see "Migration Workflow" below.
 
 ---
 
-## Overview
+## Why the levels matter
 
-3-level architecture: specs → design → code.
-
-```
-specs/                # Human intent — current state of the project, in the user's own words
-  migrations/         # In-flight migrations — temporary, get moved on completion
-    complete/         # Completed migrations, numbered in landing order
-design/               # AI translation — requirements.md, crc-*, seq-*, ui-*, test-*, manifest-ui.md
-docs/                 # user-manual.md, developer-guide.md
-src/                  # Code with traceability comments
-```
-
-### What each level is for
-
-**Specs** are the human's voice. They describe what the system should
-do in natural language, organized by feature area. The user writes or
-approves them. They communicate intent — not implementation, not
-internal structure. A spec should read like someone explaining the
-feature to a colleague. For libraries, API signatures belong in specs
-because they *are* the face of the project — they must be agreed upon
-before design begins. Specs must state the language and environment
-so the AI knows what it's building for.
-
-Most specs are **per-feature** — one spec, one capability, one cohesive
-slice of behavior. A second kind, **summary specs**, indexes existing
-behavior along a cross-cutting axis (CLI surface, storage layout, API
-set, capabilities) without introducing any new behavior of its own.
-See *Summary specs* below.
-
-**Design** is the AI's translation of specs into buildable structure.
-Requirements extract testable statements. CRC cards assign
-responsibilities to components. Sequences show how components
-interact. The user reviews this translation before code is written —
-catching a misunderstanding here costs minutes, not hours.
-
-**Code** implements the design with traceability comments linking back
-to the design artifacts that justify each component's existence.
-
-### Why this matters
+(*The 3-level model itself — what specs, design, and code each are, and where
+they live — is in `/minimap`. This skill is the **process** that builds and
+maintains them.*)
 
 Each level exists because skipping it has a concrete cost:
 
@@ -98,46 +63,11 @@ Each level exists because skipping it has a concrete cost:
 
 The phases are not ceremony. They are cheaper than debugging a misunderstood requirement after 500 lines of code.
 
-### The root spec index
+## Summary specs — maintenance
 
-A project with many specs needs a **root index** — one file (e.g.
-`specs/index.md`) that maps every per-feature spec by **system**, registers
-the **summary specs**, and names the **cross-cutting themes**. The
-per-feature specs are the leaves; the index is the root that says where to
-look.
-
-**Use it to orient cheaply.** Read the root index *first* — at session
-start, or before working in an unfamiliar area — then open only the specs it
-points you to. One small read replaces grepping the whole `specs/` tree or
-opening files just to learn what they cover; orientation drops from
-O(corpus) toward O(1) tokens. This is the spec-level companion to *Design
-Docs First — Not Code*.
-
-**Keep it complete.** Every per-feature spec gets an entry — a spec missing
-from the index is drift (the `minispec query unindexed-specs` check flags
-it; see the Spec Phase and Quality Checklist). Entries are *pointers, not
-copies*: the named spec stays canonical, the index mirrors it. A **theme**
-gathers every spec a cross-cutting concern touches and states its invariant
-once, so contradictions between leaves become visible; themes are earned
-from real navigation failures, not enumerated up front.
-
-### Summary specs
-
-A **summary spec** is a spec that doesn't introduce behavior — it
-*indexes* behavior owned by per-feature specs, along one cross-cutting
-axis. Per-feature specs answer "what does this feature do?"; summary
-specs answer "what's the full set of X in this project?"
-
-Examples that recur across projects:
-
-- A **CLI inventory** spec lists every subcommand and flag (e.g.
-  `specs/cli-commands.md`).
-- A **storage layout** spec lists every record class with key/value
-  layout (e.g. `specs/record-formats.md`).
-- An **API surface** spec lists every public binding exposed to a
-  scripting or extension layer (e.g. `specs/lua-api.md`).
-- A **capabilities** spec lists every named feature with motivation
-  and objective (e.g. `specs/features.md`).
+(*What a summary spec **is**, and the recurring kinds — CLI inventory, storage
+layout, API surface, capabilities — are in `/minimap`. This is the maintenance
+side: when to create one, and how to keep it true.*)
 
 When to create one:
 
