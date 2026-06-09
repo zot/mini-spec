@@ -586,12 +586,16 @@ func (c *CLI) runUpdate(args []string) int {
 			return 1
 		}
 		reason := strings.Join(args[3:], " ")
-		tn, err := u.Retire(args[1], args[2], reason)
+		// CRC: crc-Update.md, crc-CLI.md | Seq: seq-update.md | R80, R103
+		tn, sources, err := u.Retire(args[1], args[2], reason)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			return 1
 		}
 		fmt.Println(tn)
+		if !c.Quiet {
+			fmt.Fprint(os.Stderr, retireReminder(args[1], sources))
+		}
 
 	case "migration-complete":
 		if len(args) < 2 {
@@ -611,6 +615,29 @@ func (c *CLI) runUpdate(args []string) int {
 	}
 
 	return 0
+}
+
+// retireReminder builds the supersede-at-source reminder printed to stderr
+// after a retirement: striking out an Rn does not remove the spec/design prose
+// that described its old behavior, and that stale prose can lead a future agent
+// to revert the change. It names the retired requirement's **Source:** spec(s)
+// so the originating prose is one pointer away.
+// CRC: crc-CLI.md | Seq: seq-update.md | R103
+func retireReminder(oldReq string, sources []string) string {
+	specLine := "(no **Source:** recorded — locate its originating spec by hand)"
+	if len(sources) > 0 {
+		specLine = strings.Join(sources, ", ") + "  (" + oldReq + "'s **Source:**)"
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "⚠ supersede at the source: %s is retired, but directives describing its\n", oldReq)
+	b.WriteString("  old behavior remain and can lead a future agent to revert the change.\n")
+	b.WriteString("  Reconcile every place the old behavior is still described:\n")
+	fmt.Fprintf(&b, "    • originating spec prose: %s\n", specLine)
+	fmt.Fprintf(&b, "    • design prose: grep design/ for %s and the old names; fix CRC bullets\n", oldReq)
+	b.WriteString("      and seq steps that still describe the old state\n")
+	b.WriteString("  Completion test: could an agent reading only specs + design be led to undo\n")
+	b.WriteString("  this change? If yes, a trap remains.\n")
+	return b.String()
 }
 
 func (c *CLI) runValidate(_ []string) int {

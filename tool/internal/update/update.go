@@ -267,21 +267,23 @@ var reqIDRe = regexp.MustCompile(`^R\d+$`)
 
 // Retire rewrites the oldReq line in requirements.md with the strikethrough/
 // Retired marker AND appends a new T-typed gap to design.md. Returns the
-// assigned Tn. If replacement is "-" or empty, the marker says "no replacement".
-// R80
-func (u *Update) Retire(oldReq, replacement, reason string) (string, error) {
+// assigned Tn and the retired requirement's **Source:** spec(s) — the latter
+// lets the CLI emit the supersede-at-source reminder. If replacement is "-" or
+// empty, the marker says "no replacement".
+// R80, R103
+func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, error) {
 	if !reqIDRe.MatchString(oldReq) {
-		return "", fmt.Errorf("invalid requirement ID: %q", oldReq)
+		return "", nil, fmt.Errorf("invalid requirement ID: %q", oldReq)
 	}
 	noReplacement := replacement == "" || replacement == "-"
 	if !noReplacement && !reqIDRe.MatchString(replacement) {
-		return "", fmt.Errorf("invalid replacement requirement ID: %q (use Rn or -)", replacement)
+		return "", nil, fmt.Errorf("invalid replacement requirement ID: %q (use Rn or -)", replacement)
 	}
 
 	reqsPath := u.Project.RequirementsPath()
 	reqs, err := parser.ParseRequirements(reqsPath)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	var target *parser.Requirement
@@ -292,16 +294,16 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, error) {
 		}
 	}
 	if target == nil {
-		return "", fmt.Errorf("requirement %s not found", oldReq)
+		return "", nil, fmt.Errorf("requirement %s not found", oldReq)
 	}
 	if target.Retired {
-		return "", fmt.Errorf("requirement %s is already retired", oldReq)
+		return "", nil, fmt.Errorf("requirement %s is already retired", oldReq)
 	}
 
 	gapsPath := u.Project.DesignMdPath()
 	gaps, err := parser.ParseGaps(gapsPath)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	newTn := nextGapID(gaps, "T")
 
@@ -313,12 +315,12 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, error) {
 	}
 
 	if err := u.rewriteRetiredLine(reqsPath, target, newTn, replacementClause); err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if err := u.appendGapLine(gapsPath, formatGapLine("T", newTn, gapDesc)); err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return newTn, nil
+	return newTn, target.Sources, nil
 }
 
 // rewriteRetiredLine rewrites a requirement line in-place to its retired form.

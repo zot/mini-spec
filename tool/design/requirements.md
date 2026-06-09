@@ -35,6 +35,7 @@
 - **R21:** `update remove-ref [crc-file] [Rn]` removes requirement from CRC card
 - **R22:** `update add-gap [type] [desc]` adds new gap with auto-numbered ID
 - **R23:** `update resolve-gap [id]` marks gap as resolved (checks checkbox)
+- **R103:** after `update retire` rewrites the Rold line and appends the Tn (R80), it prints a supersede-at-source reconcile reminder to **stderr** — naming Rold's feature `**Source:**` spec(s) from requirements.md (or saying none is recorded), prompting a grep of design/ for stale directives, and stating the completion test — while **stdout** carries only the Tn; the reminder is advisory and is suppressed by `--quiet`
 
 ## Feature: Validate
 **Source:** specs/validate.md

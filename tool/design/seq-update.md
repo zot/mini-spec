@@ -52,3 +52,21 @@ Update --> CLI: success
 
 CLI --> User: "Added R2: R5 has no design coverage"
 ```
+
+# Sequence: Update Retire
+
+```
+User -> CLI: minispec update retire R12 R40 "ec-rekey reason"
+CLI -> Update: Retire(project, "R12", "R40", "ec-rekey reason")
+
+Update -> Parser: ParseRequirements(requirements.md)
+Parser --> Update: []Requirement, find R12 (Sources: [specs/storage.md]) at line N
+Update -> Parser: ParseGaps(design.md) -> next Tn
+Update -> os: rewrite R12 line to "~~R12:~~ (Retired Tn — see R40) ..."
+Update -> os: append "- Tn: R12 retired by R40 (ec-rekey reason)" to Gaps
+Update --> CLI: tn="Tn", sources=["specs/storage.md"]
+
+CLI --> User (stdout): "Tn"
+CLI --> User (stderr, unless --quiet): supersede-at-source reminder
+            naming specs/storage.md (R12's **Source:**) + the completion test
+```

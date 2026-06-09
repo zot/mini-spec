@@ -42,7 +42,7 @@
 | `update add-gap [type] [description]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Add a new gap with auto-numbered ID. Migration spec amends: `A` and `T` gaps are written without checkboxes. |
 | `update resolve-gap [id]` | [updates.md](updates.md) | Mark a gap as resolved. Alias for `update check design.md [id]`. |
 | `update approve-gap [id]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Convert an existing gap to approved (A) type. Migration spec amends: A entries have no checkbox. |
-| `update retire R<old> <R<new>\|-> "<reason>"` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | Retire a requirement: strikethrough the Rn line, append a Tn gap. |
+| `update retire R<old> <R<new>\|-> "<reason>"` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Retire a requirement: strikethrough the Rn line, append a Tn gap, and print a supersede-at-source reconcile reminder (naming the retired requirement's **Source:** spec) to stderr. |
 | `update migration-complete <name>` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | Move `specs/migrations/<name>.md` to `specs/migrations/complete/<NNN>-<name>.md`. |
 
 ## `phase` subcommands
