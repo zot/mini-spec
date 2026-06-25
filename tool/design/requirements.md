@@ -125,6 +125,7 @@
 - **R70:** Requirements with design coverage but no implementation coverage are reported as I-type (implementation) gaps
 - **R71:** Tool parses gap type "I" (implementation) in addition to S/R/D/C/O/A
 - **R72:** Validate output includes an implementation coverage section showing which requirements have code-level refs
+- **R104:** Traceability parser also extracts inline Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — collecting the leading comma-separated `Rn` refs into ReqRefs. A ref that does not immediately follow the comment leader (a prose mention like `// see R5` or `// computed (R5)`) is not counted.
 
 ## Feature: Migration Workflow
 **Source:** specs/migrations/complete/001-migration-and-retirement.md

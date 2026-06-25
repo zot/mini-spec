@@ -1,4 +1,4 @@
-// CRC: crc-Parser.md | Seq: seq-parse.md | R67, R71
+// CRC: crc-Parser.md | Seq: seq-parse.md | R67, R71, R104
 package parser
 
 import (
@@ -31,6 +31,14 @@ func ParseTraceability(path string, commentPattern string, commentCloser string)
 	if err != nil {
 		return Traceability{}, fmt.Errorf("invalid comment pattern %q: %w", commentPattern, err)
 	}
+	// R104: a bare annotation leads with the ref(s) immediately after the
+	// comment leader (e.g. `// R5: desc`, `// R5, R6`, trailing `foo() // R7`).
+	// Only the leading comma-separated refs match; prose like `// see R5` does
+	// not, because the ref does not follow the leader.
+	bareRe, err := regexp.Compile(fmt.Sprintf(`%s(R\d+\b(?:\s*,\s*R\d+\b)*)`, commentPattern))
+	if err != nil {
+		return Traceability{}, fmt.Errorf("invalid comment pattern %q: %w", commentPattern, err)
+	}
 
 	trace := Traceability{}
 	scanner := bufio.NewScanner(file)
@@ -46,6 +54,9 @@ func ParseTraceability(path string, commentPattern string, commentCloser string)
 			if matches[3] != "" {
 				trace.ReqRefs = append(trace.ReqRefs, extractReqRefs(matches[3], commentCloser)...)
 			}
+		} else if m := bareRe.FindStringSubmatch(line); m != nil {
+			// R104: bare annotation — collect only the leading refs.
+			trace.ReqRefs = append(trace.ReqRefs, reqRefRe.FindAllString(m[1], -1)...)
 		}
 	}
 
