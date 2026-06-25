@@ -27,7 +27,7 @@
 
 | Format | Purpose | Owning spec(s) |
 |---|---|---|
-| Traceability comment | One or more lines like `// CRC: crc-Foo.md \| Seq: seq-bar.md#1.2 \| R5, R12` in code files listed under Artifacts. Pipe-separated sections, third section optional. Block-comment languages require a configured closer. A **bare annotation** — a comment that leads with a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — also supplies inline Rn refs; a ref not leading the comment (prose `// see R5`) does not count. | [validate.md](validate.md) (Traceability Comments, Sequence Anchor Validation, Implementation Coverage), [config.md](config.md) (`comment_patterns`, `comment_closers`), [queries.md](queries.md) (`query traceability`, `query comment-patterns`) |
+| Traceability comment | One or more lines like `// CRC: crc-Foo.md \| Seq: seq-bar.md#1.2 \| R5, R12` in code files listed under Artifacts. Pipe-separated sections, third section optional. Block-comment languages require a configured closer. A **bare annotation** — a comment that leads with a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — also supplies inline Rn refs; a ref not leading the comment (prose `// see R5`) does not count. Both the `\| Rn` tail and the bare annotation expand `Rn-Rm` ranges (`// R5-R8` covers R5 through R8). | [validate.md](validate.md) (Traceability Comments, Sequence Anchor Validation, Implementation Coverage), [config.md](config.md) (`comment_patterns`, `comment_closers`), [queries.md](queries.md) (`query traceability`, `query comment-patterns`) |
 
 ## Configuration & metadata
 

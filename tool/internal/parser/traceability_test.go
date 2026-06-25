@@ -126,6 +126,45 @@ func TestParseTraceability_BareNoColon(t *testing.T) {
 	}
 }
 
+func TestParseTraceability_RangeExpansion(t *testing.T) {
+	// R105: ranges expand in both the bare annotation and the CRC tail;
+	// ranges and comma lists may be mixed.
+	content := "// R5-R8: bare range\n" +
+		"// CRC: crc-X.md | R10-R12\n" +
+		"// R20-R22, R25: mixed\n" +
+		"func f() {}\n"
+	path := writeTemp(t, content)
+	trace, err := ParseTraceability(path, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"R5", "R6", "R7", "R8", "R10", "R11", "R12", "R20", "R21", "R22", "R25"}
+	if !reflect.DeepEqual(trace.ReqRefs, want) {
+		t.Errorf("ReqRefs = %v, want %v", trace.ReqRefs, want)
+	}
+}
+
+func TestParseTraceability_AlternationPattern(t *testing.T) {
+	// R106: an alternation comment prefix (HTML + embedded JS) composes
+	// correctly — the HTML CRC comment and the JS bare range both harvest.
+	content := "<!-- CRC: crc-Foo.md | R500, R501 -->\n" +
+		"// R600-R603: ranged bare annotation in <script>\n" +
+		"foo();\n"
+	path := writeTemp(t, content)
+	trace, err := ParseTraceability(path, `<!--\s*|//\s*`, " -->")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantCRC := []string{"crc-Foo.md"}
+	if !reflect.DeepEqual(trace.CRCRefs, wantCRC) {
+		t.Errorf("CRCRefs = %v, want %v", trace.CRCRefs, wantCRC)
+	}
+	wantReq := []string{"R500", "R501", "R600", "R601", "R602", "R603"}
+	if !reflect.DeepEqual(trace.ReqRefs, wantReq) {
+		t.Errorf("ReqRefs = %v, want %v", trace.ReqRefs, wantReq)
+	}
+}
+
 func TestParseTraceability_ProseNotCounted(t *testing.T) {
 	// R104: refs not leading the comment are prose, not annotations.
 	content := "// see R5 for the rationale\n// computed lazily (R6)\n// the R7 path is taken here\nfunc f() {}\n"

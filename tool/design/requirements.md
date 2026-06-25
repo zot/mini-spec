@@ -126,6 +126,8 @@
 - **R71:** Tool parses gap type "I" (implementation) in addition to S/R/D/C/O/A
 - **R72:** Validate output includes an implementation coverage section showing which requirements have code-level refs
 - **R104:** Traceability parser also extracts inline Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — collecting the leading comma-separated `Rn` refs into ReqRefs. A ref that does not immediately follow the comment leader (a prose mention like `// see R5` or `// computed (R5)`) is not counted.
+- **R105:** Inline Rn ref harvesting (both the `// CRC: … | Rn` tail and the bare annotation) expands `Rn-Rm` range syntax into every member, so a range-form annotation (`// R5-R8`) covers the whole span; the second `R` is optional (`R5-8`), comma-separated lists and ranges may be mixed (`// R5-R7, R10`), and a reversed range (`R8-R5`) contributes only the low ref.
+- **R106:** The configured comment prefix is wrapped in a non-capturing group when composed into the traceability and bare-annotation regexes, so an alternation pattern (e.g. `<!--\s*|//\s*` for HTML with embedded JS) composes correctly instead of the `|` binding loosely and matching the first alternative without the rest of the comment.
 
 ## Feature: Migration Workflow
 **Source:** specs/migrations/complete/001-migration-and-retirement.md

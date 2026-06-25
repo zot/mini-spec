@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104
+**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104, R105, R106
 
 Parses mini-spec design file formats into structured data.
 
@@ -29,7 +29,7 @@ Parses mini-spec design file formats into structured data.
 - ParseGaps(path): parse design.md Gaps section -> []Gap (types: S/R/D/C/I/O/A/T)
   - Tn entries always have no checkbox; HasCheckbox=false
   - An entries: prefer no checkbox; legacy `- [ ] An` form still accepted with HasCheckbox=true
-- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern; strips commentCloser from refs; stops each section at next `|` delimiter; extracts Rn refs from optional third section; also extracts Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (prose mentions not leading with a ref are ignored); splits each Seq ref at `#` into SeqRef{File, Fragment} -> Traceability
+- ParseTraceability(path, commentPattern, commentCloser): scan code file for CRC: comments using the provided pattern (the pattern is wrapped in a non-capturing group so an alternation prefix composes correctly, R106); strips commentCloser from refs; stops each section at next `|` delimiter; extracts Rn refs from optional third section; also extracts Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (prose mentions not leading with a ref are ignored); both ref forms expand `Rn-Rm` ranges into every member via expandReqRefs (R105); splits each Seq ref at `#` into SeqRef{File, Fragment} -> Traceability
 - ParseSeqDoc(path): scan a sequence-diagram file for dotted-number items (allowing lane characters `│ ├ └ ─ |` before the number); group IDs by first segment K; build per-K trees -> SeqDoc
 
 ## Collaborators

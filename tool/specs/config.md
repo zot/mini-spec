@@ -68,7 +68,7 @@ comment_closers:
 
 ## Comment Patterns
 
-The `comment_patterns` map defines regex patterns for single-line comments by file extension. The pattern matches the comment prefix; the tool appends `CRC:` to find traceability comments.
+The `comment_patterns` map defines regex patterns for single-line comments by file extension. The pattern matches the comment prefix; the tool appends `CRC:` to find traceability comments. The pattern may be an **alternation** — e.g. `.html: "<!--\\s*|//\\s*"` for HTML files that embed JS traceability in `<script>` alongside HTML comments. The tool wraps the configured prefix in a non-capturing group, so the alternation composes correctly (R106).
 
 Default patterns (built-in):
 | Extension | Pattern | Languages |

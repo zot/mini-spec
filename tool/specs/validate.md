@@ -41,6 +41,7 @@ Run all validations and report issues.
 - Optional third pipe-delimited section contains inline requirement refs: `// CRC: crc-X.md | Seq: seq-Y.md | R5, R12`
 - Parser extracts Rn refs from the third section (comma-separated)
 - Inline Rn refs may also come from a **bare annotation**: a comment whose first token after the comment leader is a requirement ref (e.g. `// R5: description`, `// R5, R6`, or a trailing `foo() // R7`). The leading comma-separated refs are collected. This counts the deliberate field/line annotations that sit alongside a type's or function's `// CRC:` header.
+- Both the `| Rn` tail and the bare annotation expand `Rn-Rm` **ranges** into every member, so a range-form annotation (`// R5-R8`) counts R5, R6, R7, and R8. Ranges and comma lists may be mixed (`// R5-R7, R10`).
 - A ref that does not immediately follow the comment leader — a prose mention like `// see R5` or `// computed lazily (R5)` — is **not** counted; only a comment that leads with the ref signals intent.
 - Inline Rn refs are validated: each must exist in requirements.md
 
