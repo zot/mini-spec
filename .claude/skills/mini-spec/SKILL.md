@@ -359,6 +359,28 @@ Mark implemented using minispec:
 
 Look out for language-specific "gotchas" like mixing functions and methods in Lua.
 
+**Codify what you verified — don't leave behavior hand-checked.** When you
+implement a behavior and confirm it works (a live run, a smoke test, an ad-hoc
+script), capture that verification as a `test-*.md` design + a test **in the same
+pass**. A hand-check proves it works *today*; the test is what catches the
+regression three sessions from now, when a future agent refactors the code that
+made it pass. This is a **default action of the Implementation phase** — not a
+Design-phase afterthought, and not something to defer to a Gaps-phase `O` entry.
+
+- **The cheap cases have no excuse.** Pure, deterministic logic — state
+  machines, parsers, ownership/routing decisions, config defaults — tests with a
+  fake collaborator (a small interface double) and a zero-value struct: no DB,
+  no server, no fixtures. Choose scenarios that avoid the expensive-to-reach
+  paths and you still pin the decision logic.
+- **Anchor the test like any artifact.** Add `test-*.md` to `design.md`
+  Artifacts mapped to the test file (so its refs harvest and future anchors
+  there are seen), then `minispec update check` it once it passes.
+- **`O`-gap is the exception, not the escape hatch.** Logging "missing tests" as
+  an Oversight gap is for behavior genuinely disproportionate to test now — needs
+  live external infra, a full rebuild, a real GPU. When you take that exception,
+  say *why* in the gap. Everything a fake-and-zero-value can reach is written,
+  not deferred.
+
 **Upon completion**, run `~/.claude/bin/minispec phase implementation` to verify traceability, then run the Simplification Phase.
 
 5. Simplification Phase
@@ -384,8 +406,8 @@ Run `~/.claude/bin/minispec phase gaps` to validate the gaps section, then run `
 - **Design→Code (Dn):** Designed features without code
 - **Code→Design (Cn):** Code without design artifacts
 - **Implementation (In):** Requirements with design coverage but no inline Rn ref in any code file
-- **Oversights (On):** Missing tests, tech debt, enhancements, security concerns, etc.
-- **Approved (An):** Approved gap. Permanent — written without a checkbox.
+- **Oversights (On):** Missing tests *that were genuinely disproportionate to write in the Implementation phase* (say why — the cheap deterministic cases get a test, not an O-gap), tech debt, enhancements, security concerns, etc.
+- **Approved (An):** Approved gap. Permanent — written without a checkbox. Good for "don't do it this way" requirements.
 - **'Tired (Tn):** Retired requirement — obsoleted by a later change. Each Tn names the original Rn, the replacement Rn (or "no replacement" if removed outright), and the reason (usually a migration or refactor). Retired Rn entries stay in requirements.md with their original text but get a `~~Rn:~~ (Retired Tn — see Rxxx)` marker so old design/code references still resolve. Permanent — written without a checkbox.
 
 Nest related items with checkboxes (only S/R/D/C/I/O take checkboxes; A and T are permanent and never carry one):
@@ -407,6 +429,47 @@ If you encounter legacy `- [ ] An:` lines, drop the `[ ]` —
 
 Use `minispec update add-gap` to add gaps; it writes the right
 shape automatically (no checkbox for A/T, checkbox for the rest).
+
+### Conformance deviations are gaps, and they link both ways
+
+When a requirement states a rule the code does not yet honor everywhere,
+**each deviation is its own gap** — not a paragraph of spec prose. Prose
+cannot be queried, is never checked off, and drifts out of date silently;
+a gap is greppable, carries a checkbox, and gets closed. So a spec states
+the rule and says "deviations are tracked as gaps"; the gap list holds the
+inventory.
+
+**One gap per deviation, not one gap listing several.** Splitting them is
+what makes each independently closable, and it surfaces ordering
+constraints a combined body hides — dependencies between deviations only
+become visible once they are separate entries that can block one another.
+
+**Link both ways.** A gap whose repair will require editing a requirement
+names that `Rn` in its body *and* says the requirement edit is part of the
+repair. The requirement then carries a short back-link — a consistent,
+greppable phrase such as `see gap <ID>` — noting that it is provisional
+and what changes when the gap closes.
+
+The back-link is the load-bearing half, and the one people skip. The
+forward link (gap → requirement) is discovered by whoever works the gap,
+who is already looking. The reverse is for everyone else: without it a
+requirement reads as settled current intent, and a future agent
+"fixes" code to match a clause that was already slated for removal —
+precisely the revert trap "Supersede at the source" exists to prevent.
+Write the requirement text so it still describes today truthfully, with
+the pending change marked; do not pre-apply an edit that has not landed,
+which would make the requirement a lie in the other direction.
+
+Two forms not to confuse with this: a **retired** requirement (`Tn`)
+already back-links by construction, since `minispec update retire` writes
+the `~~Rn:~~ (Retired Tn — see Rxxx)` marker; and a gap that merely *cites*
+a requirement as context needs no back-link, because nothing about that
+requirement changes when the gap is repaired. Back-link only where the
+repair edits the requirement.
+
+To audit: for every open S/R/D/C/I/O gap naming an `Rn`, ask whether
+repairing it changes that requirement's text. If yes, the requirement must
+carry the back-link.
 
 **Upon completion**, offer to update Documentation (Documentation Phase).
 
@@ -600,12 +663,88 @@ onto), freeing the current file for the migration, then resume later from the
 parked sub-item. The freedom to intermix is the point — neither style is
 imposed.
 
+### Carves — the layer above the item
+
+An item is a unit of *work*. A **carve** is the layer above it: one coherent
+problem decomposed into items that may each need a different skill. It is the
+document those items point back at.
+
+It exists because coherence and schedulability have different natural units. A
+problem is coherent at the size of "the review console" — change one decision
+and the others move. Work is schedulable only in pieces that fit one session
+with one skill loaded. So no session can hold the whole problem and the queue
+can only hold pieces. Something has to carry the whole, and that is the carve.
+
+Both a carve and a migration are documents that spawn work, but their
+properties are close to inverted:
+
+| | Migration | Carve |
+|---|---|---|
+| End state | Defined (A→B); expires by design | None; decays as parts land |
+| Completion | Ritual: prose grep, `migration-complete`, `complete/NNN-` | A move to `done/` |
+| Spawns | One coherent change, phases run once | N items, scheduled independently over months |
+| Content | How to get from A to B | Decisions, open forks, and the split |
+| Kinds of work | One | Deliberately several |
+
+A migration says *the system is at A and must reach B*. A carve says *here is a
+problem area, here is what we have settled, here is how it breaks into
+schedulable pieces*. The lifetime difference is the sharpest: migrations are
+temporary by design, while a carve can stay open for months.
+
+**Where a carve lives: with the public design docs, not with the private
+trajectory files.** A carve is almost entirely facts about the code, and those
+belong where someone reading the project can find them. A top-level `carves/`
+beside `specs/` and `design/` is the default, with `carves/done/` for finished
+ones so they do not crowd out live ones. Deliberately not under `specs/`, which
+describes how the system *is*; a carve is a work-management artifact, which is
+the same reason migrations were exiled to `specs/migrations/`.
+
+**Promotion is a judgment call, and it belongs to the maintainer.** The test is
+*is this a meaty task?* — substantial enough to stay open a while and worth
+naming, because the name is what makes the surrounding work manageable. No count
+of queue items decides it: a one-item document can be carved on the expectation
+of more, and a two-item one can stay a working note if nobody needs the name.
+Keep the number of live carves small; they are a management tool, and a directory
+full of them stops being one.
+
+**An agent proposes; it does not decide.** Raise it once a document has spawned a
+second item — that is the prompt to ask, not a rule that fires. Below that,
+usually stay quiet. Treating the count as the criterion gets it wrong in both
+directions at once: it refuses a meaty single-item problem while mechanically
+promoting anything that happens to spawn two.
+
+Promote forward, moving an existing carve when it is next touched rather than in
+a sweep, and rewrite the links that pointed at the old path as part of the move.
+Promotion also forces an editorial pass separating the decision from the private
+reasoning behind it, and writing for a stranger is the cheapest clarity check
+available.
+
+**Three disciplines.** The first two tend to happen by instinct. The third does
+not, and it is the one that matters.
+
+1. **Per-part status in the doc.** Strike a landed part through, with its commit.
+2. **Dated, attributed decisions.** `DECIDED (name, date)`, append-only, so a
+   reader can tell a settled call from a musing and whose it was. This is the
+   single highest-value habit in the format.
+3. **Migrate on landing.** When a part lands, its decisions belong in `specs/`
+   and `design/` as requirements, spec prose, or a comment at the code; the
+   carve then points at where they went. A migration gets a forcing function for
+   free (the retire reminder, the prose grep, the completion ritual). A carve
+   gets none, so its decisions rot silently while still reading as current. This
+   is not hypothetical: a stale line in one working note sent a later carve down
+   a wrong path, and that carve had to mark the note stale by hand.
+
+Adopting discipline 3 also reframes the planning scratch usefully, as a staging
+area for reasoning that has not earned a public home yet rather than a permanent
+one.
+
 ### What's reusable vs. project-specific
 
-Reusable core: the three files, the lifecycle, the interleaving model. Each
-project parameterizes the rest — routing labels (which skill runs an item),
-the planning-scratch location, any batching rules, file siting and case
-convention, and whether the files carry a project prefix.
+Reusable core: the three files, the lifecycle, the interleaving model, and the
+carve layer above the item. Each project parameterizes the rest — routing labels
+(which skill runs an item), the planning-scratch location, any batching rules,
+file siting and case convention, whether carves sit at top level or elsewhere,
+and whether the files carry a project prefix.
 
 ## CRC Card Format
 ```markdown
