@@ -722,7 +722,49 @@ available.
 **Three disciplines.** The first two tend to happen by instinct. The third does
 not, and it is the one that matters.
 
-1. **Per-part status in the doc.** Strike a landed part through, with its commit.
+1. **Per-part status, in a block at the top.** A carve outlives the length
+   anyone reads end to end, so "what is still open?" has to be answerable from
+   the first screen. Left to grow where the work happened, status lands
+   two-thirds down and is effectively invisible.
+
+   ```markdown
+   ## Status
+
+   - [x] ~~**Item 1 — record and resolve.**~~ **LANDED (`4c6e974`, 2026-08-04.)**
+   - [ ] **Item 4 — fail fast when onboarding does not take.** **OPEN (#122.)**
+   ```
+
+   Further down, each part's detail is keyed by **bare number, with no title and
+   no description** — `**Item 1** (…)`. That split is the point rather than a
+   style preference: the block owns the title and the status, the body owns the
+   detail, and neither repeats the other, so there is no second copy to drift. A
+   status *table* restating body prose is worse than none, because the two will
+   disagree and nothing will say which is right.
+
+   - **The checkbox is authoritative** where the markings on a line disagree.
+     The line states the same fact three ways — checkbox, strikethrough, marker
+     — because three different readers want it: a grep, a skimmer, and someone
+     wanting provenance. Use the same `- [ ]` / `- [x]` notation as the gaps
+     list, so both documents read alike and one query spans them.
+   - **`LANDED (commit, date)` mirrors `DECIDED (name, date)`**, deliberately —
+     same shape, same greppability, and the commit is what makes the claim
+     checkable. **Let the verb vary where it carries information**: `SENT` for a
+     part discharged by a cross-project message and owning no commit, `DEFERRED`
+     for one parked on purpose rather than merely unstarted. Forcing `LANDED`
+     onto those makes the marker a worse record than the prose it replaced.
+   - **State the negative, and distinguish "open" from "not checked".** A part
+     with no marker is indistinguishable from one nobody has thought about.
+     `NOT VERIFIED` earns its own words, because a repaired *symptom* reads
+     exactly like a satisfied *requirement* — that misreading is the most
+     expensive one this block prevents.
+   - **Not everything takes a checkbox.** Banked gaps, accepted residue, and
+     already-in-place preconditions are listed without one; there is nothing to
+     close. Same distinction an approved gap draws.
+
+   Key parts however the document already does — `Item N` where it wrote a
+   numbered split, the queue's own `#N` where every part has one. The queue
+   number is better when it exists, being the identifier the work is scheduled
+   under. The machine view across every live carve is one grep for `^- \[ \]`.
 2. **Dated, attributed decisions.** `DECIDED (name, date)`, append-only, so a
    reader can tell a settled call from a musing and whose it was. This is the
    single highest-value habit in the format.
@@ -740,11 +782,13 @@ one.
 
 ### What's reusable vs. project-specific
 
-Reusable core: the three files, the lifecycle, the interleaving model, and the
-carve layer above the item. Each project parameterizes the rest — routing labels
-(which skill runs an item), the planning-scratch location, any batching rules,
-file siting and case convention, whether carves sit at top level or elsewhere,
-and whether the files carry a project prefix.
+Reusable core: the three files, the lifecycle, the interleaving model, the carve
+layer above the item, and the status block's shape — a block at the top, bare
+keys below, nothing stated twice. Each project parameterizes the rest — routing
+labels (which skill runs an item), the planning-scratch location, any batching
+rules, file siting and case convention, whether carves sit at top level or
+elsewhere, whether the files carry a project prefix, and how parts are keyed
+(`Item N` versus the queue's own `#N`).
 
 ## CRC Card Format
 ```markdown
