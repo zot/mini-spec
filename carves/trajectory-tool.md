@@ -137,6 +137,71 @@ never in the dark about what happened to files it did not write. An agent that
 mutates state through a tool and then cannot see the result will reason from a
 stale picture and, eventually, assert it.
 
+**DECIDED (Bill, 2026-08-07): the tool mints IDs, and never hands out a bare one.**
+Assignment and the write that records it are one invocation, so a number is in a
+document the moment it exists and `max()` over the documents stays the whole truth.
+The alternative — a command that reserves an ID for the agent to write later — is a
+second copy of the numbering state by construction, which is the stale-counter
+failure recorded above with the hand taken out of it. Keeping such a copy honest
+would need reservations to expire, and expiry is the lease the lock was already
+decided not to need.
+
+*The idiom already exists in the tool.* `update add-gap` auto-numbers and writes in
+one act, and there is no `query next-gap-id` because none was ever needed. What is
+missing is the same shape for the other two classes: items, which Item 6 covers, and
+requirements, which have no verb at all today.
+
+**DECIDED (Bill, 2026-08-07): every minted ID is cranked out.** The agent has to know
+the number in order to refer to it afterwards, and it cannot read one out of a file it
+did not write. This is the paragraph above applied to the one piece of state the tool
+*creates* rather than modifies, which is the case where being in the dark is total
+rather than partial.
+
+**DECIDED (Bill, 2026-08-07): the requirement verb is `minispec update add-req`, an
+`add-gap` twin addressed by section heading.** It mints the next `Rn`, appends the
+entry to the named section, and cranks out the number — or the range, for a batch.
+
+*Measured across both projects before deciding.* Requirements are defined in
+`design/requirements.md` and nowhere else: **zero of ark's 147 spec files** carry a
+`- **Rn:**` definition, and the 63 that mention an `Rn` are citing one. There is a
+single mint site, so the earlier worry that a spec edit might be the minting act was
+unfounded.
+
+| | ark | mini-spec |
+|---|---|---|
+| `## Feature:` headings | 193, all unique | 17, all unique |
+| `### ` sub-headings | 366, 6 titles duplicated | none — the file is flat |
+| `**Source:**` lines | 195, of **142 distinct values** | non-unique |
+| spec files defining an `Rn` | 0 of 147 | 0 of 9 |
+
+**Address the destination by heading text, at whatever level it exists.** Not by
+`**Source:**`, which is emphatically non-unique — `specs/main.md` heads nine separate
+groups in ark. And not by Feature, which is too coarse: `Source Monitoring` alone
+holds 68 entries spread across its sub-sections. One `--section "<heading>"` serves a
+flat file and a two-level one alike, and it resolves uniquely for 360 of ark's 366
+sub-headings. The six collisions — `CLI`, `Go API`, `Store API` and their kin — refuse
+and crank out the qualified forms for the caller to re-run, which is the same refusal
+shape as everywhere else here rather than a new mechanism.
+
+**It appends to an existing section and refuses on an unknown one, and that is the
+line worth holding: the tool owns IDs, not prose.** A sub-section title is authoring —
+"Phase A: Config-Triggered Reconcile" is a judgment about how the design decomposes,
+and a tool inventing one would be doing the part that is not mechanical. A new heading
+is hand-written first, which races nothing because it carries no ID.
+
+**Batch is the primary form, not an accommodation.** The skill's own instruction is to
+"merge all specs into numbered requirements", and ark's file shows blocks throughout:
+R338-R341 landed together, R961-R962 much later in the same sub-section. The crank
+handle reports a minted block as `R963-R966`, in the range syntax the tool already
+parses.
+
+*One correction, recorded because this carve is about instruments that lie.* The first
+measurement of append practice split on `## ` alone and reported that 20% of groups do
+not end at their highest number, which read as evidence that requirements are
+sometimes inserted rather than appended. Wrong: ark's grouping is two levels deep, so
+a Feature was never the unit, and those out-of-order tails are ordinary appends to
+sub-sections. The instrument answered exactly the question it was asked.
+
 **DECIDED (Bill, 2026-08-04): the slot covers the trajectory files only, and the
 surface is `minispec pending [add-item | start | finish | revert | replay]
 [ITEM-NUM [FLAG...]]`.** The pending item is the smallest unit of work, so it is the
@@ -292,6 +357,13 @@ says to change the setting to `private-trajectory` or `all` if it is; any other 
 verifies that it *is*, and says to change it to `none` if not. This catches the real
 drift — a project that gains git after `init`.
 
+*Amended 2026-08-07: the check covers ignore state too*, not only whether git is
+present. Under `private-trajectory` the trajectory files must be ignored; under `all`
+they must not be; `.carves/` must be ignored whenever it exists, and it need not
+exist, since it is created on demand. `git check-ignore` takes a list, so the whole
+question costs one invocation beside the one that answers git presence. What a
+mismatch does is settled below.
+
 **DECIDED (Bill, 2026-08-04): `init` is the sole creator of `.minispec/config.yaml`,
 and with no config the only legal commands are `init` and those needing no
 minispec-specific files at all** — `minispec version` and its kin. This supersedes an
@@ -363,12 +435,63 @@ one rule, and the message fits the situation instead of being a script read alou
 This is also the case where the agent may run `init` — because the user asked it to,
 which is the standing rule.
 
-@undecided: (Daneel, 2026-08-04) `track` is a second copy of a fact the `.gitignore`
-already holds, and the earlier argument for `.gitignore`-as-declaration was that
-there would be no second copy to drift. It is fine *if verified* — under
-`private-trajectory` the trajectory files must actually be ignored, and that is the
-same gripe shape as the two preferences above. Without the check, the config becomes a
-claim rather than a computed property.
+**DECIDED (Bill, 2026-08-07): `track` is verified on every run, not merely stored.**
+This settles the objection that it duplicates what `.gitignore` already says. It does
+duplicate it — but a copy re-checked on every non-trivial invocation cannot drift
+undetected, and undetected drift was the whole of the objection. A stored claim rots;
+a checked one is a checksum. The copy also earns its keep independently, because
+`--create` needs the policy months after `init`, possibly before any ignore line
+exists to read it from.
+
+*The weaker alternative was proposed and rejected.* Daneel argued for treating
+`track` as creation policy and letting divergence raise a standing advisory. Rejected
+on this project's own measurement: in ark, every category carrying a forcing function
+sits at zero, and the one category carrying only a reminder sits at 19%.
+
+**The order of business, for any command doing more than reporting its version:**
+
+1. **No `.minispec/config.yaml`.** `.gitignore` does not matter yet. This is the
+   no-config refusal already decided above, now also carrying the `track` choice. The
+   agent establishes whether the directory is git-managed — that is a fact, and the
+   three-tier rule says the agent goes and looks — then asks the user, in as few plain
+   words as possible, whether they want this to be a mini-spec project and whether the
+   queue should stay private or ship with the repository. On yes, the agent runs
+   `minispec init --track-VALUE`.
+2. **Config present.** Lock it, load it, verify it is well-formed, and verify `track`
+   agrees with both facts: git presence, and the ignore state of the trajectory files
+   and of `.carves/` when it exists.
+3. **Disagreement.** Gripe and exit with a crank handle. The agent repairs by running
+   `minispec init --track-VALUE --repair`; it does not hand-edit the config.
+
+**DECIDED (Bill, 2026-08-07): `--repair` is symmetric, and the agent confirms with the
+user before running it.** It sets `track` to the given value *and* brings `.gitignore`
+into agreement with it. Symmetry is what lets one command resolve a mismatch in either
+direction: `private-trajectory` with unignored files can be fixed by adding the ignore
+lines or by declaring the files public, those mean opposite things, and the flag value
+is how the user chooses between them. That choice is the user's, which is why the
+confirmation is required rather than polite — the tool detects, the agent relays, the
+human decides. Not a new mechanism.
+
+**DECIDED (Bill, 2026-08-07): plain `init` refuses when `.minispec/` exists**, because
+it would be stomping on something. Its crank handle names `--repair` as the way to
+change a `track` value, and says to confirm with the user first. The two forms are
+mutually exclusive on that one precondition, which is what keeps either from having to
+guess the caller's intent.
+
+**DECIDED (Bill, 2026-08-07): a malformed config is the one place the agent may edit
+it.** `--repair` validates well-formedness before doing anything, and a config that
+fails validation cannot be repaired by a flag — the damage is arbitrary, most likely a
+stray character typed while the file was open in an editor. So the crank handle states
+every problem found, points at the configuration documentation in the skill directory,
+and **explicitly authorises the edit**, because at that point the agent is the only
+actor left who can act. Back up the config first, and skip the backup when it is
+byte-identical to the one already there.
+
+*That documentation is an obligation this decision creates.*
+[`.claude/skills/mini-spec/config-reference.md`](../.claude/skills/mini-spec/config-reference.md)
+documents `.minispec.yaml` — the design-root config — and says nothing about
+`.minispec/config.yaml`, `track`, or inheritance. The crank handle would point at a
+section that does not exist, so writing it is part of the work rather than a follow-up.
 
 **On the standing gripe.** It fires on every run until satisfied, which is right on
 tonight's evidence: ark's one-shot stderr reminder on retirement left 19% of retired
@@ -527,6 +650,11 @@ pending and the done file, which is the part people get wrong in both directions
 highest IDs are still live). Retires the hand-copied counter entirely. Smallest
 real thing on the list, read-only, and it removes failure 1 above by construction.
 
+*Amended 2026-08-07: informational only.* With the tool minting IDs, this no longer
+feeds a write — it is for a human reading the queue, or an agent orienting itself. Its
+correctness still matters, since it is the same `max()` the minting verbs use, but a
+stale answer can no longer end up written into a document.
+
 **Item 3** — `minispec validate trajectory`, folded into `validate` or standing
 alone. Referential integrity (every `#N` in a carve's status block resolves to a
 live queue item or a done entry; every queued item whose linked doc is a carve
@@ -571,6 +699,12 @@ overwriting if one already exists. `init carve` creates a carve with its `## Sta
 block already at the top and the bare-key detail section beneath. Note this
 introduces a **new verb class** — the tool's five existing verbs never create a
 file, and `update` only rewrites files that already exist.
+
+`init` itself lands here too, with its two forms and their opposite preconditions:
+plain `init --track-VALUE` refuses when `.minispec/` exists, and
+`init --track-VALUE --repair` requires it. Both write `.gitignore` to agree with the
+chosen `track`, and both reach the user through the agent rather than acting on their
+own. Decisions in the `track` section above.
 
 *The evidence is this document.* Ark's six carves were retrofitted by hand in one
 afternoon; three had independently invented a status notation and three had none,
@@ -648,7 +782,8 @@ open question 2 as genuinely open rather than a matter of picking a favourite.
 
 ## Item 1 — parameterization
 
-Mostly settled 2026-08-04. What remains carries an `@undecided:`.
+Settled — mostly on 2026-08-04, with the last open points closed on 2026-08-07. No
+`@undecided:` remains anywhere in this carve.
 
 ### The measurement that decides the method
 
@@ -889,6 +1024,18 @@ only job is keeping two agents from stomping on each other mid-edit; it is not
 protecting a hot resource, so it needs no fairness, no queueing, and no lease. Held
 across a single file edit and released.
 
+**DECIDED (Bill, 2026-08-07): every command touching a trajectory file takes the
+lock, reads included.** One flat rule beats a per-command judgment about which reads
+are really read-only, and it buys a consistent read rather than one taken mid-write by
+another agent.
+
+*This is a consistency detail, not a correctness one, and the distinction is worth
+keeping.* A per-invocation lock cannot make an ID safe on its own — `query next-id`
+followed by a separate write leaves a gap no lock spans, since the lock is released at
+exit. That hazard is closed by the tool minting IDs inside the writing invocation, not
+by locking the read. Lock everything because it is cheap and uniform; do not mistake
+it for the thing that prevents collisions.
+
 **Both files at once — the two cases.** When the repository root *is* a design root
 (ark's shape), `.minispec.yaml` and `.minispec/config.yaml` legitimately sit side by
 side in one directory. When the roots differ, a top-level `.minispec.yaml` is the
@@ -1038,28 +1185,65 @@ be private. `track` answers that once at `init`, so the case is gone along with
 agent may simply re-run: the root is known, privacy is already settled by `track`,
 and the creation was the point of the original invocation.
 
-**Case 5 does both jobs from one answer.** The confirmation authorizes `carves/`,
+**Case 3 does both jobs from one answer.** The confirmation authorizes `carves/`,
 which records the root; the original command authorizes the trajectory file. Nothing
 else is asked, because nothing else is in question.
 
-**A sixth situation is not a refusal.** The file exists but is *not* ignored — the
-state both surveyed projects were in before tonight. Work can proceed, so refusing
-would be wrong; it is the adoption gap recorded above, and belongs in the advisory
-that names the files and what to add to `.gitignore`.
+*Renumbered 2026-08-07.* This and the paragraph below said **Case 5** until today,
+left behind when the `track` amendment deleted the cases between. Both always meant
+the root confirmation, which is now case 3 — the stale-pointer failure this carve
+argues about, committed in the carve itself.
 
-**Case 5, answered "no".** The user is running from outside their project — most
+**A sixth situation was recorded here and is now unreachable.** *Superseded
+2026-08-07, kept as a record so the reasoning is not rediscovered.* It read: the file
+exists but is *not* ignored — the state both surveyed projects were in before tonight
+— and concluded that work should proceed under an advisory, since refusing would be
+wrong. Two later decisions abolish the state it describes. Nothing but `init` runs
+without a config, so a project can no longer carry trajectory files with no
+declaration at all; and with `track` verified on every run, unignored files are a
+mismatch that gripes and exits under `private-trajectory` and are simply correct under
+`all`. The adoption gap it named is closed by `init` writing the ignore lines, not by
+an advisory nobody has to act on.
+
+**Case 3, answered "no".** The user is running from outside their project — most
 likely above it, since the search only walks up and would have found a marker
 below. The refusal should say so: run from inside the project. Creating anything
 here would put a repository root in the wrong place, and `carves/` is durable enough
 that the mistake would persist.
 
-### Still open
+### The root confirmation needs no flag
 
-@undecided: (Daneel, 2026-08-04) how the root confirmation is spelled. My earlier
-reason for wanting it distinct from `--create` was **wrong** — I claimed the two
-could co-occur, and the entailments above show they cannot. What is left is only
-whether one flag reading differently in two situations is clearer than two flags, and
-that is a naming judgment rather than a structural one.
+**DECIDED (Bill, 2026-08-07): nothing is spelled, because the question dissolves.**
+An `@undecided:` sat here asking whether the root confirmation should reuse
+`--create` or take a flag of its own. Its premise was wrong on re-reading: root
+detection cannot fail after `init`, and nothing but `init` runs without a config, so
+**case 3 is reachable only by `init` itself.** A non-init command in that state hits
+the no-config refusal instead. `--create` therefore lives on trajectory writes and the
+root question lives on `init` — two flags on two verbs, never competing for one slot,
+and never able to appear on the same command line.
+
+*And `init` needs no confirmation flag either, because the assent already happened.*
+The tool never runs `init` implicitly, the skill never tells an agent to run it, and
+the only paths that reach it are a direct user request or the no-config crank handle —
+whose entire purpose is obtaining exactly this yes. A flag would re-ask a question
+answered one step earlier, and an unbuilt road needs no maintenance.
+
+**The one residual risk is closed by naming the path, not by adding a flag.** The
+user's yes is to *make this a mini-spec project*, not to *here specifically*. The
+negative finding already sought by the crank handle catches standing **above** the
+project — "this looks like a folder of projects" — but not standing **below** it, in a
+tree with no VCS anywhere to walk up to. Rare, recoverable, and silent. So the refusal
+**names the absolute path it is about to make the repository root**, which makes the
+assent land on a stated location. The decision above already has it naming the working
+directory; this makes that load-bearing rather than incidental, and it is the same
+instinct as `carves/` declaring the root by artifact.
+
+*Recorded because being wrong twice about one marker is itself evidence.* The first
+reason for wanting a distinct flag was that the two situations could co-occur — false,
+and the entailments in this section disprove it. The second was that only a naming
+judgment remained — also false. Neither error was visible from the paragraph itself;
+both needed the surrounding decisions read together, which is exactly the reading a
+carve exists to make possible.
 
 ## Open questions
 
@@ -1085,9 +1269,12 @@ that is a naming judgment rather than a structural one.
 5. **Should the tool ever edit trajectory files?** `update check` already edits
    `design.md` checkboxes. The same for a carve's status block is tempting and
    riskier, since these files are mostly prose.
-6. **Does `add-item` renumber or reuse?** It needs `query next-id`, and it must hold
-   the ID stable once assigned. Two agents adding items in the same session would
-   otherwise collide.
+6. ~~**Does `add-item` renumber or reuse?**~~ — **answered 2026-08-07: neither.** The
+   question existed only because the agent was carrying an ID between two
+   invocations. With the tool minting and writing in one act, there is no interval in
+   which a second agent can take the same number, nothing to hold stable, and nothing
+   to reuse. See the crank-handle section, where the verb that mints a requirement is
+   decided too.
 7. **Where does crank-handle output go?** Stdout is natural for a CLI, but an agent
    reads tool results, not terminals. If the change summary is the return value it
    is seen; if it is a side-effect print during a batch it may not be. This matters
