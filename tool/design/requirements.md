@@ -24,7 +24,7 @@
 - **R15:** `query gaps` lists gap items from design.md
 - **R16:** `query traceability [file]` checks a code file for CRC/Seq comments
 - **R17:** `query traceability --all` scans all code files in Artifacts
-- **R89:** `query project` reports resolved project paths (root, design, src, specs) so the AI can verify which project the tool detected when results look surprising
+- **R89:** `query project` reports resolved project paths (design root, design, src, specs) so the AI can verify which project the tool detected when results look surprising
 
 ## Feature: Updates
 **Source:** specs/updates.md
@@ -52,7 +52,7 @@
 ## Feature: Configuration
 **Source:** specs/config.md
 
-- **R32:** Project detection walks up to find design/ directory
+- **R32:** Design-root detection walks up to find the design/ directory
 - **R33:** Default paths: design/, src/, crc-*.md, seq-*.md
 - **R34:** Optional .minispec.yaml config file for overrides
 - **R35:** CLI flags: --design-dir, --src-dir, --quiet, --json
@@ -92,7 +92,7 @@
 
 - **R54:** `--version` flag displays version and exits
 - **R55:** Version is shown in help output header
-- **R56:** `check-version` compares tool version against skill README.md Version: line (project-level then user-level), exits 0 on match, 1 on mismatch or not found
+- **~~R56:~~** (Retired T1 — see R117) `check-version` compares tool version against skill README.md Version: line (project-level then user-level), exits 0 on match, 1 on mismatch or not found
 
 ## Feature: Comment Closers
 **Source:** specs/config.md
@@ -174,3 +174,18 @@
 - **R99:** Validate checks K-sequence contiguity within each numbered sequence file: the set of K values present must be contiguous starting at 1
 - **R100:** Validate checks intra-file dotted-ID uniqueness: every dotted ID appears at most once per sequence file
 - **R101:** Unnumbered sequence files (no dotted items found) are silently skipped by sequence-numbering validation — numbering is opt-in per file
+
+## Feature: Repository Root
+**Source:** specs/repository-root.md
+
+- **R107:** Tool distinguishes two roots: the **design root**, the directory containing `design/`, which owns `specs/`, `design/` and `src/`; and the **repository root**, the top of the version-controlled working tree, which owns `.claude/`, `carves/` and the trajectory files
+- **R108:** Repository-root detection searches upward from the current directory **collecting** markers rather than accepting the first one met, so a strong marker wins from any depth below it
+- **R109:** `.git`, `.minispec/`, `carves/`, and a trajectory file (`PENDING.md`, `CURRENT.md`, `DONE.md`) are equal strong markers: the deepest directory carrying any of them is the repository root, and no ordering among them is defined
+- **R110:** When no strong marker is found, the deepest `.claude` directory is the repository root
+- **R111:** When neither a strong marker nor a `.claude` directory is found, the deepest `.minispec.yaml` is the repository root — the weak final fallback, meaningful only because a design root is sometimes also the repository root
+- **R112:** Repository-root detection never considers the user's home directory or any directory above it
+- **R113:** Repository-root detection failure is an error naming the directory the search started from
+- **R114:** Only `.git` counts as a version-control marker; a tree managed by another VCS falls through to the next marker rather than being detected
+- **R115:** `query project` reports the repository root alongside the design root
+- **R116:** `query project` states when the repository root and the design root are the same directory, rather than printing the same path twice unlabeled
+- **R117:** `check-version` finds the skill's `README.md` under the repository root first, then under the user's home directory

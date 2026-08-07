@@ -33,5 +33,5 @@
 
 | File | Purpose | Owning spec(s) |
 |---|---|---|
-| `.minispec.yaml` | Optional project config: `design_dir`, `src_dir`, `comment_patterns`, `comment_closers`. | [config.md](config.md) |
-| `.claude/skills/mini-spec/README.md` | Skill version source. `check-version` reads the `Version:` line (project-level first, then `~/`). | [config.md](config.md) (Version section) |
+| `.minispec.yaml` | Optional **design-root** config: `design_dir`, `src_dir`, `comment_patterns`, `comment_closers`. | [config.md](config.md) |
+| `.claude/skills/mini-spec/README.md` | Skill version source. `check-version` reads the `Version:` line, looking under the **repository root** first, then `~/`. | [config.md](config.md) (Version section), [repository-root.md](repository-root.md) |

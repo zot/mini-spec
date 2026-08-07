@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R56, R60, R62, R79, R80, R81, R82, R83, R89, R103
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116
 
 Command-line interface handling.
 
@@ -12,13 +12,13 @@ Command-line interface handling.
 ## Does
 - Parse(args): parse command and flags
 - Run(): dispatch to appropriate handler (or show version if --version)
-- CheckVersion(): find skill README.md in project or user .claude/skills/mini-spec/, extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found.
+- CheckVersion(): find skill README.md under the **repository root** first, then the user's home directory, in .claude/skills/mini-spec/; extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found. (R117)
 - Output(data): format and print result (text or JSON)
 - Error(err): print error to stderr
 - PrintVersion(): display version and exit
 
 ## Collaborators
-- Project: to initialize project context
+- Project: to initialize project context and to resolve the repository root for CheckVersion
 - Query: for query subcommands
 - Update: for update subcommands
 - Validate: for validate command

@@ -6,6 +6,12 @@ The tool looks for design files in these locations (in order):
 1. `./design/` (current directory)
 2. Walk up to find a directory containing `design/`
 
+This resolves the **design root** — the directory owning `specs/`, `design/` and
+`src/`. It is not the same as the repository root, which owns `.claude/`, `carves/`
+and the trajectory files, and which a repository may share between several design
+roots. Repository-root detection is a separate search with its own markers; see
+[repository-root.md](repository-root.md).
+
 ## File Paths
 
 Default paths (can be overridden):
@@ -113,7 +119,7 @@ The closer string is stripped from the end of parsed traceability refs. This is 
 The tool reports its version:
 - In the help output header (e.g., `minispec v2.1.0`)
 - Via `--version` flag (displays version and exits)
-- Via `minispec check-version`: finds the skill's `README.md` in `.claude/skills/mini-spec/` (project-level first, then user-level `~/`), extracts the `Version:` line, and compares it against the tool's version. Exits 0 on match, 1 on mismatch or if not found.
+- Via `minispec check-version`: finds the skill's `README.md` in `.claude/skills/mini-spec/` under the **repository root** first, then under the user's home directory; extracts the `Version:` line, and compares it against the tool's version. Exits 0 on match, 1 on mismatch or if not found. `.claude/` is repository-scoped, so the lookup is anchored at the repository root rather than the current directory — see [repository-root.md](repository-root.md).
 
 ## Command-Line Flags
 

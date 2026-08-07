@@ -104,7 +104,7 @@ Commands:
   phase <phase-name>    Run phase-specific validation
 
 Query subcommands:
-  project               Show resolved project paths (root, design, src, specs)
+  project               Show resolved paths (repo root, design root, design, src, specs)
   requirements          List all requirements
   coverage              Show requirement coverage by design files
   uncovered             List requirements with no design coverage
@@ -144,20 +144,28 @@ Flags:
 }
 
 func (c *CLI) runCheckVersion() int {
-	skillReadme := "mini-spec/README.md"
-	candidates := []string{}
+	// Directories that may own a `.claude/`, in precedence order. The layout beneath
+	// each one is identical, so it is spelled out once at the point of use below.
+	var bases []string
 
-	// Project-level
-	if cwd, err := os.Getwd(); err == nil {
-		candidates = append(candidates, filepath.Join(cwd, ".claude", "skills", skillReadme))
+	// CRC: crc-CLI.md | R117
+	// `.claude/` is repository-scoped, so the lookup anchors at the repository root
+	// rather than the current directory. Anchoring at cwd meant that running from
+	// anywhere below the top found no local .claude/ and fell silently through to the
+	// user-level skill — while still printing a verdict. Measured on a project that
+	// vendors its own copy of the skill to pin a version: from a subdirectory the
+	// check reported "ok" against the user-level skill and ignored the pin entirely.
+	if root, err := project.RepoRoot(); err == nil {
+		bases = append(bases, root)
 	}
 
 	// User-level
 	if home, err := os.UserHomeDir(); err == nil {
-		candidates = append(candidates, filepath.Join(home, ".claude", "skills", skillReadme))
+		bases = append(bases, home)
 	}
 
-	for _, path := range candidates {
+	for _, base := range bases {
+		path := filepath.Join(base, ".claude", "skills", "mini-spec", "README.md")
 		ver, err := readSkillVersion(path)
 		if err != nil {
 			continue
@@ -187,6 +195,12 @@ func readSkillVersion(path string) (string, error) {
 		if ver, ok := strings.CutPrefix(line, "Version:"); ok {
 			return strings.TrimSpace(ver), nil
 		}
+	}
+	// Distinguish "read failed" from "read fine, no Version line". Without this a
+	// mid-scan I/O error reports absence, and the caller moves on to the next
+	// candidate as though this one had simply been silent. R117
+	if err := scanner.Err(); err != nil {
+		return "", err
 	}
 	return "", fmt.Errorf("no Version line found")
 }
@@ -234,20 +248,36 @@ func (c *CLI) runQuery(args []string) int {
 	subcmd := args[0]
 
 	switch subcmd {
+	// CRC: crc-CLI.md | R89, R115, R116
 	case "project":
+		repoRoot, repoErr := project.RepoRoot()
 		info := map[string]string{
 			"root":   p.RootPath,
 			"design": p.DesignDir,
 			"src":    p.SrcDir,
 			"specs":  p.SpecsDir(),
 		}
+		if repoErr == nil {
+			info["repo_root"] = repoRoot
+		}
 		if c.JSON {
 			c.output(info)
 		} else {
-			fmt.Printf("root:   %s\n", info["root"])
-			fmt.Printf("design: %s\n", info["design"])
-			fmt.Printf("src:    %s\n", info["src"])
-			fmt.Printf("specs:  %s\n", info["specs"])
+			// The same-directory case is stated rather than printed twice unlabeled:
+			// the two roots coincide in most projects, which is exactly why the
+			// distinction stayed invisible for so long. R116
+			switch {
+			case repoErr != nil:
+				fmt.Printf("repo root:   (not found: %v)\n", repoErr)
+			case repoRoot == p.RootPath:
+				fmt.Printf("repo root:   %s (same as design root)\n", repoRoot)
+			default:
+				fmt.Printf("repo root:   %s\n", repoRoot)
+			}
+			fmt.Printf("design root: %s\n", p.RootPath)
+			fmt.Printf("design:      %s\n", p.DesignDir)
+			fmt.Printf("src:         %s\n", p.SrcDir)
+			fmt.Printf("specs:       %s\n", p.SpecsDir())
 		}
 
 	case "requirements":

@@ -8,7 +8,7 @@
 
 | Command | Owning spec | Summary |
 |---|---|---|
-| `minispec check-version` | [config.md](config.md) | Verify tool binary version matches the skill's `README.md`. Exits 0 on match. |
+| `minispec check-version` | [config.md](config.md), [repository-root.md](repository-root.md) | Verify tool binary version matches the skill's `README.md`, looked up under the repository root first, then `~/`. Exits 0 on match. |
 | `minispec query <sub>` | [queries.md](queries.md) | Read design files and print results. No modifications. |
 | `minispec update <sub>` | [updates.md](updates.md) | Atomic modifications to structured parts of design files. |
 | `minispec validate` | [validate.md](validate.md) | Run all structural validations and report issues. |
@@ -18,7 +18,7 @@
 
 | Subcommand | Owning spec | Summary |
 |---|---|---|
-| `query project` | [queries.md](queries.md) | Show resolved project paths (root, design, src, specs). |
+| `query project` | [queries.md](queries.md), [repository-root.md](repository-root.md) | Show resolved paths: repository root, design root, design, src, specs. States when the two roots are the same directory. |
 | `query requirements` | [queries.md](queries.md) | List all requirements with text and source spec. |
 | `query coverage` | [queries.md](queries.md) | For each requirement, list referencing design files. |
 | `query uncovered` | [queries.md](queries.md) | List requirements with no design file references. |
