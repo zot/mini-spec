@@ -56,7 +56,11 @@ identifies within the document, `#N` identifies in the queue and appears in the
 marker. Ark's live carves already read this way — `**Item 8 — a test harness…**
 **OPEN (#121.)**`.
 
-- [ ] **Item 1 — project parameterization.** **OPEN (#1.)**
+- **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
+  checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
+  - [x] ~~repository-root detection.~~ **LANDED (`8197c6c`, 2026-08-07.)**
+  - [ ] `.minispec/` and the config move. **OPEN (#3.)**
+  - [ ] `init`, `track`, and `--repair`. **OPEN (#4.)**
 - [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
 - [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
@@ -594,10 +598,27 @@ history.
 
 ## The split
 
-**Item 1** — the parameterization every other part reads: file siting, case
-convention, project prefix, carve directory, and part-key format. Config file
-versus convention-with-overrides is open question 1. Land it first; get it wrong
-and the tool imposes one project's conventions on every other.
+**Item 1** — the bootstrap every other part stands on. *Renamed 2026-08-07: it was
+"project parameterization", after the question it was opened to answer rather than
+after the work.* That question is answered and the answer was **no parameters** —
+siting mandated, prefix dropped, carve directory fixed, privacy universal, part keys a
+per-document property. The trajectory config surface came out empty. What remains
+under the number is everything the decisions built instead, and it splits three ways:
+
+- ~~**repository-root detection (#1)**~~ — **LANDED (`8197c6c`, 2026-08-07.)** The
+  upward marker search, the two roots the word "project" was hiding, and the `$HOME`
+  exclusion. Decisions migrated to
+  [tool/specs/repository-root.md](../tool/specs/repository-root.md) as R107–R117,
+  with `crc-RepoRoot.md`, `seq-reporoot.md` and `test-RepoRoot.md`; the sections
+  below keep the reasoning and the measurements, not the specification.
+- **`.minispec/` and the config move (#3)** — the directory, `config.yaml`, the
+  inheritance model, the flat top-level-`.minispec.yaml` error, and the lock target.
+  Needs #1, since all of it is sited at a root the tool must first be able to find.
+- **`init`, `track`, and `--repair` (#4)** — the creation verbs, the startup
+  consistency check, and the refusal paths. Needs #3, since it writes the config.
+
+*Ordering is a real dependency chain, not a preference*, which is why this splits into
+three scheduled items rather than one. Each lands something usable on its own.
 
 **Item 9** — `format.md` in the skill directory: the normative reference for every
 trajectory file shape — the three files, the item entry, the done entry, the carve
@@ -780,10 +801,15 @@ carries a bare key. One shape to build, not two.
 Ark also uses all three part-key notations at once, in live carves, which settles
 open question 2 as genuinely open rather than a matter of picking a favourite.
 
-## Item 1 — parameterization
+## Item 1 — the bootstrap
 
 Settled — mostly on 2026-08-04, with the last open points closed on 2026-08-07. No
-`@undecided:` remains anywhere in this carve.
+`@undecided:` remains anywhere in this carve. Split into three scheduled sub-items the
+same day; the split and its dependency chain are in the section above.
+
+*The section title said "parameterization" until 2026-08-07*, naming the question
+rather than the work. The answer turned out to be that there are no parameters, so the
+heading had come to advertise an empty config surface.
 
 ### The measurement that decides the method
 
@@ -889,6 +915,13 @@ decomposed into items that may each need a different skill." Work spanning sever
 skills cannot be scoped to any one design root.
 
 ### Finding the repository root
+
+**MIGRATED 2026-08-07 (`8197c6c`).** Everything decided in this section is now
+specified in [tool/specs/repository-root.md](../tool/specs/repository-root.md) and
+numbered R107–R117. **That spec is the authority; what follows is the reasoning that
+produced it**, kept because the measurements are the argument and a spec states
+behavior rather than why it was chosen. Where the two ever disagree, the spec wins
+and this section is stale.
 
 **DECIDED (Bill, 2026-08-04): search upward, tracking markers as you go, and never
 consider `$HOME` or above.** No explicit key.
@@ -1121,10 +1154,36 @@ directory and then the home directory, and never walks up.** Observed directly:
 
 So in the repository where the skill is authored, running the check from the
 directory where the Go work happens validates the binary against the **installed**
-skill rather than the source being edited. Both files are byte-identical today, so
-nothing is currently wrong; the failure appears the moment the repo's README is
-bumped without reinstalling, and it is silent, because a check against the wrong
-file still prints a verdict.
+skill rather than the source being edited.
+
+**Amended 2026-08-07: this paragraph understated the finding twice, and the fix
+measured both.** It said the two files are byte-identical "so nothing is currently
+wrong," and predicted the failure would appear "the moment the repo's README is
+bumped without reinstalling."
+
+*Wrong about this repository, in the harmless direction.* `~/.claude/skills/mini-spec`
+is a **symlink** to this repo's copy — same inode. They cannot diverge, so there is
+nothing to reinstall and the predicted failure can never fire here.
+
+*Wrong about the world, in the direction that matters.* Some projects keep their own
+copy of the skill in the repository so the artifacts and the skill travel together
+and the version is **pinned** — `~/work/microfts2` is one. There the old lookup fires
+today, from any subdirectory, and it is the pin it defeats. Measured 2026-08-07 with
+microfts2 vendored at 2.10.0 and the user-level skill at 2.11.0: run from
+`microfts2/cmd/`, the released binary printed
+
+```
+ok: tool and skill both at 2.11.0
+```
+
+— green, against the wrong file, ignoring the pin entirely. The vendored copy exists
+precisely to state a version, and a cwd-anchored lookup reads past it. That is a
+confident wrong answer from the tool's own check, which is the failure class this
+carve was opened over.
+
+**LANDED (`8197c6c`, 2026-08-07)** as part of sub-item #1. The behavior now lives in
+[tool/specs/repository-root.md](../tool/specs/repository-root.md) with R107–R117 and
+`crc-RepoRoot.md`; this section keeps only the diagnosis and the measurement.
 
 *This is not a trajectory bug and does not belong to any item here.* It is recorded
 because it is the same underlying fact from a second direction: **the tool has
