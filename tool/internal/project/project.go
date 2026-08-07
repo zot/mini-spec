@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Config holds project configuration
@@ -21,10 +19,14 @@ type Config struct {
 
 // Project represents a mini-spec project
 type Project struct {
+	// RootPath is the design root — the directory containing design/. Named before
+	// the two roots were distinguished; the repository root is RepoRoot's business.
 	RootPath  string
 	DesignDir string
 	SrcDir    string
 	Config    Config
+	// Origins records which configuration layer supplied each effective setting. R129
+	Origins Origins
 }
 
 // DefaultCommentPatterns returns the default comment patterns per file extension
@@ -94,34 +96,13 @@ func DetectFrom(startPath string) (*Project, error) {
 	return nil, fmt.Errorf("no design/ directory found (searched from %s)", startPath)
 }
 
+// CRC: crc-Project.md | Seq: seq-config.md#1 | R121
+// loadProject resolves the effective configuration for a design root. The three-layer
+// resolution lives in config.go; this only sites the result.
 func loadProject(rootPath string) (*Project, error) {
-	config := DefaultConfig()
-
-	// Try to load .minispec.yaml
-	configPath := filepath.Join(rootPath, ".minispec.yaml")
-	if data, err := os.ReadFile(configPath); err == nil {
-		var userConfig Config
-		if err := yaml.Unmarshal(data, &userConfig); err != nil {
-			return nil, fmt.Errorf("invalid .minispec.yaml: %w", err)
-		}
-		// Merge user config into defaults
-		if userConfig.DesignDir != "" {
-			config.DesignDir = userConfig.DesignDir
-		}
-		if userConfig.SrcDir != "" {
-			config.SrcDir = userConfig.SrcDir
-		}
-		if len(userConfig.CodeExtensions) > 0 {
-			config.CodeExtensions = userConfig.CodeExtensions
-		}
-		// Merge comment patterns: user patterns override defaults
-		for ext, pattern := range userConfig.CommentPatterns {
-			config.CommentPatterns[ext] = pattern
-		}
-		// Merge comment closers: user closers override defaults
-		for ext, closer := range userConfig.CommentClosers {
-			config.CommentClosers[ext] = closer
-		}
+	config, origins, err := resolveConfig(rootPath)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Project{
@@ -129,6 +110,7 @@ func loadProject(rootPath string) (*Project, error) {
 		DesignDir: filepath.Join(rootPath, config.DesignDir),
 		SrcDir:    filepath.Join(rootPath, config.SrcDir),
 		Config:    config,
+		Origins:   origins,
 	}, nil
 }
 

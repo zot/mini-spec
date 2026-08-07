@@ -4,20 +4,44 @@ All queries read from design files and output results. No modifications.
 
 ## minispec query project
 
-Show the project paths resolved by the tool: root, design directory, src
-directory, and specs directory. Useful for verifying which project the tool
-detected (especially when running from a subdirectory or when reported missing
-paths look correct).
+Show the paths resolved by the tool: repository root, design root, design
+directory, src directory, and specs directory. Useful for verifying which project
+the tool detected (especially when running from a subdirectory or when reported
+missing paths look correct). When the repository root and the design root are the
+same directory — the common case — it says so rather than printing the path twice
+unlabeled. See [repository-root.md](repository-root.md).
 
 Output:
 ```
-root:   /home/me/work/ark
-design: /home/me/work/ark/design
-src:    /home/me/work/ark/src
-specs:  /home/me/work/ark/specs
+repo root:   /home/me/work/ark (same as design root)
+design root: /home/me/work/ark
+design:      /home/me/work/ark/design
+src:         /home/me/work/ark/src
+specs:       /home/me/work/ark/specs
 ```
 
-JSON output uses keys `root`, `design`, `src`, `specs`.
+JSON output uses keys `repo_root`, `root`, `design`, `src`, `specs`. `repo_root` is
+omitted when no repository root could be resolved.
+
+## minispec query config
+
+Show every effective setting with its value and **the file that supplied it**,
+sorted by name. Settings no configuration file set report the built-in defaults.
+
+This exists because configuration resolves across three layers, so the effective
+value is not what any single file says. Without it, "why is this value what it is"
+means reading two files and knowing the precedence by heart. Map settings are listed
+per key (`comment_patterns[.go]`), matching the granularity at which they merge. See
+the Config Scopes section of [config.md](config.md).
+
+Output:
+```
+design_dir               design                        (built-in defaults)
+src_dir                  lib                           /home/me/work/ark/.minispec/config.yaml
+comment_patterns[.html]  <!--\s*|//\s*                  /home/me/work/ark/tool/.minispec.yaml
+```
+
+JSON output is an array of objects with keys `setting`, `value`, `origin`.
 
 ## minispec query requirements
 

@@ -54,7 +54,7 @@
 
 - **R32:** Design-root detection walks up to find the design/ directory
 - **R33:** Default paths: design/, src/, crc-*.md, seq-*.md
-- **R34:** Optional .minispec.yaml config file for overrides
+- **R34:** Optional `.minispec.yaml` config file in a **design root**, for overrides
 - **R35:** CLI flags: --design-dir, --src-dir, --quiet, --json
 - **R36:** JSON output mode for tooling integration
 - **R37:** (deferred) MCP server mode via `minispec serve`
@@ -189,3 +189,20 @@
 - **R115:** `query project` reports the repository root alongside the design root
 - **R116:** `query project` states when the repository root and the design root are the same directory, rather than printing the same path twice unlabeled
 - **R117:** `check-version` finds the skill's `README.md` under the repository root first, then under the user's home directory
+
+## Feature: Config Scopes
+**Source:** specs/config.md
+
+- **R118:** Repository configuration lives at `<repository root>/.minispec/config.yaml`
+- **R119:** `.minispec/` is a tool-managed directory at the repository root, holding the repository configuration and the tool's machine-local working files
+- **R120:** Where the repository root is also a design root, `.minispec/config.yaml` is that design root's configuration too — there is no second file
+- **R121:** A design root's `.minispec.yaml` states only what differs from the repository configuration; a design root whose settings match it needs no file at all
+- **R122:** A `.minispec.yaml` at the repository root is an error with no exception, because it would have to inherit from `.minispec/config.yaml` — a file inside its own directory
+- **R123:** The repository-root `.minispec.yaml` check is a single existence test that detects a symlink as readily as a regular file, so a link to the new location is rejected rather than treated as a supported alias
+- **R124:** Settings resolve in three layers, each applied over the previous: built-in defaults, then the repository configuration, then the design root's own file
+- **R125:** Scalar settings (`design_dir`, `src_dir`) replace the inherited value when present
+- **R126:** Map settings (`comment_patterns`, `comment_closers`) merge per key, so a design root adding one entry keeps every other entry the repository set
+- **R127:** List settings (`code_extensions`) merge as a union **between configuration layers**: repository entries are kept, design-root additions appended, duplicates dropped, and repository order preserved so the result is deterministic
+- **R130:** The first configuration layer to set a list **replaces** the built-in defaults rather than unioning onto them, so a project can still narrow a shipped list. The remedy in R128 works by moving a setting down a level, and nothing sits below the defaults to move it to; defaults are also not a layer anyone authored, so "state only what you add" cannot apply to them
+- **R128:** (inferred) A design root can add to an inherited list but cannot remove from one; removal is achieved by dropping the setting from the repository configuration and stating it in each design root that needs it, so no removal syntax exists
+- **R129:** The tool can report which file each effective setting came from, so a value's origin does not require reading two files and knowing the precedence

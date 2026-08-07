@@ -272,6 +272,20 @@ which is design-root configuration; it stays exactly where it is. A repo-level f
 appears only where something repo-level needs saying, and today nothing does — the
 trajectory config surface is empty, so its first job is being the lock.
 
+**MIGRATED 2026-08-07.** The config structure decided here — both scopes, the
+inheritance, the flat top-level error, and the merge rules that fell out of
+implementing it — is now specified in the **Config Scopes** section of
+[tool/specs/config.md](../tool/specs/config.md) and numbered R118–R130. **That spec is
+the authority; what follows is the reasoning that produced it.** Where the two ever
+disagree, the spec wins and this section is stale.
+
+*One rule the carve never stated, discovered by building it:* lists merge as a union
+**between configuration layers**, but the first configuration layer *replaces* the
+built-in defaults. Without that exception the shipped `code_extensions` would be
+permanently un-narrowable — union can only grow a list, and the remedy for an unwanted
+entry (drop it from the layer above, state it here) has nowhere to reach, since
+nothing sits below the defaults. Found by a failing test, not by review.
+
 **DECIDED (Bill, 2026-08-04): the config structure is `/.minispec/config.yaml` plus
 per-project `.minispec.yaml` files that inherit from it, and there is never a
 `.minispec.yaml` at the top level of the repository.**
@@ -288,6 +302,13 @@ either style: a full-repo project keeps everything in `/.minispec/config.yaml`, 
 repo-project layout has no design root up there to configure. The rule stays flat, so
 the check is one existence test rather than a condition about what else sits beside
 it.
+
+**DECIDED (Bill, 2026-08-07): the real reason is that the inheritance would be
+incoherent, not that the case never arises.** `/.minispec.yaml` would have to inherit
+from `/.minispec/config.yaml` — a file inheriting from a file inside its own
+directory. The argument above is from absence, which invites a reader to go looking
+for the case it says does not exist; this one holds whatever layout you are in, and
+it is why the rule needs no exception rather than merely happening not to need one.
 
 *Consequence, and it lands on the reference project.* Ark had `design/` at its
 repository root **and** a `.minispec.yaml` beside it setting `comment_patterns`. Bill
@@ -612,8 +633,12 @@ under the number is everything the decisions built instead, and it splits three 
   with `crc-RepoRoot.md`, `seq-reporoot.md` and `test-RepoRoot.md`; the sections
   below keep the reasoning and the measurements, not the specification.
 - **`.minispec/` and the config move (#3)** — the directory, `config.yaml`, the
-  inheritance model, the flat top-level-`.minispec.yaml` error, and the lock target.
-  Needs #1, since all of it is sited at a root the tool must first be able to find.
+  inheritance model, and the flat top-level-`.minispec.yaml` error. Needs #1, since all
+  of it is sited at a root the tool must first be able to find. Decisions migrated to
+  the **Config Scopes** section of [tool/specs/config.md](../tool/specs/config.md) as
+  R118–R130. *The lock target moved out of this sub-item:* a requirement saying "one
+  lock per repository" is untestable while nothing locks, so it belongs with whatever
+  implements locking rather than banking an immediate implementation gap here.
 - **`init`, `track`, and `--repair` (#4)** — the creation verbs, the startup
   consistency check, and the refusal paths. Needs #3, since it writes the config.
 
@@ -1069,10 +1094,23 @@ exit. That hazard is closed by the tool minting IDs inside the writing invocatio
 by locking the read. Lock everything because it is cheap and uniform; do not mistake
 it for the thing that prevents collisions.
 
-**Both files at once — the two cases.** When the repository root *is* a design root
-(ark's shape), `.minispec.yaml` and `.minispec/config.yaml` legitimately sit side by
-side in one directory. When the roots differ, a top-level `.minispec.yaml` is the
-error above.
+**Both files at once — superseded 2026-08-07, kept as a record.** This paragraph read:
+"When the repository root *is* a design root (ark's shape), `.minispec.yaml` and
+`.minispec/config.yaml` legitimately sit side by side in one directory. When the roots
+differ, a top-level `.minispec.yaml` is the error above."
+
+**That contradicted the config-structure decision above and was wrong**, on exactly
+the case that matters most — the reference project's own layout. A top-level
+`.minispec.yaml` is a flat error in *every* shape, ark's included, because it would
+have to inherit from a file inside its own directory. Where the repository root is a
+design root, `/.minispec/config.yaml` is that design root's configuration too; there
+is no second file.
+
+*Found 2026-08-07 while scoping sub-item #3, before any code was written.* It is the
+rot this carve was opened about, committed inside the carve: a dated `DECIDED` and an
+unmarked paragraph disagreeing, with the unmarked one reading as current because
+nothing about it looked provisional. The only reason it surfaced is that implementing
+the section forced the two to be read together.
 
 **DECIDED (Bill, 2026-08-04): a repo-project's `.minispec.yaml` inherits from
 `/.minispec/config.yaml`.** Settings shared across projects go in the repository

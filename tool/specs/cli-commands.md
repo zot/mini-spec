@@ -19,6 +19,7 @@
 | Subcommand | Owning spec | Summary |
 |---|---|---|
 | `query project` | [queries.md](queries.md), [repository-root.md](repository-root.md) | Show resolved paths: repository root, design root, design, src, specs. States when the two roots are the same directory. |
+| `query config` | [queries.md](queries.md), [config.md](config.md) | Show every effective setting with its value and the file that supplied it. |
 | `query requirements` | [queries.md](queries.md) | List all requirements with text and source spec. |
 | `query coverage` | [queries.md](queries.md) | For each requirement, list referencing design files. |
 | `query uncovered` | [queries.md](queries.md) | List requirements with no design file references. |

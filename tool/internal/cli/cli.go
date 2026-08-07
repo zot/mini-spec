@@ -105,6 +105,7 @@ Commands:
 
 Query subcommands:
   project               Show resolved paths (repo root, design root, design, src, specs)
+  config                Show effective settings with the file each came from
   requirements          List all requirements
   coverage              Show requirement coverage by design files
   uncovered             List requirements with no design coverage
@@ -278,6 +279,21 @@ func (c *CLI) runQuery(args []string) int {
 			fmt.Printf("design:      %s\n", p.DesignDir)
 			fmt.Printf("src:         %s\n", p.SrcDir)
 			fmt.Printf("specs:       %s\n", p.SpecsDir())
+		}
+
+	// CRC: crc-CLI.md | R129
+	case "config":
+		settings := p.EffectiveSettings()
+		if c.JSON {
+			c.output(settings)
+		} else {
+			width := 0
+			for _, s := range settings {
+				width = max(width, len(s.Name))
+			}
+			for _, s := range settings {
+				fmt.Printf("%-*s  %-26s  %s\n", width, s.Name, s.Value, s.Origin)
+			}
 		}
 
 	case "requirements":

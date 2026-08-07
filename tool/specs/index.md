@@ -10,7 +10,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 
 | spec | covers |
 |---|---|
-| [config.md](config.md) | design-root detection, `.minispec.yaml`, comment patterns and closers, global flags, version reporting |
+| [config.md](config.md) | design-root detection, the two config scopes and their inheritance, comment patterns and closers, global flags, version reporting |
 | [repository-root.md](repository-root.md) | repository-root detection, the two-root distinction, marker ranking, the home-directory exclusion |
 
 ### Commands — what the tool does once oriented

@@ -33,5 +33,6 @@
 
 | File | Purpose | Owning spec(s) |
 |---|---|---|
-| `.minispec.yaml` | Optional **design-root** config: `design_dir`, `src_dir`, `comment_patterns`, `comment_closers`. | [config.md](config.md) |
+| `.minispec/config.yaml` | **Repository** config, at the repository root. Same schema as below; settings shared by every design root beneath it. Where the repository root is also a design root, this is that design root's config too. | [config.md](config.md) (Config Scopes) |
+| `.minispec.yaml` | Optional **design-root** config: `design_dir`, `src_dir`, `code_extensions`, `comment_patterns`, `comment_closers`. States only what differs from the repository config. **At the repository root this file is an error, with no exception.** | [config.md](config.md) (Config Scopes) |
 | `.claude/skills/mini-spec/README.md` | Skill version source. `check-version` reads the `Version:` line, looking under the **repository root** first, then `~/`. | [config.md](config.md) (Version section), [repository-root.md](repository-root.md) |
