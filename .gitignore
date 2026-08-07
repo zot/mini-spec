@@ -8,6 +8,11 @@
 notes.md
 old/
 
+# Trajectory files are private in every project (carves/trajectory-tool.md)
+/PENDING.md
+/CURRENT.md
+/DONE.md
+
 # Build artifacts
 node_modules/
 dist/

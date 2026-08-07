@@ -1,0 +1,1109 @@
+# Carve: offload the trajectory layer to the tool
+
+The skill describes the trajectory layer — the pending/current/done queue, carves,
+items — as prose conventions and asks people to maintain them by hand. Most of
+that prose is *mechanics*: file shapes, the lifecycle, the next-free-ID rule, the
+status block format. Mechanics can be delegated the way the phase sections already
+delegate. Judgment cannot, and the split between the two is what this carve is
+about.
+
+**Provenance.** Promoted 2026-08-04 from a private working note,
+`TRAJECTORY-TOOL-20260804.md`, which holds the raw diagnosis and the drafts that
+were settled against. Everything from it that a stranger needs is restated here;
+the note is not linked because `.scratch/` is gitignored in this repo, which is
+the case the [reference rule](reference-discipline.md) exists to prevent.
+
+**Annotations.** `@undecided:` marks a proposal we are not yet sure is a decision —
+the state between unmarked thinking and `DECIDED`, and named for the state rather
+than for an action so that nothing reads it as an instruction to go and decide. It
+converts to `DECIDED` when settled, or it is deleted. It shares a stem with
+`DECIDED`, so one grep for `decid` spans both states.
+
+**DECIDED (Bill, 2026-08-04): bare is a use, backquoted is a mention.** Written
+bare, it is a real tag and ark indexes it, so what is unsettled is findable from the
+corpus rather than only from this file. Written in backquotes — as everywhere in
+this paragraph — it is a mention: ark skips it, and so can a reader's grep, by
+dropping any hit whose next character is a backtick. One character does the work a
+markdown parser would otherwise have to do. It does not retire that parser: a *link*
+inside a code span carries no such marker, which is still Item 1 of
+[reference-discipline.md](reference-discipline.md).
+
+## Status
+
+Ordered by intent, so the numbers run out of sequence. Position is the priority; the
+number is only the identifier.
+
+**DECIDED (Bill, 2026-08-04): parts are numbered, sub-items are not.** A part's
+`Item N` is the join between its one-line status here and its elaboration below —
+without it the only way to connect the two is by matching title text, which breaks
+the moment a title is edited, the same fragility as anchoring on line numbers. A
+sub-item has no separate elaboration to join to, so it needs no key; it is a plain
+bullet under its parent.
+
+**A sub-item is numbered only when it enters a pending item by itself** (Bill,
+2026-08-04). If one pending item takes the whole part, the part carries the `#N` and
+its sub-items stay bare — they are breakdown, not schedule. So **the number appears
+exactly at the scheduling boundary**, and never at two levels for the same work.
+
+That is checkable: for any part, either the part carries a `#N` or some of its
+sub-items do, not both. The one shape that would violate it — a part scheduled
+whole, then a leftover sub-item scheduled separately — is the shape the one-item-per-
+part rule already says to fix by splitting, so the invariant and the rule hold each
+other up.
+
+`Item N` and `#N` are two keys doing two jobs, not one thing said twice: `Item N`
+identifies within the document, `#N` identifies in the queue and appears in the
+marker. Ark's live carves already read this way — `**Item 8 — a test harness…**
+**OPEN (#121.)**`.
+
+- [ ] **Item 1 — project parameterization.** **OPEN (#1.)**
+- [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
+- [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
+- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
+- **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
+- [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
+- [ ] **Item 6 — the bidirectional item↔part link.** **BLOCKED (open questions 2 and 3.)**
+- [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
+- [ ] **Item 8 — shrink the skill.** **OPEN (not queued.)**
+
+## Why
+
+The skill already names this defect about carves, and the prediction was about
+itself:
+
+> A migration gets a forcing function for free (the retire reminder, the prose
+> grep, the completion ritual). A carve gets none, so its decisions rot silently
+> while still reading as current.
+
+### The drift arrived in one afternoon
+
+Four failures in ark on 2026-08-04, all mechanically checkable, none needing
+judgment to *detect*:
+
+1. **Stale next-free-ID counters.** The current file said next item `#120`, next
+   gap `O209`; the real maxima were `#121` and `O211`. The next person to file by
+   that line would have reused `#120`. The same file documents the next-free-ID
+   rule three hundred lines below the stale copy, and warns that a stale copy
+   caused an ID reuse six days earlier. It went stale again anyway.
+2. **A checkbox that outlived its work** — `- [ ] the tiers`, after the tiers had
+   landed and the carve said so.
+3. **A gap closed in prose and open in its checkbox**, for a day. The checkbox was
+   right: the prose closed it when the mechanism landed, while the sentence it was
+   written about was still true.
+4. **Six carves, three notations, three with no status at all.** Nothing could
+   answer "what is open across all carves" until they were normalised by hand.
+
+### The sharper argument: ad-hoc checks are silently wrong
+
+Diagnosing the above meant writing throwaway shell. Four instruments were written
+that afternoon and **four returned confident wrong answers**:
+
+| instrument | failure |
+|---|---|
+| `grep 'R338[0-9]'` over a coverage report | the report prints **ranges** (`R3386-3388`), so the tail of every range was invisible; reported a requirement covered when it was not |
+| `grep -oE '~~[^~]{0,55}~~'` | the bound was 55, the target string 57 chars; concluded a carve had no status block when it had a table |
+| `awk "/func \(db \*DB\) Fetch/,/^}/"` | `\*` from a shell variable became a regex quantifier, so the pattern wanted `db` + spaces + `DB`; reported that the doors did **not** call `resolvePath`, which would have falsely accused a carve of lying |
+| `grep -oE "next free item ID is\s*#[0-9]+"` | the text wraps mid-phrase inside bold markers; reported the counter absent |
+
+Every one failed the same way: **reported absence rather than error.** That is the
+argument for tested tool code over per-session improvisation — not convenience,
+but that a wrong check is indistinguishable from a passing one.
+
+## Decisions
+
+**DECIDED (Bill, 2026-08-04): this is a carve, not a migration and not a single
+spec.** A migration is a concise A→B document that expires by design, and B is not
+determined here — three of the open questions below are data-model questions whose
+answers change what the commands are. The backup slot settles it independently: it
+is a tool-wide safety mechanism that would retrofit onto the eight existing
+`update` verbs, so it is schedulable and valuable whether or not a single
+trajectory check is ever written. A migration containing a part that is not about
+the migration is the wrong container.
+
+### Reference discipline — moved
+
+The rule that governs which documents may cite which, and its four decisions, now
+live in [reference-discipline.md](reference-discipline.md). Stated once, there, so
+there is no second copy to drift.
+
+It still binds *these* documents: this carve is public, so it may cite only
+VCS-managed files, which is why the provenance note above names its working note in
+prose instead of linking it.
+
+### Crank handle and revert
+
+**Every change the tool makes is cranked out** — printed in full, so the agent is
+never in the dark about what happened to files it did not write. An agent that
+mutates state through a tool and then cannot see the result will reason from a
+stale picture and, eventually, assert it.
+
+**DECIDED (Bill, 2026-08-04): the slot covers the trajectory files only, and the
+surface is `minispec pending [add-item | start | finish | revert | replay]
+[ITEM-NUM [FLAG...]]`.** The pending item is the smallest unit of work, so it is the
+right thing to be able to undo. Tracking the rest of the working tree is a different
+and much larger problem, and *the tool must never reach for blanket git resets or
+staging* — only safe, verifiable operations.
+
+*Consequence, stated so nobody is surprised later:* the eight existing `update` verbs
+stay unprotected. They still write via bare `os.WriteFile` with no backup. Scoping
+the slot to trajectory files first is a fine increment; it just is not the tool-wide
+mechanism an earlier draft of this carve assumed.
+
+**DECIDED (Bill, 2026-08-04): one trajectory stash at a time, named `mini-spec
+trajectory`.** Starting a new pending item drops the previous one and takes a fresh
+snapshot; revert and replay do the same. The stash is *reference* — it tells you what
+changed in the working tree since the item began. Reporting a difference destroys
+nothing, which is what makes it safe to build. **Undoing that difference is a
+different act with a different risk**, since the user may have done unrelated work
+along the way, and nothing here should slide from the first into the second.
+
+**The command matters, and the obvious one is wrong.** `git stash push` moves the
+changes out of the working tree — destructive, and exactly what must not happen. The
+safe idiom is `git stash create` to build the commit object, then `git stash store -m
+"mini-spec trajectory"` to record it. Verified 2026-08-04 in a scratch repository:
+the working tree is untouched and the entry appears in `git stash list` under that
+name. Find it by message rather than index, since a user's own stashes shift the
+indices.
+
+**Two limits, both measured, both changing what the snapshot can claim.**
+
+*It cannot hold the trajectory files.* They are gitignored, and `git stash create`
+captures tracked modifications only — ignored paths are absent from the commit. So
+the stash and the backup slot are not alternatives: copy-then-stamp keeps the
+trajectory files, the stash covers the tracked working tree, and neither can do the
+other's job.
+
+**DECIDED (Bill, 2026-08-04): the trajectory backups live in a directory, not a
+stash.** A plain directory holds ignored files, which is exactly what git refuses to
+do, and it is where the stamp file belongs too — keeping the copies and the stamp
+together is what makes "one stamp, atomic across all the files" obvious rather than
+implied.
+
+**DECIDED (Bill, 2026-08-04): the directory is `.minispec/`, and the repo-level
+config moves into it as `.minispec/config.yaml`.** Not `.carve/saved`, which sits
+one letter from `.carves/` — two directories differing by a single character at the
+same level is a permanent misread — and which would put tool-managed scratch inside a
+directory of hand-written human documents.
+
+**The rename is the load-bearing half.** Until now `.minispec.yaml` meant two things
+at once: the design-root config, and the repo-root config that the lock and the root
+search wanted. That ambiguity produced the same hazard twice in one evening — touch
+it at a design root and you teach the search that a design root is a repository.
+Moving the repo-level file into `.minispec/` makes the two scopes *structurally*
+distinct rather than same-name-different-place, so the hazard cannot be written.
+
+*It also upgrades the root search.* `.minispec/` is tool-created at the repository
+root by construction, so it is an unambiguous strong marker and belongs beside
+`.git`, `carves/` and the trajectory files. `.minispec.yaml` stays where it was in
+the chain — the weak final fallback, meaningful only because a design root is
+sometimes also the repository root.
+
+*No migration falls out of this.* Ark's `.minispec.yaml` sets `comment_patterns`,
+which is design-root configuration; it stays exactly where it is. A repo-level file
+appears only where something repo-level needs saying, and today nothing does — the
+trajectory config surface is empty, so its first job is being the lock.
+
+**DECIDED (Bill, 2026-08-04): the config structure is `/.minispec/config.yaml` plus
+per-project `.minispec.yaml` files that inherit from it, and there is never a
+`.minispec.yaml` at the top level of the repository.**
+
+- `/.minispec/config.yaml` — the repository's configuration. Where the repository
+  root is itself a design root, this is that design root's configuration too.
+- `<repo-project>/.minispec.yaml` — one per design root beneath the top, stating only
+  what differs from the repository config. A project whose settings match it needs no
+  file at all.
+- `/.minispec.yaml` — **an error, with no exception.** The tool flags it.
+
+No exception is needed because the top level never has its own `.minispec.yaml` in
+either style: a full-repo project keeps everything in `/.minispec/config.yaml`, and a
+repo-project layout has no design root up there to configure. The rule stays flat, so
+the check is one existence test rather than a condition about what else sits beside
+it.
+
+*Consequence, and it lands on the reference project.* Ark had `design/` at its
+repository root **and** a `.minispec.yaml` beside it setting `comment_patterns`. Bill
+moved that file to `.minispec/config.yaml` on 2026-08-04 and left a symlink behind at
+the old path. Verified the same day: the released binary follows the link and still
+resolves ark's custom `.html` alternation, so the move costs nothing while the tool
+still reads the old location.
+
+**DECIDED (Bill, 2026-08-04): the symlink is transition scaffolding, removed once
+this lands.** It is not a supported shape, so the rule stays flat and the check stays
+a single existence test — no special case for links, and no indefinite support for
+binaries reading the old location. Until then ark works normally through it.
+
+*And the sequencing needs no coordination* (Bill, 2026-08-04). The upgraded tool
+gripes on its first run, and that gripe *is* the reminder to remove the link — the
+same shape as every other refusal here: the tool detects and instructs rather than
+anything being arranged in advance. A draft of this section treated "the reference
+project fails the check" as a problem to schedule around; it is the notification
+working.
+
+**DECIDED (Bill, 2026-08-04): it cranks out the instruction and exits — no attempt to
+continue, and no backward compatibility for the old location.** The message names the
+file, says the configuration now lives in `.minispec/config.yaml`, and stops. A draft
+here proposed reporting without blocking so work could proceed; that is precisely the
+backward compatibility not wanted, and a warning nobody has to act on is one that
+survives for years. A hard stop costs one `rm` once.
+
+### Git: preferences, not manipulation
+
+**DECIDED (Bill, 2026-08-04): mini-spec does not manipulate the git repository**, its
+one trajectory stash aside. No staging, no commits, no resets, no branch state.
+*Editing `.gitignore` is not manipulation in that sense* — it is editing a file, not
+changing git's state — which is what keeps this consistent with the `--create` path
+that already writes a trajectory filename there.
+
+**DECIDED (Bill, 2026-08-04): two preferences, griped about while unmet.**
+
+- `.minispec/config.yaml` **should be tracked** by git.
+- `.minispec/backup` **should be ignored** by git.
+
+Both are computed properties — `git ls-files` and `check-ignore` answer them — so
+there is nothing to assert and nothing to go stale. That is the test applied to
+everything else here, and these pass it.
+
+**DECIDED (Bill, 2026-08-04): the stamp lives in `.minispec/backup`.** One ignore
+line then covers everything machine-local, and `config.yaml` is the only thing left
+in `.minispec/` — so "the tracked one is the only one you can see" holds by structure
+rather than by remembering two paths.
+
+**DECIDED (Bill, 2026-08-04): `minispec init` creates a basic `.minispec/config.yaml`
+and adds `.minispec/backup` to the top-level `.gitignore`.**
+
+### `track`, and the bootstrap rule
+
+**DECIDED (Bill, 2026-08-04): `minispec init --track-STYLE`, and the flag is
+mandatory.** It records a `track` setting in `.minispec/config.yaml`:
+
+| flag | setting | meaning |
+|---|---|---|
+| `--track-none` | `none` | no version control |
+| `--track-private-trajectory` | `private-trajectory` | git; `init` puts the trajectory files in `.gitignore` |
+| `--track-all` | `all` | git; `init` does not ignore them |
+
+Mandatory because the tool cannot infer it. Whether a repository *is* git-managed is
+checkable after the fact; whether you want your queue to ship is not inferable at
+all, and a default would make that choice for someone without their noticing.
+
+**DECIDED (Bill, 2026-08-04): consistency is checked at startup, and a mismatch
+gripes and exits.** `track: none` verifies the repository is *not* git-managed and
+says to change the setting to `private-trajectory` or `all` if it is; any other value
+verifies that it *is*, and says to change it to `none` if not. This catches the real
+drift — a project that gains git after `init`.
+
+**DECIDED (Bill, 2026-08-04): `init` is the sole creator of `.minispec/config.yaml`,
+and with no config the only legal commands are `init` and those needing no
+minispec-specific files at all** — `minispec version` and its kin. This supersedes an
+earlier decision that the tool would touch the config into existence so it had
+something to lock: that would have produced a config with no `track`, which is
+exactly the undefined state the mandatory flag abolishes.
+
+**Two things this simplifies, and one it complicates.**
+
+*The `--create` privacy question disappears.* With `track` already recorded,
+`--create` is uniform — it creates, honouring the setting — so `--no-ignore` goes
+away and the refusal table below loses its case 3. Exactly one case then needs a
+human, and it is the root confirmation.
+
+*Root detection can no longer fail after `init`.* A config implies `.minispec/`
+exists, and `.minispec/` is a strong root marker, so the upward search always
+succeeds. **The ask-the-user fallback is therefore an init-time mechanism**, not
+something an arbitrary command might hit.
+
+*But the "run `init`" gripe can point somebody at the wrong action.* Run a command
+from **above** your project and no config is found, so the tool says to initialise —
+and doing that plants a repository root in the wrong directory.
+
+**DECIDED (Bill, 2026-08-04): the refusal is a crank handle carrying the gist plus an
+instruction to the agent to check whether the directory looks like a code project.**
+The gist:
+
+```
+It doesn't look like this is a minispec project.
+If DIR is a code project, would you like me to make it work with minispec?
+```
+
+**Why the agent checks rather than the user being asked outright: never ask a human a
+question the agent can answer.** The user's irreducible contribution is *intent* —
+"yes, I want this to be a mini-spec project." Whether there is code in the directory
+is a *fact*, and the agent can go and look. Asking a non-technical user "if DIR is a
+code project…" hands them the one part they may be least equipped for while the agent
+stands right there able to settle it.
+
+That gives three tiers, each doing only what the others cannot: **the tool detects
+the missing config, the agent inspects the directory, the human supplies the intent.**
+
+Three things this needs to get right.
+
+*The most valuable finding is the negative one.* This message exists because somebody
+ran from **above** their project, and a directory containing many project directories
+is exactly what an agent can recognise. "This looks like a folder of projects rather
+than a project — did you mean one of these?" is far more useful than a yes, and it is
+the case that would otherwise plant a repository root in the wrong place.
+
+*The crank handle must include the stop.* The moment it says "check whether this looks
+like a code project," a weaker agent can conclude *yes* and run `init` — building
+precisely the road left deliberately unbuilt. The instruction ends with **report and
+wait**. This is the one place in the design where an agent is told to go and look at
+something ahead of a user decision, so it is the one place the boundary has to be
+spelled out rather than left as an absence.
+
+*The tool gives the gist; the agent writes the sentence.* Verbatim copy cannot adapt
+to what the agent found — it would still say "if DIR is a code project" after the
+agent has established that it plainly is, or plainly is not. So the tool supplies what
+to check and what to ask, and the agent composes for the human.
+
+*That also dissolves the two-register problem* rather than managing it. An earlier
+draft here split crank-handle output into agent-facing instructions and user-facing
+copy, and worried about which the agent should relay. Under this shape **the tool is
+always agent-facing** and the human-facing sentence is always composed. One register,
+one rule, and the message fits the situation instead of being a script read aloud.
+
+This is also the case where the agent may run `init` — because the user asked it to,
+which is the standing rule.
+
+@undecided: (Daneel, 2026-08-04) `track` is a second copy of a fact the `.gitignore`
+already holds, and the earlier argument for `.gitignore`-as-declaration was that
+there would be no second copy to drift. It is fine *if verified* — under
+`private-trajectory` the trajectory files must actually be ignored, and that is the
+same gripe shape as the two preferences above. Without the check, the config becomes a
+claim rather than a computed property.
+
+**On the standing gripe.** It fires on every run until satisfied, which is right on
+tonight's evidence: ark's one-shot stderr reminder on retirement left 19% of retired
+requirements still referenced from live code. A reminder seen once decays to nothing.
+This one cannot become wallpaper either, because it is *closable* — `init` once and
+it is gone. A recurring nag you can never discharge is a different animal. In a tree
+with no git neither preference is meaningful, so it stays quiet.
+
+**DECIDED (Bill, 2026-08-04): `init` is for the user to run; `--create` is
+agent-runnable with the user's permission. Neither is enforced.** If the user asks
+the agent to run `minispec init`, it runs it — no prohibition goes in the skill.
+
+*The mechanism is absence, not enforcement, and that is the point.* In both commands
+the authority is the user; what differs is whether a path exists that could route
+around them. `--create` has a defined path *through* the user — the tool refuses, the
+agent relays the question, the user answers, the agent re-runs — so the agent is a
+courier rather than a decider. `init` has no path at all: **the tool never runs it
+implicitly and the skill never tells an agent to run it**, so the only way an agent
+reaches it is a direct request, which is the user deciding in person.
+
+A prohibition would be worse on both counts. It is text, so it can be misread,
+rationalised around, or argued out of, and it needs maintaining; an unbuilt road needs
+none of that. And it would be actively wrong — it would make the agent refuse a
+legitimate direct request, which is worse behaviour than running the command.
+
+Note the gripe is a crank handle aimed *through* the agent at the user, the same shape
+as the root-confirmation refusal. Not a new mechanism.
+
+*It cannot see new untracked files.* A source file created during an item is absent
+from the snapshot, so a diff against it **under-reports** — the failure mode this
+whole carve is most alert to, since a check that reports absence rather than error is
+indistinguishable from a passing one. The output has to say what it did not look at,
+rather than leaving the reader to discover it.
+
+**One level of undo, and one of redo.** Explicitly *not* an undo stack: the 80s
+`vi` `u` with goldfish memory. The most recent change is immediately revertable and
+replayable, and nothing older is recoverable. That is enough for the real emergency
+— a command that did the wrong thing thirty seconds ago — and it avoids owning a
+history the VCS already owns better.
+
+**DECIDED (Bill, 2026-08-04): revert by copy-then-stamp.** Copy the files to a
+scratch area, make all the changes, then touch a stamp file. On revert, verify none
+of those files has changed since the stamp; if any has, **refuse** and crank out
+which files changed and where their backups are. The operator is better placed than
+the tool to reconcile a hand edit with a pending revert, and a revert that silently
+clobbers a later edit is worse than no revert.
+
+The stamp is what makes this cheap: no content hashing, only an mtime comparison,
+and comparing against a single stamp rather than per-file snapshots is what keeps
+the check atomic across all four files at once. This is `make`'s dependency model —
+marker file, mtime, no history — and it is right for the same reason it was then:
+the cheap check is *sufficient*, and anything cleverer buys accuracy nobody needs.
+
+**DECIDED (Bill, 2026-08-04): every operation is the same swap, and the stamp file
+carries the state.** Each of change, revert and replay does: tmp-copy the live
+files, perform the operation, write the stamp, then `mv` the tmp copies over the old
+backups. The stamp records `changed`, `reverted` or `replayed`, and revert and
+replay run the identical drift check.
+
+*Why one backup set suffices:* the backup always holds **the other state**, so
+revert and replay are one mechanism with two names. A second copy for replay is
+redundant, and the swap is what makes it so.
+
+*Why the tmp-then-`mv` ordering is load-bearing, so nobody simplifies it away:*
+`mv` within a filesystem is atomic, so a crash leaves either the old backup intact
+or the new one complete, never a half-written backup. Same reason one writes a temp
+file and renames rather than truncating in place.
+
+**DECIDED (Bill, 2026-08-04): three states, and these are the only transitions.**
+
+```
+        (any state) --<a new mutation>--> changed        [backup replaced]
+
+        changed  --revert-->  reverted
+        reverted --replay-->  replayed
+        replayed --revert-->  reverted
+```
+
+`changed` is what a fresh mutation leaves behind — an item retirement, say — where
+a backup was taken but neither a revert nor a replay has happened.
+
+*Why three and not two.* Two states counts *configurations*, of which there are
+indeed two (live-holds-the-change, live-holds-the-original), and concludes that
+`changed` and `replayed` are the same thing. They are the same configuration and
+different **nodes**: `changed` is the entry, reachable only by a fresh mutation and
+never by toggling. Collapsing them would mean a fresh retirement setting the state
+to `replayed`, which is the tool asserting something untrue — nothing was replayed.
+A stamp that lies is worse than a stamp with one more value in it.
+
+**The property to build on:** from every state, **exactly one** of `revert` /
+`replay` is legal. There is never a choice to disambiguate and never a
+"reverting twice" case to define — the state fully determines the single legal next
+operation, and anything else is refused with a crank-handle message saying which
+state the slot is in and what it will accept.
+
+**Goldfish, stated exactly:** a new mutation from *any* state resets to `changed`
+and replaces the backup. Whatever was previously revertable is gone, without
+ceremony. That is the whole memory model, and the reason the slot never needs a
+history.
+
+## The split
+
+**Item 1** — the parameterization every other part reads: file siting, case
+convention, project prefix, carve directory, and part-key format. Config file
+versus convention-with-overrides is open question 1. Land it first; get it wrong
+and the tool imposes one project's conventions on every other.
+
+**Item 9** — `format.md` in the skill directory: the normative reference for every
+trajectory file shape — the three files, the item entry, the done entry, the carve
+status block and its bare-key detail, the marker vocabulary, the ID rule. Loaded on
+demand rather than always, the way `config-reference.md` already is.
+
+Three jobs, and the last two are what make it necessary rather than tidy:
+
+1. **The tool implements it.** Items 2, 3 and 7 each encode format knowledge and
+   would otherwise each invent their own reading of it.
+2. **An agent repairs from it.** When a file is damaged, or predates the tool, or
+   was hand-written by someone with only prose to copy from, the agent needs the
+   shapes stated normatively — and needs them precisely when the tool is what cannot
+   help.
+3. **Old formats migrate to it.** A project already running a hand-maintained layer
+   has files in some earlier shape. Without a written target there is nothing to
+   migrate *to*.
+
+Coupled to Item 1: `format.md` states the shapes, Item 1 states which slots a
+project may vary. Write them together, or the config will parameterize fields the
+format does not have.
+
+**The annotation marker belongs here too** (Bill, 2026-08-04): the tag this carve
+invented for its own use should become part of the documented format, for **specs as
+well as carves**. Two consequences worth holding onto.
+
+*It is greppable, so it can be checked.* "How many unsettled points does this spec
+carry?" becomes a computed property rather than a reading exercise — which is this
+repository's own test for whether a convention earns its keep.
+
+*In a spec it is a different animal than in a carve.* A carve is allowed to be
+unsettled; a spec describes how the system **is**, so an unresolved point inside one
+is a hole in the specification. That makes the marker the lightweight inline form of
+the *blocked* state already identified as missing — "we cannot specify this yet, and
+here is precisely what we would need to know" — where no amount of effort closes the
+item, only an answer does. Whether the two should be one mechanism or two is
+genuinely open.
+
+**One drift hazard to settle up front.** The tool's own specs describe these same
+formats, and [tool/specs/file-formats.md](../tool/specs/file-formats.md) exists as
+the summary spec for exactly that. Two hand-maintained normative copies of one
+format is the failure this whole carve is about. Either `format.md` is the authority
+and the tool spec links to it, or the tool spec is the authority and `format.md` is
+generated from it — but not both by hand.
+
+**Item 2** — `minispec query next-id <item|gap|req>`. Prints the next free number
+as `max()` across every file that can hold one — for items that is **both** the
+pending and the done file, which is the part people get wrong in both directions
+(pending's max is too low right after completions; done's is too low while the
+highest IDs are still live). Retires the hand-copied counter entirely. Smallest
+real thing on the list, read-only, and it removes failure 1 above by construction.
+
+**Item 3** — `minispec validate trajectory`, folded into `validate` or standing
+alone. Referential integrity (every `#N` in a carve's status block resolves to a
+live queue item or a done entry; every queued item whose linked doc is a carve
+appears in that carve's status block), checkbox agreement, counter freshness,
+orphans, duplicate IDs across pending and done, and status-block presence. All four
+ark failures fall here. Read-only.
+
+**Item 4** — moved to [reference-discipline.md](reference-discipline.md). The number
+stays retired here so nothing renumbers and no later part reuses it.
+
+**Item 5** — the backup slot. Tool-wide, not trajectory-specific: every `update`
+subcommand currently writes in place via bare `os.WriteFile`
+([tool/internal/update/update.go](../tool/internal/update/update.go)) with no backup
+anywhere, so this retrofits onto eight existing verbs and is worth landing on its
+own. Prerequisite for Item 6. **`/mini-spec` must document it, and revert
+especially** — a safety mechanism nobody knows about is not a safety mechanism, and
+the skill is where an agent learns the escape hatch exists before it needs one.
+
+**Item 6** — the bidirectional item↔part link and the commands that use it:
+`minispec add-item --from <carve-or-migration>#<part>`, which creates the queue
+entry *and* the corresponding part line so the two cannot be created out of step;
+and completion, which moves the item to done, clears the current file, **and checks
+off the carve or migration parts it discharges** — one command across all four
+surfaces rather than four hand edits with three chances to forget one. For
+completion to check the right box the link must be recorded, and that is the core
+data model here. Blocked on open questions 2 and 3, and constrained by the
+asymmetry in the survey below: with trajectory files private in every project, the
+public half of the link is *never* a markdown link — a carve carries a bare key and
+the queue side holds the recorded pointer. The riskiest part, and the one
+hand-maintenance structurally cannot supply.
+
+**Item 7** — creation. Now reached through the refusal path rather than a verb you
+have to know about (see the Item 1 section): a write to a missing trajectory file
+fails and cranks out the create instruction, with the `.gitignore` question folded
+into it. What follows is the original framing, which still describes what creation
+*produces*; only the way it is reached has changed. `minispec init carve <name>` is
+untouched by that, since no write path leads to a carve that does not exist yet.
+
+This is the half that prevents the problem rather than detecting it. Creating a
+trajectory file writes its lifecycle preamble with it, and refuses rather than
+overwriting if one already exists. `init carve` creates a carve with its `## Status`
+block already at the top and the bare-key detail section beneath. Note this
+introduces a **new verb class** — the tool's five existing verbs never create a
+file, and `update` only rewrites files that already exist.
+
+*The evidence is this document.* Ark's six carves were retrofitted by hand in one
+afternoon; three had independently invented a status notation and three had none,
+which is exactly what a scaffold prevents. The three notations existed because
+there was nothing to copy from except prose, and prose gets paraphrased. This carve
+was hand-written too.
+
+`init` also front-loads Item 1, because it has to *choose* siting, prefix and key
+format rather than merely tolerate them. If `init` can produce a project's
+conventions correctly, the validators can read them.
+
+**Item 8** — shrink the skill. The trajectory and carve sections are the largest
+prose block in [SKILL.md](../.claude/skills/mini-spec/SKILL.md), and most of it is
+mechanics. Lands last by construction: the mechanics cannot leave the prose until
+the tool carries them.
+
+*This is a move, not a deletion*, and Item 9 is where they move to. Deleting the
+mechanics outright would strip the format from the one place an agent can read when
+the tool is unavailable — which is exactly the situation in which a damaged file
+needs repairing.
+
+Also here: `minispec query carves`, the cross-document status view — one line per
+carve, open/landed counts, optionally the open items. Today that is
+`grep -n '^- \[ \]' carves/*.md`, and it works only because the notation was
+standardised by hand.
+
+## What stays in the skill
+
+No tool can carry these:
+
+- Why a carve exists at all, and the coherence-versus-schedulability argument.
+- **Promotion is the maintainer's judgment**, explicitly not the agent's. A tool
+  must not decide it, and should not even nag.
+- Priority ordering — position, not number, and by intent.
+- **`NOT VERIFIED` as a distinct state.** A repaired *symptom* reads exactly like a
+  satisfied *requirement*; only a human who read the code can tell them apart. The
+  tool can see the marker, never validate it.
+- Migrate-on-landing, which is about where decisions go, not about file shape.
+
+## Surveyed against two real projects, 2026-08-04
+
+Ark runs the full layer and mini-spec has just adopted it, and they disagree on
+almost every parameter — which is the evidence that Item 1 is real work rather than
+bookkeeping.
+
+| | ark | mini-spec |
+|---|---|---|
+| queue siting | top level | top level |
+| queue visibility (as surveyed) | **private** — fossil-only, untracked in git | **not ignored** |
+| how privacy was declared | filename case (top-level uppercase = private) | nothing |
+| project prefix | in the title (`# PENDING: Ark State`), not the filename | none |
+| item entry | `## 119. **Title** (`/skill`). status. [link](path)` | same shape |
+| part keys in carves | `#N`, `Item N`, and `Part B` — all three, live | `Item N` |
+| `.minispec.yaml` | overrides `comment_patterns` only | absent |
+
+*The visibility row is what the survey found, not what was decided.* Both rows now
+read "private" under the Item 1 decision below, which is what makes the next
+paragraph hold everywhere instead of per project.
+
+**The finding that changes a design, not just a config field:** because ark's queue
+is private and its carves are public, a carve there cites an item as a bare `#N`
+that *deliberately cannot be a link* — its carve README says so. **The item↔part
+reference is therefore asymmetric**: private→public may be a markdown link,
+public→private may not.
+
+That asymmetry was the survey's most awkward finding while visibility varied by
+project, because the linkable direction flipped with the setting and Item 6 could
+not assume either. **Deciding that trajectory files are private everywhere makes it
+a constant instead of a variable**: the public→private half is *never* a link, in
+any project, so Item 6 records the link on the private side and the public side
+carries a bare key. One shape to build, not two.
+
+Ark also uses all three part-key notations at once, in live carves, which settles
+open question 2 as genuinely open rather than a matter of picking a favourite.
+
+## Item 1 — parameterization
+
+Mostly settled 2026-08-04. What remains carries an `@undecided:`.
+
+### The measurement that decides the method
+
+Git classifies a *directory* cleanly — ark's `.scratch/` and `.carves/` are
+gitignored, so anything under them is certainly private. It returns the
+**ambiguous** answer for the queue: `PENDING.md`, `CURRENT.md` and `DONE.md` are
+untracked *and not ignored*, because fossil owns them and git never saw them. That
+is indistinguishable from "written five minutes ago and not committed", which is
+the case the warn rule exists for.
+
+**So visibility must be declared.** It can still be *verified* once declared, and
+the verification survives whatever form the declaration takes: a file that is
+ignored *and* tracked has leaked — git permits that state, since ignoring never
+untracks — and catching it costs one more question to a `git` the tool is already
+running.
+
+### Privacy is a convention, not a parameter
+
+**DECIDED (Bill, 2026-08-04): trajectory files are private by default.** This
+supersedes a proposed `trajectory_public` config key and removes visibility from the
+per-command surface.
+
+*Amended 2026-08-04 by the `track` setting.* This was first written as "gitignored in
+every project — not a per-project setting," with `--no-ignore` as the escape hatch.
+The substance is unchanged, but the wording is now wrong: `track` **is** a
+per-project setting, chosen once at `init`, with `private-trajectory` as the
+recommended style and `all` as the named alternative. The hatch did not disappear; it
+moved from a per-command flag to a one-time declaration.
+
+**DECIDED (Bill, 2026-08-04): `.gitignore` is the declaration, and the creation path
+is where it is made.** Normal trajectory writing fails when the file does not exist
+and cranks out the instruction:
+
+- "PENDING.md does not exist. Re-run with `--create`."
+
+*Amended 2026-08-04.* Three variants were written here, one of which asked the user
+whether the file should be ignored. `track` answers that at `init`, so `--create` is
+uniform and the branch is gone.
+
+**DECIDED (Bill, 2026-08-04): no git is fine — just create the file, and have the
+tool check.** A project without a repository gets no ignore prompt rather than an
+instruction naming a file it does not have. Consistent with the reference rule,
+which already says non-git projects go unchecked and are told so rather than passed
+silently.
+
+**DECIDED (Bill, 2026-08-04): `--create` on the failing command**, not a separate
+creation verb. The message can then say *re-run what you just ran, with `--create`*,
+which is the shortest thing to read at the moment it is read, and it keeps the
+tool's verb count where it is.
+
+**Why `.gitignore` beats a config key.** It is already the file whose job is
+declaring what is private, everything already reads it, and using it creates no
+second copy to disagree with the first. The consequence is larger than the saving:
+once privacy lives there, a carve linking the queue stops being a trajectory concept
+and becomes an ordinary instance of a rule already decided in
+[reference-discipline.md](reference-discipline.md) — **error on ignored**. The
+visibility question is not answered, it is dissolved.
+
+**The human makes the call, once, at creation, and the agent never does.** The tool
+detects the state and dictates the response by reference; the agent relays. That
+also relocates Item 7: `--create` *is* the scaffold, but reached by doing normal
+work and being refused rather than by knowing an `init` verb exists. Discoverable by
+construction.
+
+**Adoption, not only creation.** The rule above fixes files the tool makes; existing
+ones need a one-time repair. Ark's queue is **not** in `.gitignore` — untracked only
+because fossil owns it — so a tool reading it today concludes "public" and would
+pass a carve→queue link that dangles for a git cloner. Mini-spec's own `PENDING.md`
+was in the same state. Adding the filenames to `.gitignore` costs nothing (it has no
+bearing on what fossil tracks) and makes the state unambiguous.
+
+### Two roots, and the word that names them both
+
+Before the decisions, the vocabulary, because its ambiguity cost a design detour on
+2026-08-04. **"Project root" means two different things in this repository:**
+
+- the **repository root** — the top of the git working tree, where `.claude/`,
+  `carves/` and the queue live. `/home/deck/work/mini-spec`.
+- the **design root** — the directory containing `design/`, which is what the tool
+  detects and prints as `root:`. `/home/deck/work/mini-spec/tool`, and separately
+  `/home/deck/work/mini-spec/example`.
+
+They coincide in ark, which is why the collision stayed invisible. Item 9 and the
+skill should use the two explicit terms and never the bare word.
+
+### Siting
+
+**DECIDED (Bill, 2026-08-04): trajectory files live at the repository root,
+mandated — no config key.** The reasoning is the one that decides it: *the
+trajectory goes across techniques*, so its scope is the repository, not any one
+design root. A repo holds one work queue and may hold several design roots — this
+one holds two, `tool/` and `example/` — so siting the queue under either would be
+wrong, and making it configurable would only offer a way to get it wrong.
+
+This supersedes the earlier pair: the default-plus-key shape, and the
+`sibling_trajectory` option that measurement had already shown to be a no-op. The
+config surface for trajectory siting is now empty.
+
+**DECIDED (Bill, 2026-08-04): carves are repo-level too**, and for the same reason
+stated in one word — a carve is *cross-approach*. That is not an analogy to the
+trajectory argument, it is the definition: a carve is "one coherent problem
+decomposed into items that may each need a different skill." Work spanning several
+skills cannot be scoped to any one design root.
+
+### Finding the repository root
+
+**DECIDED (Bill, 2026-08-04): search upward, tracking markers as you go, and never
+consider `$HOME` or above.** No explicit key.
+
+- **A `.git`, a `.minispec/`, a `carves/`, or a trajectory file ends the search** —
+  the deepest directory carrying any of them is the repository root. All four are
+  repo-level by mandate or by definition, so where they coexist they agree, and the
+  ordering among them never has to be decided.
+- Otherwise, the **deepest `.claude`**.
+- Otherwise, the **deepest `.minispec.yaml`** — the weak final fallback, meaningful
+  only because a design root is sometimes also the repository root.
+- **Otherwise ask.** See the fallback below.
+
+Excluding `$HOME` closes a concrete failure rather than a stylistic one:
+`/home/deck/.claude` exists, so without the exclusion a tree carrying none of the
+markers resolves its repository root to the user's home directory, and `--create`
+then deposits `PENDING.md` there.
+
+**DECIDED (Bill, 2026-08-04): `specs/migrations/` is not a home for trajectory
+files — remove it.** It was the siting the skill documented until today, and it is
+what made the ranking above a question at all: a project following the published
+guidance would have had trajectory files several levels down, so a search-ending
+marker there would have resolved `specs/migrations/` as its repository root — after
+which every path the tool computed would be wrong *together*, the hardest kind of
+wrong to notice. Retiring the siting removes the shape rather than accommodating it,
+which is why the three strong markers can be equals.
+
+*Consequence for Item 8, beyond the prose edit:* a project already in that state has
+files to move. The tool can see this cheaply — trajectory files found under a
+`specs/` directory are in the retired location — so the upgrade can be a warning
+naming the files and where they belong, rather than something a reader has to notice
+in a changelog.
+
+**DECIDED (Bill, 2026-08-04): when no marker is found, ask — and record the answer
+as a marker.** The question is *is the current working directory the repository
+root?*, since people normally run from their project directory. On yes, `carves/` is
+created there, and the user is never asked again because that directory is itself
+the marker every later run finds.
+
+**The tool has no user to ask, so it cranks out an error saying to ask** (Bill,
+2026-08-04). It fails, names the working directory, and instructs the agent to put
+the question to the user and re-run once answered. That keeps the assent where it
+belongs: **the tool detects, the agent relays, the human answers, and the tool
+records.** An agent that answered on the user's behalf would be manufacturing the
+one thing it must never manufacture — and it would do so invisibly, since a created
+`carves/` is indistinguishable afterwards from one the user asked for.
+
+This is the same refusal shape as `--create`: fail, state the situation, name the
+re-run. Not a second mechanism to learn.
+
+**This is the third time the same shape has won tonight, and it is worth naming:
+declare by artifact, not by config key.** `.gitignore` records privacy, `carves/`
+records the root. Both are files that had to exist anyway, both are already read by
+something, and neither creates a second copy that can disagree with the first. A
+config key would have recorded the same answer in a place nothing else looks.
+
+It also answers the question it replaces — silent default or refusal? — with
+neither. A refusal stops work; a silent default writes files somewhere nobody chose;
+asking does neither, and it is the one option that ends with the ambiguity gone
+rather than deferred.
+
+*One wrinkle, unresolved and small:* git does not track empty directories, so a
+`carves/` created purely as a marker would not survive a clone. It barely matters,
+since a clone has a `.git` that wins anyway — but ark's `carves/` carries a
+`README.md` explaining what a carve is, which persists and earns its place with a
+reader. Creating that alongside the directory costs nothing and composes with
+`init carve` in Item 7.
+
+Tracking is what makes the fallbacks correct. A walk that decided at each level
+could not know whether a `.git` sat above it, so it would have to settle for the
+first weaker marker it met; collecting lets the strong marker win from any depth
+while the weak ones stay available if it never appears.
+
+*Only `.git`, not `.fslckout`* — consistent with the git-only decision in
+[reference-discipline.md](reference-discipline.md), and it costs nothing: a
+fossil-only tree simply falls through to the next marker down the list, which is the
+right answer there rather than a gap. Ark is such a tree in principle and carries a
+`.git` anyway, so the fallback goes unexercised there.
+
+**Why collecting beats a first-match walk**, in two measurements.
+
+`.claude` is a weak marker: it exists at three levels of this very path.
+
+```
+/home/deck/work/mini-spec    .claude  .git
+/home/deck/work              .claude
+/home/deck                   .claude
+```
+
+A first-match walk that accepted `.claude` would resolve `/home/deck/work` as the
+repository root for any design root lacking one of its own — a directory that is not
+a repository at all. The decided algorithm is immune here, because `.git` at the
+repository root wins from any depth; that immunity is exactly what collecting buys,
+and it is why `.claude` ranks below the VCS marker. It remains a per-directory
+convention rather than a repository boundary, which is why the search stops short of
+`$HOME`. The shallowest `.claude` in that listing is the home directory, reached
+only when nothing deeper carries a marker — which is precisely the case the
+exclusion exists for.
+
+`.minispec.yaml` is already the design-root marker, read at
+`<design root>/.minispec.yaml`
+([tool/internal/project/project.go](../tool/internal/project/project.go)). In a repo
+with two design roots each may carry its own, and the innermost wins any upward
+walk — so "first `.minispec.yaml` going up" would resolve this repository's root to
+`tool/`, precisely the wrong answer. **Presence is not a declaration**, which is why
+it is the fallback rather than the first heuristic.
+
+*Caveat on all of it:* ark's repository root, design root, config and `.claude` are
+one directory, so none of this is observable there. Mini-spec is the only project
+where the distinction exists, which makes it a sample of one for the interesting
+behaviour.
+
+**DECIDED (Bill, 2026-08-04): drop the filename-prefix parameter.** The skill lists
+it; zero of two projects use it. Ark carries its prefix in the *title*
+(`# PENDING: Ark State`), which nothing parses and so needs no configuration.
+
+**DECIDED (Bill, 2026-08-04): the lock is `.minispec/config.yaml`, and the tool
+ensures it exists — touching it if it does not.**
+
+*Amended 2026-08-04: the tool does not touch it into existence.* `init` is the sole
+creator, and with no config the only legal commands are `init` and those needing no
+minispec files at all. Auto-creation would have produced a config with no `track`,
+which is the undefined state the mandatory flag exists to abolish — and the lock
+target is guaranteed anyway, because nothing that needs a lock can run before `init`.
+
+**Always the repository file — one lock per repository, never per repo-project.** A
+design-root lock would let `tool/` and `example/` take different locks on the same
+queue, which is no lock at all. The move of the repository config into `.minispec/`
+is what makes this unambiguous: there is now exactly one file it could mean.
+
+**It is a short-term, low-contention lock**, and knowing that bounds the design. Its
+only job is keeping two agents from stomping on each other mid-edit; it is not
+protecting a hot resource, so it needs no fairness, no queueing, and no lease. Held
+across a single file edit and released.
+
+**Both files at once — the two cases.** When the repository root *is* a design root
+(ark's shape), `.minispec.yaml` and `.minispec/config.yaml` legitimately sit side by
+side in one directory. When the roots differ, a top-level `.minispec.yaml` is the
+error above.
+
+**DECIDED (Bill, 2026-08-04): a repo-project's `.minispec.yaml` inherits from
+`/.minispec/config.yaml`.** Settings shared across projects go in the repository
+config once; a project's own file states only what differs. Where nothing differs, a
+project needs no file at all.
+
+**Two styles, and a project should pick one.**
+
+- **A full-repo project** — the repository root is the design root. One project, one
+  config.
+- **Repo-projects** — no specs directory at the top level; each project has its own
+  design root and its own `.minispec.yaml` inheriting the shared settings.
+
+Mixing them — repo-projects *plus* the top level as a project in its own right — is
+possible but not recommended: the top level's settings have to live in
+`/.minispec/config.yaml`, which means every repo-project then has to override all of
+them. The awkwardness is real, and the answer is to avoid the shape rather than
+design around it.
+
+*The tool should still be able to say which file a setting came from.* Inheritance
+means the effective configuration is not what any single file says, so "why is this
+value what it is" needs an answer that does not require reading two files and knowing
+the precedence by heart.
+
+Note this is why a top-level `.minispec.yaml` can be a flat error: in the mixed style
+the top level's settings live in `/.minispec/config.yaml` like everything else, so
+there is no legitimate use for the file the rule forbids.
+
+**DECIDED (Bill, 2026-08-04): no `carves_dir` setting. `carves/` sits at the top of
+the repository.** Its location was already mandated; removing the name override
+makes it a fixed point, which is what lets it serve as a root marker at all — a
+directory whose name a project could change could not identify anything.
+
+Derived, not configured: `carves/done/` beneath it, the way `migrations/complete/`
+derives today; and the **private carve directory as the dotted sibling** —
+`.carves/` beside `carves/` — which is what ark already does and which
+`check-ignore` can confirm rather than take on faith.
+
+### What the siting decision rests on — measured 2026-08-04
+
+`SpecsDir()` returns `<design root>/specs` unconditionally
+([tool/internal/project/project.go](../tool/internal/project/project.go)), so **"beside
+the specs directory" and "the design root" name the same directory in every
+project, by construction.** Confirmed on both surveyed projects.
+
+**The axis that actually varies is repository root versus design root, and this
+repository is the case that needs it.** The tool detects a design root by walking up
+for `design/`, which finds **two** here — `tool/` and `example/`, each with its own
+`design/`, `src/` and `specs/` — while `PENDING.md` sits at the repository root above
+both. Run from that root, the tool resolves no project at all: *"no design/
+directory found."*
+
+So the structural fact is **trajectory scope ≠ project scope**: a repository holds
+one work queue and may hold several mini-spec projects. Ark hides this because its
+two roots coincide.
+
+That carries an implementation consequence for Item 1 — trajectory commands need
+their own root detection, walking up to `.git` rather than to `design/`, instead of
+sharing the existing one.
+
+Ark is unchanged by the decision, this repository becomes correct exactly as it
+already stands, and the config surface stays empty. The only case it forbids — a
+design root keeping its own separate queue — has no instance in either project.
+
+### The same split already bites `check-version`, measured 2026-08-04
+
+The trajectory files are not the only repo-scoped artifact the tool cannot see.
+`.claude/` is repo-scoped too, and the version check looks for it in the wrong
+place.
+
+[tool/internal/cli/cli.go](../tool/internal/cli/cli.go) builds two candidates for the
+skill README — `<cwd>/.claude/…`, then `<home>/.claude/…`. **It checks the current
+directory and then the home directory, and never walks up.** Observed directly:
+
+| run from | README consulted |
+|---|---|
+| repository root | `…/mini-spec/.claude/skills/mini-spec/README.md` — the repo's own |
+| `tool/` | `/home/deck/.claude/skills/mini-spec/README.md` — the *installed* copy |
+
+So in the repository where the skill is authored, running the check from the
+directory where the Go work happens validates the binary against the **installed**
+skill rather than the source being edited. Both files are byte-identical today, so
+nothing is currently wrong; the failure appears the moment the repo's README is
+bumped without reinstalling, and it is silent, because a check against the wrong
+file still prints a verdict.
+
+*This is not a trajectory bug and does not belong to any item here.* It is recorded
+because it is the same underlying fact from a second direction: **the tool has
+exactly one notion of root, and repo-scoped artifacts do not fit it.** `.claude/`,
+the queue, and `carves/` are all repo-scoped; `design/`, `specs/` and `src/` are
+project-scoped. That is an argument for git-root detection as a capability the tool
+lacks generally, not a knob invented for the trajectory files — which is the
+strongest thing that can be said for option 3.
+
+**Both defaults change `SKILL.md` prose, not just tool behavior**, so they land in
+Item 8 with a version bump behind them.
+
+### One listed parameter is not a project parameter at all
+
+Part-key notation, measured across ark's seven carves: `Item N` in three, `#N` in
+three, `Part B`/`Part C` in one — same project, same period. The skill already
+implies this ("key parts however the document already does"), so the tool must
+**parse all three forms** rather than be told one.
+
+That narrows open question 2 usefully: the question was never which notation to
+configure, but what the link *records* — and the answer is `<doc-path>#<literal
+key>`, whatever the document wrote. It also feeds Item 9, which has to decide
+whether the marker vocabulary (`LANDED`, `SENT`, `DEFERRED`, `NOT VERIFIED`, and
+the `MOVED` coined in this carve's own status block) is a closed set or an open
+one. A closed set is checkable; an open one is honest. Not both.
+
+### Out of scope, but adjacent
+
+`specs/` is hardcoded in the tool while `design_dir` and `src_dir` are configurable.
+The trajectory layer neither widens that nor fixes it, since it ends up adding no
+keys at all. Worth a separate decision, not this one.
+
+### The refusal cases, enumerated
+
+The tool can be missing two different things: the repository root, and the file the
+command wants. They are not independent, and the dependence collapses most of the
+combinations.
+
+**Two entailments, both forced by the marker rules.** A `.git` ends the search, so
+*root unknown implies no git anywhere on the upward path* — the `.gitignore` branch
+cannot arise. A trajectory file also ends the search, so *root unknown implies the
+trajectory files are missing too* — they are markers, and a found marker is a found
+root.
+
+*Amended 2026-08-04 by `track`.* A third case sat here — root known, file missing,
+git present but the path not yet ignored — and it was the only one besides the root
+question that needed a person, because someone had to answer whether the file should
+be private. `track` answers that once at `init`, so the case is gone along with
+`--no-ignore`.
+
+| | root | file | git | re-run needs | human answer |
+|---|---|---|---|---|---|
+| 1 | known | exists | — | nothing | — |
+| 2 | known | missing | any | `--create` | no |
+| 3 | unknown | *necessarily* missing | *necessarily* absent | root confirmation | **yes** — is this the root? |
+
+**Exactly one case needs a person**, and it is the root confirmation. Case 2 the
+agent may simply re-run: the root is known, privacy is already settled by `track`,
+and the creation was the point of the original invocation.
+
+**Case 5 does both jobs from one answer.** The confirmation authorizes `carves/`,
+which records the root; the original command authorizes the trajectory file. Nothing
+else is asked, because nothing else is in question.
+
+**A sixth situation is not a refusal.** The file exists but is *not* ignored — the
+state both surveyed projects were in before tonight. Work can proceed, so refusing
+would be wrong; it is the adoption gap recorded above, and belongs in the advisory
+that names the files and what to add to `.gitignore`.
+
+**Case 5, answered "no".** The user is running from outside their project — most
+likely above it, since the search only walks up and would have found a marker
+below. The refusal should say so: run from inside the project. Creating anything
+here would put a repository root in the wrong place, and `carves/` is durable enough
+that the mistake would persist.
+
+### Still open
+
+@undecided: (Daneel, 2026-08-04) how the root confirmation is spelled. My earlier
+reason for wanting it distinct from `--create` was **wrong** — I claimed the two
+could co-occur, and the entailments above show they cannot. What is left is only
+whether one flag reading differently in two situations is clearer than two flags, and
+that is a naming judgment rather than a structural one.
+
+## Open questions
+
+1. ~~**Project parameterization**~~ — **answered 2026-08-04**, see the Item 1
+   section. Convention over configuration won on the evidence: privacy became a
+   universal convention rather than a setting, the prefix parameter was dropped, and
+   siting became a mandate. The trajectory config surface is empty. What loose ends
+   remain carry an `@undecided:` there rather than sitting here.
+2. **What identifies a "part"?** Completion has to check off the right box, so a
+   queue entry must name a part unambiguously. A heading anchor is fragile (titles
+   get edited); a bare `Item N` is stable but unique only within its document.
+   Probably `<doc-path>#<key>`, with the key being whatever that document keys by.
+   Note this no longer depends on question 1: the key format was measured to be a
+   per-document property, not a project setting, so the parser accepts all forms and
+   the link records the literal key.
+3. **Cardinality of the item↔part link.** What happens when a part is completed by
+   more than one item, or an item completes parts in two documents? Both are
+   plausible — a harness item discharging gaps in three carves — and the data model
+   has to say 1:1, 1:N or N:M before the commands are written.
+4. **Does the counter assertion survive?** Once `query next-id` exists, the "next
+   free ID is N" line in a working doc is pure liability. Delete it, or keep it and
+   validate it?
+5. **Should the tool ever edit trajectory files?** `update check` already edits
+   `design.md` checkboxes. The same for a carve's status block is tempting and
+   riskier, since these files are mostly prose.
+6. **Does `add-item` renumber or reuse?** It needs `query next-id`, and it must hold
+   the ID stable once assigned. Two agents adding items in the same session would
+   otherwise collide.
+7. **Where does crank-handle output go?** Stdout is natural for a CLI, but an agent
+   reads tool results, not terminals. If the change summary is the return value it
+   is seen; if it is a side-effect print during a batch it may not be. This matters
+   more than it sounds, because the whole point is that the agent not be in the
+   dark.
+8. **Private carves must not leak.** Some projects keep a gitignored carve directory
+   alongside the public one. The tool must read both to validate, and must never
+   write a private carve's contents into anything that ships — a report, an error
+   message, a summary file.
+9. **Does the format carry a version marker?** Item 9 exists partly so an old
+   hand-maintained layer can be migrated to a written target, and a migration has
+   to know what shape it is looking at. A version lets the tool upgrade, or refuse,
+   rather than misparse — but it is also one more thing in every file, so it earns
+   its place only if migration is real rather than hypothetical.
+10. **Does mini-spec run its own trajectory layer?** Partially answered on
+   2026-08-04: this repo grew a pending file and this carve directory the same day.
+   Still absent: a current file, a done file, and any project prefix decision.
+   Building tooling for a layer the project does not itself run is a smell worth
+   closing one way or the other.
