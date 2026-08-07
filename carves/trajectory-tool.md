@@ -59,7 +59,7 @@ marker. Ark's live carves already read this way — `**Item 8 — a test harness
 - **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
   - [x] ~~repository-root detection.~~ **LANDED (`8197c6c`, 2026-08-07.)**
-  - [ ] `.minispec/` and the config move. **OPEN (#3.)**
+  - [x] ~~`.minispec/` and the config move.~~ **LANDED (`fe0cd11`, 2026-08-07.)**
   - [ ] `init`, `track`, and `--repair`. **OPEN (#4.)**
 - [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
@@ -272,7 +272,7 @@ which is design-root configuration; it stays exactly where it is. A repo-level f
 appears only where something repo-level needs saying, and today nothing does — the
 trajectory config surface is empty, so its first job is being the lock.
 
-**MIGRATED 2026-08-07.** The config structure decided here — both scopes, the
+**MIGRATED 2026-08-07 (`fe0cd11`).** The config structure decided here — both scopes, the
 inheritance, the flat top-level error, and the merge rules that fell out of
 implementing it — is now specified in the **Config Scopes** section of
 [tool/specs/config.md](../tool/specs/config.md) and numbered R118–R130. **That spec is
