@@ -1,5 +1,5 @@
 # Project
-**Requirements:** R32, R33, R34, R35, R38, R39, R57, R58, R93, R118, R119, R120, R121, R122, R123, R124, R125, R126, R127, R128, R129, R130
+**Requirements:** R32, R33, R34, R35, R38, R39, R57, R58, R93, R118, R119, R120, R121, R122, R123, R124, R125, R126, R127, R128, R129, R130, R135
 
 Finds and loads a mini-spec project's configuration and design files.
 
@@ -13,6 +13,9 @@ Finds and loads a mini-spec project's configuration and design files.
   `.minispec.yaml`
 - origins: for each setting, which layer supplied it. Recorded during merging, since
   after merging there is no way to tell where an inherited value came from
+- config.track: the one **repository-scoped** setting. It resolves like any other
+  scalar, but only the repository layer may supply one — see `applyLayerFile` below.
+  Its meaning and verification belong to `Track`, not here
 - commentPatterns: map of file extension to comment prefix regex (e.g., ".go" -> `//\s*`)
 - commentClosers: map of file extension to closing delimiter (e.g., ".md" -> ` -->`)
 
@@ -24,6 +27,9 @@ Finds and loads a mini-spec project's configuration and design files.
 - applyLayer(cfg, layer): apply one layer over what is resolved — scalars replace,
   maps merge per key, lists union with duplicates dropped and inherited order kept —
   and record the layer as the origin of every setting it supplied
+- applyLayerFile(cfg, path, isRepoLayer): read one layer and apply it, **refusing a
+  design root that states `track`**. Refused rather than ignored: silently dropping it
+  would leave someone editing a line that has no effect, with no way to discover that
 - DesignPath(filename): resolve path within design dir
 - SrcPath(filename): resolve path within src dir
 - CommentPattern(ext): return regex pattern for the given extension (with defaults)

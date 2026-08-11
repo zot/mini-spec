@@ -10,11 +10,16 @@ import (
 
 // Config holds project configuration
 type Config struct {
-	DesignDir       string            `yaml:"design_dir"`
-	SrcDir          string            `yaml:"src_dir"`
-	CodeExtensions  []string          `yaml:"code_extensions"`
-	CommentPatterns map[string]string `yaml:"comment_patterns"`
-	CommentClosers  map[string]string `yaml:"comment_closers"`
+	DesignDir       string            `yaml:"design_dir,omitempty"`
+	SrcDir          string            `yaml:"src_dir,omitempty"`
+	CodeExtensions  []string          `yaml:"code_extensions,omitempty"`
+	CommentPatterns map[string]string `yaml:"comment_patterns,omitempty"`
+	CommentClosers  map[string]string `yaml:"comment_closers,omitempty"`
+	// Track is repository-scoped and belongs to the repository layer alone: it
+	// describes the repository, and a repository may hold several design roots, so
+	// letting one of them answer for the whole would be the two-roots confusion this
+	// tool has already paid for once. R131, R135
+	Track string `yaml:"track,omitempty"`
 }
 
 // Project represents a mini-spec project

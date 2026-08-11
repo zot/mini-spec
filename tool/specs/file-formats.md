@@ -33,6 +33,9 @@
 
 | File | Purpose | Owning spec(s) |
 |---|---|---|
-| `.minispec/config.yaml` | **Repository** config, at the repository root. Same schema as below; settings shared by every design root beneath it. Where the repository root is also a design root, this is that design root's config too. | [config.md](config.md) (Config Scopes) |
+| `.minispec/config.yaml` | **Repository** config, at the repository root. Same schema as below, plus `track` (`none` / `private-trajectory` / `all`), which only this scope carries. Settings shared by every design root beneath it. Where the repository root is also a design root, this is that design root's config too. Created only by `minispec init`. | [config.md](config.md) (Config Scopes), [initialization.md](initialization.md) (`track`, creation) |
+| `.minispec/backup` | Tool-managed machine-local working files, including the revert slot's stamp. Should be git-ignored; `init` writes that ignore line. | [initialization.md](initialization.md) |
+| `.gitignore` (top level) | Not a tool format, but a file the tool **writes**: `init` adds the `.minispec/backup` line, and under `track: private-trajectory` the trajectory filenames. `--repair` reconciles it with `track`. Read on every non-trivial run via `git check-ignore`. | [initialization.md](initialization.md) |
+| `PENDING.md`, `CURRENT.md`, `DONE.md` (repository root) | The trajectory files. Mandated location, no config key. The tool checks their ignore state against `track`; their content is owned by the skill, not the tool. | [initialization.md](initialization.md), [repository-root.md](repository-root.md) (markers) |
 | `.minispec.yaml` | Optional **design-root** config: `design_dir`, `src_dir`, `code_extensions`, `comment_patterns`, `comment_closers`. States only what differs from the repository config. **At the repository root this file is an error, with no exception.** | [config.md](config.md) (Config Scopes) |
 | `.claude/skills/mini-spec/README.md` | Skill version source. `check-version` reads the `Version:` line, looking under the **repository root** first, then `~/`. | [config.md](config.md) (Version section), [repository-root.md](repository-root.md) |

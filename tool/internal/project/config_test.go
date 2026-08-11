@@ -24,7 +24,7 @@ func writeFile(t *testing.T, path, content string) {
 // so a test asserting on provenance names the layer once rather than rebuilding it.
 func repoConfig(t *testing.T, root, content string) string {
 	t.Helper()
-	path := repoConfigPath(root)
+	path := RepoConfigPath(root)
 	writeFile(t, path, content)
 	return path
 }

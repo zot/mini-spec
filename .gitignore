@@ -25,3 +25,4 @@ dist-test/
 /.claude/agents/code-simplifier.md
 /tool/bin
 
+/.minispec/backup

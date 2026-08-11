@@ -206,3 +206,49 @@
 - **R130:** The first configuration layer to set a list **replaces** the built-in defaults rather than unioning onto them, so a project can still narrow a shipped list. The remedy in R128 works by moving a setting down a level, and nothing sits below the defaults to move it to; defaults are also not a layer anyone authored, so "state only what you add" cannot apply to them
 - **R128:** (inferred) A design root can add to an inherited list but cannot remove from one; removal is achieved by dropping the setting from the repository configuration and stating it in each design root that needs it, so no removal syntax exists
 - **R129:** The tool can report which file each effective setting came from, so a value's origin does not require reading two files and knowing the precedence
+
+## Feature: Initialization
+**Source:** specs/initialization.md
+
+- **R131:** `track` is a repository-scoped setting in `.minispec/config.yaml` with exactly three values: `none`, `private-trajectory`, `all`
+- **R132:** `track: none` asserts the project is not version-controlled; `private-trajectory` and `all` both assert it is git-managed, differing only in whether the trajectory files are ignored
+- **R133:** The paths whose ignore state `track` governs are `PENDING.md`, `CURRENT.md` and `DONE.md` at the repository root, plus `.carves/` whenever it exists
+- **R134:** `.carves/` must be ignored under every git-managed `track` value, including `all`; public `carves/` is never required to be ignored
+- **R135:** A design root's `.minispec.yaml` cannot set or override `track`, because it describes the repository rather than one design root
+- **R136:** `minispec init` requires exactly one `--track-<style>` flag and never infers or defaults the value
+- **R137:** `minispec init` is the sole creator of `.minispec/config.yaml`; no other command brings it into existence
+- **R138:** `init` writes `<repository root>/.minispec/config.yaml` recording the chosen `track` value
+- **R139:** `init` adds an ignore line for `.minispec/backup` to the top-level `.gitignore` under any git-managed `track` value
+- **R140:** `init` adds ignore lines for the trajectory files under `track: private-trajectory`
+- **R141:** `init` reports every file it created or edited, in full, so an agent never has to infer what changed
+- **R142:** Plain `init` refuses when `.minispec/` already exists, naming `--repair` as the way to change a `track` value and saying to confirm with the user first
+- **R143:** The tool never runs `init` implicitly
+- **R144:** `init --track-<style> --repair` sets `track` on an existing configuration *and* brings `.gitignore` into agreement with that value
+- **R145:** `--repair` requires `.minispec/` to exist — the inverse of plain `init`'s precondition — so neither form has to guess the caller's intent
+- **R146:** The `--repair` instruction tells the agent to confirm the `track` value with the user before running it, because the two repair directions mean opposite things
+- **R147:** Every command doing more than reporting its version verifies `track` against whether the repository is git-managed
+- **R148:** The same check verifies `track` against the actual ignore state of the paths in R133
+- **R149:** A `track` mismatch gripes and exits, naming which fact disagrees and `minispec init --track-<style> --repair` as the repair
+- **R150:** The mismatch gripe fires on every run until repaired, rather than once per session
+- **R151:** In a tree with no git at all, the `track` check and the git preferences are silent
+- **R152:** With no `.minispec/config.yaml`, the only commands that run are `init`, `--version`, `help`, and `check-version`
+- **R153:** `check-version` runs without a configuration deliberately, so an agent whose first instruction is to run it can establish tool/skill agreement before being told to initialize
+- **R154:** Every other command refuses with a crank handle when no configuration exists
+- **R155:** The no-configuration refusal names the absolute path it would make the repository root, so the user's assent lands on a stated location
+- **R156:** The refusal instructs the agent to establish whether the directory is a code project — a fact the agent can check — rather than asking the user that question
+- **R157:** The refusal instructs the agent to report and wait, never to run `init` on its own conclusion
+- **R158:** The refusal asks the agent to recognise a directory of project directories and report that finding, since that is the case that would otherwise plant a repository root in the wrong place
+- **R159:** The refusal supplies the gist for the agent to compose from, not verbatim user-facing copy, so the message can adapt to what the agent found
+- **R160:** When the user declines, the refusal says to run from inside the project
+- **R161:** `--repair` validates the configuration's well-formedness before acting on it
+- **R162:** A malformed configuration is the one case where the tool explicitly authorises the agent to edit the configuration directly, stating every problem found and pointing at the skill's configuration documentation
+- **R163:** The agent backs up the configuration before editing it, skipping the backup when it would be byte-identical to one already present
+- **R164:** The tool gripes while `.minispec/config.yaml` is not tracked by git
+- **R165:** The tool gripes while `.minispec/backup` is not ignored by git
+- **R166:** The tool does not stage, commit, reset, or otherwise alter git state; editing `.gitignore` is not excluded by this, being a file edit rather than a change to git's state
+- **R167:** Version-control checks shell out to the `git` command line only — no second VCS is supported and no VCS library is linked in
+- **R168:** A project managed by a version-control system other than git is told its ignore state cannot be checked, rather than passing silently
+- **R169:** (inferred) A project that predates `track` must run `init` once before non-version commands work; the one-time refusal is how it is asked the question
+- **R170:** The tool adds no ignore line for a path git already ignores, whatever rule is doing it. Whether a path is covered is asked of git rather than decided by matching lines, because an anchored `/PENDING.md`, a bare `PENDING.md` and a `*.md` wildcard are the same intent written three ways
+- **R171:** Ignore lines the tool writes are anchored to the repository root (`/PENDING.md`), because every path `track` governs is mandated there and an unanchored pattern also matches nested ones — and, since the last matching pattern wins, would silently widen a rule the project had written narrowly
+- **R172:** When a `track` value requires a path to be tracked but a rule outside the top-level `.gitignore` still ignores it, the tool names that path rather than reporting a success it did not achieve

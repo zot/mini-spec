@@ -70,7 +70,22 @@ func (c *CLI) Run(args []string) int {
 	cmd := args[cmdIdx]
 	cmdArgs := args[cmdIdx+1:]
 
+	// An unrecognised command is reported as such before the bootstrap gate runs: a
+	// typo deserves "unknown command", not "this isn't a minispec project".
+	if !knownCommands[cmd] {
+		return c.unknownCommand(cmd)
+	}
+
+	// CRC: crc-CLI.md | Seq: seq-bootstrap.md#1 | R152, R154
+	// Nothing beyond a version report runs until the repository has a configuration and
+	// a track value that agrees with what git reports.
+	if code, stop := c.gate(cmd); stop {
+		return code
+	}
+
 	switch cmd {
+	case "init":
+		return c.runInit(cmdArgs)
 	case "check-version":
 		return c.runCheckVersion()
 	case "query":
@@ -85,10 +100,19 @@ func (c *CLI) Run(args []string) int {
 		c.printUsage()
 		return 0
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
-		c.printUsage()
-		return 1
+		// Unreachable while knownCommands and this switch agree, which
+		// TestKnownCommandsCoversEveryDispatchedCommand is what keeps true.
+		return c.unknownCommand(cmd)
 	}
+}
+
+// unknownCommand reports a command the dispatcher does not accept. Shared by the
+// pre-gate check and the dispatch switch so the two cannot drift into wording the same
+// refusal differently.
+func (c *CLI) unknownCommand(cmd string) int {
+	fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
+	c.printUsage()
+	return 1
 }
 
 func (c *CLI) printUsage() {
@@ -97,6 +121,7 @@ func (c *CLI) printUsage() {
 Usage: minispec [flags] <command> [args]
 
 Commands:
+  init --track-<style>  Create the repository config (--track-none|-private-trajectory|-all)
   check-version         Verify tool and skill versions match
   query <subcommand>    Query design files
   update <subcommand>   Update design files
@@ -135,6 +160,12 @@ Phase subcommands:
   design                Validate design files and coverage
   implementation        Validate code files and traceability
   gaps                  Validate gaps section
+
+Init flags:
+  --track-none                 No version control
+  --track-private-trajectory   Git; trajectory files ignored
+  --track-all                  Git; trajectory files tracked
+  --repair                     Reconcile an existing config and .gitignore
 
 Flags:
   --design-dir PATH    Override design directory

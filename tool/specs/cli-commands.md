@@ -8,7 +8,9 @@
 
 | Command | Owning spec | Summary |
 |---|---|---|
-| `minispec check-version` | [config.md](config.md), [repository-root.md](repository-root.md) | Verify tool binary version matches the skill's `README.md`, looked up under the repository root first, then `~/`. Exits 0 on match. |
+| `minispec init --track-<style>` | [initialization.md](initialization.md) | Create `<repo root>/.minispec/config.yaml` recording `track`, and write the ignore lines that value implies. Sole creator of the repository configuration; the flag is mandatory. Refuses when `.minispec/` already exists. |
+| `minispec init --track-<style> --repair` | [initialization.md](initialization.md) | Set `track` on an existing configuration *and* bring `.gitignore` into agreement with it. Requires `.minispec/` to exist. The agent confirms the value with the user before running it. |
+| `minispec check-version` | [config.md](config.md), [repository-root.md](repository-root.md) | Verify tool binary version matches the skill's `README.md`, looked up under the repository root first, then `~/`. Exits 0 on match. Runs without a configuration. |
 | `minispec query <sub>` | [queries.md](queries.md) | Read design files and print results. No modifications. |
 | `minispec update <sub>` | [updates.md](updates.md) | Atomic modifications to structured parts of design files. |
 | `minispec validate` | [validate.md](validate.md) | Run all structural validations and report issues. |
@@ -55,6 +57,17 @@
 | `phase design` | [phase.md](phase.md) | Validate Design Phase: design.md Artifacts complete, CRC Rn references valid. |
 | `phase implementation` | [phase.md](phase.md) | Validate Implementation Phase: artifact code files exist with traceability comments. |
 | `phase gaps` | [phase.md](phase.md) | Validate Gaps Phase: gap IDs follow S/R/D/C/I/O/A/T format, no duplicates. |
+
+## `init` flags
+
+| Flag | Behavior |
+|---|---|
+| `--track-none` | Record `track: none` — the project is not under version control. |
+| `--track-private-trajectory` | Record `track: private-trajectory` — git, trajectory files ignored. |
+| `--track-all` | Record `track: all` — git, trajectory files tracked. |
+| `--repair` | Operate on an existing configuration instead of creating one; sets `track` and reconciles `.gitignore`. |
+
+Exactly one `--track-*` flag is required. `--repair` inverts the `.minispec/` precondition rather than adding a mode.
 
 ## Global flags
 

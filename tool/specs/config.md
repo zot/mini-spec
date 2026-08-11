@@ -63,6 +63,12 @@ Configuration lives at two scopes, matching the two roots.
 repository configuration and the tool's machine-local working files, which is why
 the repository config lives there rather than beside `.git`.
 
+**One setting belongs to the repository scope alone: `track`.** It records whether the
+project is version-controlled and whether its trajectory files are private, it is
+written only by `minispec init`, and it is verified rather than merely stored. A
+design root cannot set or override it, because it describes the repository. See
+[initialization.md](initialization.md).
+
 **A top-level `.minispec.yaml` is always an error.** Not because the case never
 arises, but because the inheritance would be incoherent: it would have to inherit
 from `.minispec/config.yaml`, a file inside its own directory. Where the repository

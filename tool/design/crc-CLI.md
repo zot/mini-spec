@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169
 
 Command-line interface handling.
 
@@ -13,12 +13,43 @@ Command-line interface handling.
 - Parse(args): parse command and flags
 - Run(): dispatch to appropriate handler (or show version if --version)
 - CheckVersion(): find skill README.md under the **repository root** first, then the user's home directory, in .claude/skills/mini-spec/; extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found. (R117)
+- Gate(cmd): before dispatching anything that does more than report a version, require a repository configuration and a verified `track`. `--version`, `help` and `check-version` are exempt; `init` is the only command that may proceed without a configuration (R152, R153, R154)
+- refuseNoConfig(): the no-configuration crank handle (R155–R159)
 - Output(data): format and print result (text or JSON)
 - Error(err): print error to stderr
 - PrintVersion(): display version and exit
 
+**The refusal is written for the agent, and the agent writes for the human.** The tool
+supplies the gist; a verbatim script cannot adapt to what the agent found, and would
+still say "if this is a code project" after the agent had established that it plainly
+is or plainly is not. One register, one rule.
+
+Three things that message must carry, each closing a hole the others do not:
+
+- **The absolute path** it would make the repository root, so the user's yes lands on a
+  stated location rather than on "here" (R155).
+- **The instruction to look, and the stop.** Whether this directory holds code is a
+  *fact*, so the agent goes and checks rather than asking the user — but the moment the
+  message says "check," a weaker agent can conclude *yes* and run `init`, building the
+  road deliberately left unbuilt. So it ends with **report and wait** (R156, R157).
+- **The negative finding it is really hunting for.** This refusal exists because
+  someone ran from *above* their project, and a directory full of project directories
+  is exactly what an agent can recognise. "This looks like a folder of projects" is more
+  useful than a yes, and it is the case that would otherwise plant a repository root in
+  the wrong place (R158). Declined, the answer is to run from inside the project (R160).
+
+**Why `check-version` is exempt (R153).** A skill's first instruction is to run it. A
+version check that refused in an uninitialized project would leave an agent unable to
+establish whether its tool matches its skill *before* being told what to do about that.
+
+**Every project predating `track` meets this refusal once (R169).** That is the
+adoption path rather than a side effect — the refusal is how such a project gets asked
+the question it was never asked.
+
 ## Collaborators
 - Project: to initialize project context and to resolve the repository root for CheckVersion
+- Init: for the `init` command, and named by the refusals as the way forward
+- Track: to verify the declared value before any non-trivial command runs
 - Query: for query subcommands
 - Update: for update subcommands
 - Validate: for validate command

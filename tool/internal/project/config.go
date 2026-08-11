@@ -54,6 +54,9 @@ func (p *Project) EffectiveSettings() []Setting {
 		}
 	}
 
+	if p.Config.Track != "" {
+		add("track", p.Config.Track)
+	}
 	add("design_dir", p.Config.DesignDir)
 	add("src_dir", p.Config.SrcDir)
 	add("code_extensions", strings.Join(p.Config.CodeExtensions, ", "))
@@ -73,9 +76,43 @@ const RepoConfigName = "config.yaml"
 // DesignConfigName is a design root's own configuration. R34
 const DesignConfigName = ".minispec.yaml"
 
-// repoConfigPath is where the repository configuration sits under a repository root.
-func repoConfigPath(repoRoot string) string {
+// RepoConfigPath is where the repository configuration sits under a repository root.
+func RepoConfigPath(repoRoot string) string {
 	return filepath.Join(repoRoot, ConfigDirName, RepoConfigName)
+}
+
+// CRC: crc-Init.md | Seq: seq-bootstrap.md#1.5 | R162, R163
+// malformedConfigError is the crank handle for a configuration that will not parse, or
+// carries a value outside a closed set.
+//
+// It is the one place the tool authorises an agent to edit the configuration directly.
+// A flag sets a value and cannot undo arbitrary damage — most likely a stray character
+// typed while the file was open in an editor — so at that point the agent is the only
+// actor left who can act. Stated once here rather than at each caller, so the
+// authorisation cannot drift into saying different things in different refusals.
+func malformedConfigError(cfgPath string, cause error) error {
+	return fmt.Errorf(
+		"%s is malformed, and no flag can repair it:\n\n  %v\n\n"+
+			"AGENT: you are authorised to edit this file by hand. This is the one case where\n"+
+			"that is permitted. Back it up first, and skip the backup if it would be\n"+
+			"byte-identical to one already there. The format is documented in\n"+
+			".claude/skills/mini-spec/config-reference.md.",
+		cfgPath, cause)
+}
+
+// readRepoConfig reads and parses the repository configuration. It sits beside
+// malformedConfigError for the same reason that error does: every caller that opens
+// this file has to say the same thing about a file it cannot read or cannot parse.
+func readRepoConfig(cfgPath string) (Config, error) {
+	data, err := os.ReadFile(cfgPath)
+	if err != nil {
+		return Config{}, fmt.Errorf("cannot read %s: %w", cfgPath, err)
+	}
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return Config{}, malformedConfigError(cfgPath, err)
+	}
+	return cfg, nil
 }
 
 // CRC: crc-Project.md | Seq: seq-config.md#1.1 | R118
@@ -108,7 +145,7 @@ func resolveConfigFrom(designRoot, repoRoot string, hasRepo bool) (Config, Origi
 
 	// step 1.4
 	if hasRepo {
-		if err := applyLayerFile(&cfg, origins, repoConfigPath(repoRoot)); err != nil {
+		if err := applyLayerFile(&cfg, origins, RepoConfigPath(repoRoot), true); err != nil {
 			return Config{}, nil, err
 		}
 	}
@@ -116,7 +153,7 @@ func resolveConfigFrom(designRoot, repoRoot string, hasRepo bool) (Config, Origi
 	// step 1.5 — unconditional. Where the repository root and the design root are the
 	// same directory, this file *is* the one step 1.2 rejected, so there is no
 	// "unless the roots coincide" case to write.
-	if err := applyLayerFile(&cfg, origins, filepath.Join(designRoot, DesignConfigName)); err != nil {
+	if err := applyLayerFile(&cfg, origins, filepath.Join(designRoot, DesignConfigName), false); err != nil {
 		return Config{}, nil, err
 	}
 
@@ -134,7 +171,7 @@ func rejectRepoRootDesignConfig(repoRoot string) error {
 	if _, err := os.Lstat(path); err != nil {
 		return nil
 	}
-	repoCfg := repoConfigPath(repoRoot)
+	repoCfg := RepoConfigPath(repoRoot)
 	return fmt.Errorf(
 		"%s is not a valid location for a mini-spec config.\n"+
 			"The repository configuration lives at %s.\n"+
@@ -143,9 +180,15 @@ func rejectRepoRootDesignConfig(repoRoot string) error {
 	)
 }
 
+// CRC: crc-Project.md | Seq: seq-config.md#1.4 | R135
 // applyLayerFile reads one configuration layer and applies it. A missing file is not
 // an error — a layer a project does not use simply contributes nothing.
-func applyLayerFile(cfg *Config, origins Origins, path string) error {
+//
+// isRepoLayer gates the one repository-scoped setting. A design root stating `track`
+// is refused rather than ignored: silently dropping it would leave someone editing a
+// line that has no effect and no way to discover that, which is the failure this
+// project treats as worse than an error.
+func applyLayerFile(cfg *Config, origins Origins, path string, isRepoLayer bool) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
@@ -153,6 +196,13 @@ func applyLayerFile(cfg *Config, origins Origins, path string) error {
 	var layer Config
 	if err := yaml.Unmarshal(data, &layer); err != nil {
 		return fmt.Errorf("invalid config %s: %w", path, err)
+	}
+	if layer.Track != "" && !isRepoLayer {
+		return fmt.Errorf(
+			"%s sets `track`, which is repository-scoped and belongs only in %s.\n"+
+				"It describes the repository, and a repository may hold several design roots,\n"+
+				"so one of them cannot answer for the whole. Remove it here.",
+			path, ConfigDirName+"/"+RepoConfigName)
 	}
 	applyLayer(cfg, layer, path, origins)
 	return nil
@@ -166,7 +216,12 @@ func applyLayerFile(cfg *Config, origins Origins, path string) error {
 // an inherited entry means dropping the setting from the layer above and stating it
 // here instead.
 func applyLayer(cfg *Config, layer Config, origin string, origins Origins) {
-	// step 2.1
+	// step 2.1 — track is a scalar like any other, but only the repository layer can
+	// have supplied one: applyLayerFile refuses it from anywhere else. R135
+	if layer.Track != "" {
+		cfg.Track = layer.Track
+		origins["track"] = origin
+	}
 	if layer.DesignDir != "" {
 		cfg.DesignDir = layer.DesignDir
 		origins["design_dir"] = origin

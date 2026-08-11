@@ -12,6 +12,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 |---|---|
 | [config.md](config.md) | design-root detection, the two config scopes and their inheritance, comment patterns and closers, global flags, version reporting |
 | [repository-root.md](repository-root.md) | repository-root detection, the two-root distinction, marker ranking, the home-directory exclusion |
+| [initialization.md](initialization.md) | `init` and `--repair`, the `track` setting and its startup check, the no-configuration refusal, git preferences |
 
 ### Commands — what the tool does once oriented
 
