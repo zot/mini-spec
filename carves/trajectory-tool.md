@@ -60,7 +60,7 @@ marker. Ark's live carves already read this way — `**Item 8 — a test harness
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
   - [x] ~~repository-root detection.~~ **LANDED (`8197c6c`, 2026-08-07.)**
   - [x] ~~`.minispec/` and the config move.~~ **LANDED (`fe0cd11`, 2026-08-07.)**
-  - [ ] `init`, `track`, and `--repair`. **OPEN (#4.)**
+  - [x] ~~`init`, `track`, and `--repair`.~~ **LANDED (`0711319`, 2026-08-11.)**
 - [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
 - [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
@@ -362,6 +362,29 @@ rather than by remembering two paths.
 and adds `.minispec/backup` to the top-level `.gitignore`.**
 
 ### `track`, and the bootstrap rule
+
+**MIGRATED 2026-08-11 (`0711319`).** Everything decided in this section is now
+specified in [tool/specs/initialization.md](../tool/specs/initialization.md) and
+numbered R131–R172. **That spec is the authority; what follows is the reasoning that
+produced it**, kept because a spec states behavior rather than why it was chosen, and
+the three-tier argument in particular is worth more than the rule it produced. Where
+the two disagree, the spec wins.
+
+*Three requirements have no ancestor here, because building it produced them.* R170:
+whether a path is already ignored is asked of git, never decided by matching lines —
+`/PENDING.md`, `PENDING.md` and `*.md` are the same intent written three ways. R171:
+lines the tool writes are anchored, since every governed path is mandated at the
+repository root. R172: a path the chosen value wants public but some rule outside the
+top-level `.gitignore` still ignores is *named*, not silently left.
+
+That trio came from one defect, found the first time `init` ran on a real repository —
+this one. Text matching did not recognise the anchored `/PENDING.md` already present,
+appended the bare form beside it, and because the last matching pattern wins, replaced
+a narrow rule with a broader one. Recorded here rather than only in the spec because it
+is the sharpest instance of this carve's own argument: **every fake agreed with the
+broken code, and the tests all still passed after the bug was found.** They asserted
+presence; the property was multiplicity. Ad-hoc reasoning about a format is silently
+wrong in exactly the way ad-hoc shell was.
 
 **DECIDED (Bill, 2026-08-04): `minispec init --track-STYLE`, and the flag is
 mandatory.** It records a `track` setting in `.minispec/config.yaml`:
@@ -1386,8 +1409,10 @@ carve exists to make possible.
    to know what shape it is looking at. A version lets the tool upgrade, or refuse,
    rather than misparse — but it is also one more thing in every file, so it earns
    its place only if migration is real rather than hypothetical.
-10. **Does mini-spec run its own trajectory layer?** Partially answered on
-   2026-08-04: this repo grew a pending file and this carve directory the same day.
-   Still absent: a current file, a done file, and any project prefix decision.
-   Building tooling for a layer the project does not itself run is a smell worth
-   closing one way or the other.
+10. ~~**Does mini-spec run its own trajectory layer?**~~ — **answered 2026-08-11: yes.**
+   The pending file and this carve directory arrived 2026-08-04; the done and current
+   files followed on 2026-08-07, when the first item completed and there was nowhere to
+   record it. All three exist and are in use, and no project prefix was ever wanted —
+   the bare names are the mandated ones. The smell is closed: this project runs the
+   layer it is building tooling for, and `#4` is the proof, since `init` refused to run
+   here until this repository declared its own `track`.
