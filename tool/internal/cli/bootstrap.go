@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -62,10 +63,10 @@ func (c *CLI) gate(cmd string) (int, bool) {
 		return 1, true
 	}
 
-	// steps 1.5 and 1.6
+	// steps 1.5, 1.6, 1.6.1 and 1.6.2
 	track, err := project.LoadTrack(cfgPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		fmt.Fprint(os.Stderr, trackRefusal(cfgPath, err))
 		return 1, true
 	}
 
@@ -187,6 +188,54 @@ func noConfigMessage(repoRoot string) string {
 	// R169
 	b.WriteString("(A project that already uses mini-spec meets this once: `track` is new, and\n" +
 		"this refusal is how it gets asked.)\n")
+	return b.String()
+}
+
+// CRC: crc-CLI.md | Seq: seq-bootstrap.md#1.6 | R174
+// trackRefusal chooses which refusal a failed LoadTrack earns: absence gets the
+// pre-track crank handle, damage gets whatever the loader said, which is the malformed
+// authorisation.
+//
+// Split out of the gate so the *branch* is testable and not merely the two messages.
+// Reverting this routing is the invisible regression — ErrNoTrack's own text names
+// `--repair`, so the output would stay plausible while the intent question and the stop
+// silently vanished.
+func trackRefusal(cfgPath string, err error) string {
+	if errors.Is(err, project.ErrNoTrack) {
+		return preTrackMessage(cfgPath)
+	}
+	return fmt.Sprintf("%v\n", err)
+}
+
+// CRC: crc-CLI.md | Seq: seq-bootstrap.md#1.6.1 | R174, R175, R176
+// preTrackMessage is the refusal for a configuration that parses but sets no `track`.
+//
+// A separate message from the malformed refusal because the two resolve differently:
+// absence is a version difference a flag supplies, a wrong value is damage a flag
+// cannot be trusted with. Routing this case to the malformed refusal told the agent to
+// hand-edit a file `--repair` accepts — and a hand edit sets the value while leaving
+// `.gitignore` alone, which is half a repair offered as the only one available.
+//
+// It asks for strictly less than noConfigMessage. A configuration existing settles that
+// this is a mini-spec project and settles where its root is, so the only thing left is
+// the intent no inspection can supply — which is why the directory-inspection step is
+// absent here rather than merely optional.
+func preTrackMessage(cfgPath string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s has no `track` setting.\n\n", cfgPath)
+	b.WriteString("This configuration predates `track`. It is not damaged, and a flag repairs it.\n\n")
+	// R175 — the one question no inspection can answer.
+	b.WriteString("AGENT: ask the user, in plain words, whether this project's work queue should\n" +
+		"stay private or ship with the repository. That is the only thing the tool cannot\n" +
+		"work out for itself, and the two answers mean opposite things about what this\n" +
+		"repository publishes.\n\n")
+	// R176 — the stop. Same reason as the no-configuration refusal: an agent that picks
+	// a value on the user's behalf is manufacturing assent.
+	b.WriteString("THEN REPORT AND WAIT. Do not choose a value on the user's behalf.\n\n")
+	b.WriteString("On their answer, the command is:\n\n")
+	b.WriteString("    minispec init --track-<none|private-trajectory|all> --repair\n\n")
+	b.WriteString("It sets `track` and brings .gitignore into agreement with it, leaving every\n" +
+		"other setting and every comment in the file alone.\n")
 	return b.String()
 }
 

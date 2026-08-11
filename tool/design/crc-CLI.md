@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176
 
 Command-line interface handling.
 
@@ -15,6 +15,9 @@ Command-line interface handling.
 - CheckVersion(): find skill README.md under the **repository root** first, then the user's home directory, in .claude/skills/mini-spec/; extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found. (R117)
 - Gate(cmd): before dispatching anything that does more than report a version, require a repository configuration and a verified `track`. `--version`, `help` and `check-version` are exempt; `init` is the only command that may proceed without a configuration (R152, R153, R154)
 - refuseNoConfig(): the no-configuration crank handle (R155–R159)
+- refusePreTrack(): the crank handle for a configuration that parses but sets no
+  `track`. Names `minispec init --track-<style> --repair`, asks the agent for the
+  user's intent alone, and stops there (R174–R176)
 - Output(data): format and print result (text or JSON)
 - Error(err): print error to stderr
 - PrintVersion(): display version and exit
@@ -42,9 +45,26 @@ Three things that message must carry, each closing a hole the others do not:
 version check that refused in an uninitialized project would leave an agent unable to
 establish whether its tool matches its skill *before* being told what to do about that.
 
-**Every project predating `track` meets this refusal once (R169).** That is the
-adoption path rather than a side effect — the refusal is how such a project gets asked
-the question it was never asked.
+**Every project predating `track` meets a refusal once (R169), but not the same one.**
+That is the adoption path rather than a side effect — a refusal is how such a project
+gets asked the question it was never asked. Which refusal depends on what it already
+has, and the two name opposite verbs:
+
+- **No `.minispec/` at all** — the no-configuration refusal above, answered by plain
+  `init`.
+- **A configuration written before `track` existed** — `refusePreTrack`, answered by
+  `--repair`, because plain `init` refuses where `.minispec/` is present.
+
+**`refusePreTrack` asks for strictly less (R175).** The no-configuration refusal has to
+send the agent looking, because whether this directory is a project at all is unknown. A
+configuration existing settles that, and settles the repository root with it. What is
+left is the one thing no inspection can supply — whether the queue stays private or ships
+— so the message carries the question, the stop (R176), and the command, and nothing
+else.
+
+**It is a separate message because the alternative was measurably wrong (R174).** Routing
+a missing `track` to the malformed refusal told the agent to hand-edit a file that
+`--repair` accepts, and a hand edit sets the value while leaving `.gitignore` alone.
 
 ## Collaborators
 - Project: to initialize project context and to resolve the repository root for CheckVersion

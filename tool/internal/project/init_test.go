@@ -27,6 +27,15 @@ func readGitignore(t *testing.T, dir string) string {
 	return string(data)
 }
 
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
 // R136 — the value is never inferred or defaulted; it is the one decision the tool
 // must not make for the user.
 func TestInitRequiresATrackValue(t *testing.T) {
@@ -350,6 +359,151 @@ func TestRepairRefusesAMalformedConfig(t *testing.T) {
 	after, _ := os.ReadFile(RepoConfigPath(dir))
 	if string(after) != broken {
 		t.Error("refused --repair modified the malformed config")
+	}
+}
+
+// R173 — a configuration with no `track` predates the setting rather than being
+// damaged, so --repair supplies what is absent instead of refusing.
+func TestRepairAcceptsAConfigWithNoTrack(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(RepoConfigPath(dir), []byte("design_dir: design\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := initIn(t, dir, TrackAll, true, gitWith()); err != nil {
+		t.Fatalf("--repair on a pre-track config failed: %v", err)
+	}
+	v, err := LoadTrack(RepoConfigPath(dir))
+	if err != nil || v != TrackAll {
+		t.Errorf("after repair LoadTrack = (%q, %v), want (all, nil)", v, err)
+	}
+}
+
+// R177 — the writer edits one key and leaves the rest of the file as written.
+//
+// Every property here was destroyed by the obvious implementation (unmarshal into
+// Config, marshal back), and none of them had a test: the suite asserted what the file
+// *gained* and never what it kept. Measured on this tool's own reference repository,
+// where a repair deleted ten lines of comment explaining a non-obvious setting.
+func TestRepairPreservesCommentsAndUnknownSettings(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	original := `# why this project needs three comment prefixes
+# (the reasoning a human left for the next reader)
+comment_patterns:
+  .html: "<!--\\s*|//\\s*"
+
+# written by a newer tool version than this binary
+future_setting: 42
+`
+	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := initIn(t, dir, TrackPrivateTrajectory, true, gitWith()); err != nil {
+		t.Fatalf("--repair failed: %v", err)
+	}
+
+	after := readFile(t, RepoConfigPath(dir))
+	for _, want := range []string{
+		"# why this project needs three comment prefixes",
+		"# (the reasoning a human left for the next reader)",
+		"# written by a newer tool version than this binary",
+		`.html: "<!--\\s*|//\\s*"`,
+		"future_setting: 42",
+		"track: private-trajectory",
+	} {
+		if !strings.Contains(after, want) {
+			t.Errorf("repair dropped %q:\n%s", want, after)
+		}
+	}
+	// Key order is part of what a human wrote, so the new key lands at the end rather
+	// than the document being re-serialised in struct-field order.
+	if i, j := strings.Index(after, "comment_patterns"), strings.Index(after, "track:"); i > j {
+		t.Errorf("repair reordered the file's keys:\n%s", after)
+	}
+}
+
+// R177 — the *replace* branch, which the append case above does not reach. Changing a
+// value that is already there must edit that one scalar and leave the annotation on it
+// standing, since a repair in either direction is the whole point of the verb.
+func TestRepairChangingAnExistingValueKeepsItsComment(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	original := "# the queue ships with this repository on purpose\ntrack: all\ndesign_dir: design\n"
+	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := initIn(t, dir, TrackPrivateTrajectory, true, gitWith()); err != nil {
+		t.Fatalf("--repair failed: %v", err)
+	}
+	after := readFile(t, RepoConfigPath(dir))
+	for _, want := range []string{
+		"# the queue ships with this repository on purpose",
+		"track: private-trajectory",
+		"design_dir: design",
+	} {
+		if !strings.Contains(after, want) {
+			t.Errorf("repair dropped %q:\n%s", want, after)
+		}
+	}
+	if strings.Contains(after, "track: all") {
+		t.Errorf("repair did not change the value:\n%s", after)
+	}
+}
+
+// R177 — a value that is already correct leaves the file byte-for-byte alone, so a
+// no-op repair cannot reformat what it did not need to touch.
+func TestRepairOfACorrectValueRewritesNothing(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	original := "# a note\ntrack:   all\ndesign_dir: design\n"
+	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := initIn(t, dir, TrackAll, true, gitWith())
+	if err != nil {
+		t.Fatalf("--repair failed: %v", err)
+	}
+	if after := readFile(t, RepoConfigPath(dir)); after != original {
+		t.Errorf("no-op repair rewrote the config:\ngot:\n%s\nwant:\n%s", after, original)
+	}
+	if len(result.Unchanged) == 0 {
+		t.Error("no-op repair did not report the config as unchanged")
+	}
+}
+
+// R177 — the degenerate documents. An absent, empty or comment-only file parses to a
+// document with no content, which the node walk must not dereference and must not
+// encode as `null`.
+func TestSetTrackHandlesDegenerateDocuments(t *testing.T) {
+	for _, tc := range []struct{ name, body string }{
+		{"absent", ""},
+		{"blank lines", "\n\n"},
+		{"comments only", "# nothing but a comment\n"},
+	} {
+		out, err := setTrack([]byte(tc.body), TrackNone)
+		if err != nil {
+			t.Errorf("%s: setTrack failed: %v", tc.name, err)
+			continue
+		}
+		if !strings.Contains(string(out), "track: none") {
+			t.Errorf("%s: setTrack = %q, want it to set track", tc.name, out)
+		}
+		if strings.Contains(string(out), "null") {
+			t.Errorf("%s: setTrack emitted a null document: %q", tc.name, out)
+		}
 	}
 }
 

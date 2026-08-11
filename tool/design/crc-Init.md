@@ -1,5 +1,5 @@
 # Init
-**Requirements:** R136, R137, R138, R139, R140, R141, R142, R143, R144, R145, R146, R161, R162, R163, R170, R171, R172
+**Requirements:** R136, R137, R138, R139, R140, R141, R142, R143, R144, R145, R146, R161, R162, R163, R170, R171, R172, R173, R177
 
 The sole creator of `.minispec/config.yaml`, and the only repair path for a `track`
 value or a `.gitignore` that disagrees with one.
@@ -38,8 +38,12 @@ inverted, not added to.
   reason from a stale picture and eventually assert it
 - refuseExisting(): plain `init`'s refusal when `.minispec/` is already there, naming
   `--repair` as the way to change a value and saying to confirm with the user first
-- validateWellFormed(): `--repair`'s precondition. A configuration that fails to parse
-  cannot be repaired by a flag, because the damage is arbitrary
+- validateWellFormed(): `--repair`'s precondition. A configuration that fails to parse,
+  or carries a `track` outside the closed set, cannot be repaired by a flag because the
+  damage is arbitrary. A configuration with *no* `track` passes: it predates the
+  setting, and supplying what is absent is what this verb is for (R173)
+- writeConfig(): set `track` in place, preserving the file's comments, the order of its
+  keys, and every setting this binary does not model (R177)
 
 **Coverage is asked of git, never matched as text.** `/PENDING.md`, `PENDING.md` and
 `*.md` are the same intent written three ways, and only git knows the third counts. The
@@ -59,6 +63,17 @@ in an editor. So that refusal states every problem found, points at the skill's
 configuration documentation, and **explicitly authorises the edit** — at that point
 the agent is the only actor left who can act. The agent backs the file up first, and
 skips the backup when it would be byte-identical to one already there.
+
+**The writer edits one key; it does not re-serialise the document (R177).** Reading the
+file into the settings this binary models and writing those settings back is the obvious
+implementation, and it silently drops the comments, the key order, and every setting the
+binary does not know about. That last one is a setting from a *newer* tool version, and
+an older binary deleting it without a word is the same silent partial success this card
+already refuses on the `.gitignore` side. The losses run opposite to their importance:
+what is discarded first is the reasoning a human left for the next reader.
+
+Byte-fidelity is not claimed. A blank line between a comment and what it annotates goes;
+the comment and its attachment stay.
 
 **Why the mandatory flag.** Whether a repository *is* git-managed is checkable after
 the fact; whether you want your queue to ship is not inferable at all, and a default

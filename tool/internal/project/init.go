@@ -2,6 +2,7 @@
 package project
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -143,25 +144,24 @@ func validateWellFormed(cfgPath string) error {
 }
 
 // CRC: crc-Init.md | Seq: seq-bootstrap.md#2.4 | R137, R138
-// writeConfig sets track, preserving every other setting an existing file holds. It
-// writes a basic file rather than a commented template of every available setting:
-// a layer states only what it means, which is the same rule the inheritance model asks
-// of every configuration.
+// writeConfig sets track, preserving everything else an existing file holds. It writes
+// a basic file rather than a commented template of every available setting: a layer
+// states only what it means, which is the same rule the inheritance model asks of every
+// configuration.
 func writeConfig(cfgPath string, track TrackValue, exists bool, result *InitResult) error {
-	var cfg Config
+	var original []byte
 	if exists {
-		if data, err := os.ReadFile(cfgPath); err == nil {
-			_ = yaml.Unmarshal(data, &cfg)
-		}
+		original, _ = os.ReadFile(cfgPath)
 	}
-	if cfg.Track == string(track) {
-		result.Unchanged = append(result.Unchanged, cfgPath)
-		return nil
-	}
-	cfg.Track = string(track)
-	out, err := yaml.Marshal(&cfg)
+	out, err := setTrack(original, track)
 	if err != nil {
 		return err
+	}
+	// Already correct, so the file is left byte-for-byte alone rather than rewritten
+	// into an equivalent form.
+	if out == nil {
+		result.Unchanged = append(result.Unchanged, cfgPath)
+		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
 		return err
@@ -171,6 +171,85 @@ func writeConfig(cfgPath string, track TrackValue, exists bool, result *InitResu
 	}
 	result.record(cfgPath, exists)
 	return nil
+}
+
+// trackKey is the setting's name in the file. The node walk matches it as a string
+// because it is working with the document rather than the struct.
+const trackKey = "track"
+
+// CRC: crc-Init.md | Seq: seq-bootstrap.md#3.4 | R177
+// setTrack edits the one key in a configuration document, returning nil when the value
+// is already correct.
+//
+// The document round-trips through yaml.Node rather than through Config, and that is
+// the whole point of the function. Config models only the settings *this* binary knows
+// about, so unmarshalling into it and marshalling back discards three things at once:
+// the file's comments, the order of its keys, and any setting written by a newer tool
+// version — which an older binary would then delete without a word. The losses run
+// opposite to their importance, the first casualty being the reasoning a human left for
+// the next reader.
+//
+// Byte-fidelity is not claimed: a blank line between a comment and what it annotates is
+// not preserved. The comment and its attachment are.
+func setTrack(original []byte, track TrackValue) ([]byte, error) {
+	var doc yaml.Node
+	if err := yaml.Unmarshal(original, &doc); err != nil {
+		return nil, err
+	}
+	// An absent, empty or comment-only file parses to a document with no content, and a
+	// document that is not a mapping cannot carry a setting at all. Both start fresh —
+	// the malformed check upstream is what keeps the second case from reaching here
+	// with anything worth preserving.
+	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
+		doc = yaml.Node{
+			Kind:    yaml.DocumentNode,
+			Content: []*yaml.Node{{Kind: yaml.MappingNode, Tag: "!!map"}},
+		}
+	}
+
+	m := doc.Content[0]
+	switch value := mappingValue(m, trackKey); {
+	case value == nil:
+		// Appended rather than inserted: key order is part of what a human wrote, so a
+		// key the file never had belongs at the end.
+		m.Content = append(m.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: trackKey},
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: string(track)})
+	case value.Value == string(track):
+		return nil, nil
+	default:
+		// Only the value node is rewritten, which is what leaves a comment annotating
+		// the setting standing.
+		value.SetString(string(track))
+	}
+	return encodeConfig(&doc)
+}
+
+// mappingValue returns the value node a mapping holds for key, or nil when the mapping
+// does not carry it. A mapping node stores its pairs flattened into one slice — key,
+// value, key, value — so the walk strides by two and the value trails its key.
+func mappingValue(m *yaml.Node, key string) *yaml.Node {
+	for i := 0; i+1 < len(m.Content); i += 2 {
+		if m.Content[i].Value == key {
+			return m.Content[i+1]
+		}
+	}
+	return nil
+}
+
+// encodeConfig serialises a configuration document at the two-space indent the rest of
+// the file is written in.
+func encodeConfig(doc *yaml.Node) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(doc); err != nil {
+		return nil, err
+	}
+	if err := enc.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // CRC: crc-Init.md | Seq: seq-bootstrap.md#2.6 | R139, R140, R144, R170, R172

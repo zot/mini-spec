@@ -1,5 +1,5 @@
 # Track
-**Requirements:** R131, R132, R133, R134, R135, R147, R148, R149, R150, R151
+**Requirements:** R131, R132, R133, R134, R135, R147, R148, R149, R150, R151, R173
 
 Owns the `track` setting — the one thing a tool cannot infer about a repository —
 and verifies it against what git actually reports, on every non-trivial run.
@@ -19,6 +19,9 @@ is a checksum.
 ## Does
 - Parse(string): resolve a configuration value to a Value, rejecting anything outside
   the closed set
+- Load(cfgPath): read the declared value, distinguishing a configuration that sets no
+  `track` from one that sets an unrecognised one. Both refuse, and they refuse
+  *differently* — see below (R173)
 - ExpectedIgnored(repoRoot): the paths this value requires git to ignore. Under
   `private-trajectory` that is the trajectory files and `.carves/`; under `all` it is
   `.carves/` alone, since a directory whose whole purpose is privacy does not become
@@ -36,6 +39,14 @@ session, because a one-shot reminder decays to nothing — measured on this proj
 own sibling repository, where the single category with no standing check sat at 19%
 stale while every checked category sat at zero. It cannot become wallpaper either,
 because it is closable: repair once and it is gone.
+
+**Absence is a version difference; a wrong value is damage (R173).** A configuration
+with no `track` is one written before the setting existed, and the flag supplies exactly
+what is missing — so it is repairable, and `Load` says so. A configuration with a value
+outside the closed set was edited by a hand that may have changed other things, so no
+flag can be trusted to fix it. Init's well-formedness check has always drawn the line
+here; this card's job is to report the two cases apart so the gate can draw it in the
+same place, instead of refusing a repair the repair path would have accepted.
 
 **Why a design root cannot override it.** `track` describes the repository, and a
 repository may hold several design roots. Letting one of them answer for the whole

@@ -2,6 +2,7 @@
 package project
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -154,22 +155,36 @@ func (v TrackValue) Verify(g GitFacts, repoRoot string) []Mismatch {
 	return out
 }
 
-// CRC: crc-Track.md | Seq: seq-bootstrap.md#1.6 | R131, R152
+// CRC: crc-Track.md | R173
+// ErrNoTrack marks a configuration that parses but sets no `track`.
+//
+// Distinguished from a malformed one because the two resolve differently, and the tool
+// has to say which repair applies. **Absence is a version difference; a wrong value is
+// damage.** A key that was never written is what every configuration predating this
+// setting has, and `--repair` supplies exactly what is missing — Init's well-formedness
+// check has always accepted this case. A value outside the closed set was typed by a
+// hand that may have changed other things, so no flag can be trusted with it.
+//
+// Collapsing the two made the gate refuse a repair its own repair path would have
+// accepted, sending the agent to hand-edit a file a flag could fix — and a hand edit
+// sets `track` while leaving `.gitignore` unreconciled.
+var ErrNoTrack = errors.New("no `track` setting. A configuration predating `track` is" +
+	" repaired with `minispec init --track-<style> --repair`")
+
+// CRC: crc-Track.md | Seq: seq-bootstrap.md#1.6 | R131, R152, R173
 // LoadTrack reads the declared value from the repository configuration.
 //
-// A configuration with no `track` is malformed rather than defaulted. `init` is the
-// sole creator and always writes one, so its absence means the file was hand-made or
-// damaged — and guessing on its behalf would silently make the choice the mandatory
-// flag exists to prevent anyone making by accident.
+// Neither absence nor an unrecognised value is defaulted: guessing would silently make
+// the choice the mandatory flag exists to prevent anyone making by accident. They are
+// reported apart so the caller can name the repair that actually applies — see
+// ErrNoTrack.
 func LoadTrack(cfgPath string) (TrackValue, error) {
 	cfg, err := readRepoConfig(cfgPath)
 	if err != nil {
 		return "", err
 	}
 	if strings.TrimSpace(cfg.Track) == "" {
-		return "", malformedConfigError(cfgPath, fmt.Errorf(
-			"no `track` setting. Every configuration has one, because `minispec init`"+
-				" cannot be run without choosing it"))
+		return "", ErrNoTrack
 	}
 	v, err := ParseTrack(cfg.Track)
 	if err != nil {

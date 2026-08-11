@@ -95,6 +95,20 @@ is how the user chooses between them.
 **That choice is the user's, so the agent confirms before running it.** The tool
 detects, the agent relays, the human decides.
 
+**`--repair` sets one key and disturbs nothing else.** It preserves the configuration's
+comments, the order of its keys, and every setting the tool does not model. The obvious
+implementation — read the file into the settings this binary knows about, then write
+those settings back out — silently deletes all three, and the losses run opposite to
+their importance: the comments are the reasoning a human left for the next reader, and
+an unmodelled key is a setting from a *newer* tool version, discarded by an older binary
+without a word. A repair that quietly narrows a configuration to what the running binary
+happens to understand is the same silent partial success this layer refuses everywhere
+else.
+
+The one thing it does not promise is byte-fidelity: a blank line separating a comment
+from what it annotates is not preserved. Comments survive, their attachment survives,
+the spacing between them does not.
+
 **What repair cannot reach, it names.** Making a path public means deleting the line
 that ignores it, and the tool only owns the top-level `.gitignore`. A path ignored by a
 nested `.gitignore`, by `.git/info/exclude`, or by the user's global excludes stays
@@ -188,6 +202,36 @@ walks up, so a marker below would already have been found; the user is outside t
 project, most likely above it. Creating anything here would put a repository root in
 the wrong place, and it is durable enough that the mistake would persist.
 
+## A configuration that predates `track`
+
+A configuration that parses but sets no `track` is **not malformed**. It is an older
+schema, and `--repair` is precisely the verb for it.
+
+The line between the two cases is one sentence: **absence is a version difference; a
+wrong value is damage.** A key that was never written is what every configuration
+predating this setting has, and a flag supplies exactly the thing that is missing. A
+value outside the closed set is a character somebody typed, and a flag that sets one
+value cannot know what else the same hand changed.
+
+That line is not new. `--repair` has always drawn it — it accepts a configuration with
+no `track` and refuses one whose value it cannot parse. What was missing is the startup
+check drawing it in the *same place*, so that the two agree about which configurations a
+flag can fix. A tool that refuses a repair its own repair path would have accepted sends
+the agent to hand-edit the file, which sets `track` and leaves `.gitignore` untouched —
+half a repair, reported as the only one available.
+
+**The refusal asks for the intent and nothing else.** Unlike the no-configuration case,
+there is nothing here for the agent to go and establish: a configuration exists, so this
+is settled as a mini-spec project and the repository root is already known. The single
+irreducible question is the one `track` was made mandatory for — does this project's
+work queue stay private or ship with the repository — and only the user can answer it.
+So the message carries the question, the stop, and the command, and skips the inspection
+step that the no-configuration refusal needs.
+
+**The stop is the same and for the same reason.** An agent that picks a `track` value on
+the user's behalf is manufacturing assent, and the two answers mean opposite things
+about what the repository publishes. Report and wait.
+
 ## A malformed configuration
 
 `--repair` validates well-formedness before doing anything, and a configuration that
@@ -241,3 +285,16 @@ commands run without one, **every project already using mini-spec must run `init
 before other commands work. That is the adoption cost of making `track` mandatory, and
 it is the point rather than a side effect: the one-time refusal is how a project that
 predates `track` is asked the question, and the crank handle is what carries the ask.
+
+**There are two such populations, and they take opposite forms of the command.** A
+project with no `.minispec/` at all meets the no-configuration refusal and runs plain
+`init`. A project that already has a `.minispec/config.yaml` written before `track`
+existed meets the pre-`track` refusal and runs `--repair`, because plain `init` refuses
+where `.minispec/` is present. Both are asked the same question and neither can be
+inferred; only the verb differs, and the refusal each meets is the one that names the
+right verb.
+
+The second population exists because `init` is the sole creator *now* but was not
+always: a configuration predating the command was necessarily written by hand. That
+makes the population finite and knowable rather than open-ended — but it includes this
+tool's own reference projects, which is where the case was found.

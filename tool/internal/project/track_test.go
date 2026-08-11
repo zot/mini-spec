@@ -1,7 +1,8 @@
-// CRC: crc-Track.md | Seq: seq-bootstrap.md | R131, R133, R134, R147, R148, R149, R151, R164, R165
+// CRC: crc-Track.md | Seq: seq-bootstrap.md | R131, R133, R134, R147, R148, R149, R151, R164, R165, R173
 package project
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,22 +196,42 @@ func TestPreferenceReportNamesOnlyUnmetPreferences(t *testing.T) {
 	}
 }
 
-// R131, R152 — a configuration with no track is malformed rather than defaulted.
+// R131, R152, R173 — neither absence nor a bad value is defaulted, and the two are
+// reported *apart* so the caller can name the repair that actually applies.
+//
+// Asserting only "an error" is what let the two collapse: the gate then sent every
+// pre-`track` configuration to the hand-edit refusal, which `--repair` would have
+// accepted. So each case names the error it must produce.
 func TestLoadTrackRejectsAMissingOrBadValue(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 
-	for _, tc := range []struct{ name, body string }{
-		{"empty", ""},
-		{"no track key", "design_dir: design\n"},
-		{"unknown value", "track: sometimes\n"},
-		{"unparseable", "track: [\n"},
+	for _, tc := range []struct {
+		name, body  string
+		wantNoTrack bool
+	}{
+		{name: "empty", body: "", wantNoTrack: true},
+		{name: "no track key", body: "design_dir: design\n", wantNoTrack: true},
+		{name: "blank track", body: "track: \"\"\n", wantNoTrack: true},
+		{name: "unknown value", body: "track: sometimes\n"},
+		{name: "unparseable", body: "track: [\n"},
 	} {
 		if err := os.WriteFile(path, []byte(tc.body), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if v, err := LoadTrack(path); err == nil {
+		v, err := LoadTrack(path)
+		if err == nil {
 			t.Errorf("%s: LoadTrack = %q, want an error", tc.name, v)
+			continue
+		}
+		if got := errors.Is(err, ErrNoTrack); got != tc.wantNoTrack {
+			t.Errorf("%s: errors.Is(err, ErrNoTrack) = %v, want %v (err: %v)",
+				tc.name, got, tc.wantNoTrack, err)
+		}
+		// Damage authorises a hand edit; absence must not, because a flag repairs it.
+		if authorised := strings.Contains(err.Error(), "authorised to edit"); authorised == tc.wantNoTrack {
+			t.Errorf("%s: hand-edit authorisation present = %v, want %v: %v",
+				tc.name, authorised, !tc.wantNoTrack, err)
 		}
 	}
 
@@ -219,6 +240,14 @@ func TestLoadTrackRejectsAMissingOrBadValue(t *testing.T) {
 	}
 	if v, err := LoadTrack(path); err != nil || v != TrackAll {
 		t.Errorf("LoadTrack = (%q, %v), want (all, nil)", v, err)
+	}
+}
+
+// R173 — the pre-`track` error names the verb that fixes it. A refusal that does not
+// say what to run is a nag, and this one is the only prompt the case ever gets.
+func TestNoTrackErrorNamesRepair(t *testing.T) {
+	if !strings.Contains(ErrNoTrack.Error(), "--repair") {
+		t.Errorf("ErrNoTrack does not name --repair: %v", ErrNoTrack)
 	}
 }
 
