@@ -322,6 +322,19 @@ this lands.** It is not a supported shape, so the rule stays flat and the check 
 a single existence test — no special case for links, and no indefinite support for
 binaries reading the old location. Until then ark works normally through it.
 
+**DISCHARGED (`5ea35f1`, 2026-08-11 — queue item #5.)** Ark is repaired: `track:
+private-trajectory` recorded, `/.minispec/backup` ignored, and the symlink gone.
+
+*The order this went in matters more than the removal, and it is the one thing to
+carry forward.* The paragraph above assumed the upgraded tool lands first and its gripe
+is what prompts the removal. It went the other way, because the binary was unreleased —
+and removing the link took the **old** binary's only route to ark's config with it, so
+`~/.claude/bin/minispec` silently stopped resolving ark's `.html` comment alternation
+and would have under-reported coverage with no error. Closed by rebuilding
+`minispec-linux-amd64` from current source. **Transition scaffolding comes out after
+the thing replacing it is installed, never before** — removed early, the breakage is
+silent rather than noisy, which inverts the whole point of the gripe.
+
 *And the sequencing needs no coordination* (Bill, 2026-08-04). The upgraded tool
 gripes on its first run, and that gripe *is* the reminder to remove the link — the
 same shape as every other refusal here: the tool detects and instructs rather than
@@ -363,12 +376,23 @@ and adds `.minispec/backup` to the top-level `.gitignore`.**
 
 ### `track`, and the bootstrap rule
 
-**MIGRATED 2026-08-11 (`0711319`).** Everything decided in this section is now
-specified in [tool/specs/initialization.md](../tool/specs/initialization.md) and
-numbered R131–R172. **That spec is the authority; what follows is the reasoning that
-produced it**, kept because a spec states behavior rather than why it was chosen, and
-the three-tier argument in particular is worth more than the rule it produced. Where
-the two disagree, the spec wins.
+**MIGRATED 2026-08-11 (`0711319`, extended by `5ea35f1`).** Everything decided in this
+section is now specified in
+[tool/specs/initialization.md](../tool/specs/initialization.md) and numbered R131–R177.
+**That spec is the authority; what follows is the reasoning that produced it**, kept
+because a spec states behavior rather than why it was chosen, and the three-tier
+argument in particular is worth more than the rule it produced. Where the two disagree,
+the spec wins.
+
+*R173–R177 have no ancestor here either, and they came from the same source as R170–R172:
+running the thing on a real repository.* The gate reported a configuration with no
+`track` as malformed and sent the agent to hand-edit, while `--repair` had always
+accepted that exact case — so the tool refused a repair its own repair path would have
+performed, and the hand edit it recommended sets `track` without reconciling
+`.gitignore`. **Absence is a version difference; a wrong value is damage.** And
+`--repair` itself round-tripped the configuration through the settings struct, deleting
+ark's ten-line comment block along with any key a newer tool version might have written.
+Both were invisible to every fixture, because a fixture has no comments to lose.
 
 *Three requirements have no ancestor here, because building it produced them.* R170:
 whether a path is already ignored is asked of git, never decided by matching lines —
