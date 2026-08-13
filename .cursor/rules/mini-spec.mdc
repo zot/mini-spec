@@ -4,9 +4,18 @@ alwaysApply: true
 ---
 # Mini-spec
 
+## Cursor integration
+
+**`minispec` executable:** Use `minispec` on `PATH`, or the path in environment variable `MINISPEC` when running shell commands (PowerShell: `& $env:MINISPEC check-version`). Match tool version to `.claude/skills/mini-spec/README.md` via `minispec check-version`.
+
+**Progress visibility (Claude `TaskCreate` / `TaskUpdate` parity):** Before reading files or starting phase work, create **todos** for each applicable phase (Spec, Requirements, Design, Implementation, Simplification, Gaps). During implementation, add per-file todos. Mark todos **completed** as phases finish—same intent as Claude Code tasks.
+
+**Simplification (Claude `code-simplifier` parity):** No separate Cursor plugin. After Implementation phase, do one **in-session simplification pass** on changed files: clarity, consistency, naming—**no behavior change**—then Gaps.
+
+---
 ## Load the model first
 
-**IMMEDIATELY invoke `/minimap` using the Skill tool before doing anything else.** It carries the structural *model* this skill builds on: the 3-level spec→design→code layout, what each level is for, where artifacts live, the **root spec index**, what a **summary spec** is, and the **traceability links** (`Rn` → CRC card → code `// CRC:/Seq:` comment) that stitch the levels together. Start at the design docs and the root index, not at code — drop into code-level tools (Grep, codebase search, etc.) only after they've oriented you. This skill adds the **process** — phases, traceability *maintenance*, gaps, migrations, trajectory tracking — on top of that model.
+**Read the `minimap` rule (`.cursor/rules/minimap.mdc`) before doing anything else.** It applies alongside this rule and carries the structural *model* this skill builds on: the 3-level spec→design→code layout, what each level is for, where artifacts live, the **root spec index**, what a **summary spec** is, and the **traceability links** (`Rn` → CRC card → code `// CRC:/Seq:` comment) that stitch the levels together. Start at the design docs and the root index, not at code — drop into code-level tools (Grep, codebase search, etc.) only after they've oriented you. This skill adds the **process** — phases, traceability *maintenance*, gaps, migrations, trajectory tracking — on top of that model.
 
 ## Prerequisite: Version Check and Comment Patterns
 
@@ -14,20 +23,18 @@ alwaysApply: true
 
 **Then**, run `minispec query comment-patterns` to learn the recognized comment patterns for traceability comments in code files.
 
-## MANDATORY: Create Tasks First
+## MANDATORY: todos before work
 
-**BEFORE reading any files or doing any work**, create tasks for applicable phases:
+**BEFORE reading any files or doing any work**, create todos for applicable phases, for example:
 
-```
-TaskCreate: "Spec Phase: [feature name]"
-TaskCreate: "Requirements Phase: [feature name]"
-TaskCreate: "Design Phase: [feature name]"
-TaskCreate: "Implementation Phase: [feature name]"
-TaskCreate: "Simplification Phase: [feature name]"
-TaskCreate: "Gaps Phase: [feature name]"
-```
+- Spec Phase: [feature name]
+- Requirements Phase: [feature name]
+- Design Phase: [feature name]
+- Implementation Phase: [feature name]
+- Simplification Phase: [feature name]
+- Gaps Phase: [feature name]
 
-Do NOT proceed until tasks exist. This is required for user visibility into progress.
+Do NOT proceed until these todos exist (user visibility).
 
 ## MANDATORY: Check for In-Flight Migrations
 
@@ -49,7 +56,7 @@ Migrations are temporary by design — see "Migration Workflow" below.
 ## Why the levels matter
 
 (*The 3-level model itself — what specs, design, and code each are, and where
-they live — is in `/minimap`. This skill is the **process** that builds and
+they live — is in the `minimap` rule. This skill is the **process** that builds and
 maintains them.*)
 
 Each level exists because skipping it has a concrete cost:
@@ -65,7 +72,7 @@ The phases are not ceremony. They are cheaper than debugging a misunderstood req
 ## Summary specs — maintenance
 
 (*What a summary spec **is**, and the recurring kinds — CLI inventory, storage
-layout, API surface, capabilities — are in `/minimap`. This is the maintenance
+layout, API surface, capabilities — are in the `minimap` rule. This is the maintenance
 side: when to create one, and how to keep it true.*)
 
 When to create one:
@@ -635,8 +642,8 @@ reflects the present.
 
 Specs → design → code anchor the project's **structure** — what exists and
 why. They do not track its **trajectory**: what's queued, what's in flight,
-what just landed. The harness task tool (`TaskCreate`/`TaskUpdate`) is
-session-local and dies with the session. Trajectory tracking is the durable,
+what just landed. The editor's todo list is session-local and dies with
+the session. Trajectory tracking is the durable,
 cross-session spine the structural docs and the ephemeral tasks both lack.
 
 It is **tool-agnostic**: it tracks any kind of work — a mini-spec pass, a UI

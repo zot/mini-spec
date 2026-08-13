@@ -6,6 +6,11 @@ Version is tracked in `.claude/skills/mini-spec/README.md`. Increment the patch 
 
 Release contents (zip file):
 - `.claude/skills/mini-spec/` (skill files)
+- `.claude/skills/minimap/` (skill files) — **required**, not optional: `SKILL.md`'s
+  first instruction is to invoke `/minimap`, so a zip without it ships a skill whose
+  opening directive points at nothing. v2.9.0 ships exactly that broken pair: minimap
+  was split out in `520a783` (2026-06-07), the tag landed 2026-06-09, and the zip's
+  SKILL.md names `/minimap` three times with no minimap alongside it.
 - `.claude/agents/spec-agent.md` (agent)
 - Exclude Emacs backup files: `zip -x "*.~undo-tree~"`
 
@@ -24,9 +29,24 @@ Note: Binaries must be rebuilt for each release because they embed the version v
 
 ## Cursor
 
-If `.claude/skills/mini-spec/SKILL.md` changes, regenerate `.cursor/rules/mini-spec.mdc` so Cursor stays aligned:
+`.cursor/rules/{mini-spec,minimap}.mdc` are generated from the two skills. If either
+`SKILL.md` changes, regenerate both:
 
-`python tool/gen_cursor_rule.py`
+`python3 tool/gen_cursor_rule.py`
+
+Don't rely on remembering — `make validate` runs `gen_cursor_rule.py --check`, which
+regenerates in memory and fails if either rule on disk differs. Cursor has no
+skill-invocation mechanism, so minimap ships as its own always-applied rule rather than
+as a pointer, and the generator rewrites the cross-references between them.
+
+The generator is a chain of anchored text edits over prose maintained elsewhere, so
+every edit asserts that its anchor matched. Two of them silently became no-ops when
+SKILL.md's headings drifted — one in `520a783`, the commit that split minimap out — and
+the shipped rule spent months with no Cursor-integration section while still telling
+Cursor agents to call `TaskCreate`. If an anchor fails, update the anchor; never drop
+the edit.
+
+`.cursor/rules/mini-spec-spec-agent.mdc` is hand-written, not generated.
 
 ## Summary specs
 

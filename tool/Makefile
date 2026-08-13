@@ -1,4 +1,4 @@
-.PHONY: build install test clean validate fmt lint help
+.PHONY: build install test clean validate cursor-check fmt lint help
 
 BINARY := minispec
 BUILD_DIR := bin
@@ -29,8 +29,12 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f coverage.out coverage.html
 
+# Verify the generated Cursor rules still match the skills they mirror
+cursor-check:
+	python3 gen_cursor_rule.py --check
+
 # Run minispec validate on this project
-validate: build
+validate: build cursor-check
 	./$(BUILD_DIR)/$(BINARY) validate
 
 # Format code
@@ -59,7 +63,8 @@ help:
 	@echo "  test           Run tests"
 	@echo "  test-coverage  Run tests with coverage report"
 	@echo "  clean          Remove build artifacts"
-	@echo "  validate       Run minispec validate on this project"
+	@echo "  validate       Run minispec validate + Cursor-rule check"
+	@echo "  cursor-check   Verify .cursor/rules match the Claude skills"
 	@echo "  fmt            Format code"
 	@echo "  lint           Run linter (requires golangci-lint)"
 	@echo "  tidy           Tidy go.mod dependencies"

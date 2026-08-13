@@ -1,14 +1,92 @@
-"""Generate .cursor/rules/mini-spec.mdc from .claude/skills/mini-spec/SKILL.md."""
+"""Generate .cursor/rules/{mini-spec,minimap}.mdc from the Claude skills.
+
+Each rule is the skill's SKILL.md with a chain of anchored edits applied, so
+Cursor gets the same methodology without the Claude-only machinery (the Skill
+tool, TaskCreate/TaskUpdate, the code-simplifier agent).
+
+Every edit asserts that its anchor matched. That is not defensive habit: the
+anchors are text in a document maintained elsewhere, so an edit whose anchor
+drifts becomes a silent no-op and the script still prints "wrote". Two of them
+did exactly that for months -- one since the commit that split minimap out --
+and the shipped rule lost its whole Cursor-integration section and kept telling
+Cursor agents to call TaskCreate. A generator over someone else's prose has to
+fail loudly or it does not fail at all.
+"""
 from pathlib import Path
 import re
+import sys
 
 root = Path(__file__).resolve().parents[1]
-src = root / ".claude" / "skills" / "mini-spec" / "SKILL.md"
-dst = root / ".cursor" / "rules" / "mini-spec.mdc"
-body = src.read_text(encoding="utf-8").replace("\r\n", "\n")
-body = re.sub(r"(?ms)^---\n.*?^---\n+", "", body, count=1)
-body = body.replace("~/.claude/bin/minispec", "minispec")
-body = body.replace("(Serena, Grep, etc.)", "(Grep, codebase search, etc.)")
+skills = root / ".claude" / "skills"
+rules = root / ".cursor" / "rules"
+
+
+def sub(body, old, new, *, expect=1):
+    """Replace `old` with `new`, requiring exactly `expect` matches.
+
+    Pass expect=None for "one or more" where the count is incidental.
+    """
+    found = body.count(old)
+    if found == 0 or (expect is not None and found != expect):
+        want = "1 or more" if expect is None else expect
+        sys.exit(
+            f"gen_cursor_rule: anchor matched {found}x, expected {want}x:\n"
+            f"    {old[:140]!r}\n"
+            "The source SKILL.md changed under this script. Update the anchor "
+            "rather than dropping the edit -- a missing edit ships silently."
+        )
+    return body.replace(old, new)
+
+
+def load(skill):
+    """Read a skill body with its YAML front matter stripped."""
+    text = (skills / skill / "SKILL.md").read_text(encoding="utf-8").replace("\r\n", "\n")
+    return re.sub(r"(?ms)^---\n.*?^---\n+", "", text, count=1)
+
+
+check_only = "--check" in sys.argv[1:]
+outputs = []
+
+
+def emit(name, front, body):
+    """Queue a rule. Nothing is written until every rule has been built, so a
+    failure partway through leaves the whole .cursor/rules/ directory alone
+    instead of updating one rule and abandoning the other."""
+    outputs.append((rules / name, front + body))
+
+
+# --- minimap: the structural model -----------------------------------------
+#
+# Cursor has no skill-invocation mechanism, so minimap cannot be a pointer the
+# way `/minimap` is under Claude. It ships as its own always-applied rule, and
+# the cross-references between the two become references to the other rule.
+
+minimap = load("minimap")
+minimap = sub(
+    minimap,
+    "**model**, not the process. Load `/minimap` to *navigate*; load `/mini-spec`\n"
+    "to *maintain* (it loads this skill underneath).",
+    "**model**, not the process. The `mini-spec` rule carries the *process* and\n"
+    "builds on this one; both apply at all times.",
+)
+minimap = sub(minimap, "`/mini-spec` owns it", "the `mini-spec` rule owns it", expect=2)
+
+emit(
+    "minimap.mdc",
+    """---
+description: How a mini-spec project is laid out — the 3-level spec/design/code model, the root spec index, and the traceability links. Read before navigating or changing a mini-spec project. Companion to the mini-spec rule.
+alwaysApply: true
+---
+""",
+    minimap,
+)
+
+
+# --- mini-spec: the process -------------------------------------------------
+
+body = load("mini-spec")
+body = sub(body, "~/.claude/bin/minispec", "minispec", expect=None)
+body = sub(body, "(Serena, Grep, etc.)", "(Grep, codebase search, etc.)")
 
 cursor_block = """## Cursor integration
 
@@ -21,13 +99,18 @@ cursor_block = """## Cursor integration
 ---
 """
 
-body = body.replace(
-    "# Mini-spec\n\n## Design Docs First",
-    f"# Mini-spec\n\n{cursor_block}## Design Docs First",
-    1,
-)
+body = sub(body, "# Mini-spec\n\n## Load the model first", f"# Mini-spec\n\n{cursor_block}## Load the model first")
 
-body = body.replace(
+body = sub(
+    body,
+    "**IMMEDIATELY invoke `/minimap` using the Skill tool before doing anything else.** It carries",
+    "**Read the `minimap` rule (`.cursor/rules/minimap.mdc`) before doing anything else.** It applies alongside this rule and carries",
+)
+body = sub(body, "is in `/minimap`", "is in the `minimap` rule", expect=1)
+body = sub(body, "are in `/minimap`", "are in the `minimap` rule", expect=1)
+
+body = sub(
+    body,
     "## MANDATORY: Create Tasks First\n\n"
     "**BEFORE reading any files or doing any work**, create tasks for applicable phases:\n\n"
     "```\n"
@@ -38,8 +121,7 @@ body = body.replace(
     'TaskCreate: "Simplification Phase: [feature name]"\n'
     'TaskCreate: "Gaps Phase: [feature name]"\n'
     "```\n\n"
-    "Do NOT proceed until tasks exist. This is required for user visibility into progress.\n\n"
-    "---\n\n",
+    "Do NOT proceed until tasks exist. This is required for user visibility into progress.\n",
     "## MANDATORY: todos before work\n\n"
     "**BEFORE reading any files or doing any work**, create todos for applicable phases, for example:\n\n"
     "- Spec Phase: [feature name]\n"
@@ -48,12 +130,11 @@ body = body.replace(
     "- Implementation Phase: [feature name]\n"
     "- Simplification Phase: [feature name]\n"
     "- Gaps Phase: [feature name]\n\n"
-    "Do NOT proceed until these todos exist (user visibility).\n\n"
-    "---\n\n",
-    1,
+    "Do NOT proceed until these todos exist (user visibility).\n",
 )
 
-body = body.replace(
+body = sub(
+    body,
     "## Task Tracking\n\n"
     "**During implementation**, break down into per-file tasks:\n"
     "```\n"
@@ -67,35 +148,80 @@ body = body.replace(
     "**During implementation**, break down into per-file todos (e.g. implement `view.ts`, update design docs).\n\n"
     "**Mark phases complete** in the todo list as you finish them.\n"
     "**Use Quality Checklist items** as todos before finalizing.\n",
-    1,
 )
 
-body = body.replace(
+body = sub(
+    body,
     "Invoke the `code-simplifier` agent on the recently modified code. "
     "This refines code for clarity, consistency, and maintainability while preserving functionality.",
     "Perform the **in-session simplification pass** (see Cursor integration): "
     "refine recently modified code for clarity, consistency, and maintainability without changing behavior.",
-    1,
 )
 
-body = body.replace(
+body = sub(
+    body,
     "See `config-reference.md` (in this skill directory)",
     "See `.claude/skills/mini-spec/config-reference.md`",
-    1,
 )
 
-body = body.replace(
+body = sub(
+    body,
     "The `minispec` CLI tool (at `minispec`) performs structural operations",
     "The `minispec` CLI tool (install on PATH or set `MINISPEC`) performs structural operations",
-    1,
 )
 
-front = """---
+# Prose *about* the harness task tool, not an instruction to call it — but the
+# argument for trajectory tracking is the same one either way, so it survives
+# the rename rather than being dropped.
+body = sub(
+    body,
+    "what just landed. The harness task tool (`TaskCreate`/`TaskUpdate`) is\n"
+    "session-local and dies with the session.",
+    "what just landed. The editor's todo list is session-local and dies with\n"
+    "the session.",
+)
+
+# Nothing Claude-only may survive into the rule. These are the tool names an
+# agent could actually try to call, which is the failure worth catching. The
+# injected Cursor block is exempt because it names them on purpose, to state
+# what each maps to -- so the check runs over everything except that block.
+inherited = body.replace(cursor_block, "")
+leftovers = [name for name in ("TaskCreate", "TaskUpdate", "`/minimap`", "Skill tool") if name in inherited]
+if leftovers:
+    sys.exit(f"gen_cursor_rule: Claude-only references survived into the rule: {', '.join(leftovers)}")
+
+emit(
+    "mini-spec.mdc",
+    """---
 description: MANDATORY before writing or modifying code. Read design/design.md first; use minispec CLI; specs to design to code. Same methodology as Claude mini-spec skill.
 alwaysApply: true
 ---
-"""
+""",
+    body,
+)
 
-dst.parent.mkdir(parents=True, exist_ok=True)
-dst.write_text(front + body, encoding="utf-8", newline="\n")
-print("wrote", dst)
+
+# --- write or verify ---------------------------------------------------------
+#
+# `--check` is the forcing function. Making the generator fail loudly on a
+# drifted anchor only helps if someone runs it, and "regenerate when SKILL.md
+# changes" is a discipline with nothing behind it -- which is how the shipped
+# rule went months without a Cursor-integration section. `make validate` runs
+# this, so a stale rule is a computed property rather than something to
+# remember.
+
+if check_only:
+    stale = [path for path, text in outputs
+             if not path.exists() or path.read_text(encoding="utf-8") != text]
+    if stale:
+        sys.exit(
+            "gen_cursor_rule: these Cursor rules no longer match the skills they mirror:\n"
+            + "".join(f"    {p}\n" for p in stale)
+            + "Run `python3 tool/gen_cursor_rule.py` to regenerate."
+        )
+    print("cursor rules up to date")
+else:
+    rules.mkdir(parents=True, exist_ok=True)
+    for path, text in outputs:
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print("wrote", path)
