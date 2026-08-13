@@ -1,5 +1,5 @@
 # Git
-**Requirements:** R151, R164, R165, R166, R167, R168
+**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182
 
 Answers questions about the version-controlled working tree by invoking the `git`
 command line. Every question it answers is a **computed property** — there is
@@ -23,6 +23,11 @@ repository: a fake `Git` states the world the check is being run against.
   managed by another version-control system reaches this, and is told so
 - Tracked(path): report whether a path is known to the index — the question behind the
   `.minispec/config.yaml` preference
+- LastChanged(file, symbol): report when a named **function** last changed. Asked of
+  the function rather than the file because a file-level answer marks every alarm in a
+  busy file stale and so discriminates nothing. Four outcomes stay apart — no work tree,
+  no history for the path, a tracked file whose symbol cannot be found, and a function
+  that exists and has never changed. Only the last is a clean result (R180, R182, R184)
 
 **Unavailability is an error, not a boolean.** A "cannot determine" flag beside a map
 of falses invites a caller to read the map first and the flag never; an error cannot be

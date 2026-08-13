@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187
 
 Read-only operations that query parsed design data.
 
@@ -12,6 +12,9 @@ Read-only operations that query parsed design data.
 
 ## Does
 - Requirements(): list all requirements with text and source
+- Alarms(): list every recorded fire alarm with its freshness state and close with the
+  census. Asked rather than emitted: it carries the two states that stay non-zero for
+  months, which validate deliberately omits (R185, R186, R187)
 - Coverage(): map each Rn to design files that reference it
 - Uncovered(): list Rn with no design references
 - OrphanDesigns(): list CRC cards with no/empty Requirements field

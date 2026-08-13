@@ -83,6 +83,45 @@ Run all validations and report issues.
 - Unnumbered sequence files are silently skipped — numbering is opt-in per file.
 - Numbering gaps and duplicates are reported per sequence file.
 
+### Fire Alarm Freshness
+
+A `test-*.md` may record a fault injection that proved one of its tests — `**Fire
+alarm:**` describing the injection, `**Inject:**` naming the `file:symbol` sites it
+edits, and `**Pulled:**` giving the date it was run. A proof obtained against code
+that has since been rewritten is void, and nothing about a green suite says so.
+
+- For every alarm carrying **both** `**Inject:**` and `**Pulled:**`, the tool asks git
+  whether any listed symbol has changed since that date, and reports the alarm as
+  **stale** when one has.
+- The question is asked of the **function**, not the file. A file-level check reports
+  every alarm in a busy file as stale and so reports nothing at all; git can answer
+  "has this function changed" directly, and that is the granularity the claim is about.
+- **A change must be dated strictly after the pull.** A date is a coarser clock than
+  git's history, and the first draft of this rule counted same-day changes as stale on
+  the argument that over-reporting is the safe direction. Running it proved otherwise:
+  the normal workflow is to fix the code, pull the alarm and commit both together, so
+  the code's last change and the pull share a date for *every freshly recorded alarm*.
+  The rule marked two of ark's three verified alarms stale the day they were written.
+  A check that fires on arrival is ignored, which is a worse failure than the blind
+  spot it was avoiding — a change made later the same day is missed, and caught by the
+  next change on any later day.
+- An `**Inject:**` naming a symbol git cannot find is reported as **unresolvable**,
+  not silently skipped. That is the anchor rotting, which is the failure the field
+  exists to prevent.
+
+**Only stale alarms are reported here, and that is deliberate.** An alarm with
+`**Inject:**` but no `**Pulled:**` is a *prescription* — an injection someone wrote
+down and may never have run — and an alarm with neither is unanchored. Both are worth
+knowing and neither belongs in `validate`: a project adopting the convention has many
+of each, the counts fall slowly, and a line that reports a non-zero number every run
+for months is the recurring nag this project distinguishes from a closable gripe.
+Those two live in `minispec query alarms`. Stale is the closable one — it should
+normally read zero, and a non-zero reading is a specific worklist.
+
+**Silent without git**, like every other check that needs it. A tree with no
+repository cannot answer the question, and a check that could not look must not
+return a clean result.
+
 ## Output
 
 Show what was found so the AI can verify assumptions and correct mismatches:

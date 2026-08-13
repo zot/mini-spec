@@ -257,3 +257,17 @@
 - **R175:** The pre-`track` refusal asks the agent only for the user's intent — whether the work queue stays private or ships with the repository — because the configuration's existence already settles that this is a mini-spec project and where its repository root is
 - **R176:** The pre-`track` refusal instructs the agent to report and wait, never to choose a `track` value on the user's behalf
 - **R177:** Writing `track` into an existing configuration preserves its comments, the order of its keys, and every setting the running binary does not model, rather than re-serialising the file from the settings it knows about
+
+## Feature: Fire Alarm Freshness
+**Source:** specs/validate.md, specs/queries.md
+
+- **R178:** A `test-*.md` test entry may carry `**Fire alarm:**` (the injection in prose), `**Inject:**` (the `file:symbol` sites the injection edits, comma-separated), `**Pulled:**` (the date it was run and what happened), and `**Code:**` (the test file)
+- **R179:** `validate` reports an alarm as **stale** when it carries both `**Inject:**` and `**Pulled:**` and git shows any named symbol changed on or after the pulled date
+- **R180:** The change question is asked of the **function**, not the file it lives in — a file-level answer marks every alarm in a busy file stale and so discriminates nothing
+- **R181:** A change must be dated **strictly after** the pull to count as stale. Same-day is the normal workflow — fix the code, pull the alarm, commit both together — so counting it stale would mark every freshly-pulled alarm stale on arrival, and a check that always fires is ignored. The cost is a blind spot: a change made later the same day is missed until the next change on any later day
+- **R182:** An `**Inject:**` site whose symbol git cannot find is reported as **unresolvable** rather than skipped, since that is the anchor rotting — the failure the field exists to prevent
+- **R183:** `validate` reports stale alarms only. Alarms lacking `**Pulled:**` or `**Inject:**` are reported by `query alarms` instead, because a count that stays non-zero for months is a nag rather than a closable gripe
+- **R184:** The freshness check is silent in a tree with no git, since a check that could not look must not return a clean result
+- **R185:** `minispec query alarms` lists every recorded alarm with its state — `verified`, `stale`, `unrecorded`, `unanchored` — and closes with a census of the four counts
+- **R186:** `unrecorded` states that the repository does not record a verification, never that the injection was not run — the documents cannot answer the second question
+- **R187:** Without git, `query alarms` reports `verified` and `stale` alarms as `unchecked` rather than assuming either

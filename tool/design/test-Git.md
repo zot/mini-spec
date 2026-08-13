@@ -73,3 +73,30 @@ caller could mistake for a verified answer
 `Git` method
 **Expected:** status and `HEAD` are byte-identical afterwards
 **Refs:** crc-Git.md — R166
+
+## Test: LastChanged reads any object format
+**Purpose:** validates R180 against a real repository in both `sha1` and `sha256`. The
+first version gated on a 40-character hash, so in a SHA-256 repository no format line
+matched, the scan fell through to "no changes", and **every alarm reported verified** —
+a check that could not look returning a clean result, which is the precise failure the
+freshness feature exists to prevent, inside its own implementation
+**Input:** a repository per object format, one file, one function, one commit
+**Expected:** a real date and no error from both
+**Fire alarm:** restore the `len(hash) != 40` gate and confirm the `sha256` case goes
+red reporting no change for a function just committed
+**Inject:** internal/project/git.go:LastChanged
+**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Refs:** crc-Git.md — R180
+
+## Test: a new function is told from a gone one
+**Purpose:** validates R182 and R184 — `git log -L` searches the file as committed, so
+a function added since the last commit is absent from history while present on disk.
+Reporting that as a rotted anchor is false and fires on every newly written function
+**Input:** a repository with one committed function and one added but uncommitted; and
+a symbol in neither
+**Expected:** `ErrNoHistory` for the new one, `ErrUnresolvedSite` for the absent one
+**Fire alarm:** treat every `-L` failure as a rotted anchor — the pre-fix shape — and
+confirm the new function reports `ErrUnresolvedSite`
+**Inject:** internal/project/git.go:LastChanged
+**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Refs:** crc-Git.md — R182, R184

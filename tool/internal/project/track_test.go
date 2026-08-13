@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // fakeGit states the world a consistency check is verified against, so no repository
@@ -16,6 +17,12 @@ type fakeGit struct {
 	repo    bool
 	ignored map[string]bool
 	tracked map[string]bool
+	// changed states when a "file:symbol" site last changed. A site absent from the
+	// map has never changed; a site listed in unresolved is one git cannot find, which
+	// is a different answer and must stay distinguishable from both.
+	changed    map[string]time.Time
+	unresolved map[string]bool
+	untracked  map[string]bool
 }
 
 func (f *fakeGit) IsRepo() bool { return f.repo }
@@ -36,6 +43,23 @@ func (f *fakeGit) Tracked(path string) (bool, error) {
 		return false, ErrNoGit
 	}
 	return f.tracked[path], nil
+}
+
+func (f *fakeGit) LastChanged(file, symbol string) (time.Time, error) {
+	if !f.repo {
+		return time.Time{}, ErrNoGit
+	}
+	// An untracked file has no history to search, which is "could not look" rather
+	// than a rotted anchor. The fake models it so a test cannot assert a world the
+	// real Git could never produce.
+	if f.untracked[file] {
+		return time.Time{}, ErrNoHistory
+	}
+	site := file + ":" + symbol
+	if f.unresolved[site] {
+		return time.Time{}, ErrUnresolvedSite
+	}
+	return f.changed[site], nil
 }
 
 func gitWith(ignored ...string) *fakeGit {

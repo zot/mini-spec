@@ -3,9 +3,11 @@ package project
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // ErrNoGit reports that no ignore or tracking state could be determined — there is no
@@ -13,6 +15,19 @@ import (
 // map of falses because a caller can mistake "none of these are ignored" for a
 // verified answer, and cannot mistake an error for one. R168
 var ErrNoGit = errors.New("not a git working tree: ignore state cannot be determined")
+
+// ErrUnresolvedSite reports that git could not find the named symbol in the named
+// file. Distinguished from "has not changed" because they are opposite findings: one
+// says the anchor is intact and idle, the other says the anchor no longer points at
+// anything. Collapsing them would make a rotted anchor read as a fresh proof. R182
+var ErrUnresolvedSite = errors.New("git cannot resolve that symbol in that file")
+
+// ErrNoHistory reports that git holds no history for a path — it is untracked, or
+// newly written and not yet committed. Distinct from ErrNoGit, whose message is about
+// a missing working tree and would be untrue here, and distinct from ErrUnresolvedSite,
+// which says the file is tracked and the *symbol* is what is missing. Three different
+// findings that a caller must be able to tell apart. R182, R184
+var ErrNoHistory = errors.New("git holds no history for that path")
 
 // CRC: crc-Git.md | R167
 // GitFacts is what a consistency check needs to know about a working tree. It exists
@@ -22,6 +37,7 @@ type GitFacts interface {
 	IsRepo() bool
 	Ignored(paths []string) (map[string]bool, error)
 	Tracked(path string) (bool, error)
+	LastChanged(file, symbol string) (time.Time, error)
 }
 
 // CRC: crc-Git.md | Seq: seq-bootstrap.md#1.7 | R166, R167
@@ -119,6 +135,103 @@ func (g *Git) Tracked(path string) (bool, error) {
 		return false, nil
 	}
 	return strings.TrimSpace(out) != "", nil
+}
+
+// CRC: crc-Git.md | Seq: seq-alarm-freshness.md#1.5 | R180, R182, R184
+// LastChanged reports when the named function in the named file last changed.
+//
+// **The question is asked of the function, not the file**, because a file-level answer
+// marks every alarm in a busy file stale and so discriminates nothing. Measured on this
+// project's sibling repository before the check existed: file granularity called 8 of
+// 13 alarms stale, function granularity called 3, and hand-checking those left 1. A
+// check that reports everything is discarded as noise within a week, which makes the
+// coarse version worse than none.
+//
+// `git log -L :symbol:file` answers it directly. Its output interleaves format lines
+// with diff hunks, and commits arrive newest-first, so the first format line is the
+// answer.
+//
+// Four outcomes are kept apart deliberately: no working tree (ErrNoGit), a path git
+// holds no history for (ErrNoHistory), a tracked file whose symbol git cannot find
+// (ErrUnresolvedSite), and a function that exists and has never changed (zero time, no
+// error). Only the last is a clean result, and the three before it must never be
+// mistaken for one.
+func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
+	if !g.IsRepo() {
+		return time.Time{}, ErrNoGit
+	}
+	// A file git does not track has no history to search, which is "could not look"
+	// rather than "the anchor points at nothing". Collapsing the two would make every
+	// alarm anchored into a newly written file report as a rotted anchor — found by
+	// running this check against its own uncommitted source.
+	if tracked, terr := g.Tracked(file); terr != nil || !tracked {
+		return time.Time{}, ErrNoHistory
+	}
+	out, err := g.run("log", "-L", ":"+symbol+":"+file, "--format=%H|%ad", "--date=short")
+	if err != nil {
+		// `-L` searches the file as committed, so a function added since the last
+		// commit is absent from history while being perfectly present on disk. Reporting
+		// that as a rotted anchor is false and fires on every newly written function —
+		// found by running this check against its own new code. If the working tree
+		// still declares the symbol, the honest answer is that there is no history yet.
+		if declaresSymbol(g.abs(file), symbol) {
+			return time.Time{}, ErrNoHistory
+		}
+		return time.Time{}, ErrUnresolvedSite
+	}
+	for _, line := range strings.Split(out, "\n") {
+		hash, date, ok := strings.Cut(strings.TrimSpace(line), "|")
+		// Any object-format hash, not just SHA-1's forty characters. Pinning the
+		// length to 40 made every line of a SHA-256 repository fail to match, so the
+		// loop fell through to "no changes" and reported every alarm verified — a
+		// check that could not look returning a clean result, which is the precise
+		// failure this whole feature exists to prevent, inside its own implementation.
+		if !ok || !isObjectHash(hash) {
+			continue
+		}
+		when, perr := time.Parse("2006-01-02", date)
+		if perr != nil {
+			continue
+		}
+		return when, nil
+	}
+	return time.Time{}, nil
+}
+
+// declaresSymbol reports whether the file on disk still contains a declaration of the
+// symbol. Deliberately loose — it asks "is this plausibly present" rather than parsing
+// Go — because it is only ever used to choose between two *failure* reports, and the
+// looseness errs toward "cannot tell", never toward a clean result.
+func declaresSymbol(path, symbol string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		t := strings.TrimSpace(line)
+		if !strings.HasPrefix(t, "func ") && !strings.HasPrefix(t, "var ") &&
+			!strings.HasPrefix(t, "const ") && !strings.HasPrefix(t, "type ") {
+			continue
+		}
+		if strings.Contains(t, symbol) {
+			return true
+		}
+	}
+	return false
+}
+
+// isObjectHash reports whether a token is a full object name in any format git
+// supports — 40 hex characters for SHA-1, 64 for SHA-256.
+func isObjectHash(s string) bool {
+	if len(s) != 40 && len(s) != 64 {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // run invokes git in the working directory. Shelling out rather than linking a library

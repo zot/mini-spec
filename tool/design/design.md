@@ -20,12 +20,13 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Git.md → `internal/project/git.go`
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
-- [ ] crc-Parser.md → `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
+- [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
 - [x] crc-Query.md → `internal/query/query.go`
 - [x] crc-Update.md → `internal/update/update.go`
 - [ ] crc-Validate.md → `internal/validate/validate.go`
 - [x] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`
 - [x] crc-Phase.md → `internal/phase/phase.go`
+- [ ] crc-Alarm.md → `internal/alarm/alarm.go`
 
 ### Sequences
 - [x] seq-init.md
@@ -37,6 +38,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] seq-reporoot.md
 - [ ] seq-config.md
 - [x] seq-bootstrap.md
+- [ ] seq-alarm-freshness.md
 
 ### Test Designs
 - [ ] test-Parser.md → `internal/parser/parser_test.go`
@@ -48,6 +50,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Track.md → `internal/project/track_test.go`
 - [x] test-Init.md → `internal/project/init_test.go`
 - [x] test-Bootstrap.md → `internal/cli/bootstrap_test.go`
+- [ ] test-Alarm.md → `internal/alarm/alarm_test.go`
 
 ## Documentation
 

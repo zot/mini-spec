@@ -210,3 +210,84 @@ func TestNoGitOperationMutatesTheRepository(t *testing.T) {
 		t.Errorf("a Git method changed repository state:\nbefore %q\nafter  %q", before, after)
 	}
 }
+
+// R180 — LastChanged must read any object format git produces.
+//
+// Written after the fact: the first version gated on `len(hash) != 40`, so in a
+// SHA-256 repository every format line failed to match, the scan fell through to "no
+// changes", and every alarm reported verified. A check that could not look returning a
+// clean result is the precise failure the freshness feature exists to prevent, so this
+// test costs a real repository rather than being deferred to a fake.
+func TestLastChangedReadsAnyObjectFormat(t *testing.T) {
+	for _, format := range []string{"sha1", "sha256"} {
+		dir := t.TempDir()
+		run := func(args ...string) {
+			t.Helper()
+			cmd := exec.Command("git", args...)
+			cmd.Dir = dir
+			cmd.Env = append(os.Environ(),
+				"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+				"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Skipf("%s unsupported here (%v): %s", format, err, out)
+			}
+		}
+		run("init", "-q", "--object-format="+format, ".")
+		if err := os.WriteFile(filepath.Join(dir, "a.go"),
+			[]byte("package p\n\nfunc Foo() int { return 1 }\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		run("add", "a.go")
+		run("commit", "-qm", "one")
+
+		when, err := NewGit(dir).LastChanged("a.go", "Foo")
+		if err != nil {
+			t.Errorf("%s: LastChanged returned %v, want a date", format, err)
+			continue
+		}
+		if when.IsZero() {
+			t.Errorf("%s: LastChanged reported no change for a function that was just committed — "+
+				"a format this cannot read silently reports every alarm verified", format)
+		}
+	}
+}
+
+// R182, R184 — a function added since the last commit is *new*, not gone.
+//
+// `git log -L` searches the file as committed, so a symbol present on disk but absent
+// from history makes it fail. Reporting that as a rotted anchor is false and fires on
+// every newly written function — found by running the freshness check against this
+// feature's own new code, where `LastChanged` itself reported unresolvable.
+func TestLastChangedTellsANewFunctionFromAGoneOne(t *testing.T) {
+	dir := t.TempDir()
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+			"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v: %s", args, err, out)
+		}
+	}
+	path := filepath.Join(dir, "a.go")
+	run("init", "-q", ".")
+	if err := os.WriteFile(path, []byte("package p\n\nfunc Old() int { return 1 }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run("add", "a.go")
+	run("commit", "-qm", "one")
+	// Added on disk, never committed.
+	if err := os.WriteFile(path,
+		[]byte("package p\n\nfunc Old() int { return 1 }\n\nfunc Fresh() int { return 2 }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	g := NewGit(dir)
+	if _, err := g.LastChanged("a.go", "Fresh"); !errors.Is(err, ErrNoHistory) {
+		t.Errorf("a newly written function = %v, want ErrNoHistory — it is new, not gone", err)
+	}
+	if _, err := g.LastChanged("a.go", "Vanished"); !errors.Is(err, ErrUnresolvedSite) {
+		t.Errorf("a symbol absent from disk and history = %v, want ErrUnresolvedSite", err)
+	}
+}

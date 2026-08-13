@@ -116,3 +116,32 @@ token, so `search.md` is not treated as indexed merely because
 per-feature spec is listed (nothing is indexed yet).
 
 Output: relative spec paths, sorted; empty (exit 0) when every spec is indexed.
+
+## minispec query alarms
+
+The census of fault injections recorded in `design/test-*.md`. One line per alarm:
+the test document, the test title, the `**Inject:**` sites, and its state.
+
+Four states, and the distinction between the middle two is the point:
+
+| state | meaning |
+|---|---|
+| `verified` | has `**Pulled:**`, and no injection site has changed since |
+| `stale` | has `**Pulled:**`, but a site has changed since — the proof is void |
+| `unrecorded` | has `**Inject:**` and no `**Pulled:**` — a prescription, not a record |
+| `unanchored` | has no `**Inject:**` — describes its site in prose only, so nothing can check it |
+
+`unrecorded` is **not** a claim that the injection was never run. It is a claim that
+the repository does not say it was, which is the only thing readable from the
+documents — the same reason a carve distinguishes `NOT VERIFIED` from unstarted.
+
+`unanchored` is what a backfill cannot fix. The person who pulled the alarm knew the
+file; six weeks later nobody does, and an anchor guessed wrong is worse than none
+because every future check follows it. The count is a measure of how much of the
+convention was written after the fact.
+
+Without git, `verified` and `stale` cannot be told apart; both report as `unchecked`
+rather than as a clean result.
+
+Output: one line per alarm, grouped by document, plus a closing census —
+`27 alarms: 3 verified, 0 stale, 20 unrecorded, 4 unanchored`.

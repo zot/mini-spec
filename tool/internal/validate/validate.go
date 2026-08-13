@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zot/minispec/internal/alarm"
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
@@ -17,25 +18,28 @@ import (
 
 // ValidationResult contains issues bucketed by category. R84
 type ValidationResult struct {
-	UncoveredReqs        []string            // R numbers
-	MissingImplCoverage  []string            // R numbers
-	DuplicateReqs        []string            // R numbers
-	ReqNumberingGaps     []string            // R numbers (missing in sequence)
-	UnknownCRCRefs       map[string][]string // file -> []Rn
-	MissingArtifacts     []string            // code paths
-	MissingTraceability  []string            // code paths
-	MissingDesignRefs    map[string][]string // code path -> []missing-ref
-	UnlistedDesignFiles  []string            // design filenames
-	MissingSpecSources   []string            // spec paths
-	MalformedSpecSources []string            // Source values that don't look like clean .md paths (R91)
-	SuspiciousSourceLines []string           // lines that look like Source markers but don't match the canonical pattern (R91)
-	MissingCRCSequences  map[string][]string // crc filename -> []seq-ref
-	MissingSeqFragments  map[string][]string // code path -> []ref with unresolved #fragment (R97)
-	SeqNumberingGaps     map[string][]string // seq filename -> []missing dotted id (R98, R99)
-	SeqDuplicateIDs      map[string][]string // seq filename -> []duplicated dotted id (R100)
-	CheckboxedPermanent  []string            // gap IDs
-	DuplicateGapIDs      []string            // gap IDs
-	OrphanCRCNoReqField  []string            // crc filenames
+	UncoveredReqs         []string            // R numbers
+	MissingImplCoverage   []string            // R numbers
+	DuplicateReqs         []string            // R numbers
+	ReqNumberingGaps      []string            // R numbers (missing in sequence)
+	UnknownCRCRefs        map[string][]string // file -> []Rn
+	MissingArtifacts      []string            // code paths
+	MissingTraceability   []string            // code paths
+	MissingDesignRefs     map[string][]string // code path -> []missing-ref
+	UnlistedDesignFiles   []string            // design filenames
+	MissingSpecSources    []string            // spec paths
+	MalformedSpecSources  []string            // Source values that don't look like clean .md paths (R91)
+	SuspiciousSourceLines []string            // lines that look like Source markers but don't match the canonical pattern (R91)
+	MissingCRCSequences   map[string][]string // crc filename -> []seq-ref
+	MissingSeqFragments   map[string][]string // code path -> []ref with unresolved #fragment (R97)
+	SeqNumberingGaps      map[string][]string // seq filename -> []missing dotted id (R98, R99)
+	SeqDuplicateIDs       map[string][]string // seq filename -> []duplicated dotted id (R100)
+	CheckboxedPermanent   []string            // gap IDs
+	DuplicateGapIDs       []string            // gap IDs
+	OrphanCRCNoReqField   []string            // crc filenames
+	// VoidedAlarms are recorded fault injections whose proof has expired, or whose
+	// injection site no longer resolves. R179, R182, R183
+	VoidedAlarms []string
 }
 
 // Validate runs all structural validations
@@ -201,6 +205,7 @@ func (v *Validate) Run() (*ValidationResult, error) {
 
 	v.validateSeqNumbering(result)
 
+	v.checkAlarmFreshness(result)
 	dedupAndSortAll(result)
 	return result, nil
 }
@@ -497,7 +502,8 @@ func (r *ValidationResult) HasIssues() bool {
 		len(r.SeqDuplicateIDs) > 0 ||
 		len(r.CheckboxedPermanent) > 0 ||
 		len(r.DuplicateGapIDs) > 0 ||
-		len(r.OrphanCRCNoReqField) > 0
+		len(r.OrphanCRCNoReqField) > 0 ||
+		len(r.VoidedAlarms) > 0
 }
 
 // FormatText returns the issues-only text report. R84, R88
@@ -557,6 +563,14 @@ func (r *ValidationResult) FormatText() string {
 	if len(r.SeqDuplicateIDs) > 0 {
 		fmt.Fprintf(&sb, "  seq duplicate IDs: %s\n", formatFileMap(r.SeqDuplicateIDs, joinComma))
 	}
+	if len(r.VoidedAlarms) > 0 {
+		// One line each rather than a joined list: every entry names a different
+		// document, test and site, and a comma-joined run of those is unreadable.
+		sb.WriteString("  fire alarms whose proof has expired:\n")
+		for _, a := range r.VoidedAlarms {
+			fmt.Fprintf(&sb, "    %s\n", a)
+		}
+	}
 	if len(r.OrphanCRCNoReqField) > 0 {
 		fmt.Fprintf(&sb, "  CRCs without Requirements field: %s\n", strings.Join(r.OrphanCRCNoReqField, ", "))
 	}
@@ -608,3 +622,46 @@ func formatFileMap(m map[string][]string, render func([]string) string) string {
 }
 
 func joinComma(s []string) string { return strings.Join(s, ", ") }
+
+// CRC: crc-Validate.md | Seq: seq-alarm-freshness.md#2.1 | R179, R183, R184
+// checkAlarmFreshness reports recorded fault injections whose proof has expired.
+//
+// Only stale and unresolvable alarms reach the result. An alarm that was never recorded
+// as pulled, or that names no injection site, is real information and belongs to
+// `query alarms`: a project adopting the convention carries many of each, the counts
+// fall slowly, and a line reporting a non-zero number on every run for months is the
+// recurring nag this project distinguishes from a closable gripe.
+//
+// Silent when anything goes wrong reading the documents. This check is an addition to
+// an existing validator, and a malformed test design must not break the checks a
+// project already depends on.
+func (v *Validate) checkAlarmFreshness(result *ValidationResult) {
+	docs, err := filepath.Glob(filepath.Join(v.Project.DesignDir, "test-*.md"))
+	if err != nil || len(docs) == 0 {
+		return
+	}
+	var alarms []parser.Alarm
+	for _, d := range docs {
+		found, err := parser.ParseTestDoc(d)
+		if err != nil {
+			continue
+		}
+		alarms = append(alarms, found...)
+	}
+	if len(alarms) == 0 {
+		return
+	}
+	git := project.NewGit(v.Project.RootPath)
+	for _, a := range alarm.Voided(alarm.Assess(alarms, git)) {
+		switch a.State {
+		case alarm.Stale:
+			result.VoidedAlarms = append(result.VoidedAlarms, fmt.Sprintf(
+				"%s: %s — proof pulled %s, but %s changed %s",
+				a.Alarm.Doc, a.Alarm.Test, a.Alarm.Pulled.Format("2006-01-02"), a.Site, a.Changed))
+		case alarm.Unresolvable:
+			result.VoidedAlarms = append(result.VoidedAlarms, fmt.Sprintf(
+				"%s: %s — git cannot resolve %s, so the anchor no longer points at anything",
+				a.Alarm.Doc, a.Alarm.Test, a.Site))
+		}
+	}
+}

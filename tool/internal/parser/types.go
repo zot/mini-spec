@@ -3,7 +3,7 @@ package parser
 
 // Requirement represents a single requirement from requirements.md
 type Requirement struct {
-	ID       string   // e.g., "R1"
+	ID       string // e.g., "R1"
 	Text     string
 	Sources  []string // spec file paths (R90: comma-separated list supported)
 	Inferred bool

@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/zot/minispec/internal/alarm"
+	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/phase"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
@@ -139,6 +141,7 @@ Query subcommands:
   gaps                  List gap items
   migrations            List in-flight migration specs
   unindexed-specs       List specs not referenced in the root index (specs/index.md)
+  alarms                List recorded fire alarms with their freshness state
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
   comment-patterns      Show recognized comment patterns per file extension
@@ -447,6 +450,9 @@ func (c *CLI) runQuery(args []string) int {
 				fmt.Println(m)
 			}
 		}
+
+	case "alarms":
+		return c.queryAlarms(p)
 
 	case "unindexed-specs":
 		specs, err := q.UnindexedSpecs()
@@ -786,5 +792,67 @@ func (c *CLI) runPhase(args []string) int {
 	if !result.Passed {
 		return 1
 	}
+	return 0
+}
+
+// CRC: crc-Query.md | Seq: seq-alarm-freshness.md#2.4 | R185, R186, R187
+// queryAlarms prints the census of recorded fault injections.
+//
+// Asked rather than emitted. `validate` reports only the closable states; the two that
+// stay non-zero for months while a project adopts the convention live here, where
+// looking at them is a decision rather than a line you learn to scroll past.
+func (c *CLI) queryAlarms(p *project.Project) int {
+	docs, err := filepath.Glob(filepath.Join(p.DesignDir, "test-*.md"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	var alarms []parser.Alarm
+	for _, d := range docs {
+		found, ferr := parser.ParseTestDoc(d)
+		if ferr != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s: %v\n", d, ferr)
+			return 1
+		}
+		alarms = append(alarms, found...)
+	}
+	assessments := alarm.Assess(alarms, project.NewGit(p.RootPath))
+
+	if c.JSON {
+		c.output(assessments)
+		return 0
+	}
+	lastDoc := ""
+	for _, a := range assessments {
+		if a.Alarm.Doc != lastDoc {
+			lastDoc = a.Alarm.Doc
+			fmt.Printf("%s:\n", lastDoc)
+		}
+		// R186 — the label says the repository does not record a verification. It does
+		// not say the injection was never run, because the documents cannot answer that
+		// and a tool asserting the stronger claim would be manufacturing a finding.
+		detail := ""
+		switch a.State {
+		case alarm.Stale:
+			detail = fmt.Sprintf(" — pulled %s, %s changed %s",
+				a.Alarm.Pulled.Format("2006-01-02"), a.Site, a.Changed)
+		case alarm.Unresolvable:
+			detail = fmt.Sprintf(" — git cannot resolve %s", a.Site)
+		case alarm.Unrecorded:
+			detail = " — no verification recorded (not a claim it was never run)"
+		case alarm.Unanchored:
+			detail = " — no Inject:, so nothing can check it"
+		}
+		fmt.Printf("  %-13s %s%s\n", a.State, a.Alarm.Test, detail)
+	}
+
+	census := alarm.Census(assessments)
+	parts := make([]string, 0, len(alarm.CensusOrder))
+	for _, st := range alarm.CensusOrder {
+		if census[st] > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", census[st], st))
+		}
+	}
+	fmt.Printf("\n%d alarms: %s\n", len(assessments), strings.Join(parts, ", "))
 	return 0
 }

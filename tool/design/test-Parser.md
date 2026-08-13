@@ -90,3 +90,27 @@ def add(): pass
 ```
 **Expected:** With pattern `#\s*`, finds Traceability{CRCRefs: ["crc-Store.md"], SeqRefs: ["seq-crud.md"]}
 **Refs:** crc-Parser.md
+
+## Test: an alarm never adopts the next test's fields
+**Purpose:** validates R178 — attributing a `**Pulled:**` to an alarm that never had one
+is the strongest false claim this parser could make: it would report an unverified
+guard as verified
+**Input:** an unrecorded alarm followed by a recorded one
+**Expected:** the first has no sites and no pull date; the second keeps both
+**Fire alarm:** stop `readAlarmFields` only at a heading level no document uses, and
+confirm the first alarm reports the second's pull date
+**Inject:** internal/parser/testdoc.go:readAlarmFields
+**Pulled:** 2026-08-13 — rang: the first alarm adopted `2026-08-05`; restore byte-clean
+**Refs:** crc-Parser.md — R178
+
+## Test: a half-written injection site is dropped, not guessed at
+**Purpose:** validates R178 — an entry with no colon has no symbol, and half an anchor
+points somewhere, which is worse than nowhere because every future check follows it
+**Input:** an `**Inject:**` mixing one good site with three malformed ones, and an
+unparseable `**Pulled:**`
+**Expected:** one site kept; no pull date recorded
+**Fire alarm:** accept entries with no colon and confirm the malformed three appear
+**Inject:** internal/parser/testdoc.go:parseSites
+**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Refs:** crc-Parser.md — R178
+
