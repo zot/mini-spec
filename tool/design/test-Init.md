@@ -136,3 +136,66 @@ not have to infer what changed
 **Input:** `init --track-private-trajectory` in a tree with a working tree
 **Expected:** the output names `.minispec/config.yaml` and `.gitignore`
 **Refs:** seq-bootstrap.md#2.8 — R141
+
+## Test: `--repair` accepts a configuration with no `track`
+**Purpose:** validates R173 from the repair side — absence is what this verb is for, so
+it must not be refused as damage
+**Input:** a `config.yaml` holding only `design_dir`; `init --track-all --repair`
+**Expected:** succeeds, and `LoadTrack` afterwards reads `all`
+**Fire alarm:** make `validateWellFormed` reject an empty `Track` as well as an
+unparseable one, and confirm this goes red
+**Inject:** internal/project/init.go:validateWellFormed
+**Pulled:** 2026-08-11 — covered by the LoadTrack injection above; not pulled alone
+**Refs:** seq-bootstrap.md#3.3 — R173
+
+## Test: repair preserves comments, key order, and unmodelled settings
+**Purpose:** validates R177 — the writer edits one key and disturbs nothing else. The
+suite asserted what the file *gained* and never what it kept, which is why the defect
+shipped
+**Input:** a `config.yaml` with a two-line comment block, a quoted `comment_patterns`
+entry, and a `future_setting: 42` this binary does not model; `--repair`
+**Expected:** every comment, the quoted form, the unknown key and the original key
+order all survive, with `track` appended last
+**Fire alarm:** restore the struct round-trip — unmarshal into `Config`, set `Track`,
+`yaml.Marshal` back — and confirm every preserved string is reported dropped. This is
+the literal defect, measured on ark: it deleted a ten-line comment block explaining a
+non-obvious setting
+**Inject:** internal/project/init.go:setTrack
+**Pulled:** 2026-08-11 — rang: five dropped strings reported, restore byte-clean
+**Refs:** seq-bootstrap.md#3.4 — R177
+
+## Test: changing an existing value keeps the comment on it
+**Purpose:** the *replace* branch, which the append case does not reach — a repair in
+either direction must edit the one scalar and leave its annotation standing
+**Input:** a `config.yaml` with a comment above `track: all`; `--repair` to
+`private-trajectory`
+**Expected:** the comment survives, the value changes, the neighbouring setting is
+untouched
+**Fire alarm:** replace the value node wholesale instead of setting it in place, and
+clear the key's head comment — confirm the comment is reported dropped
+**Inject:** internal/project/init.go:setTrack
+**Pulled:** 2026-08-11 — rang, restore byte-clean
+**Refs:** seq-bootstrap.md#3.4 — R177
+
+## Test: a no-op repair rewrites nothing
+**Purpose:** validates that an already-correct value leaves the file byte-for-byte
+alone, so a repair cannot reformat what it had no reason to touch
+**Input:** a `config.yaml` with irregular spacing (`track:   all`) and a comment;
+`--repair` to the same value
+**Expected:** the file is byte-identical afterwards and the report says `unchanged`
+**Fire alarm:** delete the already-correct early return from `setTrack` so it always
+re-encodes, and confirm the byte comparison goes red on the collapsed spacing
+**Inject:** internal/project/init.go:setTrack
+**Pulled:** 2026-08-11 — rang, restore byte-clean
+**Refs:** seq-bootstrap.md#3.4 — R177
+
+## Test: the degenerate documents do not panic or emit `null`
+**Purpose:** an absent, empty or comment-only file parses to a document with no
+content, which the node walk must not dereference
+**Input:** `""`, `"\n\n"`, and a comments-only body
+**Expected:** each yields a document setting `track`, and none contains `null`
+**Fire alarm:** disable the empty/non-mapping guard and confirm an `index out of
+range [0] with length 0` panic
+**Inject:** internal/project/init.go:setTrack
+**Pulled:** 2026-08-11 — rang (panicked as predicted), restore byte-clean
+**Refs:** seq-bootstrap.md#3.4 — R177

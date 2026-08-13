@@ -80,3 +80,20 @@ a misconfiguration
 **Input:** `track: none`, fake reports no working tree, nothing ignored
 **Expected:** no mismatch and no preference output
 **Refs:** crc-Track.md — R151
+
+## Test: absence and damage are reported apart, and absence names the verb
+**Purpose:** validates R173 — a configuration with no `track` predates the setting and
+`--repair` fixes it, while a value outside the closed set is damage no flag can undo.
+Asserting only "an error" is what let the two collapse
+**Input:** the table of `""`, no `track` key, `track: ""`, `track: sometimes`,
+`track: [` — plus `ErrNoTrack`'s own text
+**Expected:** the first three satisfy `errors.Is(err, ErrNoTrack)` and carry no
+hand-edit authorisation; the last two carry it and are not `ErrNoTrack`; the sentinel
+names `--repair`
+**Fire alarm:** wrap the absence case in `malformedConfigError` again — the literal
+pre-fix line — and confirm the three absence rows go red on the authorisation
+assertion. Separately, drop `--repair` from the sentinel's text and confirm the naming
+test goes red
+**Inject:** internal/project/track.go:LoadTrack, internal/project/track.go:ErrNoTrack
+**Pulled:** 2026-08-11 — rang: both, separately, and each restore was byte-clean
+**Refs:** seq-bootstrap.md#1.6 — R131, R152, R173

@@ -367,6 +367,15 @@ regression three sessions from now, when a future agent refactors the code that
 made it pass. This is a **default action of the Implementation phase** — not a
 Design-phase afterthought, and not something to defer to a Gaps-phase `O` entry.
 
+**Then break it on purpose and record what you broke.** A regression test written
+after its bug is fixed passes on its first run, which tells you the property holds
+today and nothing about whether the test can detect its absence. Re-introduce the
+defect, confirm red, restore, and diff to prove the restore was clean — then write it
+into the `test-*.md` as `**Fire alarm:**` / `**Inject:**` / `**Pulled:**` (see Test
+Case Format). Recording it is not bookkeeping: the proof is void once the code it
+targeted is rewritten, and the injection written down is what makes re-running it
+minutes of work rather than a re-derivation nobody undertakes.
+
 - **The cheap cases have no excuse.** Pure, deterministic logic — state
   machines, parsers, ownership/routing decisions, config defaults — tests with a
   fake collaborator (a small interface double) and a zero-value struct: no DB,
@@ -817,8 +826,44 @@ Principles: Single Responsibility, minimal collaborations, PascalCase.
 **Input:** setup and data
 **Expected:** verifiable outcome
 **Refs:** crc-*.md, seq-*.md
+**Code:** store_test.go
+**Fire alarm:** what to break so this test goes red, and what red looks like
+**Inject:** links.go:SyncLinkPath
+**Pulled:** 2026-08-05 — rang
 ```
 Cover: happy path, errors, edge cases.
+
+### The fire-alarm fields
+
+A test that has never failed is an assertion that happened to be true when you
+wrote it. Before trusting a new guard, break the thing it guards and watch it
+scream — then **write down what you broke**, because the proof expires the moment
+its subject is rewritten and nothing in a green suite will say so.
+
+- **`**Fire alarm:**`** — the injection in prose, and what the failure should look
+  like. Prefer the *real* historical defect over a strawman: restoring the actual
+  line proves the test catches *that*, while shuffling something by hand proves only
+  that the test dislikes shuffling.
+- **`**Inject:**`** — `file:symbol` for the site the injection **edits**, comma-separated
+  when an alarm has more than one. This is the field a tool can use and the one that is
+  easy to get wrong: name what the injection *changes*, never a symbol it merely
+  *consults*. "Return early when `Lookup` already knows the path" edits the caller —
+  `Lookup` is context, and recording it there points every future check at the wrong
+  function.
+- **`**Pulled:**`** — the date it was actually run and what happened. **Absence is
+  meaningful and must not be filled in by guessing:** an alarm with no `Pulled` is a
+  *prescription* (here is the injection to run) rather than a *record* (I ran it, it
+  rang). Those read identically in prose and are entirely different claims — the same
+  reason `NOT VERIFIED` earns its own words in a carve's status block.
+- **`**Code:**`** — the test file, so the alarm and the test it vouches for are
+  linked in the direction a tool can follow.
+
+**Why `Inject:` is a field rather than something to read out of the prose.** The
+forward chain already runs test→code; the person rewriting a function is in the code
+and never opens the test doc. `Inject:` is the back-link that makes "what alarms cover
+what I am about to change" a grep instead of a memory — and the back-link is always
+the half that gets skipped, because the forward one is found by whoever is already
+looking.
 
 ## Quality Checklist
 - [ ] Requirements: all spec items captured, numbered (R1, R2, ...), inferred items marked
@@ -827,6 +872,7 @@ Cover: happy path, errors, edge cases.
 - [ ] UI Specs: ASCII layouts, refs to CRCs and manifest-ui.md
 - [ ] Traceability: design files in Artifacts, code files have checkboxes, all Rn referenced
 - [ ] Tests: test-*.md for key behaviors
+- [ ] Fire alarms: every guard written *after* its bug was fixed has been broken on purpose and confirmed red, with `**Inject:**` naming the edit site and `**Pulled:**` the date — and any alarm whose subject was rewritten since has been pulled again
 - [ ] Summary specs: any cross-cutting axis touched by this change has been mirrored in the relevant summary spec (CLI inventory, storage layout, API surface, capabilities, …) — see the project's pinned list
 - [ ] Root spec index: every per-feature spec is mapped under a system in the root index (created if absent); `~/.claude/bin/minispec query unindexed-specs` returns empty
 - [ ] Phase validation: `~/.claude/bin/minispec phase <phase>` passes after each phase

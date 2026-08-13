@@ -65,3 +65,49 @@ unknown flag rather than a silently-accepted string
 **Input:** the flag table
 **Expected:** exactly three, each named for the value it records
 **Refs:** seq-bootstrap.md#2.1 — R136
+
+## Test: the pre-`track` refusal names repair and not hand-editing
+**Purpose:** validates R174 — this is the case the whole change exists to correct. The
+malformed refusal sent the agent to hand-edit a file `--repair` accepts, and a hand
+edit sets `track` while leaving `.gitignore` unreconciled
+**Input:** `preTrackMessage` with a configuration path
+**Expected:** names `--repair`, names the path, and carries **no** hand-edit
+authorisation
+**Fire alarm:** put the malformed refusal's "you are authorised to edit this file by
+hand" clause into this message and confirm the negative assertion goes red
+**Inject:** internal/cli/bootstrap.go:preTrackMessage
+**Pulled:** 2026-08-11 — rang, restore byte-clean
+**Refs:** seq-bootstrap.md#1.6.1 — R174
+
+## Test: the pre-`track` refusal asks the intent and stops
+**Purpose:** validates R175 and R176 — a configuration existing already settles what
+the no-configuration refusal has to send the agent looking for, so this one asks only
+the question no inspection can answer, and then stops
+**Input:** `preTrackMessage`
+**Expected:** carries the stop and the private-or-ships question; carries **neither**
+of the no-configuration refusal's inspection clauses
+**Fire alarm:** covered by the routing injection below, which swaps whole messages
+**Inject:** internal/cli/bootstrap.go:preTrackMessage
+**Refs:** seq-bootstrap.md#1.6.1 — R175, R176
+
+## Test: absence and damage are routed to different refusals
+**Purpose:** validates R174 at the branch rather than the message. This is the
+regression that hides: `ErrNoTrack`'s own text names `--repair`, so sending absence
+down the damage branch still prints something plausible while the intent question and
+the stop silently vanish
+**Input:** `trackRefusal` with `ErrNoTrack`, with a **wrapped** `ErrNoTrack`, and with
+an unrelated malformed error
+**Expected:** the first two return exactly `preTrackMessage(cfgPath)`; the third
+returns the loader's own message unchanged
+**Guard the guard:** whole-message equality rather than clause checks — the two tests
+above own what each message *says*, this owns only which one an error earns, and
+comparing whole messages additionally pins `cfgPath` being threaded through
+**Fire alarm:** branch on `==` instead of `errors.Is` and confirm the wrapped row goes
+red — that is the real-world slip. Separately, pass a literal in place of `cfgPath` and
+confirm this goes red while both clause-style tests stay green, which is what proves
+this assertion strictly stronger
+**Inject:** internal/cli/bootstrap.go:trackRefusal
+**Pulled:** 2026-08-11 — rang: both, separately, each restore byte-clean. A third
+attempt deleted the branch outright, which orphaned an import and broke the *build* —
+the test never ran, so it proved nothing and was reshaped
+**Refs:** seq-bootstrap.md#1.6 — R174

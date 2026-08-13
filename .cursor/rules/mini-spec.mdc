@@ -353,6 +353,37 @@ minispec update check design.md crc-Store.md
 
 Look out for language-specific "gotchas" like mixing functions and methods in Lua.
 
+**Codify what you verified — don't leave behavior hand-checked.** When you
+implement a behavior and confirm it works (a live run, a smoke test, an ad-hoc
+script), capture that verification as a `test-*.md` design + a test **in the same
+pass**. A hand-check proves it works *today*; the test is what catches the
+regression three sessions from now, when a future agent refactors the code that
+made it pass. This is a **default action of the Implementation phase** — not a
+Design-phase afterthought, and not something to defer to a Gaps-phase `O` entry.
+
+**Then break it on purpose and record what you broke.** A regression test written
+after its bug is fixed passes on its first run, which tells you the property holds
+today and nothing about whether the test can detect its absence. Re-introduce the
+defect, confirm red, restore, and diff to prove the restore was clean — then write it
+into the `test-*.md` as `**Fire alarm:**` / `**Inject:**` / `**Pulled:**` (see Test
+Case Format). Recording it is not bookkeeping: the proof is void once the code it
+targeted is rewritten, and the injection written down is what makes re-running it
+minutes of work rather than a re-derivation nobody undertakes.
+
+- **The cheap cases have no excuse.** Pure, deterministic logic — state
+  machines, parsers, ownership/routing decisions, config defaults — tests with a
+  fake collaborator (a small interface double) and a zero-value struct: no DB,
+  no server, no fixtures. Choose scenarios that avoid the expensive-to-reach
+  paths and you still pin the decision logic.
+- **Anchor the test like any artifact.** Add `test-*.md` to `design.md`
+  Artifacts mapped to the test file (so its refs harvest and future anchors
+  there are seen), then `minispec update check` it once it passes.
+- **`O`-gap is the exception, not the escape hatch.** Logging "missing tests" as
+  an Oversight gap is for behavior genuinely disproportionate to test now — needs
+  live external infra, a full rebuild, a real GPU. When you take that exception,
+  say *why* in the gap. Everything a fake-and-zero-value can reach is written,
+  not deferred.
+
 **Upon completion**, run `minispec phase implementation` to verify traceability, then run the Simplification Phase.
 
 5. Simplification Phase
@@ -378,8 +409,8 @@ Run `minispec phase gaps` to validate the gaps section, then run `minispec valid
 - **Design→Code (Dn):** Designed features without code
 - **Code→Design (Cn):** Code without design artifacts
 - **Implementation (In):** Requirements with design coverage but no inline Rn ref in any code file
-- **Oversights (On):** Missing tests, tech debt, enhancements, security concerns, etc.
-- **Approved (An):** Approved gap. Permanent — written without a checkbox.
+- **Oversights (On):** Missing tests *that were genuinely disproportionate to write in the Implementation phase* (say why — the cheap deterministic cases get a test, not an O-gap), tech debt, enhancements, security concerns, etc.
+- **Approved (An):** Approved gap. Permanent — written without a checkbox. Good for "don't do it this way" requirements.
 - **'Tired (Tn):** Retired requirement — obsoleted by a later change. Each Tn names the original Rn, the replacement Rn (or "no replacement" if removed outright), and the reason (usually a migration or refactor). Retired Rn entries stay in requirements.md with their original text but get a `~~Rn:~~ (Retired Tn — see Rxxx)` marker so old design/code references still resolve. Permanent — written without a checkbox.
 
 Nest related items with checkboxes (only S/R/D/C/I/O take checkboxes; A and T are permanent and never carry one):
@@ -401,6 +432,47 @@ If you encounter legacy `- [ ] An:` lines, drop the `[ ]` —
 
 Use `minispec update add-gap` to add gaps; it writes the right
 shape automatically (no checkbox for A/T, checkbox for the rest).
+
+### Conformance deviations are gaps, and they link both ways
+
+When a requirement states a rule the code does not yet honor everywhere,
+**each deviation is its own gap** — not a paragraph of spec prose. Prose
+cannot be queried, is never checked off, and drifts out of date silently;
+a gap is greppable, carries a checkbox, and gets closed. So a spec states
+the rule and says "deviations are tracked as gaps"; the gap list holds the
+inventory.
+
+**One gap per deviation, not one gap listing several.** Splitting them is
+what makes each independently closable, and it surfaces ordering
+constraints a combined body hides — dependencies between deviations only
+become visible once they are separate entries that can block one another.
+
+**Link both ways.** A gap whose repair will require editing a requirement
+names that `Rn` in its body *and* says the requirement edit is part of the
+repair. The requirement then carries a short back-link — a consistent,
+greppable phrase such as `see gap <ID>` — noting that it is provisional
+and what changes when the gap closes.
+
+The back-link is the load-bearing half, and the one people skip. The
+forward link (gap → requirement) is discovered by whoever works the gap,
+who is already looking. The reverse is for everyone else: without it a
+requirement reads as settled current intent, and a future agent
+"fixes" code to match a clause that was already slated for removal —
+precisely the revert trap "Supersede at the source" exists to prevent.
+Write the requirement text so it still describes today truthfully, with
+the pending change marked; do not pre-apply an edit that has not landed,
+which would make the requirement a lie in the other direction.
+
+Two forms not to confuse with this: a **retired** requirement (`Tn`)
+already back-links by construction, since `minispec update retire` writes
+the `~~Rn:~~ (Retired Tn — see Rxxx)` marker; and a gap that merely *cites*
+a requirement as context needs no back-link, because nothing about that
+requirement changes when the gap is repaired. Back-link only where the
+repair edits the requirement.
+
+To audit: for every open S/R/D/C/I/O gap naming an `Rn`, ask whether
+repairing it changes that requirement's text. If yes, the requirement must
+carry the back-link.
 
 **Upon completion**, offer to update Documentation (Documentation Phase).
 
@@ -594,12 +666,132 @@ onto), freeing the current file for the migration, then resume later from the
 parked sub-item. The freedom to intermix is the point — neither style is
 imposed.
 
+### Carves — the layer above the item
+
+An item is a unit of *work*. A **carve** is the layer above it: one coherent
+problem decomposed into items that may each need a different skill. It is the
+document those items point back at.
+
+It exists because coherence and schedulability have different natural units. A
+problem is coherent at the size of "the review console" — change one decision
+and the others move. Work is schedulable only in pieces that fit one session
+with one skill loaded. So no session can hold the whole problem and the queue
+can only hold pieces. Something has to carry the whole, and that is the carve.
+
+Both a carve and a migration are documents that spawn work, but their
+properties are close to inverted:
+
+| | Migration | Carve |
+|---|---|---|
+| End state | Defined (A→B); expires by design | None; decays as parts land |
+| Completion | Ritual: prose grep, `migration-complete`, `complete/NNN-` | A move to `done/` |
+| Spawns | One coherent change, phases run once | N items, scheduled independently over months |
+| Content | How to get from A to B | Decisions, open forks, and the split |
+| Kinds of work | One | Deliberately several |
+
+A migration says *the system is at A and must reach B*. A carve says *here is a
+problem area, here is what we have settled, here is how it breaks into
+schedulable pieces*. The lifetime difference is the sharpest: migrations are
+temporary by design, while a carve can stay open for months.
+
+**Where a carve lives: with the public design docs, not with the private
+trajectory files.** A carve is almost entirely facts about the code, and those
+belong where someone reading the project can find them. A top-level `carves/`
+beside `specs/` and `design/` is the default, with `carves/done/` for finished
+ones so they do not crowd out live ones. Deliberately not under `specs/`, which
+describes how the system *is*; a carve is a work-management artifact, which is
+the same reason migrations were exiled to `specs/migrations/`.
+
+**Promotion is a judgment call, and it belongs to the maintainer.** The test is
+*is this a meaty task?* — substantial enough to stay open a while and worth
+naming, because the name is what makes the surrounding work manageable. No count
+of queue items decides it: a one-item document can be carved on the expectation
+of more, and a two-item one can stay a working note if nobody needs the name.
+Keep the number of live carves small; they are a management tool, and a directory
+full of them stops being one.
+
+**An agent proposes; it does not decide.** Raise it once a document has spawned a
+second item — that is the prompt to ask, not a rule that fires. Below that,
+usually stay quiet. Treating the count as the criterion gets it wrong in both
+directions at once: it refuses a meaty single-item problem while mechanically
+promoting anything that happens to spawn two.
+
+Promote forward, moving an existing carve when it is next touched rather than in
+a sweep, and rewrite the links that pointed at the old path as part of the move.
+Promotion also forces an editorial pass separating the decision from the private
+reasoning behind it, and writing for a stranger is the cheapest clarity check
+available.
+
+**Three disciplines.** The first two tend to happen by instinct. The third does
+not, and it is the one that matters.
+
+1. **Per-part status, in a block at the top.** A carve outlives the length
+   anyone reads end to end, so "what is still open?" has to be answerable from
+   the first screen. Left to grow where the work happened, status lands
+   two-thirds down and is effectively invisible.
+
+   ```markdown
+   ## Status
+
+   - [x] ~~**Item 1 — record and resolve.**~~ **LANDED (`4c6e974`, 2026-08-04.)**
+   - [ ] **Item 4 — fail fast when onboarding does not take.** **OPEN (#122.)**
+   ```
+
+   Further down, each part's detail is keyed by **bare number, with no title and
+   no description** — `**Item 1** (…)`. That split is the point rather than a
+   style preference: the block owns the title and the status, the body owns the
+   detail, and neither repeats the other, so there is no second copy to drift. A
+   status *table* restating body prose is worse than none, because the two will
+   disagree and nothing will say which is right.
+
+   - **The checkbox is authoritative** where the markings on a line disagree.
+     The line states the same fact three ways — checkbox, strikethrough, marker
+     — because three different readers want it: a grep, a skimmer, and someone
+     wanting provenance. Use the same `- [ ]` / `- [x]` notation as the gaps
+     list, so both documents read alike and one query spans them.
+   - **`LANDED (commit, date)` mirrors `DECIDED (name, date)`**, deliberately —
+     same shape, same greppability, and the commit is what makes the claim
+     checkable. **Let the verb vary where it carries information**: `SENT` for a
+     part discharged by a cross-project message and owning no commit, `DEFERRED`
+     for one parked on purpose rather than merely unstarted. Forcing `LANDED`
+     onto those makes the marker a worse record than the prose it replaced.
+   - **State the negative, and distinguish "open" from "not checked".** A part
+     with no marker is indistinguishable from one nobody has thought about.
+     `NOT VERIFIED` earns its own words, because a repaired *symptom* reads
+     exactly like a satisfied *requirement* — that misreading is the most
+     expensive one this block prevents.
+   - **Not everything takes a checkbox.** Banked gaps, accepted residue, and
+     already-in-place preconditions are listed without one; there is nothing to
+     close. Same distinction an approved gap draws.
+
+   Key parts however the document already does — `Item N` where it wrote a
+   numbered split, the queue's own `#N` where every part has one. The queue
+   number is better when it exists, being the identifier the work is scheduled
+   under. The machine view across every live carve is one grep for `^- \[ \]`.
+2. **Dated, attributed decisions.** `DECIDED (name, date)`, append-only, so a
+   reader can tell a settled call from a musing and whose it was. This is the
+   single highest-value habit in the format.
+3. **Migrate on landing.** When a part lands, its decisions belong in `specs/`
+   and `design/` as requirements, spec prose, or a comment at the code; the
+   carve then points at where they went. A migration gets a forcing function for
+   free (the retire reminder, the prose grep, the completion ritual). A carve
+   gets none, so its decisions rot silently while still reading as current. This
+   is not hypothetical: a stale line in one working note sent a later carve down
+   a wrong path, and that carve had to mark the note stale by hand.
+
+Adopting discipline 3 also reframes the planning scratch usefully, as a staging
+area for reasoning that has not earned a public home yet rather than a permanent
+one.
+
 ### What's reusable vs. project-specific
 
-Reusable core: the three files, the lifecycle, the interleaving model. Each
-project parameterizes the rest — routing labels (which skill runs an item),
-the planning-scratch location, any batching rules, file siting and case
-convention, and whether the files carry a project prefix.
+Reusable core: the three files, the lifecycle, the interleaving model, the carve
+layer above the item, and the status block's shape — a block at the top, bare
+keys below, nothing stated twice. Each project parameterizes the rest — routing
+labels (which skill runs an item), the planning-scratch location, any batching
+rules, file siting and case convention, whether carves sit at top level or
+elsewhere, whether the files carry a project prefix, and how parts are keyed
+(`Item N` versus the queue's own `#N`).
 
 ## CRC Card Format
 ```markdown
@@ -628,8 +820,44 @@ Principles: Single Responsibility, minimal collaborations, PascalCase.
 **Input:** setup and data
 **Expected:** verifiable outcome
 **Refs:** crc-*.md, seq-*.md
+**Code:** store_test.go
+**Fire alarm:** what to break so this test goes red, and what red looks like
+**Inject:** links.go:SyncLinkPath
+**Pulled:** 2026-08-05 — rang
 ```
 Cover: happy path, errors, edge cases.
+
+### The fire-alarm fields
+
+A test that has never failed is an assertion that happened to be true when you
+wrote it. Before trusting a new guard, break the thing it guards and watch it
+scream — then **write down what you broke**, because the proof expires the moment
+its subject is rewritten and nothing in a green suite will say so.
+
+- **`**Fire alarm:**`** — the injection in prose, and what the failure should look
+  like. Prefer the *real* historical defect over a strawman: restoring the actual
+  line proves the test catches *that*, while shuffling something by hand proves only
+  that the test dislikes shuffling.
+- **`**Inject:**`** — `file:symbol` for the site the injection **edits**, comma-separated
+  when an alarm has more than one. This is the field a tool can use and the one that is
+  easy to get wrong: name what the injection *changes*, never a symbol it merely
+  *consults*. "Return early when `Lookup` already knows the path" edits the caller —
+  `Lookup` is context, and recording it there points every future check at the wrong
+  function.
+- **`**Pulled:**`** — the date it was actually run and what happened. **Absence is
+  meaningful and must not be filled in by guessing:** an alarm with no `Pulled` is a
+  *prescription* (here is the injection to run) rather than a *record* (I ran it, it
+  rang). Those read identically in prose and are entirely different claims — the same
+  reason `NOT VERIFIED` earns its own words in a carve's status block.
+- **`**Code:**`** — the test file, so the alarm and the test it vouches for are
+  linked in the direction a tool can follow.
+
+**Why `Inject:` is a field rather than something to read out of the prose.** The
+forward chain already runs test→code; the person rewriting a function is in the code
+and never opens the test doc. `Inject:` is the back-link that makes "what alarms cover
+what I am about to change" a grep instead of a memory — and the back-link is always
+the half that gets skipped, because the forward one is found by whoever is already
+looking.
 
 ## Quality Checklist
 - [ ] Requirements: all spec items captured, numbered (R1, R2, ...), inferred items marked
@@ -638,6 +866,7 @@ Cover: happy path, errors, edge cases.
 - [ ] UI Specs: ASCII layouts, refs to CRCs and manifest-ui.md
 - [ ] Traceability: design files in Artifacts, code files have checkboxes, all Rn referenced
 - [ ] Tests: test-*.md for key behaviors
+- [ ] Fire alarms: every guard written *after* its bug was fixed has been broken on purpose and confirmed red, with `**Inject:**` naming the edit site and `**Pulled:**` the date — and any alarm whose subject was rewritten since has been pulled again
 - [ ] Summary specs: any cross-cutting axis touched by this change has been mirrored in the relevant summary spec (CLI inventory, storage layout, API surface, capabilities, …) — see the project's pinned list
 - [ ] Root spec index: every per-feature spec is mapped under a system in the root index (created if absent); `minispec query unindexed-specs` returns empty
 - [ ] Phase validation: `minispec phase <phase>` passes after each phase
