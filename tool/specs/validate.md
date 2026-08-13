@@ -62,6 +62,11 @@ Run all validations and report issues.
 - Source values are checked for clean shape: relative path, ends in `.md`, no whitespace/parens/backticks/leading-slash/annotations. Malformed values are reported separately from missing files.
 - Lines that look like Source markers but don't match the canonical pattern (e.g. `**Source**:`, `*Source:*`, `Source:`) are reported as suspicious so the author can fix them.
 - When malformed values or suspicious lines are present, validate appends a `fix instructions:` block at the bottom of the output describing the canonical Source format.
+- When a Source path is **missing**, validate appends a `fix instructions:` block naming the three legitimate repairs. It does so because the obvious repair is the one that must never be taken: deleting the orphaned requirements opens a numbering gap, and closing that gap by renumbering silently repoints every design and code anchor at a different requirement — a failure no check can detect, since all the numbers still exist. The block says:
+  - **spec renamed** → rewrite the `**Source:**` to the new path
+  - **spec merged into another** → repoint the `**Source:**` at the absorbing spec; the requirements live on and nothing retires
+  - **spec deleted outright** → retire each of its requirements with `update retire`, regroup them under a `**Source:** specs/deleted.md` block, and record the dead spec's name, a one-line description, and its requirement numbers in `specs/deleted.md`
+  - and, in every case: requirement numbers are never renumbered and never reused
 - Migration-completion fallback: a Source value like `specs/migrations/X.md` resolves to `specs/migrations/complete/<NNN>-X.md` (NNN digits) when the literal path is missing but the renumbered completed file exists. This means `update migration-complete` does not require rewriting `**Source:**` lines in requirements.md.
 
 ### CRC Sequences Validation

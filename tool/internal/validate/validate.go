@@ -1,4 +1,4 @@
-// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101
+// CRC: crc-Validate.md | Seq: seq-validate.md | R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101, R188
 package validate
 
 import (
@@ -581,21 +581,14 @@ func (r *ValidationResult) FormatText() string {
 		fmt.Fprintf(&sb, "  duplicate gap IDs: %s\n", strings.Join(r.DuplicateGapIDs, ", "))
 	}
 
-	if len(r.MalformedSpecSources) > 0 || len(r.SuspiciousSourceLines) > 0 {
-		sb.WriteString(sourceFixInstructions())
-	}
+	sb.WriteString(r.sourceFixInstructions())
 
 	sb.WriteString("\nphase: validate FAILED\n")
 	return sb.String()
 }
 
-// sourceFixInstructions returns a crank-handle block describing the canonical
-// `**Source:**` format. Emitted when malformed Source values or suspicious
-// near-miss lines are detected. R92
-func sourceFixInstructions() string {
-	return `
-fix instructions:
-  Source lines in requirements.md must match this exact format:
+// sourceFormatFix describes the canonical `**Source:**` format. R92
+const sourceFormatFix = `  Source lines in requirements.md must match this exact format:
     **Source:** path/to/spec.md
   Multiple sources are allowed, comma-separated:
     **Source:** path/a.md, path/b.md
@@ -604,6 +597,41 @@ fix instructions:
   context about a source needs to be recorded, put it in the requirement
   text or in the spec file itself, not the Source line.
 `
+
+// missingSourceFix names the three legitimate repairs for a Source whose spec
+// is gone, and forecloses the fourth — deleting the orphaned requirements —
+// because the numbering gap that opens invites a renumber, and a renumber
+// repoints every anchor while leaving every check green. R188
+const missingSourceFix = `  A missing Source means its spec was renamed, merged, or deleted. Repair by
+  case — never by deleting the requirements:
+    renamed  rewrite the **Source:** to the new path
+    merged   repoint the **Source:** at the absorbing spec; nothing retires
+    deleted  retire each requirement (minispec update retire <Rn> - "<spec>
+             deleted"), move them under a **Source:** specs/deleted.md block,
+             and record the spec's name, a one-line description, and its
+             requirement numbers in specs/deleted.md
+  Requirement numbers are never renumbered and never reused. Deleting the
+  orphaned requirements opens a numbering gap, and renumbering to close it
+  points every design and code anchor at a different requirement — which
+  nothing detects, because all the numbers still exist.
+`
+
+// sourceFixInstructions returns the crank-handle block for whichever Source
+// diagnostics fired, or "" when none did. Both halves sit under one header.
+// R92, R188
+func (r *ValidationResult) sourceFixInstructions() string {
+	var halves []string
+	if len(r.MalformedSpecSources) > 0 || len(r.SuspiciousSourceLines) > 0 {
+		halves = append(halves, sourceFormatFix)
+	}
+	if len(r.MissingSpecSources) > 0 {
+		halves = append(halves, missingSourceFix)
+	}
+	if len(halves) == 0 {
+		return ""
+	}
+	// Each half ends in a newline, so joining on one puts a blank line between them.
+	return "\nfix instructions:\n" + strings.Join(halves, "\n")
 }
 
 // formatFileMap renders a map of file -> []ref entries, sorted by key, using

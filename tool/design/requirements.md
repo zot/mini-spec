@@ -160,6 +160,7 @@
 - **R90:** Requirements parser accepts a comma-separated list of paths on a `**Source:**` line and exposes them via a `Sources []string` field; validate iterates each path independently
 - **R91:** Validate detects malformed Source values (entries that don't match a clean relative `.md` path) and near-miss Source-like lines that don't match the canonical pattern, reporting them in `malformed Source values:` and `suspicious Source lines:` categories
 - **R92:** Validate output appends a `fix instructions:` block at the bottom describing the canonical `**Source:**` format whenever malformed values or suspicious lines are detected (crank-handle pattern)
+- **R188:** Validate appends a `fix instructions:` block whenever a Source path is missing, naming the three legitimate repairs — rewrite the Source (renamed), repoint it at the absorbing spec (merged), or retire the requirements and regroup them under `specs/deleted.md` (deleted) — and stating that requirement numbers are never renumbered or reused, because deleting the orphaned requirements opens a numbering gap whose renumbering repair silently repoints every design and code anchor
 - **R93:** Spec-source resolver recognizes the migration-completion convention: a Source value `specs/migrations/X.md` resolves to `specs/migrations/complete/<NNN>-X.md` if the literal path does not exist but a digit-prefixed match does, so requirements pointing at migrated specs do not flag as missing after `update migration-complete`
 
 

@@ -191,6 +191,35 @@ themes registered. Run `~/.claude/bin/minispec query unindexed-specs` — it
 lists any per-feature spec missing from the index (the spec-level analog of
 `query uncovered`); the pass is clean when that list is empty.
 
+**Deleting a spec.** Removing a `specs/*.md` file orphans every requirement whose
+`**Source:**` names it, and `validate` reports `missing spec sources`. Three
+situations look identical from the error message and are repaired differently:
+
+- **Renamed.** Rewrite the `**Source:**` lines to the new path. Nothing retires.
+- **Merged into another spec.** Repoint the `**Source:**` at the absorbing spec.
+  The behavior lives on, so nothing retires. This is the case most often
+  mistaken for a deletion, and mis-handling it retires requirements that are
+  still true.
+- **Deleted outright — the behavior is gone.** Retire each of its requirements
+  (`minispec update retire Rn - "<spec> deleted"`), then:
+  1. Regroup them in `requirements.md` under a feature block whose `**Source:**`
+     is `specs/deleted.md`. Keep one block per dead spec and name it in the
+     heading — `## Feature: search (deleted)` — so provenance survives the move.
+  2. Record the spec in `specs/deleted.md`: its name, a one-line description of
+     what it covered, and the requirement numbers it owned.
+  3. Index `specs/deleted.md` in the root index like any other spec, and honor
+     the retirement's step-6 obligation to reconcile design prose at its source.
+
+`specs/deleted.md` is a **tombstone registry**, not a spec — it describes nothing
+the system does. It exists so a dead spec's requirements keep a `**Source:**` that
+resolves, and so a reader meeting a struck-through `R40` in an old CRC card can
+still learn what it was for. Completed migrations need no equivalent: their Source
+resolves forward to `complete/NNN-<name>.md` on its own.
+
+**In none of the three cases do you delete the requirement lines.** That is the
+one repair the error message seems to invite and the one that must never be taken
+— see "Rn numbers are permanent" in the Requirements Phase below.
+
 **Upon completion**, run `~/.claude/bin/minispec phase spec` to verify spec files exist, then offer Requirements Phase. Do not jump to Design.
 
 2. Requirements Phase
@@ -216,8 +245,35 @@ Format:
 Guidelines:
 - Each spec item becomes exactly one numbered requirement (R1, R2, ...)
 - Numbering is global across all features (not per-feature)
+- Numbers are permanent — never renumber, never reuse (see below)
 - Mark inferred requirements explicitly: "**R5:** (inferred) ..."
 - Keep requirement text atomic and testable
+
+**Rn numbers are permanent — never renumber, never reuse.** An `Rn` is not a
+position in a list. It is an identifier that CRC cards, sequence steps, and code
+comments point at, and its meaning is whatever it meant when those pointers were
+written.
+
+Renumbering is the only edit in this system that breaks everything while leaving
+every check green. Afterwards all the numbers still exist, so `unknown CRC refs`
+finds nothing, coverage stays satisfied, `validate` passes — and every anchor in
+`design/` and `src/` now cites a different requirement than its author meant.
+There is no detection and no repair short of re-reading every reference in the
+project. Compare a *missing* number, which is loud and fixable: this failure is
+silent and permanent, which is why the rule is absolute rather than a preference.
+
+- **Append only.** A new requirement takes the next free number: the maximum
+  assigned anywhere, including retired ones.
+- **A gap in the sequence is a symptom, not a defect.** If `validate` reports
+  `numbering gaps`, a requirement was deleted. The repair is to put it back
+  — normally as a retirement — never to close the gap by shifting numbers down.
+- **Do not delete a requirement; retire it.** `minispec update retire` keeps the
+  number and its original text in place behind a forwarding marker, so every
+  existing reference still resolves. Deletion is what creates the gap that
+  tempts the renumber.
+
+The same discipline governs sequence-step IDs, for the same reason — see
+"Numbered Sequence Anchors" in the Design Phase.
 
 **Upon completion**, run `~/.claude/bin/minispec phase requirements` to verify format, then offer Design Phase. Do not jump to Implementation.
 

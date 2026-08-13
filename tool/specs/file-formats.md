@@ -20,6 +20,7 @@
 | File | Purpose | Owning spec(s) |
 |---|---|---|
 | `specs/*.md` | Per-feature specs. Referenced from `requirements.md` via `**Source:** specs/foo.md`. Tool validates the path resolves; content is free-form. | [validate.md](validate.md) (Spec Source Validation), [phase.md](phase.md) (`phase spec`) |
+| `specs/deleted.md` | Tombstone registry for specs deleted outright — each entry names the dead spec, a one-line description of what it covered, and the requirement numbers it owned. Keeps those (retired) requirements' `**Source:**` resolving. A convention, not a format the tool parses. | [validate.md](validate.md) (Spec Source Validation, missing-Source repairs) |
 | `specs/migrations/*.md` | In-flight migration specs (non-recursive). Listed by `query migrations`. Content is free-form. | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) (`query migrations`) |
 | `specs/migrations/complete/<NNN>-*.md` | Completed migrations, renumbered in landing order. `update migration-complete` performs the move. | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) (`update migration-complete`, Source migration-completion fallback) |
 
