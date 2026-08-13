@@ -33,28 +33,65 @@ inside a code span carries no such marker, which is still Item 1 of
 Ordered by intent, so the numbers run out of sequence. Position is the priority; the
 number is only the identifier.
 
-**DECIDED (Bill, 2026-08-04): parts are numbered, sub-items are not.** A part's
-`Item N` is the join between its one-line status here and its elaboration below —
-without it the only way to connect the two is by matching title text, which breaks
-the moment a title is edited, the same fragility as anchoring on line numbers. A
-sub-item has no separate elaboration to join to, so it needs no key; it is a plain
-bullet under its parent.
+**DECIDED (Bill, 2026-08-04): parts are numbered.** A part's `Item N` is the join
+between its one-line status here and its elaboration below — without it the only way
+to connect the two is by matching title text, which breaks the moment a title is
+edited, the same fragility as anchoring on line numbers.
 
-**A sub-item is numbered only when it enters a pending item by itself** (Bill,
-2026-08-04). If one pending item takes the whole part, the part carries the `#N` and
-its sub-items stay bare — they are breakdown, not schedule. So **the number appears
-exactly at the scheduling boundary**, and never at two levels for the same work.
+**DECIDED (Bill, 2026-08-13): subparts are numbered too, and get their own header
+entries.** *This supersedes the second half of the 2026-08-04 decision, which said a
+sub-item "has no separate elaboration to join to, so it needs no key," and the rule
+that a sub-item is numbered only when it enters a pending item by itself.* Both rested
+on sub-items being mere breakdown. Under the split rule below they are scheduling
+units, so they need the same join their parents need, for the same reason.
 
-That is checkable: for any part, either the part carries a `#N` or some of its
-sub-items do, not both. The one shape that would violate it — a part scheduled
-whole, then a leftover sub-item scheduled separately — is the shape the one-item-per-
-part rule already says to fix by splitting, so the invariant and the rule hold each
-other up.
+A subpart is **namespaced by its parent and numbered from 1** — `3.1`, `3.2` — with a
+header entry keyed by bare number exactly as a part is. Numbering is **append-only**:
+once a queue entry points at `3.2`, renumbering `3.2` leaves the pointer resolving to
+different work with nothing able to detect it, which is the same silent failure that
+makes `Rn` and sequence-step IDs permanent. Gaps in the sequence are expected.
+
+**DECIDED (Bill, 2026-08-13): split until no part is completed by more than one
+item.** When a part would take several items, issue subparts so each is discharged by
+exactly one. The parent is then completed **when its subparts are, derived rather than
+stored** — it keeps no checkbox of its own, since a parent box would be a second copy
+of a fact the subparts already carry, and two copies are what disagree. Item 1 is the
+worked example: `SPLIT`, no parent checkbox, three sub-items landing in three commits.
+
+So **the number appears exactly at the scheduling boundary**, and never at two levels
+for the same work — the 2026-08-04 formulation, now reached by splitting rather than
+by withholding keys. That remains checkable: for any part, either the part carries a
+`#N` or its subparts do, not both.
+
+**The reverse direction stays open on purpose** (Bill, 2026-08-13): one *item* may
+still discharge parts in several documents — a harness item closing gaps in three
+carves. So the link is asymmetric. A part records exactly one item; a queue entry
+records a list of parts. Splitting fixes many-items-per-part; it was never meant to
+forbid many-parts-per-item.
 
 `Item N` and `#N` are two keys doing two jobs, not one thing said twice: `Item N`
 identifies within the document, `#N` identifies in the queue and appears in the
 marker. Ark's live carves already read this way — `**Item 8 — a test harness…**
 **OPEN (#121.)**`.
+
+**DECIDED (Bill, 2026-08-13): a part is identified by `<doc-path>#<key>.<subkey>`.**
+The fragment resolves *inside* the named document, so the key scheme is a per-document
+property and no project-wide convention is needed: `carves/x.md#7` is whatever `x.md`
+keys as `7`, and cannot mean a `#7` from somewhere else. The parser accepts every live
+form and records the literal key. Measured across the eight carves in ark and this repo
+(2026-08-13): three schemes are in use — `Item N` (four documents), the bare queue
+number (three), and `Part X` letters (one) — and **no document mixes two**, which is
+what makes the fragment unambiguous. Subkeys follow the same shape, so the three read
+`3.2`, `72.1` and `B.1`.
+
+That uniformity is convention rather than a checked property, and one document holding
+both an `Item 7` and a `#7` is the single state where resolution breaks. `validate
+trajectory` asserts it — see Item 3.
+
+The shape is deliberately the one already in use for sequence anchors (`Seq:
+seq-foo.md#1.4`): same `file#dotted-fragment` syntax, a different resolver, and context
+always says which, since a `Seq:` reference and a part pointer never appear in the same
+position.
 
 - **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
@@ -62,13 +99,15 @@ marker. Ark's live carves already read this way — `**Item 8 — a test harness
   - [x] ~~`.minispec/` and the config move.~~ **LANDED (`fe0cd11`, 2026-08-07.)**
   - [x] ~~`init`, `track`, and `--repair`.~~ **LANDED (`0711319`, 2026-08-11.)**
 - [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
+- [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
 - [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
 - **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
 - [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
-- [ ] **Item 6 — the bidirectional item↔part link.** **BLOCKED (open questions 2 and 3.)**
+- [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
 - [ ] **Item 8 — shrink the skill.** **OPEN (not queued.)**
+- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
 
 ## Why
 
@@ -755,15 +794,79 @@ appears in that carve's status block), checkbox agreement, counter freshness,
 orphans, duplicate IDs across pending and done, and status-block presence. All four
 ark failures fall here. Read-only.
 
+**Plus one key-scheme check** (Bill, 2026-08-13): **a document uses exactly one key
+form.** `<doc-path>#<key>` is unambiguous only because the scheme is a per-document
+property, so a carve holding both an `Item 7` and a `#7` is the single state where a
+part pointer resolves to two different parts. Today that uniformity is convention —
+eight carves measured, none mixed — and convention is what this whole carve exists to
+stop relying on. The block is already being parsed for the checks above, so asserting
+one form per document costs nothing beyond the assertion, and it protects the
+identifier every other command depends on.
+
 **Item 4** — moved to [reference-discipline.md](reference-discipline.md). The number
 stays retired here so nothing renumbers and no later part reuses it.
+
+**Item 10** (Bill, 2026-08-13) — every list this format tracks progress on uses
+`- [ ]` / `- [x]`, not a prose stamp. This carve's own Open questions section was the
+demonstration: five of ten were settled, marked with strikethrough and an "answered
+2026-08-04" phrase, and entirely invisible to the one query the format is built around.
+`grep '^- \[ \]'` is *the* machine view across every live carve — a section it cannot
+see does not exist to it, however carefully a human marked it up.
+
+The general rule: **a stamp records what happened; a checkbox records what is left.**
+Those are different jobs and the format needs both, but only the second is queryable, so
+the second is the one that cannot be optional. Strikethrough and the dated marker stay —
+they are the provenance a reader wants — they just stop being the only signal.
+
+Three consequences, and the third is the reason this is a part rather than a footnote:
+
+- The Open questions section takes checkboxes (done here, 2026-08-13).
+- Anything with no checkbox now *means* something — a standing constraint or accepted
+  residue, nothing to close — which is the distinction an approved gap already draws.
+  Question 8 is the worked example.
+- **Existing carves need retrofitting**, and that is the work. Ark has seven; three had
+  independently invented a status notation and three had none, which is the same
+  evidence that motivated Item 7's scaffold. A convention that only new documents
+  follow leaves the old ones silently unqueryable.
+
+Feeds Item 9, which is where the rule gets written down normatively, and hands Item 3 a
+check: a section that tracks progress and carries no checkboxes is a section the machine
+view is blind to.
+
+**Item 11** (Bill, 2026-08-13) — bring the `update` verbs that mint an identifier into
+line with question 7's answer: markdown to stdout by default, machine-readable behind
+`--json`.
+
+*Measured 2026-08-13, and the split is not arbitrary.* Six `update` verbs already
+conform — `add-gap` prints `Added O3: <desc>`, `check` prints `Checked X in Y`,
+`add-ref`/`remove-ref` likewise — a prose sentence on stdout, suppressed by `--quiet`.
+The two that deviate are exactly the two that **mint** something: `retire` prints a bare
+`Tn`, and `migration-complete` prints a bare new path. Neither honors `--quiet`. That is
+not carelessness; whoever wrote them treated a minted value as a *return value*, which
+was the reasonable reading before a rule existed to say otherwise.
+
+`retire` is the sharp case, because the deviation is *specified*: R103 states that
+stdout carries only the `Tn` while the supersede reminder goes to stderr. So the
+crank-handle output — the part that actually tells an agent what to do next — is on the
+channel the rule now assigns to diagnostics, and conforming means **editing a
+requirement, not just an implementation.** That is why this is a part rather than a
+cleanup, and why it needs its own gap in `design/` when it is scheduled.
+
+Two things to settle when it is: whether `--json` carries the minted value for callers
+that want it, and whether `--quiet` should suppress a minted identifier at all — it is
+the one output a caller may genuinely need to read back.
+
+*Placement note: parked last because it is the least urgent of these, not because it is
+the smallest. Move it if that reads wrong.*
 
 **Item 5** — the backup slot. Tool-wide, not trajectory-specific: every `update`
 subcommand currently writes in place via bare `os.WriteFile`
 ([tool/internal/update/update.go](../tool/internal/update/update.go)) with no backup
 anywhere, so this retrofits onto eight existing verbs and is worth landing on its
-own. Prerequisite for Item 6. **`/mini-spec` must document it, and revert
-especially** — a safety mechanism nobody knows about is not a safety mechanism, and
+own. Prerequisite for Item 6 — and **question 5's answer (2026-08-13: the tool does
+edit trajectory files) is why**: the files it will be writing are mostly prose, so a bad
+write has more to destroy here than a flipped checkbox has in `design.md`.
+**`/mini-spec` must document it, and revert especially** — a safety mechanism nobody knows about is not a safety mechanism, and
 the skill is where an agent learns the escape hatch exists before it needs one.
 
 **Item 6** — the bidirectional item↔part link and the commands that use it:
@@ -773,11 +876,19 @@ and completion, which moves the item to done, clears the current file, **and che
 off the carve or migration parts it discharges** — one command across all four
 surfaces rather than four hand edits with three chances to forget one. For
 completion to check the right box the link must be recorded, and that is the core
-data model here. Blocked on open questions 2 and 3, and constrained by the
-asymmetry in the survey below: with trajectory files private in every project, the
-public half of the link is *never* a markdown link — a carve carries a bare key and
-the queue side holds the recorded pointer. The riskiest part, and the one
-hand-maintenance structurally cannot supply.
+data model here.
+
+**Unblocked 2026-08-13.** Questions 2 and 3 are answered, and between them the data
+model is settled: a part is `<doc-path>#<key>.<subkey>`; a part records exactly one
+item, a queue entry records a list of parts; and a parent part is never checked
+directly, since it completes when its subparts do. So completion iterates the item's
+recorded parts, checks each, and checks nothing else — no parent boxes, no inference
+about what a part's siblings mean.
+
+Still constrained by the asymmetry in the survey below: with trajectory files private
+in every project, the public half of the link is *never* a markdown link — a carve
+carries a bare key and the queue side holds the recorded pointer. The riskiest part,
+and the one hand-maintenance structurally cannot supply.
 
 **Item 7** — creation. Now reached through the refusal path rather than a verb you
 have to know about (see the Item 1 section): a write to a missing trajectory file
@@ -870,8 +981,10 @@ a constant instead of a variable**: the public→private half is *never* a link,
 any project, so Item 6 records the link on the private side and the public side
 carries a bare key. One shape to build, not two.
 
-Ark also uses all three part-key notations at once, in live carves, which settles
-open question 2 as genuinely open rather than a matter of picking a favourite.
+Ark also uses all three part-key notations at once, in live carves. That is what made
+question 2 a real question rather than a matter of picking a favourite — and what
+answered it: since no single document mixes two notations, the literal key is
+unambiguous within the document that wrote it.
 
 ## Item 1 — the bootstrap
 
@@ -1288,7 +1401,7 @@ three, `Part B`/`Part C` in one — same project, same period. The skill already
 implies this ("key parts however the document already does"), so the tool must
 **parse all three forms** rather than be told one.
 
-That narrows open question 2 usefully: the question was never which notation to
+That is what answered question 2: the question was never which notation to
 configure, but what the link *records* — and the answer is `<doc-path>#<literal
 key>`, whatever the document wrote. It also feeds Item 9, which has to decide
 whether the marker vocabulary (`LANDED`, `SENT`, `DEFERRED`, `NOT VERIFIED`, and
@@ -1391,52 +1504,89 @@ carve exists to make possible.
 
 ## Open questions
 
-1. ~~**Project parameterization**~~ — **answered 2026-08-04**, see the Item 1
-   section. Convention over configuration won on the evidence: privacy became a
-   universal convention rather than a setting, the prefix parameter was dropped, and
-   siting became a mandate. The trajectory config surface is empty. What loose ends
-   remain carry an `@undecided:` there rather than sitting here.
-2. **What identifies a "part"?** Completion has to check off the right box, so a
-   queue entry must name a part unambiguously. A heading anchor is fragile (titles
-   get edited); a bare `Item N` is stable but unique only within its document.
-   Probably `<doc-path>#<key>`, with the key being whatever that document keys by.
-   Note this no longer depends on question 1: the key format was measured to be a
-   per-document property, not a project setting, so the parser accepts all forms and
-   the link records the literal key.
-3. **Cardinality of the item↔part link.** What happens when a part is completed by
-   more than one item, or an item completes parts in two documents? Both are
-   plausible — a harness item discharging gaps in three carves — and the data model
-   has to say 1:1, 1:N or N:M before the commands are written.
-4. **Does the counter assertion survive?** Once `query next-id` exists, the "next
-   free ID is N" line in a working doc is pure liability. Delete it, or keep it and
-   validate it?
-5. **Should the tool ever edit trajectory files?** `update check` already edits
-   `design.md` checkboxes. The same for a carve's status block is tempting and
-   riskier, since these files are mostly prose.
-6. ~~**Does `add-item` renumber or reuse?**~~ — **answered 2026-08-07: neither.** The
-   question existed only because the agent was carrying an ID between two
-   invocations. With the tool minting and writing in one act, there is no interval in
-   which a second agent can take the same number, nothing to hold stable, and nothing
-   to reuse. See the crank-handle section, where the verb that mints a requirement is
-   decided too.
-7. **Where does crank-handle output go?** Stdout is natural for a CLI, but an agent
-   reads tool results, not terminals. If the change summary is the return value it
-   is seen; if it is a side-effect print during a batch it may not be. This matters
-   more than it sounds, because the whole point is that the agent not be in the
-   dark.
-8. **Private carves must not leak.** Some projects keep a gitignored carve directory
-   alongside the public one. The tool must read both to validate, and must never
-   write a private carve's contents into anything that ships — a report, an error
-   message, a summary file.
-9. **Does the format carry a version marker?** Item 9 exists partly so an old
-   hand-maintained layer can be migrated to a written target, and a migration has
-   to know what shape it is looking at. A version lets the tool upgrade, or refuse,
-   rather than misparse — but it is also one more thing in every file, so it earns
-   its place only if migration is real rather than hypothetical.
-10. ~~**Does mini-spec run its own trajectory layer?**~~ — **answered 2026-08-11: yes.**
-   The pending file and this carve directory arrived 2026-08-04; the done and current
-   files followed on 2026-08-07, when the first item completed and there was nowhere to
-   record it. All three exist and are in use, and no project prefix was ever wanted —
-   the bare names are the mandated ones. The smell is closed: this project runs the
-   layer it is building tooling for, and `#4` is the proof, since `init` refused to run
-   here until this repository declared its own `track`.
+Checkboxes match the Status block, so one `grep '^- \[ \]'` spans both. The number lives
+in the label rather than in markdown list position: prose elsewhere cites "question 2",
+and a positional number silently moves when a question is inserted above it — the same
+reason `Rn` and part keys are never renumbered. **Question 8 carries no checkbox**: it is
+a standing constraint rather than a fork, so there is nothing to close, the distinction an
+approved gap draws.
+
+- [x] ~~**1. Project parameterization.**~~ — **answered 2026-08-04**, see the Item 1
+  section. Convention over configuration won on the evidence: privacy became a
+  universal convention rather than a setting, the prefix parameter was dropped, and
+  siting became a mandate. The trajectory config surface is empty. What loose ends
+  remain carry an `@undecided:` there rather than sitting here.
+- [x] ~~**2. What identifies a "part"?**~~ — **answered 2026-08-13:
+  `<doc-path>#<key>.<subkey>`.** The lean recorded here was right, and the reason it
+  works is the one this question already half-stated: the fragment resolves inside the
+  named document, so the key scheme is a per-document property and a bare `7` cannot
+  be confused with a `7` from elsewhere. Measured across eight carves — three schemes
+  live, none mixed within a document. See the Status section for the decision and the
+  uniformity check it hands to Item 3.
+- [x] ~~**3. Cardinality of the item↔part link.**~~ — **answered 2026-08-13, by
+  normalization rather than by modelling.** Split parts into subparts until no part is
+  completed by more than one item, so the awkward direction never arises; the parent
+  completes when its subparts do, derived rather than stored. The other direction is
+  deliberately left open — one item may still discharge parts in several documents —
+  so the link is asymmetric: scalar on the part side, a list on the queue side. See
+  the Status section.
+- [ ] **4. Does the counter assertion survive?** Once `query next-id` exists, the "next
+  free ID is N" line in a working doc is pure liability. Delete it, or keep it and
+  validate it? Contingent on Item 2 rather than blocked by it — the fork is real either
+  way, but nothing forces a call until `next-id` exists.
+- [x] ~~**5. Should the tool ever edit trajectory files?**~~ — **answered 2026-08-13:
+  yes** (Bill). `update check` already edits `design.md` checkboxes, and Items 6 and 7
+  were designed on this assumption throughout — completion checks off the parts an item
+  discharges and clears the current file, creation writes the lifecycle preamble. The
+  decision ratifies what the document already assumed rather than changing anything.
+
+  **The risk the question named does not go away, and now has somewhere to go.** These
+  files are mostly prose, so a bad write has more to destroy here than a flipped
+  checkbox in `design.md`. That is what makes **Item 5 a prerequisite rather than a
+  convenience** — it already says so for Item 6, and this is the reason.
+
+  The yes is bounded by what the items actually describe: **structural edits only** —
+  checkboxes, markers, and entries the tool itself wrote. Nothing in this carve asks the
+  tool to rewrite prose, and the scope of the answer is the scope of those designs.
+- [x] ~~**6. Does `add-item` renumber or reuse?**~~ — **answered 2026-08-07: neither.**
+  The question existed only because the agent was carrying an ID between two
+  invocations. With the tool minting and writing in one act, there is no interval in
+  which a second agent can take the same number, nothing to hold stable, and nothing
+  to reuse. See the crank-handle section, where the verb that mints a requirement is
+  decided too.
+- [x] ~~**7. Where does crank-handle output go?**~~ — **answered 2026-08-13: stdout,
+  as markdown** (Bill). The question's worry rested on a wrong premise: an agent
+  invoking a CLI *does* receive stdout as the tool result, so the destination was never
+  the risk. What remains of the worry is sequencing — a side-effect print during a batch
+  may go unread — and that is a property of when a command is called, not of where it
+  writes.
+
+  **`minispec` is a command for agents, so markdown is the default output, not a
+  presentation layer over some other form.** Baby Food: the model reads the output
+  directly and never parses a format. Program-parseable output is the *exception* and
+  already has its mechanism — `--json` is a global flag
+  ([tool/internal/cli/cli.go](../tool/internal/cli/cli.go), documented in
+  [cli-commands.md](../tool/specs/cli-commands.md)) — so nothing new is needed; the
+  decision just names what it is an exception to.
+
+  *Existing deviations are **Item 11**, added 2026-08-13.* Two `update` verbs put a bare
+  minted value in the agent channel — `retire`'s `Tn` and `migration-complete`'s new
+  path — and `retire`'s split is stated in R103, so conforming edits a requirement
+  rather than an implementation.
+- **8. Private carves must not leak.** *No checkbox: a standing constraint on every
+  part that reads or reports, not a question with an answer.* Some projects keep a
+  gitignored carve directory alongside the public one. The tool must read both to
+  validate, and must never write a private carve's contents into anything that ships —
+  a report, an error message, a summary file.
+- [ ] **9. Does the format carry a version marker?** Item 9 exists partly so an old
+  hand-maintained layer can be migrated to a written target, and a migration has
+  to know what shape it is looking at. A version lets the tool upgrade, or refuse,
+  rather than misparse — but it is also one more thing in every file, so it earns
+  its place only if migration is real rather than hypothetical.
+- [x] ~~**10. Does mini-spec run its own trajectory layer?**~~ — **answered 2026-08-11:
+  yes.** The pending file and this carve directory arrived 2026-08-04; the done and
+  current files followed on 2026-08-07, when the first item completed and there was
+  nowhere to record it. All three exist and are in use, and no project prefix was ever
+  wanted — the bare names are the mandated ones. The smell is closed: this project runs
+  the layer it is building tooling for, and `#4` is the proof, since `init` refused to
+  run here until this repository declared its own `track`.
