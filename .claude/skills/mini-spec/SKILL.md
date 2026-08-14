@@ -649,6 +649,14 @@ It is **tool-agnostic**: it tracks any kind of work — a mini-spec pass, a UI
 pass, a plain investigation — each item naming the skill that runs it, or
 none. It ships with mini-spec but is not about mini-spec.
 
+**The shapes are normative in `trajectory-format.md`** (in this skill directory),
+loaded on demand the way `config-reference.md` is. It owns every file shape, key
+and marker below — siting, the item and done entries, the carve status block,
+part and subpart numbering, the marker vocabulary, and the ID rule. **Where this
+section and that file disagree, that file wins**, and it currently does disagree
+about siting: the mandated location is the repository root, with no project
+prefix and no config key. This section keeps the reasoning and the judgment.
+
 ### The three files
 
 Named for the states an item passes through: **pending → current → done**

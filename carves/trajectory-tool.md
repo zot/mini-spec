@@ -95,10 +95,13 @@ position.
 
 - **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
-  - [x] ~~repository-root detection.~~ **LANDED (`8197c6c`, 2026-08-07.)**
-  - [x] ~~`.minispec/` and the config move.~~ **LANDED (`fe0cd11`, 2026-08-07.)**
-  - [x] ~~`init`, `track`, and `--repair`.~~ **LANDED (`0711319`, 2026-08-11.)**
-- [ ] **Item 9 — `format.md`: the normative format reference.** **OPEN (not queued.)**
+  - [x] ~~**1.1 — repository-root detection.**~~ **LANDED (`8197c6c`, 2026-08-07 — `#1`.)**
+  - [x] ~~**1.2 — `.minispec/` and the config move.**~~ **LANDED (`fe0cd11`, 2026-08-07 — `#3`.)**
+  - [x] ~~**1.3 — `init`, `track`, and `--repair`.**~~ **LANDED (`0711319`, 2026-08-11 — `#4`.)**
+- **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
+  checkbox: the sub-items carry the state.
+  - [ ] **9.1 — write `trajectory-format.md`.** **OPEN (#8.)**
+  - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
 - [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
@@ -731,7 +734,7 @@ under the number is everything the decisions built instead, and it splits three 
 *Ordering is a real dependency chain, not a preference*, which is why this splits into
 three scheduled items rather than one. Each lands something usable on its own.
 
-**Item 9** — `format.md` in the skill directory: the normative reference for every
+**Item 9** — `trajectory-format.md` in the skill directory: the normative reference for every
 trajectory file shape — the three files, the item entry, the done entry, the carve
 status block and its bare-key detail, the marker vocabulary, the ID rule. Loaded on
 demand rather than always, the way `config-reference.md` already is.
@@ -748,9 +751,115 @@ Three jobs, and the last two are what make it necessary rather than tidy:
    has files in some earlier shape. Without a written target there is nothing to
    migrate *to*.
 
-Coupled to Item 1: `format.md` states the shapes, Item 1 states which slots a
-project may vary. Write them together, or the config will parameterize fields the
-format does not have.
+*The coupling to Item 1 is discharged, and discharged in the direction that makes this
+easier.* This read "write them together, or the config will parameterize fields the
+format does not have" while Item 1 was open. Item 1 landed with an **empty** config
+surface — siting mandated, prefix dropped, carve directory fixed, privacy universal — so
+there are no varying slots and `trajectory-format.md` states mandates rather than defaults. Nothing
+here waits on anything.
+
+### The four decisions Item 9 was holding
+
+**DECIDED (Bill, 2026-08-14): `trajectory-format.md` is the authority for the shapes; the tool spec
+carries a generated section and never restates them by hand.**
+
+*The mechanical fact that reshapes this, found before deciding.* A `**Source:**` value
+must be a relative path resolving inside `specs/` — no leading slash, no `..`
+([tool/specs/validate.md](../tool/specs/validate.md), Spec Source Validation) — so a skill
+file **can never be a requirement's Source**. The moment the tool parses trajectory
+content, a `tool/specs/trajectory.md` must exist regardless. So the question was never
+which file wins; it was whether that spec restates the shapes or cites them.
+
+The authority half is already recorded and only needs honouring:
+[tool/specs/file-formats.md](../tool/specs/file-formats.md) says the trajectory files'
+"content is owned by the skill, not the tool," and that file already models
+cite-don't-restate for `design.md` — `config.md` owns the format, `validate.md` owns the
+structural rules. The format is tool-agnostic besides: the skill says trajectory tracking
+"ships with mini-spec but is not about mini-spec," and ark has run the layer for months
+with no tool support at all.
+
+**What "cite" alone could not do is fail.** That is this project's own recurring finding,
+and `#7` is ten days old: a generator over prose maintained elsewhere must fail loudly or
+it does not fail, and an honest generator only helps when something runs it. So the shapes
+live in `trajectory-format.md`, `tool/specs/trajectory.md` is hand-written for **behavior** with one
+**generated section** holding the shapes, and `make validate` asserts it. Section-scoped
+generate-and-compare — generate the part that is owned elsewhere, hand-write the prose
+around it. That is Item **9.2**, and it is why this part splits.
+
+**DECIDED (Bill, 2026-08-14): the marker vocabulary is open, and the *shape* is what gets
+checked.** The dichotomy this carve recorded — "a closed set is checkable; an open one is
+honest, not both" — does not survive Item 10. The checkbox is the queryable signal and the
+stamp is provenance, so the machine never needs to read the verb. `trajectory-format.md` **reserves**
+the live verbs with fixed meanings and permits more; Item 3 asserts `**VERB
+(attribution)**` and never the word.
+
+*Measured 2026-08-14 across 15 carve files in both projects, and the measurement is what
+decides it.*
+
+| | verbs |
+|---|---|
+| pre-existing | `LANDED` `OPEN` `NOT VERIFIED` `DEFERRED` `SENT` `ASSESSED` |
+| coined by **this carve**, in ten days | `SPLIT` `MOVED` `DISCHARGED` `MIGRATED` — none of the four appears in any of ark's 13 carve files |
+
+Ten live verbs, four of them added in ten days by one document. A set closed today would
+refuse four of the words currently in use, and it would have refused them *while this
+carve was arguing that closing it might be right*. `SKILL.md` already says "let the verb
+vary where it carries information"; this ratifies that rather than overturning it.
+
+**DECIDED (Bill, 2026-08-14): no version number — absence is the version.** A file the
+tool created carries the marker; a file without one is legacy, and that is the whole
+signal a migration needs. Open question 9 asked whether the format carries a version
+marker and made it conditional on migration being real rather than hypothetical: it is
+real but small and one-time — 15 carve files, three key notations, already retrofitted by
+hand once. A number in every file, forever, buys nothing until there is a second version
+to name, and that is when it earns its place.
+
+**DECIDED (Bill, 2026-08-14): `@undecided:` and *blocked* are one mechanism at two
+severities** — one greppable marker carrying a required *what would settle it* clause,
+ordinary in a carve, a counted defect in a spec. **Kept minimal for now**, and the reason
+is adoption rather than doubt: at the moment of deciding, the marker had **zero live
+uses** — all four occurrences in this carve were backquoted mentions, and ark has none. So
+`trajectory-format.md` documents the marker and its clause, and does not yet build the
+blocked state on top of it.
+
+*It acquired its first live use an hour later, in the naming question at the end of this
+section* — which is the better argument for keeping it than the count was. A marker exists
+for the state where something is genuinely proposed rather than settled, and writing 9.1
+produced exactly one.
+
+*One thing that measurement did establish.* Those occurrences being mentions is the
+use/mention rule working exactly as designed — which makes this document's own claim about
+what `@undecided:` remains a computed property rather than an assertion. One grep
+separates the two on a single trailing character, with no markdown parser involved.
+
+*And one shape it misreads, found by writing the grep down.* A regular expression quoting
+the tag puts a metacharacter where the backtick would go, so the heuristic scores it a
+use. Harmless here — it was reworded out of this paragraph rather than left as a false
+positive in the reference instance — but it is a second witness for the same limitation
+the annotation decision already names: the marker handles the common case, and a code span
+still needs the markdown-aware extraction that is Item 1 of
+[reference-discipline.md](reference-discipline.md).
+
+### The split
+
+**9.1** — the normative reference itself: the three files and their mandated siting, the
+item entry, the done entry, the carve status block and its bare-key detail, subpart
+numbering, the reserved marker vocabulary and its shape, the checkbox-versus-stamp rule
+from Item 10, the `@undecided:` marker, and the ID rule.
+
+**9.2** — `tool/specs/trajectory.md` gains a section generated from
+`trajectory-format.md`, with `make validate` asserting it — the `#7` shape, scoped to a
+section rather than a file. Depends on 9.1, since there is nothing to generate from until
+the authority exists.
+
+@undecided: **the file is named `trajectory-format.md`, not the `format.md` this carve
+called it for ten days.** Daneel's call while writing 9.1, and easily reverted — one `git
+mv` and twelve references here. The reasoning: the skill directory already documents CRC
+cards, sequences, test cases and requirements formats inside `SKILL.md`, so a bare
+`format.md` would be the one unqualified name among them and will attract the wrong
+content later; the sibling it is modelled on, `config-reference.md`, is qualified by its
+subject for the same reason. **Settled by Bill saying yes or no** — no measurement can
+answer it.
 
 **The annotation marker belongs here too** (Bill, 2026-08-04): the tag this carve
 invented for its own use should become part of the documented format, for **specs as
@@ -765,15 +874,17 @@ unsettled; a spec describes how the system **is**, so an unresolved point inside
 is a hole in the specification. That makes the marker the lightweight inline form of
 the *blocked* state already identified as missing — "we cannot specify this yet, and
 here is precisely what we would need to know" — where no amount of effort closes the
-item, only an answer does. Whether the two should be one mechanism or two is
-genuinely open.
+item, only an answer does. ~~Whether the two should be one mechanism or two is
+genuinely open.~~ **Answered 2026-08-14: one mechanism, two severities** — see the
+decisions below.
 
-**One drift hazard to settle up front.** The tool's own specs describe these same
-formats, and [tool/specs/file-formats.md](../tool/specs/file-formats.md) exists as
-the summary spec for exactly that. Two hand-maintained normative copies of one
-format is the failure this whole carve is about. Either `format.md` is the authority
-and the tool spec links to it, or the tool spec is the authority and `format.md` is
-generated from it — but not both by hand.
+**One drift hazard to settle up front — settled 2026-08-14, see the decisions below.**
+The tool's own specs describe these same formats, and
+[tool/specs/file-formats.md](../tool/specs/file-formats.md) exists as the summary spec for
+exactly that. Two hand-maintained normative copies of one format is the failure this whole
+carve is about. The fork recorded here — `trajectory-format.md` authoritative with the tool spec
+linking, or the tool spec authoritative with `trajectory-format.md` generated from it — was answered
+by taking the first and mechanizing it, which is 9.2.
 
 **Item 2** — `minispec query next-id <item|gap|req>`. Prints the next free number
 as `max()` across every file that can hold one — for items that is **both** the
@@ -988,9 +1099,16 @@ unambiguous within the document that wrote it.
 
 ## Item 1 — the bootstrap
 
-Settled — mostly on 2026-08-04, with the last open points closed on 2026-08-07. No
-`@undecided:` remains anywhere in this carve. Split into three scheduled sub-items the
-same day; the split and its dependency chain are in the section above.
+Settled — mostly on 2026-08-04, with the last open points closed on 2026-08-07. Split
+into three scheduled sub-items the same day; the split and its dependency chain are in the
+section above.
+
+*This paragraph said "no `@undecided:` remains anywhere in this carve" until 2026-08-14,
+when the naming question in the Item 9 section made that false.* Corrected rather than
+deleted, because it is a small worked instance of what the whole carve argues: a true
+statement about a document, written inside that document, expires the moment the document
+changes — and nothing but a reader noticing stands between the expiry and a confident
+wrong answer. The claim belongs to a grep, not to a sentence.
 
 *The section title said "parameterization" until 2026-08-07*, naming the question
 rather than the work. The answer turned out to be that there are no parameters, so the
@@ -1578,11 +1696,14 @@ approved gap draws.
   gitignored carve directory alongside the public one. The tool must read both to
   validate, and must never write a private carve's contents into anything that ships —
   a report, an error message, a summary file.
-- [ ] **9. Does the format carry a version marker?** Item 9 exists partly so an old
-  hand-maintained layer can be migrated to a written target, and a migration has
-  to know what shape it is looking at. A version lets the tool upgrade, or refuse,
-  rather than misparse — but it is also one more thing in every file, so it earns
-  its place only if migration is real rather than hypothetical.
+- [x] ~~**9. Does the format carry a version marker?**~~ — **answered 2026-08-14: no
+  number, and absence is the version.** The question made itself conditional on migration
+  being real rather than hypothetical, and the measurement says real but small and
+  one-time: 15 carve files across both projects, three key notations, already retrofitted
+  by hand once. A file the tool created carries the marker; a file without one is legacy,
+  which is the whole signal a migration needs. A number in every file forever buys nothing
+  until there is a second version to name — and that is when it earns its place. See the
+  Item 9 section.
 - [x] ~~**10. Does mini-spec run its own trajectory layer?**~~ — **answered 2026-08-11:
   yes.** The pending file and this carve directory arrived 2026-08-04; the done and
   current files followed on 2026-08-07, when the first item completed and there was

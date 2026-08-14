@@ -164,6 +164,16 @@ body = sub(
     "See `.claude/skills/mini-spec/config-reference.md`",
 )
 
+# Cursor has no skill directory, so every on-demand reference has to become a repo
+# path or it points at nothing. One edit per referenced file, each asserted -- a new
+# reference added to SKILL.md without a rule here ships "in this skill directory" to
+# an agent that has no such place.
+body = sub(
+    body,
+    "**The shapes are normative in `trajectory-format.md`** (in this skill directory),",
+    "**The shapes are normative in `.claude/skills/mini-spec/trajectory-format.md`**,",
+)
+
 body = sub(
     body,
     "The `minispec` CLI tool (at `minispec`) performs structural operations",
