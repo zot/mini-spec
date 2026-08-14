@@ -100,7 +100,7 @@ position.
   - [x] ~~**1.3 — `init`, `track`, and `--repair`.**~~ **LANDED (`0711319`, 2026-08-11 — `#4`.)**
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
   checkbox: the sub-items carry the state.
-  - [ ] **9.1 — write `trajectory-format.md`.** **OPEN (#8.)**
+  - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
 - [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
@@ -852,14 +852,20 @@ from Item 10, the `@undecided:` marker, and the ID rule.
 section rather than a file. Depends on 9.1, since there is nothing to generate from until
 the authority exists.
 
-@undecided: **the file is named `trajectory-format.md`, not the `format.md` this carve
-called it for ten days.** Daneel's call while writing 9.1, and easily reverted — one `git
-mv` and twelve references here. The reasoning: the skill directory already documents CRC
-cards, sequences, test cases and requirements formats inside `SKILL.md`, so a bare
-`format.md` would be the one unqualified name among them and will attract the wrong
-content later; the sibling it is modelled on, `config-reference.md`, is qualified by its
-subject for the same reason. **Settled by Bill saying yes or no** — no measurement can
-answer it.
+**DECIDED (Bill, 2026-08-14): the file is named `trajectory-format.md`, not the
+`format.md` this carve called it for ten days.** Daneel's call while writing 9.1, put up
+as this document's first live `@undecided:` and confirmed the same day. The reasoning: the
+skill directory already documents CRC cards, sequences, test cases and requirements
+formats inside `SKILL.md`, so a bare `format.md` would be the one unqualified name among
+them and will attract the wrong content later; the sibling it is modelled on,
+`config-reference.md`, is qualified by its subject for the same reason.
+
+*Recorded because the marker's whole lifecycle ran in one session.* It was documented in
+the morning with zero live uses, acquired its first use an hour later on this question,
+carried the required *what would settle it* clause — Bill saying yes or no, since no
+measurement can answer a naming question — and converted to `DECIDED` on his answer. That
+is the state the marker exists to hold: not unmarked thinking, not a settled call, and
+visible to a grep the whole time it was neither.
 
 **The annotation marker belongs here too** (Bill, 2026-08-04): the tag this carve
 invented for its own use should become part of the documented format, for **specs as
