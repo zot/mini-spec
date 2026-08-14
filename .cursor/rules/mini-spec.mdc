@@ -650,74 +650,40 @@ It is **tool-agnostic**: it tracks any kind of work — a mini-spec pass, a UI
 pass, a plain investigation — each item naming the skill that runs it, or
 none. It ships with mini-spec but is not about mini-spec.
 
-**The shapes are normative in `.claude/skills/mini-spec/trajectory-format.md`**,
-loaded on demand the way `config-reference.md` is. It owns every file shape, key
-and marker below — siting, the item and done entries, the carve status block,
-part and subpart numbering, the marker vocabulary, and the ID rule. **Where this
-section and that file disagree, that file wins**, and it currently does disagree
-about siting: the mandated location is the repository root, with no project
-prefix and no config key. This section keeps the reasoning and the judgment.
+**Every shape is normative in `.claude/skills/mini-spec/trajectory-format.md`**,
+loaded on demand the way `config-reference.md` is: siting, the three file
+shapes, the item and done entries, the carve status block, part and subpart
+numbering, the marker vocabulary, and the ID rule. **Read it before writing or
+repairing any of these files.** This section keeps only what a format cannot
+carry — why the layer exists, and the judgment it asks of you.
 
 ### The three files
 
 Named for the states an item passes through: **pending → current → done**
-(future → present → past). Default location
-`specs/migrations/{PENDING,CURRENT,DONE}.md`; a project may site them
-elsewhere (e.g. at top level) and keep a project prefix. The vocabulary
-below refers to the project's files **wherever they live**, so a path never
-needs qualifying:
+(future → present → past). They are called **the pending file**, **the current
+file** and **the done file** throughout, so a path never needs qualifying;
+`.claude/skills/mini-spec/trajectory-format.md` says where they live.
 
-- **the pending file** — the work queue.
-- **the current file** — working context for the active item.
+- **the pending file** — the work queue, ordered by intent, and the index back
+  to the roadmap, planning scratch, and feature designs.
+- **the current file** — working context for the active item, and nothing else.
 - **the done file** — the completion ledger.
 
-The standing ledger (exactly one PENDING, one CURRENT, one DONE) sits in the
-same `migrations/` directory as the in-flight migration specs. Two kinds of
-file share that directory — say so, so `PENDING.md` is never mistaken for a
-migration spec.
+### Working the queue
 
-### Lifecycle rules
-
-- **The pending file is ordered by intent** — the top item is active. Each
-  item is a `##` heading, so a paused item's context can nest as a sub-item
-  beneath it.
-- **Finishing an item:** first mark it done in its **source file** (the
-  plan/spec/design doc where the work lives); then reset the current file;
-  then move the item from the pending file to the done file.
-- **The current file is for the active item only** — never a log of finished
-  work (that is the done file). With nothing active, it holds a one-line
-  placeholder.
-- **Entries are status indicators only** — the source file holds the
-  content, design, and rules. No instructions in entries.
-- **The done file is most-recent-first.** Each entry records date, title,
-  and what landed (commit, requirement ranges, gaps banked, sources) —
-  enough to reconstruct the change without re-reading the code.
-- **The pending file is the index** back to the roadmap, planning scratch,
-  and feature designs.
-
-### File shapes
-
-```markdown
-# Pending
-<lifecycle rules>
----
-## 1. **<title>** (<skill that runs it — or omit>). <one-line status>.
-   Source: [<doc>](<path>). Next: <next action>.
-## 2. **<title>** …
-```
-```markdown
-# Current
-Working context for the active item only — never a log (that's the done
-file). To pause: lift this into a sub-item under that item's `##` heading in
-the pending file, then reset here, freeing it for what you pick up next.
----
-_No active item._
-```
-```markdown
-# Done
-Completed items, most-recent first.
-- **YYYY-MM-DD — <title>.** <commit, R-range, gaps banked, sources touched>.
-```
+- **The top item is active.** Ordering is by intent, which is a judgment, not a
+  score: position carries the priority and the number is only an identifier.
+- **Finishing an item, in this order:** first mark it done in its **source
+  file** (the carve, plan or spec where the work lives); then reset the current
+  file; then move the item from the pending file to the done file. Source first,
+  because that is the copy a future reader trusts, and the one nobody thinks to
+  check.
+- **The current file is a resume buffer.** To pause an item, lift its context
+  into a sub-item under that item's `##` heading in the pending file, then reset
+  the current file — freeing it for whatever you pick up next.
+- **Never let the current file become a log.** Finished work goes to the done
+  file. This is the rule most often broken, because leaving the last item's
+  context in place costs nothing at the moment you do it.
 
 ### Interleaving with migrations
 
@@ -730,12 +696,10 @@ composable as the work demands:
 - A **state item** is a unit of queued work, paused and resumed via the
   current file.
 
-They compose; they do not nest by rule. The current file is a **resume
-buffer**: to change styles mid-flight, park the active item's context as a
-sub-item under its `##` heading (the pending file is a stack you can push
-onto), freeing the current file for the migration, then resume later from the
-parked sub-item. The freedom to intermix is the point — neither style is
-imposed.
+They compose; they do not nest by rule. To change styles mid-flight, park the
+active item the usual way — the pending file is a stack you can push onto — and
+the current file is free for the migration. The freedom to intermix is the point;
+neither style is imposed.
 
 ### Carves — the layer above the item
 
@@ -765,13 +729,12 @@ problem area, here is what we have settled, here is how it breaks into
 schedulable pieces*. The lifetime difference is the sharpest: migrations are
 temporary by design, while a carve can stay open for months.
 
-**Where a carve lives: with the public design docs, not with the private
-trajectory files.** A carve is almost entirely facts about the code, and those
-belong where someone reading the project can find them. A top-level `carves/`
-beside `specs/` and `design/` is the default, with `carves/done/` for finished
-ones so they do not crowd out live ones. Deliberately not under `specs/`, which
-describes how the system *is*; a carve is a work-management artifact, which is
-the same reason migrations were exiled to `specs/migrations/`.
+**Why a carve lives with the public design docs and not with the private
+trajectory files:** it is almost entirely facts about the code, and those belong
+where someone reading the project can find them. Deliberately not under `specs/`,
+which describes how the system *is*; a carve is a work-management artifact, the
+same reason migrations were exiled to `specs/migrations/`. The paths themselves
+are mandated in `.claude/skills/mini-spec/trajectory-format.md`.
 
 **Promotion is a judgment call, and it belongs to the maintainer.** The test is
 *is this a meaty task?* — substantial enough to stay open a while and worth
@@ -794,54 +757,33 @@ reasoning behind it, and writing for a stranger is the cheapest clarity check
 available.
 
 **Three disciplines.** The first two tend to happen by instinct. The third does
-not, and it is the one that matters.
+not, and it is the one that matters. `.claude/skills/mini-spec/trajectory-format.md` has the shapes; what
+follows is why each one is worth the trouble.
 
 1. **Per-part status, in a block at the top.** A carve outlives the length
    anyone reads end to end, so "what is still open?" has to be answerable from
    the first screen. Left to grow where the work happened, status lands
    two-thirds down and is effectively invisible.
 
-   ```markdown
-   ## Status
+   The rule underneath the shape is *nothing stated twice*: the block owns the
+   title and the status, the body owns the detail. A status table restating body
+   prose is worse than none, because the two will disagree and nothing will say
+   which is right.
 
-   - [x] ~~**Item 1 — record and resolve.**~~ **LANDED (`4c6e974`, 2026-08-04.)**
-   - [ ] **Item 4 — fail fast when onboarding does not take.** **OPEN (#122.)**
-   ```
-
-   Further down, each part's detail is keyed by **bare number, with no title and
-   no description** — `**Item 1** (…)`. That split is the point rather than a
-   style preference: the block owns the title and the status, the body owns the
-   detail, and neither repeats the other, so there is no second copy to drift. A
-   status *table* restating body prose is worse than none, because the two will
-   disagree and nothing will say which is right.
-
-   - **The checkbox is authoritative** where the markings on a line disagree.
-     The line states the same fact three ways — checkbox, strikethrough, marker
-     — because three different readers want it: a grep, a skimmer, and someone
-     wanting provenance. Use the same `- [ ]` / `- [x]` notation as the gaps
-     list, so both documents read alike and one query spans them.
-   - **`LANDED (commit, date)` mirrors `DECIDED (name, date)`**, deliberately —
-     same shape, same greppability, and the commit is what makes the claim
-     checkable. **Let the verb vary where it carries information**: `SENT` for a
-     part discharged by a cross-project message and owning no commit, `DEFERRED`
-     for one parked on purpose rather than merely unstarted. Forcing `LANDED`
-     onto those makes the marker a worse record than the prose it replaced.
-   - **State the negative, and distinguish "open" from "not checked".** A part
-     with no marker is indistinguishable from one nobody has thought about.
-     `NOT VERIFIED` earns its own words, because a repaired *symptom* reads
-     exactly like a satisfied *requirement* — that misreading is the most
-     expensive one this block prevents.
-   - **Not everything takes a checkbox.** Banked gaps, accepted residue, and
-     already-in-place preconditions are listed without one; there is nothing to
-     close. Same distinction an approved gap draws.
-
-   Key parts however the document already does — `Item N` where it wrote a
-   numbered split, the queue's own `#N` where every part has one. The queue
-   number is better when it exists, being the identifier the work is scheduled
-   under. The machine view across every live carve is one grep for `^- \[ \]`.
+   **`NOT VERIFIED` is the marker to reach for deliberately**, and the one no
+   tool can ever check. A repaired *symptom* reads exactly like a satisfied
+   *requirement*; only a person who read the code can tell them apart. That
+   misreading is the most expensive one this block prevents, so state the
+   negative rather than leaving a part unmarked — unmarked is indistinguishable
+   from unconsidered.
 2. **Dated, attributed decisions.** `DECIDED (name, date)`, append-only, so a
    reader can tell a settled call from a musing and whose it was. This is the
    single highest-value habit in the format.
+
+   Its companion: **supersede in place.** When a decision overturns an earlier
+   one, say so *at the earlier one*. A dated `DECIDED` sitting beside an unmarked
+   paragraph that contradicts it will be read as current, because nothing about
+   the unmarked paragraph looks provisional.
 3. **Migrate on landing.** When a part lands, its decisions belong in `specs/`
    and `design/` as requirements, spec prose, or a comment at the code; the
    carve then points at where they went. A migration gets a forcing function for
@@ -854,15 +796,17 @@ Adopting discipline 3 also reframes the planning scratch usefully, as a staging
 area for reasoning that has not earned a public home yet rather than a permanent
 one.
 
-### What's reusable vs. project-specific
+### What a project chooses, and what it does not
 
-Reusable core: the three files, the lifecycle, the interleaving model, the carve
-layer above the item, and the status block's shape — a block at the top, bare
-keys below, nothing stated twice. Each project parameterizes the rest — routing
-labels (which skill runs an item), the planning-scratch location, any batching
-rules, file siting and case convention, whether carves sit at top level or
-elsewhere, whether the files carry a project prefix, and how parts are keyed
-(`Item N` versus the queue's own `#N`).
+**Almost nothing is a project setting.** Siting, filenames, the carve directory,
+privacy, and how parts are keyed are all mandated or per-document properties —
+see `.claude/skills/mini-spec/trajectory-format.md`. Two projects running this layer should produce files
+a stranger can read interchangeably, which is the whole reason the shapes are
+written down rather than described.
+
+What is genuinely yours: the **routing labels** (which skill runs an item, or
+none), where the **planning scratch** lives, and any **batching rules** about how
+much work an item should hold.
 
 ## CRC Card Format
 ```markdown

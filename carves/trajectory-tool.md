@@ -109,7 +109,10 @@ position.
 - [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
 - [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
-- [ ] **Item 8 — shrink the skill.** **OPEN (not queued.)**
+- **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
+  carry the state.
+  - [ ] **8.1 — move the mechanics out of `SKILL.md`.** **OPEN (#9.)**
+  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)**
 - [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
 
 ## Why
@@ -1039,18 +1042,47 @@ conventions correctly, the validators can read them.
 
 **Item 8** — shrink the skill. The trajectory and carve sections are the largest
 prose block in [SKILL.md](../.claude/skills/mini-spec/SKILL.md), and most of it is
-mechanics. Lands last by construction: the mechanics cannot leave the prose until
-the tool carries them.
+mechanics. ~~Lands last by construction: the mechanics cannot leave the prose until the
+tool carries them.~~
+
+**Superseded 2026-08-14, by the paragraph directly beneath it.** The mechanics do not
+move to *the tool*; they move to `trajectory-format.md`, which the next sentence has said
+since the day this was written and which 9.1 landed as `64b9fd6`. The blocker was a
+premise that outlived its own paragraph — and it did so unnoticed for ten days precisely
+because a status marker records what is *left*, while the reason a part is parked lives in
+prose that nothing re-reads. Recorded rather than deleted: it is this carve's own argument
+happening to this carve, for the third time.
 
 *This is a move, not a deletion*, and Item 9 is where they move to. Deleting the
 mechanics outright would strip the format from the one place an agent can read when
 the tool is unavailable — which is exactly the situation in which a damaged file
 needs repairing.
 
-Also here: `minispec query carves`, the cross-document status view — one line per
-carve, open/landed counts, optionally the open items. Today that is
-`grep -n '^- \[ \]' carves/*.md`, and it works only because the notation was
-standardised by hand.
+**DECIDED (Bill, 2026-08-14): split, because only half of this still waits on the tool.**
+
+**8.1** — the move itself, unblocked the moment 9.1 landed. It also closes a duplicate
+9.1 *created*: `SKILL.md`'s "File shapes" section still carries all three fenced blocks
+that `trajectory-format.md` now owns, so the format is currently stated normatively in two
+hand-maintained places, which is the failure this carve was opened about. And it deletes
+the stale siting prose measured on 2026-08-14 — `specs/migrations/` as the default, plus
+a parameterization list naming siting, prefix, case convention and part-keying, all four
+decided away 2026-08-04 and all four now contradicted by
+[tool/internal/project/track.go](../tool/internal/project/track.go), which hardcodes the
+three filenames at the repository root.
+
+**8.2** — `minispec query carves`, the cross-document status view: one line per carve,
+open/landed counts, optionally the open items. Today that is
+`grep -n '^- \[ \]' carves/*.md`, and it works only because the notation was standardised
+by hand. This is the half that genuinely waits on the tool.
+
+*A note on what the split reveals about 9.2* (Daneel, 2026-08-14). 9.2 was recommended as
+the next part this morning and should not have been: it generates a format section into a
+tool spec, and the tool has **no requirements about trajectory shapes yet** — measured,
+three of eleven `tool/specs/` files carry zero requirements and all three are summary
+specs, so a new `tool/specs/trajectory.md` would be a per-feature spec with no feature.
+`file-formats.md` points rather than restates, so it is not a second copy either. 9.2
+becomes real when Items 2, 3 or 7 write requirements that parse these shapes. Until then
+it is a mechanism in search of the drift it prevents.
 
 ## What stays in the skill
 

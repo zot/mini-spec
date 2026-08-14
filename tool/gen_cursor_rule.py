@@ -165,13 +165,26 @@ body = sub(
 )
 
 # Cursor has no skill directory, so every on-demand reference has to become a repo
-# path or it points at nothing. One edit per referenced file, each asserted -- a new
-# reference added to SKILL.md without a rule here ships "in this skill directory" to
-# an agent that has no such place.
+# path or it points at nothing. The parenthetical goes first, because the general
+# rewrite below would otherwise leave "(in this skill directory)" hanging off a path
+# that is no longer in one.
 body = sub(
     body,
-    "**The shapes are normative in `trajectory-format.md`** (in this skill directory),",
-    "**The shapes are normative in `.claude/skills/mini-spec/trajectory-format.md`**,",
+    "**Every shape is normative in `trajectory-format.md`** (in this skill directory),",
+    "**Every shape is normative in `.claude/skills/mini-spec/trajectory-format.md`**,",
+)
+
+# Then every remaining bare mention, however many there are. Deliberately a class
+# rewrite rather than one anchor per sentence: SKILL.md gains references to this file
+# as the layer grows, and an anchor list extended by hand is a list that will be
+# forgotten -- the failure this whole script was hardened against. expect=None because
+# the count is incidental, and asserting it would turn every new mention into a
+# spurious build break.
+body = sub(
+    body,
+    "`trajectory-format.md`",
+    "`.claude/skills/mini-spec/trajectory-format.md`",
+    expect=None,
 )
 
 body = sub(
