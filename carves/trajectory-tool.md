@@ -111,7 +111,7 @@ position.
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
 - **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
   carry the state.
-  - [ ] **8.1 — move the mechanics out of `SKILL.md`.** **OPEN (#9.)**
+  - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
   - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)**
 - [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
 
