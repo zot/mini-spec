@@ -93,6 +93,36 @@ seq-foo.md#1.4`): same `file#dotted-fragment` syntax, a different resolver, and 
 always says which, since a `Seq:` reference and a part pointer never appear in the same
 position.
 
+**DECIDED (Bill, 2026-08-16): the done-entry shape is ark's, plus a part pointer — and
+mini-spec migrates, not ark.** `- **YYYY-MM-DD — #8 / R189–R198: title.** (`commit`) Part
+`<doc>#<key>`.` Identifiers lead, so a reader scanning three thousand lines sees the joins
+before the prose; the slot takes a queue ID, a gap ID, a requirement range, several
+separated by `/`, or nothing for an incident. The part pointer is the one genuine addition
+— ark's shape has nowhere to record which part a change discharged, and Item 3's
+referential integrity and Item 6's bidirectional link both need it.
+
+*Recorded because the error is instructive and it is mine.* `trajectory-format.md`'s
+original done-entry shape described **mini-spec's `DONE.md`** — a ten-entry file I had
+been authoring that same week — and I wrote it down as the target that older projects
+migrate *to*. Measured 2026-08-16: it matched **0 of ark's 54** done entries, while ark's
+own shape had survived a 3,753-line ledger. The pending half was fine (62 of ark's 66
+entries match), so the divergence was one section, invented rather than observed.
+
+This is the same failure as the key-form decision below, one level worse. There a real
+measurement across eight carves was read as normative; here there was no measurement at
+all — the normative claim was generalized from the instance I happened to be writing, in
+the days I was writing it. **A format document is a target, which makes the question of
+where its shapes came from load-bearing rather than academic.** The rule that falls out:
+when writing down a shape, name the corpus it was read from, or do not claim it.
+
+*How it surfaced is worth keeping too.* `query next-id item` run in ark reported
+`DONE.md 0` — zero identifiers from a 3,753-line ledger — and the answer it gave was
+nonetheless **correct**, because ark's highest live ID (`#123`) happens to exceed its
+highest done one (`#118`). It becomes wrong the moment a high-numbered item completes,
+which is exactly the collision R190 exists to prevent, arriving through a door R190 did
+not cover. Without R197's per-file counts it would have read as an ordinary right answer.
+The evidence line earned its keep on its first use outside this repository.
+
 **DECIDED (Bill, 2026-08-16): one key form — `Item N` — and the other two are migrated
 away.** *This supersedes the half of question 2's answer that said the parser accepts
 every live form and records the literal key.* Three schemes were measured live on
@@ -168,6 +198,7 @@ parent moves with its sub-items, since they are one entry.
 
 **Open, in dogfood order:**
 
+- [ ] **Item 13 — read the adopted done-entry shape, and migrate this repo's ledger.** **OPEN (#12.)**
 - **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
   carry the state.
   - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
@@ -1118,6 +1149,40 @@ Still constrained by the asymmetry in the survey below: with trajectory files pr
 in every project, the public half of the link is *never* a markdown link — a carve
 carries a bare key and the queue side holds the recorded pointer. The riskiest part,
 and the one hand-maintenance structurally cannot supply.
+
+**Item 13** (Bill, 2026-08-16) — make the parser read the done-entry shape the format now
+mandates, then migrate this repository's ledger onto it. Small, and ordered first because
+the two halves must land together: the shape is decided and the code still reads the old
+one, so today the format document and the tool disagree.
+
+*Measured before scheduling, on identical content in both shapes:*
+
+```
+- **2026-08-16 — #10 / R189–R198: query next-id.** (`c86c4b8`)   →  next free item ID: #1
+- **2026-08-16 — query next-id (`#10`).** `c86c4b8`.             →  next free item ID: #11
+```
+
+`doneIDRe` wants a **backticked** `` `#10` ``; the adopted shape has a bare one. So
+migrating the ledger first would make `next-id item` compute from the pending file alone
+and return a plausible wrong number rather than an error — the R190 collision, arriving
+through the door R190 did not cover.
+
+**The order is the work:**
+
+1. **Change `parseDoneIDs`** ([tool/internal/parser/trajectory.go](../tool/internal/parser/trajectory.go))
+   to read `- **DATE — #N / …:` — identifiers leading, bare, `/`-separated, with the slot
+   optionally holding a gap ID or a requirement range instead. **Edit R190's text**, which
+   describes the shape it reads; this is a requirement change, not just an implementation.
+2. **Re-pull the two alarms on that file.** Their `**Pulled:**` proofs are void the moment
+   the function is rewritten — that is the whole point of the field — and
+   `test-Trajectory.md`'s fixtures are written in the old shape, so they change too.
+3. **Migrate this repo's ten `DONE.md` entries.** The new shape is a strict superset:
+   date, title, queue ID, commit and part pointer all survive, and the requirement range
+   is *promoted* out of body prose into the header. Nothing is lost from the ledger.
+4. **Confirm** `next-id item` still answers from both files — `DONE.md 10`, not `0`.
+
+*Ark needs no migration, which was the point.* Its 54 entries are already in this shape;
+what changes is that the tool can finally read them. Verify there too once it lands.
 
 **Item 12** (Bill, 2026-08-16) — `minispec update add-req`, the third minting verb. Its
 whole design is already settled in the crank-handle section above and is **not restated

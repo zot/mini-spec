@@ -123,15 +123,28 @@ Completed items, most-recent first.
 
 ---
 
-- **YYYY-MM-DD — <title> (`#8`).** `<commit>`. Part `<doc-path>#<key>`.
-  <requirement range, gaps banked, sources touched>
+- **YYYY-MM-DD — #8 / R189–R198: <title>.** (`<commit>`) Part `<doc-path>#<key>`.
+  <gaps banked, sources touched, what a future reader needs>
 ```
 
 - **Most-recent-first.**
-- **Each entry carries its queue ID.** It is the join a carve's status block points at,
-  and an entry without one is a part pointer that dangles.
-- **Enough to reconstruct the change without re-reading the code:** date, title, queue ID,
-  commit, the part discharged, requirement ranges, gaps banked, sources touched.
+- **The identifiers lead.** Date, then what this discharged — the queue ID, the
+  requirement range, or both — then the title. A reader scanning a long ledger sees the
+  joins first, which is the whole reason they are at the front rather than buried in the
+  title.
+- **The identifier slot is flexible and deliberately so.** `#8` for a queue item,
+  `O201` for a gap closed without one, `R3392–R3397` for a requirement range, several
+  separated by `/`, or nothing at all for an incident that discharged no ID.
+- **Each entry that came from the queue carries its queue ID.** It is the join a carve's
+  status block points at, and an entry without one leaves that pointer dangling.
+- **`Part <doc-path>#<key>` records the reverse link** — which part of which carve this
+  discharged. The queue ID is the forward join; this is the one that lets you start from
+  a landed change and find the reasoning behind it.
+- **Enough to reconstruct the change without re-reading the code:** gaps banked, sources
+  touched, and whatever a future reader would otherwise have to re-derive.
+
+*This is ark's shape, adopted 2026-08-16 with the part pointer added — see the carve for
+why the format changed rather than ark.*
 
 ## Item IDs
 
