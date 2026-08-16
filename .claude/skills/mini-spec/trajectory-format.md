@@ -18,9 +18,13 @@ prose:
 2. **An agent repairs from it.** When a file is damaged, predates the tool, or was
    hand-written by someone with only prose to copy from, the shapes are needed *precisely
    when the tool is what cannot help.*
-3. **Old layers migrate to it.** A project already running a hand-maintained trajectory
-   has files in some earlier shape. Without a written target there is nothing to migrate
-   *to*.
+3. **Old layers migrate to it — this is a target, not a survey.** A project already
+   running a hand-maintained trajectory has files in some earlier shape, and the point of
+   writing the shapes down is that an agent can bring them **up to code** for the tool.
+   So where a variant is merely what somebody happened to write, this document names the
+   one form and the others migrate; it does not bless every shape it found. Backward
+   compatibility is not offered, because the migration is an edit and the alternative is
+   carrying every historical variant forever.
 
 **The format carries no version number.** Conformance is the signal: a file matching this
 document is current, and one that does not is legacy and gets migrated. A tool-created
@@ -203,12 +207,25 @@ The fragment resolves *inside* the named document, so the key scheme is a per-do
 property and no project-wide convention is needed: `carves/x.md#7` is whatever `x.md` keys
 as `7`, and cannot mean a `#7` from somewhere else.
 
-**Three key schemes are live and all are valid** — `Item N`, the bare queue number, and
-`Part X` letters. Record the literal key the document wrote.
+**There is one key form: `Item N`.** The status block writes `**Item 9 — <title>**`, the
+elaboration below is keyed `**Item 9**`, subparts are `9.1`, `9.2`, and the fragment
+carries the bare number — `carves/x.md#9.1`.
 
-**A document uses exactly one key form.** This is the one state where a part pointer
-resolves to two different parts: a carve holding both an `Item 7` and a `#7`. It is the
-single uniformity the scheme depends on, and it is checked rather than trusted.
+**Why this one, and not the queue's `#N`:** a part exists long before it is scheduled, and
+most parts are unqueued at any moment, so a key drawn from the queue is undefined exactly
+when you need to point at the part. `Item N` always resolves. `Part A`/`Part B` letters
+carry no ordering and do not subdivide.
+
+**`Item N` and `#N` are two keys doing two jobs, and both appear in a carve.** `Item N`
+identifies *within the document*; `#N` is the queue ID and appears in the marker —
+`**OPEN (#8.)**`, `**LANDED (`c86c4b8`, 2026-08-16 — `#10`.)**`. They are never
+interchangeable, which is what makes a bare `#7` in a carve unambiguously a queue
+reference.
+
+**Older documents may use another form. Migrate them.** Two other schemes were in live use
+before 2026-08-16 — the bare queue number, and `Part X` letters — and this document is the
+target they migrate *to*. Rewriting the keys is mechanical; nothing depends on the old
+form, and no backward compatibility is offered.
 
 *The shape is deliberately the one already used for sequence anchors* (`Seq:
 seq-foo.md#1.4`): same `file#dotted-fragment` syntax, a different resolver. Context always

@@ -13,7 +13,13 @@ is trajectory-specific.
 
 ## Status
 
-- [ ] **Item 1 — the checker: markdown-aware extraction, resolution, git status.** **OPEN (not queued.)**
+- **Item 1 — the checker.** **SPLIT (Bill, 2026-08-16.)** No checkbox: the sub-items carry
+  the state. **Blocks [trajectory-tool.md](trajectory-tool.md) Item 3 and 8.2**, whose
+  markdown reading is shared rather than reimplemented — a fenced example is not data,
+  whether it holds a link or a status entry — so this part's priority is no longer set by
+  this carve alone.
+  - [ ] **1.1 — the simple DOM: a position-preserving markdown parse.** **OPEN (not queued.)**
+  - [ ] **1.2 — extraction, resolution, git status, on top of it.** **OPEN (not queued.)**
 - [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
 
@@ -61,6 +67,113 @@ Links in code spans and fenced blocks are examples, not references, and a regex
 cannot tell the difference. That failure is the safe direction — a false alarm
 rather than a silent pass — but it is the same lesson as the instrument table in
 the trajectory carve, found on the document that argues it.
+
+**DECIDED (Bill, 2026-08-16): the markdown reading is a *simple DOM*, and it is split out
+as 1.1 because three parts now stand on it.** Parse into only the nodes we operate on —
+headings, list items and their checkboxes, fenced blocks, code spans, links — and keep
+**every other byte exactly where it was**. Not an AST: the shape, with everything else
+carried as opaque spans.
+
+*Two halves, and neither works alone.* Selective structure without total preservation is
+the lossy round-trip — a document read into structs and written back, with the comments
+and the unmodelled bits gone. Total preservation without selective structure is a full
+markdown parser we have no use for. Together they round-trip, which is the property the
+tests below can actually check.
+
+*Fences and code spans are the mechanism, not a special case.* Borrowed from microfts2's
+bracket chunker, where a group can be **scan-restricted** — inside it, only its close and
+escape are recognized and everything else is literal text. A fenced block and a backticked
+span are exactly that, so fence-awareness falls out of the lexicon rather than being
+bolted on. Two known bugs go with it: the `[text](path)` above, and a `## Status` example
+inside a fence counted as real open work — measured 2026-08-16, a grep widened past
+`carves/` reports 32 open items where 12 exist.
+
+*This is also how a tool may write into a document a human owns.* Mini-spec's files are an
+heirloom: markdown in the places people already read, with the tool a replaceable consumer.
+An engine that rewrites what it does not fully model will eventually delete something it
+never saw. With a position-preserving DOM an edit is a byte-range splice, so untouched text
+is untouched byte-for-byte and that class of bug cannot be written.
+
+**DECIDED (Bill, 2026-08-16): 1.1 is markdown and only markdown**, kept separate from the
+YAML reading the tool already does.
+
+*The justification is the sharing, not a rule about mode flags.* An earlier draft here
+said a parser that grows a flag for a second lexicon has stopped being simple. That is a
+bright line standing where judgment belongs, and it would forbid something obviously
+right: mail and HTTP are a control line, then headers of the same shape, then a blank
+line, then a MIME body, and one parser with a pluggable piece captures all of that.
+Splitting is **earned specialization** — you divide when carrying both has become
+burdensome, not when a difference first appears. Markdown against YAML earns it easily,
+sharing essentially no lexicon; that is why these are two and not one with a switch.
+
+*Within* markdown the split is not earned **here**, and the reason is worth stating rather
+than inheriting as a law. All three consumers model the **same region** of markdown:
+headings, list items and their checkboxes, fenced blocks, code spans, links. 1.2 wants
+links, Item 3 wants status entries, 8.2 wants checkbox lines across carves — three
+*schemas* over one set of nodes. So one DOM, with schema in readers on top: the DOM knows
+headings, list items, fences and code spans; it does not know what a carve is.
+
+*The general form of that has no rule in it, which is why the reason is spelled out.* One
+lexicon does not imply one DOM — two uses of markdown modelling disjoint regions (headings
+and checkboxes versus paragraphs and emphasis spans) are legitimately two, sharing a
+tokenizer and nothing else worth sharing. The unit is **region modelled**, not format, and
+the answer here is "one" because the regions coincide, not because they share a file
+extension. See the [earned-specialization] pattern, where three attempts to reduce this to
+a test each died to a counterexample.
+
+*The rule is not hypothetical — this project already has two, and never noticed.* The
+comment-eating `--repair` bug was cited here as motivation for **this** part, which is the
+right lesson and the wrong parser: `--repair` reads **YAML**. Its fix, landed in `5ea35f1`,
+is `setTrack` in [tool/internal/project/init.go](../tool/internal/project/init.go) parsing
+into a `yaml.Node` and rewriting **only the value node** — a YAML simple DOM, borrowed
+rather than written, whose own comment gives the pattern's argument exactly: unmarshalling
+into `Config` "discards three things at once: the file's comments, the order of its keys,
+and any setting written by a newer tool version." So markdown gets 1.1 and YAML already has
+`yaml.Node`, two lexicons, two parsers, arrived at independently and correctly never fused.
+
+*One caveat on the borrowed one, which is the honest reason to prefer writing your own.*
+`setTrack` states its limit in the source: **"byte-fidelity is not claimed"** — a blank line
+between a comment and what it annotates is lost, though the comment and its attachment
+survive. So the YAML DOM would **fail** the verbatim-reproduction test below. That is
+tolerable for a config file the tool owns the schema of, and it would not be tolerable for
+a carve, which is prose a human writes. Worth knowing before anyone reaches for an
+off-the-shelf markdown library on the strength of this decision: 1.1 needs the byte
+fidelity that `yaml.Node` explicitly does not offer.
+
+**DECIDED (Bill, 2026-08-16): the test discipline is part of 1.1, not a follow-up.** The
+pattern makes a claim a test can check exactly, and reaching for it without the tests buys
+nothing.
+
+1. **Verbatim reproduction.** `emit(parse(x))` equals `x` byte for byte — not
+   semantically, not modulo whitespace. **Run it over the real corpus, not fixtures:**
+   every document in `carves/`, `tool/design/`, `tool/specs/`, and ark's tree. That is the
+   direct lesson of the `--repair` bug — a fixture contains only what its author thought
+   to include, and what a lossy parse eats is exactly what nobody thought of. The corpus is
+   a test suite nobody has to write, and it grows on its own as documents are added.
+2. **Edit equivalence, as a commuting diagram.** For each edit operation: parse, change the
+   DOM, emit — and separately edit the text directly. Require the two results identical.
+   Round-trip identity says the document can be put back; this says the change made
+   *through* the structure is the change meant for the file.
+
+**The reference edit must be independently written, and that is the trap.** If the textual
+path runs through the DOM, or shares its span arithmetic, or calls the same helper, the
+test proves a function equals itself. Write it naive and obviously correct — replace this
+line, splice at this offset — accept that it is slow and handles only simple cases, and
+keep it in the test file where nobody is tempted to reuse it.
+
+**Order matters:** verbatim reproduction is the precondition. If `emit` is unfaithful,
+edit equivalence can pass while both paths are equally wrong, which is a green test over a
+corrupted file.
+
+*The failure mode is unusually good, which is worth knowing before writing the alarm.*
+Drop one span kind in the parser and the round-trip goes red on the first real document
+containing one, naming the file — where a coverage test stays green while the same span
+silently disappears. Pull it deliberately anyway; it is just louder by construction than
+most guards.
+
+**1.2** is what the original Item 1 described — link extraction, resolution relative to the
+containing file, and tracked / untracked-but-not-ignored / ignored / missing classification
+— now written against the DOM instead of against lines.
 
 **Item 2** — the document-class model: which classes exist in this project, which
 are public, and what each may cite. Coupled to Item 1 of

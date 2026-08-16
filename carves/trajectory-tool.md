@@ -93,6 +93,53 @@ seq-foo.md#1.4`): same `file#dotted-fragment` syntax, a different resolver, and 
 always says which, since a `Seq:` reference and a part pointer never appear in the same
 position.
 
+**DECIDED (Bill, 2026-08-16): one key form — `Item N` — and the other two are migrated
+away.** *This supersedes the half of question 2's answer that said the parser accepts
+every live form and records the literal key.* Three schemes were measured live on
+2026-08-13 and that measurement was **descriptive**; it was then read as **normative**,
+which is the error. A format document exists so an agent can bring its carves up to code,
+not so it can enshrine every shape it happened to find.
+
+*One argument settles which, and it is structural rather than a preference: the queue
+number cannot be a key.* A part exists long before it is scheduled — nine of twelve open
+parts here are "not queued" right now — so a key drawn from `#N` is undefined for most
+parts most of the time. `Item N` is the only form that always resolves, it was already the
+plurality, and its subparts extend naturally into the decided fragment shape (`Item 9` →
+`#9.1`). `Part B` letters carry no ordering and do not subdivide cleanly.
+
+**What this deletes is the point.** Item 3 was handed a check — *"a document uses exactly
+one key form"* — that existed **only** because three were allowed. It required scanning
+free text for key-shaped strings outside the status block, which is the one place the
+tool's read could not be positional. With one mandated form that check becomes a
+*conformance* question answerable from the status block itself: is the key `Item N`?
+Positional, cheap, and it tells a migrating agent exactly what to fix.
+
+*So the ingest/lint split raised on 2026-08-16 is no longer needed here.* It was proposed
+to accommodate that one free-text scan; removing the scan removes the exception. **Ingest
+by position** stands alone as the rule, which is the better outcome — the simplification
+dissolved the complication rather than managing it.
+
+*Migration is eight documents and mechanical.* Backward compatibility is explicitly not a
+concern (Bill): `trajectory-format.md` states the target, and bringing a carve up to code
+is an agent's job.
+
+**DECIDED (Bill, 2026-08-16): one shared markdown-aware extractor, not one per parser.**
+[reference-discipline.md](reference-discipline.md) Item 1 already owns *"it must parse
+markdown, not grep it"*, and it earned that from the identical failure — a throwaway
+checker run on **this carve** on 2026-08-04 flagged a `[text](path)` inside a code span as
+a missing file. Trajectory Item 3 needs the same skill for status entries: a fenced
+`## Status` example sits at exactly the positions the tool reads.
+
+*The consequence is a scheduling one, so it is recorded rather than left implicit:*
+**reference-discipline Item 1 becomes a prerequisite of trajectory Item 3**, and rises in
+the order below. The two carves stay separate documents; only the parser is shared.
+
+**DECIDED (Bill, 2026-08-16): the tool/agent contract is written into
+`trajectory-format.md`, folded into Item 3** rather than minted as a part of its own. It
+states which positions the tool ingests and that everything else is the agent's to write
+freely — currently learnable only by reading the parser. It becomes load-bearing exactly
+when the tool starts parsing carve content, which is Item 3.
+
 **DECIDED (Bill, 2026-08-16): dogfooding sets the order from here.** Build what we need
 as we need it, then *use* it instead of a UNIX tool. Both halves are the rule — the
 failure he actually caught was the second one: `query next-id` was built in the middle of
@@ -124,8 +171,12 @@ parent moves with its sub-items, since they are one entry.
 - **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
   carry the state.
   - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
-  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)**
-- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
+  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)** Needs
+    [reference-discipline.md](reference-discipline.md) Item 1.1 too: reading status blocks
+    across carves is the same read as Item 3's, and a fenced example must not count.
+- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)** Needs
+  [reference-discipline.md](reference-discipline.md) Item 1.1, the shared markdown-aware
+  extractor. Also carries the tool/agent contract section for `trajectory-format.md`.
 - [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
 - [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)** Needs Item 5.
 - [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)**
@@ -951,14 +1002,35 @@ appears in that carve's status block), checkbox agreement, counter freshness,
 orphans, duplicate IDs across pending and done, and status-block presence. All four
 ark failures fall here. Read-only.
 
-**Plus one key-scheme check** (Bill, 2026-08-13): **a document uses exactly one key
-form.** `<doc-path>#<key>` is unambiguous only because the scheme is a per-document
-property, so a carve holding both an `Item 7` and a `#7` is the single state where a
-part pointer resolves to two different parts. Today that uniformity is convention —
-eight carves measured, none mixed — and convention is what this whole carve exists to
-stop relying on. The block is already being parsed for the checks above, so asserting
-one form per document costs nothing beyond the assertion, and it protects the
-identifier every other command depends on.
+~~**Plus one key-scheme check** (Bill, 2026-08-13): a document uses exactly one key
+form.~~ **Superseded 2026-08-16 by the single-key-form decision, and this is the shape of
+the win.** That check existed only because three forms were allowed, and enforcing it
+meant scanning free text for key-shaped strings *outside* the status block — the one read
+in the whole design that could not be positional. With `Item N` mandated it becomes a
+**conformance** check answerable from the block itself: is the key `Item N`? A document
+still using the bare queue number or `Part X` is not ambiguous, it is **unmigrated**, and
+the check says so and names the target. Cheaper, positional, and it gives a migrating
+agent an instruction instead of a complaint.
+
+**Two things fold in here** (Bill, 2026-08-16):
+
+- **The shared markdown-aware extractor**, from
+  [reference-discipline.md](reference-discipline.md) Item 1.1, which is therefore a
+  prerequisite. Without it a fenced `## Status` example is indistinguishable from a status
+  block: measured 2026-08-16, a grep widened past `carves/` counts 32 open items where 12
+  exist, four of the phantoms coming from `trajectory-format.md`'s own example. The same
+  failure is recorded in reference-discipline from 2026-08-04, on this document, with a
+  link inside a code span.
+- **The tool/agent contract section** for `trajectory-format.md`: which positions the tool
+  ingests, and that everything else is the agent's to write freely. Today that is
+  learnable only by reading the parser. It becomes load-bearing precisely when the tool
+  starts reading carve content, which is this part.
+
+*The rule the contract states is one line:* **ingest by position.** What the tool treats
+as data comes from fixed positions — a `##` heading at column 0, a `- **` entry header,
+lines inside the status block — never from a pattern swept over free text. That is what
+makes an agent's prose safe by construction rather than by inspection: the `#8` entry in
+this project's own ledger cites `#7` in its body, and the parser cannot see it.
 
 **Item 4** — moved to [reference-discipline.md](reference-discipline.md). The number
 stays retired here so nothing renumbers and no later part reuses it.
@@ -1739,8 +1811,12 @@ approved gap draws.
   works is the one this question already half-stated: the fragment resolves inside the
   named document, so the key scheme is a per-document property and a bare `7` cannot
   be confused with a `7` from elsewhere. Measured across eight carves — three schemes
-  live, none mixed within a document. See the Status section for the decision and the
-  uniformity check it hands to Item 3.
+  live, none mixed within a document. See the Status section for the decision.
+
+  **Half of this was superseded 2026-08-16: there is one key form, not three.** The
+  fragment shape `<doc-path>#<key>.<subkey>` stands. What fell is *"the parser accepts
+  every live form and records the literal key"*, and with it the per-document uniformity
+  check this answer handed to Item 3. See the Status section.
 - [x] ~~**3. Cardinality of the item↔part link.**~~ — **answered 2026-08-13, by
   normalization rather than by modelling.** Split parts into subparts until no part is
   completed by more than one item, so the awkward direction never arises; the parent
