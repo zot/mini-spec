@@ -93,28 +93,59 @@ seq-foo.md#1.4`): same `file#dotted-fragment` syntax, a different resolver, and 
 always says which, since a `Seq:` reference and a part pointer never appear in the same
 position.
 
+**DECIDED (Bill, 2026-08-16): dogfooding sets the order from here.** Build what we need
+as we need it, then *use* it instead of a UNIX tool. Both halves are the rule — the
+failure he actually caught was the second one: `query next-id` was built in the middle of
+`#10` and the requirements added later that same item were still hand-numbered by grep.
+
+*So the ranking axis changes.* It was drift-reduction; it is now **how much hand-labor
+this part removes from the next session**, measured from what we actually did by hand:
+
+| part | what it replaces | measured today |
+|---|---|---|
+| **8.2** `query carves` | `grep '^- \[ \]' carves/*.md` | run ~6 times, and it is the instrument this carve opened by documenting — a tree-wide version counts 32 open items where 13 exist |
+| **3** `validate trajectory` | reading ledgers by eye | found three `#N` in the carve resolving to nothing in `DONE.md`, by hand |
+| **5** → **6** the link and completion | four hand edits per item | three items landed this session, twelve hand edits, each a chance to forget one |
+| **12** `add-req` | `grep -oE '\*\*~?~?R[0-9]+' \| sort -n \| tail -1` | R189–R198 numbered that way |
+
+**5 before 6 is a real dependency**, not a preference — the completion verb writes prose,
+and the backup slot is what makes a bad write recoverable.
+
+*The reorder below is mine, from that table; the intent behind it is Bill's.* Override the
+positions freely — the numbers are stable and only the order carries meaning.
+
+*Landed parts sit below the open ones as of 2026-08-16.* The block exists so "what is
+still open?" is answerable from the first screen, and a completed part carries no
+priority — so leaving them interleaved spent the first screen on finished work. A split
+parent moves with its sub-items, since they are one entry.
+
+**Open, in dogfood order:**
+
+- **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
+  carry the state.
+  - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
+  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)**
+- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
+- [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
+- [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)** Needs Item 5.
+- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)**
+- [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
+- **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
+  checkbox: the sub-items carry the state.
+  - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
+  - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
+- [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
+- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
+
+**Closed:**
+
+- [x] ~~**Item 2 — `query next-id`.**~~ **LANDED (`c86c4b8`, 2026-08-16 — `#10`.)**
 - **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
   - [x] ~~**1.1 — repository-root detection.**~~ **LANDED (`8197c6c`, 2026-08-07 — `#1`.)**
   - [x] ~~**1.2 — `.minispec/` and the config move.**~~ **LANDED (`fe0cd11`, 2026-08-07 — `#3`.)**
   - [x] ~~**1.3 — `init`, `track`, and `--repair`.**~~ **LANDED (`0711319`, 2026-08-11 — `#4`.)**
-- **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
-  checkbox: the sub-items carry the state.
-  - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
-  - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
-- [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
-- [ ] **Item 2 — `query next-id`.** **OPEN (#10.)**
-- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
 - **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
-- [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
-- [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)**
-- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)**
-- [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
-- **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
-  carry the state.
-  - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
-  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)**
-- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
 
 ## Why
 
@@ -211,7 +242,7 @@ rather than partial.
 `add-gap` twin addressed by section heading.** It mints the next `Rn`, appends the
 entry to the named section, and cranks out the number — or the range, for a batch.
 
-*Scheduled 2026-08-14 as **Item 12**, which is where its status lives.* Everything below
+*Scheduled 2026-08-16 as **Item 12**, which is where its status lives.* Everything below
 is the design; nothing below is a plan. **The decision spent a week with no part**, which
 is the failure this carve is about happening to this carve — see Item 12 for what that
 cost and how it surfaced.
@@ -1016,7 +1047,7 @@ in every project, the public half of the link is *never* a markdown link — a c
 carries a bare key and the queue side holds the recorded pointer. The riskiest part,
 and the one hand-maintenance structurally cannot supply.
 
-**Item 12** (Bill, 2026-08-14) — `minispec update add-req`, the third minting verb. Its
+**Item 12** (Bill, 2026-08-16) — `minispec update add-req`, the third minting verb. Its
 whole design is already settled in the crank-handle section above and is **not restated
 here**: mint the next `Rn`, address the destination by `--section "<heading>"` at whatever
 level it exists, refuse on an unknown heading because inventing one is authoring, take a
@@ -1717,7 +1748,7 @@ approved gap draws.
   deliberately left open — one item may still discharge parts in several documents —
   so the link is asymmetric: scalar on the part side, a list on the queue side. See
   the Status section.
-- [x] ~~**4. Does the counter assertion survive?**~~ — **answered 2026-08-14: delete it.**
+- [x] ~~**4. Does the counter assertion survive?**~~ — **answered 2026-08-16: delete it.**
   Ratified by Bill; the rule was already written. `trajectory-format.md` states it under
   Item IDs: *"Do not write the next-free ID down. A copied counter is a second copy of the
   numbering state, and it goes stale silently."* With `next-id` landed (`#10`) the answer
