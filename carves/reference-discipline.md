@@ -18,7 +18,7 @@ is trajectory-specific.
   markdown reading is shared rather than reimplemented — a fenced example is not data,
   whether it holds a link or a status entry — so this part's priority is no longer set by
   this carve alone.
-  - [ ] **1.1 — the simple DOM: a position-preserving markdown parse.** **OPEN (not queued.)**
+  - [ ] **1.1 — the simple DOM: a position-preserving markdown parse.** **OPEN (#11.)**
   - [ ] **1.2 — extraction, resolution, git status, on top of it.** **OPEN (not queued.)**
 - [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
