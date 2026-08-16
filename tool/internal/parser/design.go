@@ -5,6 +5,8 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -172,4 +174,38 @@ func ParseGaps(path string) ([]Gap, error) {
 	}
 
 	return gaps, scanner.Err()
+}
+
+// GapTypes are the gap classes in the order they are reported. R192
+//
+// Each runs its own numbering sequence, which is why "the next free gap ID" is a set of
+// answers rather than one.
+var GapTypes = []string{"S", "R", "D", "C", "I", "O", "A", "T"}
+
+// IsGapType reports whether s names one of the gap classes.
+//
+// The membership test lives with the list so a caller validating a type and a caller
+// reporting the set cannot disagree about which classes exist. The gap regexes above
+// still spell the same set a third time; they are the remaining copy.
+func IsGapType(s string) bool {
+	return slices.Contains(GapTypes, s)
+}
+
+// CRC: crc-Parser.md | R192
+// NextGapNum returns the next free number for one gap type.
+//
+// Factored out of update's nextGapID so a read-only caller can ask the same question
+// without importing a package that writes. The formatting stays with the writer, which
+// is the only place an ID string is minted.
+func NextGapNum(gaps []Gap, gapType string) int {
+	maxNum := 0
+	for _, g := range gaps {
+		if g.Type != gapType {
+			continue
+		}
+		if num, err := strconv.Atoi(strings.TrimPrefix(g.ID, gapType)); err == nil {
+			maxNum = max(maxNum, num)
+		}
+	}
+	return maxNum + 1
 }

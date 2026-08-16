@@ -103,11 +103,12 @@ position.
   - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
-- [ ] **Item 2 — `query next-id`.** **OPEN (not queued.)**
+- [ ] **Item 2 — `query next-id`.** **OPEN (#10.)**
 - [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)**
 - **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
 - [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
 - [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)**
+- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
 - **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
   carry the state.
@@ -209,6 +210,11 @@ rather than partial.
 **DECIDED (Bill, 2026-08-07): the requirement verb is `minispec update add-req`, an
 `add-gap` twin addressed by section heading.** It mints the next `Rn`, appends the
 entry to the named section, and cranks out the number — or the range, for a batch.
+
+*Scheduled 2026-08-14 as **Item 12**, which is where its status lives.* Everything below
+is the design; nothing below is a plan. **The decision spent a week with no part**, which
+is the failure this carve is about happening to this carve — see Item 12 for what that
+cost and how it surfaced.
 
 *Measured across both projects before deciding.* Requirements are defined in
 `design/requirements.md` and nowhere else: **zero of ark's 147 spec files** carry a
@@ -1010,6 +1016,31 @@ in every project, the public half of the link is *never* a markdown link — a c
 carries a bare key and the queue side holds the recorded pointer. The riskiest part,
 and the one hand-maintenance structurally cannot supply.
 
+**Item 12** (Bill, 2026-08-14) — `minispec update add-req`, the third minting verb. Its
+whole design is already settled in the crank-handle section above and is **not restated
+here**: mint the next `Rn`, address the destination by `--section "<heading>"` at whatever
+level it exists, refuse on an unknown heading because inventing one is authoring, take a
+batch as the primary form, and crank out the number or the range.
+
+*It exists as a part because it did not, which is the point.* That decision was dated
+2026-08-07 and carried a full design, a measurement across both projects, and a named
+consequence — and until today it appeared **exactly once in the repository**, in the
+paragraph that decided it. No status entry, no part, no spec, no code. The carve's own
+prediction about itself, executed: a decision with no schedulable home reads as current
+forever while nothing moves toward it. It surfaced only because `#10` went looking at what
+`query next-id` neighbours.
+
+*And `#10` is the evidence for building it.* R189 through R198 were written by hand that
+day — the next free number computed by grep, the feature block placed by eye, the range
+never checked against anything — which is precisely the work this verb removes. Two of
+those requirements (R197, R198) were also appended *after* their CRC cards existed, and
+`validate` caught the second as an uncovered requirement. A minting verb does not fix
+that, but it is the same class of bookkeeping the tool should be carrying.
+
+*Placement is a guess: parked beside Item 6 because they are the same shape* — the two
+remaining minting verbs, one for items and one for requirements — rather than because the
+priority was weighed. Move it if that reads wrong.
+
 **Item 7** — creation. Now reached through the refusal path rather than a verb you
 have to know about (see the Item 1 section): a write to a missing trajectory file
 fails and cranks out the create instruction, with the `.gitignore` question folded
@@ -1686,10 +1717,20 @@ approved gap draws.
   deliberately left open — one item may still discharge parts in several documents —
   so the link is asymmetric: scalar on the part side, a list on the queue side. See
   the Status section.
-- [ ] **4. Does the counter assertion survive?** Once `query next-id` exists, the "next
-  free ID is N" line in a working doc is pure liability. Delete it, or keep it and
-  validate it? Contingent on Item 2 rather than blocked by it — the fork is real either
-  way, but nothing forces a call until `next-id` exists.
+- [x] ~~**4. Does the counter assertion survive?**~~ — **answered 2026-08-14: delete it.**
+  Ratified by Bill; the rule was already written. `trajectory-format.md` states it under
+  Item IDs: *"Do not write the next-free ID down. A copied counter is a second copy of the
+  numbering state, and it goes stale silently."* With `next-id` landed (`#10`) the answer
+  is also cheap to act on — the number is a query rather than a line to maintain.
+
+  *Recorded because of how it was answered.* The rule was written during 9.1, hours before
+  `next-id` existed, by someone (Daneel) who did not notice he was closing a listed open
+  question. So the answer sat in a normative document while the question still read `- [ ]`
+  open here, and one `grep '^- \[ \]'` would have reported work that was already decided.
+  That is this document's own argument arriving from a third direction in one day: a claim
+  expired when its document changed, a blocker outlived its own paragraph, and now an
+  answer landed in one file while the question stayed open in another. All three are a
+  fact recorded in prose, in a place nothing re-reads.
 - [x] ~~**5. Should the tool ever edit trajectory files?**~~ — **answered 2026-08-13:
   yes** (Bill). `update check` already edits `design.md` checkboxes, and Items 6 and 7
   were designed on this assumption throughout — completion checks off the parts an item

@@ -145,3 +145,60 @@ rather than as a clean result.
 
 Output: one line per alarm, grouped by document, plus a closing census —
 `27 alarms: 3 verified, 0 stale, 20 unrecorded, 4 unanchored`.
+
+## minispec query next-id \<item|gap|req\>
+
+The next free identifier for a class of permanent, never-reused number. Read-only and
+**informational**: the verbs that mint an ID assign and write it in one act, so no
+answer printed here is ever copied into a document. It exists for a human reading the
+queue and for an agent orienting itself.
+
+The class is required. It selects both what is counted and **which root the tool looks
+under**, and those differ:
+
+| class | counted across | scope |
+|---|---|---|
+| `item` | the pending file **and** the done file | repository root |
+| `gap` | the Gaps section of `design/design.md` | design root |
+| `req` | `design/requirements.md`, retired requirements included | design root |
+
+**`item` reads both files, and reading either alone is wrong in a way that looks
+right.** The pending file's maximum is too low right after several items complete; the
+done file's is too low whenever the highest IDs are still live. Each in isolation
+returns a plausible number that collides with an existing ID. The shapes it reads —
+the `##` item entry and the done entry's `` (`#N`) `` — are specified in the skill's
+`trajectory-format.md`, which owns them; nothing here restates them.
+
+**`gap` reports every gap type, because gap numbering is per-type.** `S`, `R`, `D`,
+`C`, `I`, `O`, `A` and `T` each run their own sequence, so a single number would have
+to pick one arbitrarily or take an extra argument for a question the caller usually
+wants answered in full. Types with no gaps report `1`.
+
+**`req` counts retired requirements.** A retired `Rn` keeps its number forever so old
+references still resolve, so skipping them would hand out a number that is already
+taken — the precise failure the permanence rule exists to prevent.
+
+**A class whose files are missing is reported as unanswerable, not as `1`.** A project
+running no trajectory layer has no pending or done file, and "the next free item ID is
+1" is a confident wrong answer rather than an absent one. When only one of the two
+files exists, the answer is given and names the file it could not read, so the reader
+can judge whether the number is trustworthy.
+
+**The answer names its evidence.** Every response reports which files were read and how
+many identifiers each contributed, because the number alone cannot be checked. A regex
+that matches nothing and a genuinely empty queue both produce "next free ID is 1", and
+those are a broken parser and a correct answer wearing the same face. Printing the
+counts makes the difference visible without the reader having to know the format:
+
+```
+next free item ID: #11
+read:
+  PENDING.md       1
+  DONE.md          9
+```
+
+The counted noun is deliberately absent: the same column carries items for the queue
+files, gaps for `design.md` and requirements for `requirements.md`, so naming it would
+be wrong for two classes out of three.
+
+Output is markdown on stdout; `--json` gives the machine-readable form.

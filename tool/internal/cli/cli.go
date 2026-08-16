@@ -142,6 +142,7 @@ Query subcommands:
   migrations            List in-flight migration specs
   unindexed-specs       List specs not referenced in the root index (specs/index.md)
   alarms                List recorded fire alarms with their freshness state
+  next-id <class>       Next free ID for item|gap|req, with the files it counted
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
   comment-patterns      Show recognized comment patterns per file extension
@@ -271,6 +272,16 @@ func (c *CLI) runQuery(args []string) int {
 	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: minispec query <subcommand>")
 		return 1
+	}
+
+	// CRC: crc-CLI.md | R191, R198
+	// The one subcommand that must answer before a design root is resolved. Item IDs are
+	// repository-scoped and live outside any design root, so demanding a project here
+	// made the command fail in exactly the layout it exists for — this repository, whose
+	// design roots are tool/ and example/ while the queue sits above both. Found by
+	// running it, not by review.
+	if len(args) > 1 && args[0] == "next-id" && args[1] == "item" {
+		return c.emitNextID(query.NextItemID())
 	}
 
 	p, err := c.getProject()
@@ -468,6 +479,16 @@ func (c *CLI) runQuery(args []string) int {
 			}
 		}
 
+	// CRC: crc-CLI.md | R189, R196
+	case "next-id":
+		// The class is required rather than defaulted: it selects the root as well as
+		// the count, so guessing it would answer a question nobody asked. R189
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "Usage: minispec query next-id <item|gap|req>")
+			return 1
+		}
+		return c.emitNextID(q.NextID(args[1]))
+
 	case "traceability":
 		if len(args) < 2 {
 			fmt.Fprintln(os.Stderr, "Usage: minispec query traceability <file> or --all")
@@ -622,8 +643,8 @@ func (c *CLI) runUpdate(args []string) int {
 			return 1
 		}
 		gapType := strings.ToUpper(args[1])
-		if !strings.Contains("SRDCIOAT", gapType) || len(gapType) != 1 {
-			fmt.Fprintln(os.Stderr, "Gap type must be one of: S, R, D, C, I, O, A, T")
+		if !parser.IsGapType(gapType) {
+			fmt.Fprintf(os.Stderr, "Gap type must be one of: %s\n", strings.Join(parser.GapTypes, ", "))
 			return 1
 		}
 		desc := strings.Join(args[2:], " ")
@@ -855,4 +876,58 @@ func (c *CLI) queryAlarms(p *project.Project) int {
 	}
 	fmt.Printf("\n%d alarms: %s\n", len(assessments), strings.Join(parts, ", "))
 	return 0
+}
+
+// CRC: crc-CLI.md | R191, R196, R198
+// emitNextID reports one next-ID answer, in whichever form the flags asked for.
+//
+// Shared by the repository-scoped early dispatch and the design-scoped subcommand case
+// so the two cannot drift into presenting the same answer differently — the same reason
+// unknownCommand is shared. The (result, error) pair is taken straight from the call so
+// neither site can forget half of it.
+func (c *CLI) emitNextID(res *query.NextIDResult, err error) int {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(res)
+	} else {
+		c.printNextID(res)
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | R196, R197
+// printNextID writes the markdown form: the answer, then the evidence behind it.
+//
+// The sources are not decoration. A number alone cannot be checked -- a regex that
+// matched nothing and a genuinely empty queue both answer 1 -- so the per-file counts
+// are what let a reader tell a correct answer from a broken parser. R197
+func (c *CLI) printNextID(res *query.NextIDResult) {
+	if res.ByType != nil {
+		fmt.Printf("next free %s IDs: %s\n", res.Class, strings.Join(gapIDList(res), ", "))
+	} else {
+		fmt.Printf("next free %s ID: %s\n", res.Class, res.Next)
+	}
+	// The evidence block is introduced rather than merely indented: in the gap form the
+	// per-type answers and the source lines would otherwise share a margin and read as
+	// one list. Width 16 fits `requirements.md`, the longest name any class reports.
+	fmt.Println("read:")
+	for _, s := range res.Sources {
+		if !s.Present {
+			fmt.Printf("  %-16s not found\n", s.Name)
+			continue
+		}
+		fmt.Printf("  %-16s %d\n", s.Name, s.Count)
+	}
+}
+
+// gapIDList renders the per-type gap answers in the canonical order.
+func gapIDList(res *query.NextIDResult) []string {
+	out := make([]string, 0, len(parser.GapTypes))
+	for _, t := range parser.GapTypes {
+		out = append(out, res.ByType[t])
+	}
+	return out
 }

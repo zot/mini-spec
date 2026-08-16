@@ -140,17 +140,12 @@ func (u *Update) RemoveRef(crcFile, reqID string) error {
 var permanentTypes = map[string]bool{"A": true, "T": true}
 
 // nextGapID returns the next available <type>n ID by scanning existing gaps.
+//
+// The counting moved to parser.NextGapNum so a read-only caller can ask the same
+// question without importing this package; minting the ID string stays here, with the
+// only code that writes one.
 func nextGapID(gaps []parser.Gap, gapType string) string {
-	maxNum := 0
-	for _, g := range gaps {
-		if g.Type != gapType {
-			continue
-		}
-		if num, err := strconv.Atoi(strings.TrimPrefix(g.ID, gapType)); err == nil && num > maxNum {
-			maxNum = num
-		}
-	}
-	return fmt.Sprintf("%s%d", gapType, maxNum+1)
+	return fmt.Sprintf("%s%d", gapType, parser.NextGapNum(gaps, gapType))
 }
 
 // AddGap adds a new gap item with auto-numbered ID. R82, R83

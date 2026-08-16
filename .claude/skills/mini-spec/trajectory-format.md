@@ -34,14 +34,14 @@ earns its place.
 
 Mandated, not configured. There is no config key for any of it.
 
-| Path | What |
-|---|---|
-| `<repo root>/PENDING.md` | the pending file — the work queue |
-| `<repo root>/CURRENT.md` | the current file — context for the active item |
-| `<repo root>/DONE.md` | the done file — the completion ledger |
-| `<repo root>/carves/` | public carves |
+| Path                       | What                                                |
+|----------------------------|-----------------------------------------------------|
+| `<repo root>/PENDING.md`   | the pending file — the work queue                   |
+| `<repo root>/CURRENT.md`   | the current file — context for the active item      |
+| `<repo root>/DONE.md`      | the done file — the completion ledger               |
+| `<repo root>/carves/`      | public carves                                       |
 | `<repo root>/carves/done/` | finished carves, so they do not crowd out live ones |
-| `<repo root>/.carves/` | private carves — the dotted sibling, optional |
+| `<repo root>/.carves/`     | private carves — the dotted sibling, optional       |
 
 **The repository root, not the design root.** The trajectory goes *across* techniques, so
 its scope is the repository. One repository holds one work queue and may hold several

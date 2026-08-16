@@ -263,7 +263,10 @@ project. Compare a *missing* number, which is loud and fixable: this failure is
 silent and permanent, which is why the rule is absolute rather than a preference.
 
 - **Append only.** A new requirement takes the next free number: the maximum
-  assigned anywhere, including retired ones.
+  assigned anywhere, including retired ones. **Ask the tool —
+  `minispec query next-id req` — do not grep for it.** Retired requirements keep their
+  numbers, so a grep that skips them hands out one already taken, and it reports a bare
+  number with no evidence of what it counted.
 - **A gap in the sequence is a symptom, not a defect.** If `validate` reports
   `numbering gaps`, a requirement was deleted. The repair is to put it back
   — normally as a retirement — never to close the gap by shifting numbers down.
@@ -894,6 +897,10 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 - Checking/unchecking artifact checkboxes
 - Adding requirement references to CRC cards
 - Querying artifact states and coverage
+- **Finding the next free `Rn`, gap or item number** — `query next-id`. Never compute it
+  with a grep. The tool counts every file that can hold one and reports what it read; a
+  grep counts what you thought to point it at, silently misses retired and ranged forms,
+  and hands you a number that collides with an existing ID
 
 ```bash
 # Version check (run on skill load)
@@ -915,6 +922,9 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 ~/.claude/bin/minispec query gaps            # List gap items
 ~/.claude/bin/minispec query requirements    # List all requirements
 ~/.claude/bin/minispec query migrations      # List in-flight migration specs
+~/.claude/bin/minispec query next-id req     # Next free Rn (counts retired ones too)
+~/.claude/bin/minispec query next-id gap     # Next free number for every gap type
+~/.claude/bin/minispec query next-id item    # Next free queue ID (pending + done files)
 
 # Updates - artifact checkboxes (in design.md)
 ~/.claude/bin/minispec update check design.md crc-Store.md     # Check artifact

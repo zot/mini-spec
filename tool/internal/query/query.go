@@ -2,10 +2,12 @@
 package query
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/zot/minispec/internal/parser"
@@ -227,4 +229,109 @@ func (q *Query) CommentPatterns() map[string]string {
 // CommentClosers returns the configured comment closers per file extension
 func (q *Query) CommentClosers() map[string]string {
 	return q.Project.Config.CommentClosers
+}
+
+// NextIDSource is one file's contribution to a next-ID answer, and the evidence that
+// makes the answer checkable. R197
+type NextIDSource struct {
+	Name    string
+	Present bool
+	Count   int
+}
+
+// NextIDResult is the answer for one class. R189
+//
+// ByType is populated only for gaps, whose numbering runs a separate sequence per type,
+// so a single Next would have to pick one arbitrarily. R192
+type NextIDResult struct {
+	Class   string
+	Next    string
+	ByType  map[string]string
+	Sources []NextIDSource
+}
+
+// CRC: crc-Query.md | Seq: seq-query.md | R189, R191, R192, R193
+// NextID returns the next free identifier for a class of permanent, never-reused number.
+//
+// The class selects the root as well as the count: items are repository-scoped and live
+// outside any design root, gaps and requirements are design-scoped. R191
+func (q *Query) NextID(class string) (*NextIDResult, error) {
+	switch class {
+	case "item":
+		return NextItemID()
+	case "gap":
+		return q.nextGapIDs()
+	case "req":
+		return q.nextReqID()
+	default:
+		return nil, fmt.Errorf("unknown class %q (expected item, gap, or req)", class)
+	}
+}
+
+// CRC: crc-Query.md | R190, R191, R194, R195, R198
+// NextItemID reads the queue files at the repository root.
+//
+// A package function rather than a method, deliberately: it touches no design-root
+// state, and a signature that demanded a Project would be claiming a dependency it does
+// not have. That claim was not free — routing it through the method made the command
+// refuse to run in this very repository, whose design roots are tool/ and example/
+// while the queue sits above both. R198
+func NextItemID() (*NextIDResult, error) {
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		return nil, err
+	}
+	scan, err := parser.ScanTrajectory(repoRoot)
+	if err != nil {
+		return nil, err
+	}
+	// Neither file present is not an empty queue -- it is a project with no trajectory
+	// layer, which has no next ID at all. R194
+	if !scan.AnyPresent() {
+		return nil, parser.ErrNoTrajectoryFiles
+	}
+	res := &NextIDResult{Class: "item", Next: fmt.Sprintf("#%d", scan.MaxItemID()+1)}
+	for _, f := range scan.Files {
+		res.Sources = append(res.Sources, NextIDSource{Name: f.Name, Present: f.Present, Count: len(f.IDs)})
+	}
+	return res, nil
+}
+
+// CRC: crc-Query.md | R192
+// nextGapIDs answers for every gap type, since each runs its own sequence.
+func (q *Query) nextGapIDs() (*NextIDResult, error) {
+	gaps, err := q.Gaps()
+	if err != nil {
+		return nil, err
+	}
+	res := &NextIDResult{
+		Class:   "gap",
+		ByType:  make(map[string]string, len(parser.GapTypes)),
+		Sources: []NextIDSource{{Name: "design.md", Present: true, Count: len(gaps)}},
+	}
+	for _, t := range parser.GapTypes {
+		res.ByType[t] = fmt.Sprintf("%s%d", t, parser.NextGapNum(gaps, t))
+	}
+	return res, nil
+}
+
+// CRC: crc-Query.md | R193
+// nextReqID counts retired requirements too: a retired Rn keeps its number permanently,
+// so skipping it would hand out one that is already taken.
+func (q *Query) nextReqID() (*NextIDResult, error) {
+	reqs, err := q.Requirements()
+	if err != nil {
+		return nil, err
+	}
+	maxNum := 0
+	for _, r := range reqs {
+		if n, err := strconv.Atoi(strings.TrimPrefix(r.ID, "R")); err == nil {
+			maxNum = max(maxNum, n)
+		}
+	}
+	return &NextIDResult{
+		Class:   "req",
+		Next:    fmt.Sprintf("R%d", maxNum+1),
+		Sources: []NextIDSource{{Name: "requirements.md", Present: true, Count: len(reqs)}},
+	}, nil
 }

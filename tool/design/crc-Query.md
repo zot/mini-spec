@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198
 
 Read-only operations that query parsed design data.
 
@@ -26,10 +26,17 @@ Read-only operations that query parsed design data.
 - TraceabilityAll(): check all code files in Artifacts
 - CommentPatterns(): return configured comment patterns map
 - CommentClosers(): return configured comment closers map
+- NextID(class): the next free identifier for `item`, `gap` or `req`. The class picks
+  the root as well as the count — `item` is repository-scoped and delegates to
+  Trajectory, `gap` and `req` are design-scoped and read what is already parsed (R189,
+  R191). `gap` answers for **every** gap type, since numbering runs a separate sequence
+  per type (R192), and `req` counts retired requirements, whose numbers are permanently
+  taken (R193)
 
 ## Collaborators
 - Project: to locate files
 - Parser: to parse design files
+- Trajectory: to read item IDs, which live outside the design root
 
 ## Sequences
 - seq-query.md

@@ -272,3 +272,17 @@
 - **R185:** `minispec query alarms` lists every recorded alarm with its state — `verified`, `stale`, `unrecorded`, `unanchored` — and closes with a census of the four counts
 - **R186:** `unrecorded` states that the repository does not record a verification, never that the injection was not run — the documents cannot answer the second question
 - **R187:** Without git, `query alarms` reports `verified` and `stale` alarms as `unchecked` rather than assuming either
+
+## Feature: Next Free Identifier
+**Source:** specs/queries.md
+
+- **R189:** `minispec query next-id <item|gap|req>` prints the next free identifier for the named class. The class argument is required — it selects both what is counted and which root the files are resolved under
+- **R190:** `next-id item` is the maximum item ID across **both** the pending file and the done file. Either file alone yields a number that collides with an existing ID: the pending file's maximum is too low right after items complete, the done file's while the highest IDs are still live
+- **R191:** `next-id item` resolves its files at the repository root; `next-id gap` and `next-id req` resolve theirs at the design root
+- **R192:** `next-id gap` reports the next free number for every gap type, because gap numbering runs a separate sequence per type. A type with no gaps reports 1
+- **R193:** `next-id req` counts retired requirements, since a retired `Rn` keeps its number permanently and skipping it would hand out a number already taken
+- **R194:** `next-id item` reports that it cannot answer when neither trajectory file is present, rather than returning 1 — a project running no trajectory layer has no next ID, and 1 is a confident wrong answer rather than an absent one
+- **R195:** `next-id item` answers when exactly one of the two files is present, and names the file it could not read so the reader can judge whether the number is trustworthy
+- **R196:** `next-id` writes markdown to stdout and honors the global `--json` flag
+- **R197:** `next-id` reports which files it read and how many identifiers each contributed. The number alone is uncheckable: a regex that matches nothing and a genuinely empty queue both answer 1, and the counts are what distinguish a broken parser from a correct answer
+- **R198:** `next-id item` answers in a repository with **no design root at all**. The queue is repository-scoped, so requiring a project would make the command unusable exactly where it is meant to run — this repository is the proving case, with design roots at `tool/` and `example/` and the queue above both
