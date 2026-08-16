@@ -16,10 +16,14 @@ import (
 var (
 	// A pending-file item entry is a `##` heading opening with its number.
 	pendingItemRe = regexp.MustCompile(`^##\s+(\d+)\.`)
-	// A done-file entry header starts at column 0; its body lines are indented.
+	// A done-file entry header opens in bold at column 0; its body lines are indented.
 	doneEntryRe = regexp.MustCompile(`^- \*\*`)
-	// The queue ID inside a done entry header, backticked.
-	doneIDRe = regexp.MustCompile("`#(\\d+)`")
+	// The identifier slot of a done entry: the run between the date's em dash and the
+	// colon that opens the title. Deliberately unanchored, so that removing the header
+	// guard above is a real injection rather than a no-op.
+	doneSlotRe = regexp.MustCompile(`—\s*([^:]*):`)
+	// A queue ID inside that slot, written bare.
+	doneIDRe = regexp.MustCompile(`#(\d+)`)
 )
 
 // ErrNoTrajectoryFiles marks a tree that carries neither queue file. R194
@@ -112,29 +116,38 @@ func (s TrajectoryScan) AnyPresent() bool {
 
 // parsePendingIDs collects the numbers of the pending file's item headings.
 func parsePendingIDs(path string) ([]int, error) {
-	return scanIDs(path, func(line string) (int, bool) {
-		return firstSubmatchInt(pendingItemRe, line)
+	return scanIDs(path, func(line string) []int {
+		return submatchInts(pendingItemRe, line)
 	})
 }
 
 // CRC: crc-Trajectory.md | R190
-// parseDoneIDs collects queue IDs from done-entry **headers only**.
+// parseDoneIDs collects queue IDs from the identifier slot of done-entry **headers**.
 //
-// Entry bodies are prose several lines long and routinely cite other items — this
-// project's own `#8` ledger entry names `#7` in its body — so scanning them would let a
-// citation raise the maximum. That is the same class of error as reading one file
-// instead of two: a number that is plausible and wrong.
+// The slot holds whatever the entry discharged — a queue ID, a gap ID, a requirement
+// range, or several separated by `/` — so every `#N` in it counts and nothing outside it
+// does.
+//
+// Headers only, deliberately. Entry bodies are prose several lines long and routinely
+// quote other items: measured 2026-08-16, five body lines in ark's ledger would
+// contribute a queue ID if the header were not required. Letting one in is the same
+// class of error as reading one file instead of two — a number that is plausible and
+// wrong.
 func parseDoneIDs(path string) ([]int, error) {
-	return scanIDs(path, func(line string) (int, bool) {
+	return scanIDs(path, func(line string) []int {
 		if !doneEntryRe.MatchString(line) {
-			return 0, false
+			return nil
 		}
-		return firstSubmatchInt(doneIDRe, line)
+		slot := doneSlotRe.FindStringSubmatch(line)
+		if slot == nil {
+			return nil
+		}
+		return submatchInts(doneIDRe, slot[1])
 	})
 }
 
 // scanIDs walks a file line by line, collecting whatever match reports.
-func scanIDs(path string, match func(string) (int, bool)) ([]int, error) {
+func scanIDs(path string, match func(string) []int) ([]int, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -144,19 +157,19 @@ func scanIDs(path string, match func(string) (int, bool)) ([]int, error) {
 	var ids []int
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		if id, ok := match(scanner.Text()); ok {
-			ids = append(ids, id)
-		}
+		ids = append(ids, match(scanner.Text())...)
 	}
 	return ids, scanner.Err()
 }
 
-// firstSubmatchInt pulls the first capture group as an int.
-func firstSubmatchInt(re *regexp.Regexp, line string) (int, bool) {
-	m := re.FindStringSubmatch(line)
-	if m == nil {
-		return 0, false
+// submatchInts pulls the first capture group of every match as an int. A done entry's
+// slot may name more than one item, so the count per line is not bounded at one.
+func submatchInts(re *regexp.Regexp, s string) []int {
+	var ids []int
+	for _, m := range re.FindAllStringSubmatch(s, -1) {
+		if n, err := strconv.Atoi(m[1]); err == nil {
+			ids = append(ids, n)
+		}
 	}
-	n, err := strconv.Atoi(m[1])
-	return n, err == nil
+	return ids
 }

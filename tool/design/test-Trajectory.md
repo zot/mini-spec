@@ -1,29 +1,44 @@
 # Test Design: Trajectory
 **Source:** crc-Trajectory.md
 
-Both alarms below target properties that **pass by default**. A parser that read only
-the pending file, or that scanned whole done entries, would satisfy any test written
-without these cases — which is exactly why they are written with them.
+The three alarms below target properties that **pass by default**. A parser that read
+only the pending file, that scanned whole done entries, or that scanned a whole entry
+header rather than its identifier slot, would satisfy any test written without these
+cases — which is exactly why they are written with them.
+
+*Every fixture here is in the done-entry shape adopted 2026-08-16. The shapes drawn from
+ark's ledger are marked; they are there because a fixture contains only what its author
+thought to include, and the author of the shape this replaced had read no corpus at all.*
 
 ## Test: max spans both files
 **Purpose:** the maximum is taken across the pending *and* done files, not either alone (R190)
-**Input:** a pending file whose highest item is `## 3.` and a done file whose highest is `` (`#9`) ``; then the mirror case, pending `## 9.` and done `` (`#3`) ``
+**Input:** a pending file whose highest item is `## 3.` and a done file whose highest entry leads `— #9:`; then the mirror case, pending `## 9.` and done `— #3:`
 **Expected:** both directions answer 10
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go
 **Fire alarm:** make `MaxItemID` return the pending file's maximum alone. The first case goes red with `next=4, want 10`; the mirror case still passes, which is the point — one direction alone cannot detect it
 **Inject:** internal/parser/trajectory.go:MaxItemID
-**Pulled:** 2026-08-16 — rang, `next = 4, want 10`, and only the done-file-highest subtest failed. Restored byte-clean
+**Pulled:** 2026-08-16 — rang, `next = 4, want 10`, and only the done-file-highest subtest failed. Restored byte-clean. *Re-pulled the same day after `parseDoneIDs` was rewritten for the adopted shape — same signature*
 
 ## Test: a citation in an entry body does not raise the maximum
-**Purpose:** only a done entry's first line is scanned, so prose citing another item cannot inflate the answer (R190)
-**Input:** a done file with one entry `` - **2026-08-14 — thing (`#4`).** `` whose body prose cites `` `#99` `` on a later line
+**Purpose:** only a done entry's **header** is scanned, so prose quoting another item cannot inflate the answer (R190)
+**Input:** a done file with one entry `` - **2026-08-14 — #4: a thing.** `` whose body quotes an older pending entry, `- 2026-07-06 — **PENDING #99 — the older shape: seeds and scope.**`, on a later line
 **Expected:** 5, not 100
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go
-**Fire alarm:** scan every line of the entry rather than the first. Goes red with `next=100, want 5`. This is not hypothetical — this project's own `#8` ledger entry cites `` `#7` `` in its body
+**Fire alarm:** drop the header guard in `parseDoneIDs` so every line is offered to the slot regex. Goes red with `next=100, want 5`. The body line is **ark's real shape** — an older pending entry quoted verbatim inside a later done entry — and measured 2026-08-16, five such lines sit in its ledger
 **Inject:** internal/parser/trajectory.go:parseDoneIDs
-**Pulled:** 2026-08-16 — rang, `next = 100, want 5`. Restored byte-clean
+**Pulled:** 2026-08-16 — rang, `next = 100, want 5`. Restored byte-clean. *This is the second pull: the first, earlier the same day, used a body-prose fixture that the rewritten parser would no longer have caught, so both the fixture and the injection are new*
+
+## Test: only the identifier slot is read
+**Purpose:** an entry's leading slot holds whatever it discharged — a queue ID, a gap ID, a requirement range, several separated by `/`, or nothing — so only the `#N`s in it count, and nothing after the title's colon does (R190)
+**Input:** six done entries — two verbatim from ark (`— O201 / R3399:` and `— #117 / R3398:`), one discharging two items (`— #84 / #83:`), one whose `Part` pointer ends `` `carves/x.md#13` ``, one with no identifiers at all, and one whose title carries a colon followed by `#500`
+**Expected:** exactly `[117 84 83 4]`, maximum 117
+**Refs:** crc-Trajectory.md
+**Code:** internal/parser/trajectory_test.go
+**Fire alarm:** scan the whole header line rather than the slot. Goes red with `DONE.md contributed [117 84 83 4 13 500], want [117 84 83 4]` and `max = 500, want 117` — 13 being a **part key** and 500 prose. The part pointer is the sharp one: the adopted format appends `` Part `<doc>#<key>` `` to every entry, spelled exactly like a queue ID, so this slot restriction is load-bearing against the format's own addition
+**Inject:** internal/parser/trajectory.go:parseDoneIDs
+**Pulled:** 2026-08-16 — rang, both assertions, message as recorded above. Restored byte-clean
 
 ## Test: no files at all has no answer
 **Purpose:** a project with no trajectory layer is reported as unanswerable rather than told the next ID is 1 (R194)
@@ -34,7 +49,7 @@ without these cases — which is exactly why they are written with them.
 
 ## Test: one file missing still answers, and says so
 **Purpose:** a partial read is usable but must be qualified (R195, R197)
-**Input:** a done file with `` (`#6`) `` and no pending file
+**Input:** a done file with one entry leading `— #6:` and no pending file
 **Expected:** 7, with the report naming `PENDING.md` as unread
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go

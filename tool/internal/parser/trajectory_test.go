@@ -4,6 +4,7 @@ package parser
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -36,8 +37,8 @@ func nextItem(t *testing.T, dir string) int {
 func TestMaxItemIDSpansBothFiles(t *testing.T) {
 	pendingHigh := "# Pending\n\n## 9. **live thing**. Active.\n"
 	pendingLow := "# Pending\n\n## 3. **live thing**. Active.\n"
-	doneHigh := "# Done\n\n- **2026-08-14 — a thing (`#9`).** `abc1234`.\n"
-	doneLow := "# Done\n\n- **2026-08-14 — a thing (`#3`).** `abc1234`.\n"
+	doneHigh := "# Done\n\n- **2026-08-14 — #9: a thing.** (`abc1234`) Part `carves/x.md#2`.\n"
+	doneLow := "# Done\n\n- **2026-08-14 — #3: a thing.** (`abc1234`) Part `carves/x.md#2`.\n"
 
 	for _, tc := range []struct {
 		name          string
@@ -55,16 +56,53 @@ func TestMaxItemIDSpansBothFiles(t *testing.T) {
 	}
 }
 
-// R190. The alarm: scan every line of a done entry instead of its header and this goes
-// red with 100. Not hypothetical -- this project's own `#8` ledger entry cites `#7` in
-// its body prose.
+// R190. The alarm: drop the header guard in parseDoneIDs and this goes red with 100.
+// Not hypothetical -- the body line below is ark's real shape, an older pending entry
+// quoted verbatim inside a later done entry, and five such lines sit in its ledger.
 func TestCitationInDoneEntryBodyDoesNotRaiseTheMaximum(t *testing.T) {
 	done := "# Done\n\n" +
-		"- **2026-08-14 — a thing (`#4`).** `abc1234`.\n" +
-		"  It reuses the `#99` shape described earlier, scoped smaller.\n"
+		"- **2026-08-14 — #4: a thing.** (`abc1234`) Part `carves/x.md#2`.\n" +
+		"  Supersedes the queue entry it grew out of:\n" +
+		"  - 2026-07-06 — **PENDING #99 — the older shape: seeds and scope.**\n"
 	dir := writeTrajectory(t, map[string]string{"PENDING.md": "# Pending\n", "DONE.md": done})
 	if got := nextItem(t, dir); got != 5 {
 		t.Errorf("next = %d, want 5 (a citation in entry prose must not count)", got)
+	}
+}
+
+// R190. The identifier slot holds whatever the entry discharged -- a queue ID, a gap ID,
+// a requirement range, several separated by `/`, or nothing at all -- so only the `#N`s
+// in it count. Cases 1 and 2 are verbatim from ark's ledger. The rest pass by default
+// under any parser that scans the whole header: an entry with no identifiers must
+// contribute none rather than a number scavenged out of its title, and the `Part` pointer
+// the adopted format appends is spelled exactly like a queue ID while naming a part key.
+//
+// The alarm: scan the whole header line rather than the slot. Goes red with
+// `[117 84 83 4 13 500]`, where 13 is a part key and 500 is prose.
+func TestDoneIdentifierSlotVariants(t *testing.T) {
+	done := "# Done\n\n" +
+		"- **2026-08-02 — O201 / R3399: a bad search request is 400, not 500.** (`037ce42`)\n" +
+		"- **2026-08-02 — #117 / R3398: a failed proxy is not an absent server.** (`037ce42`)\n" +
+		"- **2026-07-28 — #84 / #83: two items in one landing.** (`bbb`)\n" +
+		"- **2026-08-16 — #4: a part key is not a queue ID.** (`ccc`) Part `carves/x.md#13`.\n" +
+		"- **2026-08-16 — an incident that discharged no ID.** (`ddd`)\n" +
+		"- **2026-08-16 — a title carrying a colon: and #500 after it.** (`eee`)\n"
+	dir := writeTrajectory(t, map[string]string{"PENDING.md": "# Pending\n", "DONE.md": done})
+	scan, err := ScanTrajectory(dir)
+	if err != nil {
+		t.Fatalf("ScanTrajectory: %v", err)
+	}
+	want := []int{117, 84, 83, 4}
+	for _, f := range scan.Files {
+		if f.Name != "DONE.md" {
+			continue
+		}
+		if !slices.Equal(f.IDs, want) {
+			t.Errorf("DONE.md contributed %v, want %v", f.IDs, want)
+		}
+	}
+	if got := scan.MaxItemID(); got != 117 {
+		t.Errorf("max = %d, want 117", got)
 	}
 }
 
@@ -85,7 +123,7 @@ func TestNoTrajectoryFilesIsUnanswerable(t *testing.T) {
 
 // R195, R197. One file missing still answers, and names what it could not read.
 func TestOneFileMissingAnswersAndSaysSo(t *testing.T) {
-	done := "# Done\n\n- **2026-08-14 — a thing (`#6`).** `abc1234`.\n"
+	done := "# Done\n\n- **2026-08-14 — #6: a thing.** (`abc1234`) Part `carves/x.md#2`.\n"
 	dir := writeTrajectory(t, map[string]string{"DONE.md": done})
 	scan, err := ScanTrajectory(dir)
 	if err != nil {
@@ -108,9 +146,9 @@ func TestOneFileMissingAnswersAndSaysSo(t *testing.T) {
 func TestPerFileCountsAccompanyTheAnswer(t *testing.T) {
 	pending := "# Pending\n\n## 8. **one**. Active.\n\n## 12. **two**. Queued.\n"
 	done := "# Done\n\n" +
-		"- **2026-08-14 — a (`#1`).** `aaa`.\n" +
-		"- **2026-08-13 — b (`#2`).** `bbb`.\n" +
-		"- **2026-08-12 — c (`#3`).** `ccc`.\n"
+		"- **2026-08-14 — #1: a.** (`aaa`) Part `carves/x.md#1`.\n" +
+		"- **2026-08-13 — #2: b.** (`bbb`) Part `carves/x.md#2`.\n" +
+		"- **2026-08-12 — #3: c.** (`ccc`) Part `carves/x.md#3`.\n"
 	dir := writeTrajectory(t, map[string]string{"PENDING.md": pending, "DONE.md": done})
 	scan, err := ScanTrajectory(dir)
 	if err != nil {

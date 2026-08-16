@@ -1043,6 +1043,21 @@ still using the bare queue number or `Part X` is not ambiguous, it is **unmigrat
 the check says so and names the target. Cheaper, positional, and it gives a migrating
 agent an instruction instead of a complaint.
 
+**A third conformance check, banked as `O9` while landing Item 13 (2026-08-16): a done
+entry whose header carries no identifier slot.** `parseDoneIDs` reads the run between the
+date's em dash and the title's colon; a header with no colon yields nothing, and *nothing*
+is also the right answer for an entry that legitimately discharged no ID — so the two are
+indistinguishable and the skip is silent. Measured in ark the same day: **2 of 54** entries
+sit in a pre-adoption shape with no colon, hiding `#84`, `#83` and `#46`, while
+`next-id item` reported `DONE.md 46` with no indication that two entries went unread.
+
+Latent rather than live — ark's maximum `#117` comes from a conforming entry — but that is
+the third time this exact collision has arrived through a door nobody was watching, after
+the one-file read (R190) and the shape mismatch that opened Item 13. It belongs here rather
+than in `next-id`: the number is right, the *ledger* is unmigrated, and saying so is a
+conformance question. Same shape as the key-form check above — name the target, don't
+complain.
+
 **Two things fold in here** (Bill, 2026-08-16):
 
 - **The shared markdown-aware extractor**, from

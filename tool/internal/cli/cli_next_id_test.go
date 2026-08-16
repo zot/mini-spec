@@ -24,7 +24,7 @@ func TestNextIDItemNeedsNoDesignRoot(t *testing.T) {
 	}
 	for name, body := range map[string]string{
 		"PENDING.md": "# Pending\n\n## 4. **live**. Active.\n",
-		"DONE.md":    "# Done\n\n- **2026-08-14 — a thing (`#7`).** `abc1234`.\n",
+		"DONE.md":    "# Done\n\n- **2026-08-14 — #7: a thing.** (`abc1234`) Part `carves/x.md#2`.\n",
 	} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
 			t.Fatal(err)

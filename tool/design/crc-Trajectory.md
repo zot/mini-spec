@@ -32,14 +32,18 @@ Named here so the coupling is visible; `trajectory-format.md` defines them.
 
 - **pending file** — an item entry is a `##` heading opening with the number:
   `## 8. **<title>** …`
-- **done file** — an entry's **first line** carries the queue ID in backticks:
-  `` - **YYYY-MM-DD — <title> (`#8`).** ``
+- **done file** — an entry's **header** leads with the identifiers it discharged, in the
+  run between the date's em dash and the colon that opens the title:
+  `` - **YYYY-MM-DD — #8 / R189–R198: <title>.** (`<commit>`) Part `<doc>#<key>`. ``
+  The slot may hold a gap ID or a requirement range instead, or several separated by
+  `/`, so every `#N` in it counts — and only what is in it does.
 
-**Only the entry's first line is scanned**, deliberately. Done entries are prose
-several lines long and routinely cite other items — the `#8` entry in this project's
-own ledger names `` `#7` `` in its body. Scanning entry bodies would let a citation
-raise the maximum, which is the same class of error as reading one file instead of two:
-a plausible number that is wrong.
+**Only an entry's header is scanned**, deliberately. Done entries are prose several
+lines long and quote other items freely: measured 2026-08-16, **five** body lines in
+ark's ledger would contribute a queue ID if the header were not required, most of them
+older pending entries quoted verbatim inside a later entry's body. Letting one in is the
+same class of error as reading one file instead of two — a plausible number that is
+wrong.
 
 ## Collaborators
 - Project: to resolve the repository root

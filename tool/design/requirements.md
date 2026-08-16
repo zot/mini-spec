@@ -277,7 +277,7 @@
 **Source:** specs/queries.md
 
 - **R189:** `minispec query next-id <item|gap|req>` prints the next free identifier for the named class. The class argument is required — it selects both what is counted and which root the files are resolved under
-- **R190:** `next-id item` is the maximum item ID across **both** the pending file and the done file. Either file alone yields a number that collides with an existing ID: the pending file's maximum is too low right after items complete, the done file's while the highest IDs are still live
+- **R190:** `next-id item` is the maximum item ID across **both** the pending file and the done file. Either file alone yields a number that collides with an existing ID: the pending file's maximum is too low right after items complete, the done file's while the highest IDs are still live. In the done file the IDs are read from an entry **header's leading identifier slot** and from nowhere else — an entry may discharge several, and its body routinely quotes other items, so a body scan raises the maximum from a citation
 - **R191:** `next-id item` resolves its files at the repository root; `next-id gap` and `next-id req` resolve theirs at the design root
 - **R192:** `next-id gap` reports the next free number for every gap type, because gap numbering runs a separate sequence per type. A type with no gaps reports 1
 - **R193:** `next-id req` counts retired requirements, since a retired `Rn` keeps its number permanently and skipping it would hand out a number already taken

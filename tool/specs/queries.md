@@ -165,9 +165,14 @@ under**, and those differ:
 **`item` reads both files, and reading either alone is wrong in a way that looks
 right.** The pending file's maximum is too low right after several items complete; the
 done file's is too low whenever the highest IDs are still live. Each in isolation
-returns a plausible number that collides with an existing ID. The shapes it reads —
-the `##` item entry and the done entry's `` (`#N`) `` — are specified in the skill's
-`trajectory-format.md`, which owns them; nothing here restates them.
+returns a plausible number that collides with an existing ID. The shapes it reads are
+specified in the skill's `trajectory-format.md`, which owns them; nothing here restates
+them, and the sentence that used to name one is why — it went on describing a done-entry
+shape the format had already replaced.
+
+In the done file only an entry's **header** is read, and within it only the leading
+identifier slot. Entry bodies are prose that quotes other items freely, so a body scan
+turns a citation into the maximum.
 
 **`gap` reports every gap type, because gap numbering is per-type.** `S`, `R`, `D`,
 `C`, `I`, `O`, `A` and `T` each run their own sequence, so a single number would have
