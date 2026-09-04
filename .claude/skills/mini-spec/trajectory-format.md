@@ -82,6 +82,7 @@ the queue did. See `config-reference.md`.
    Next: <next action>.
 
 ## 12. **<title>** …
+   Source: [<design root>/design.md](<path>), gap `<gap ID>`.
 ```
 
 - **Ordered by intent — the top item is active.** Position is the priority; the number is
@@ -92,6 +93,13 @@ the queue did. See `config-reference.md`.
   a one-line status, and one doc link. Rationale, findings and open questions live in the
   linked document. No instructions in entries.
 - **Completing an item removes its entry.** Remaining entries keep their numbers.
+- **A source is a carve part or a gap, told apart by shape.** The `Source:` line names the
+  document as a markdown link, then either `part `` `#<key>` `` or `gap `` `<gap ID>` `` — the
+  word says which, a part key carries `#` and a gap ID (`O136`, `R42`, `T7`) never does. A gap
+  source names one ID: a range or a list is not a source, because an entry discharges one thing.
+  Repairing a gap is the second most common thing an item does, and until the verb accepted the
+  shape (2026-08-26) every such entry was typed by hand around it. A reader reports which kind it
+  read; a writer emits one form for each and nothing else.
 
 ## The current file
 

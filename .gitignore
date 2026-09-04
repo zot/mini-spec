@@ -37,3 +37,4 @@ dist-test/
 # fossil checkout marker — the whole tree is snapshotted in
 # ~/work/fossil/mini-spec.fossil (see CLAUDE.local.md), opened over this checkout
 .fslckout
+/requests/
