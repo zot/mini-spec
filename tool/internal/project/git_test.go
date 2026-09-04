@@ -291,3 +291,78 @@ func TestLastChangedTellsANewFunctionFromAGoneOne(t *testing.T) {
 		t.Errorf("a symbol absent from disk and history = %v, want ErrUnresolvedSite", err)
 	}
 }
+
+// R205 — a method anchor is handed to git as a declaration-shaped pattern and resolves to
+// its own declaration, not to the first same-named method in the file. Built against a
+// real repository because the pattern is in git's regex dialect, not Go's.
+//
+// Layout chosen so the wrong answer has a different date: B.Run is first in the file and
+// committed on day one with a function after it (so its -L range never grows); A.Run is
+// appended on day two. A pattern that resolves "Run" to the first match reports day one
+// for A.Run; the right one reports day two.
+func TestLastChangedResolvesAMethodByItsReceiver(t *testing.T) {
+	dir := newRepo(t)
+	run := func(env []string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(append(os.Environ(),
+			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+			"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"), env...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+	day1 := []string{"GIT_AUTHOR_DATE=2026-01-01T12:00:00", "GIT_COMMITTER_DATE=2026-01-01T12:00:00"}
+	day2 := []string{"GIT_AUTHOR_DATE=2026-01-02T12:00:00", "GIT_COMMITTER_DATE=2026-01-02T12:00:00"}
+	base := "package p\n\ntype B struct{}\n\nfunc (b B) Run() int { return 2 }\n\nfunc sep() {}\n"
+	write(t, dir, "x.go", base)
+	run(day1, "add", "x.go")
+	run(day1, "commit", "-qm", "b")
+	write(t, dir, "x.go", base+"\ntype A struct{}\n\nfunc (a *A) Run() int { return 1 }\n")
+	run(day2, "add", "x.go")
+	run(day2, "commit", "-qm", "a")
+
+	g := NewGit(dir)
+	a, err := g.LastChanged("x.go", "A.Run")
+	if err != nil {
+		t.Fatalf("A.Run: %v — the method anchor did not resolve", err)
+	}
+	b, err := g.LastChanged("x.go", "B.Run")
+	if err != nil {
+		t.Fatalf("B.Run: %v — the method anchor did not resolve", err)
+	}
+	if got, want := a.Format("2006-01-02"), "2026-01-02"; got != want {
+		t.Errorf("A.Run changed %s, want %s — the pattern resolved to the first Run in the file, not to A's", got, want)
+	}
+	if got, want := b.Format("2006-01-02"), "2026-01-01"; got != want {
+		t.Errorf("B.Run changed %s, want %s", got, want)
+	}
+}
+
+// R206 — a bare anchor is bounded, so it cannot resolve inside a longer name.
+func TestLastChangedBoundsABareSymbol(t *testing.T) {
+	dir := newRepo(t)
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+			"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+	write(t, dir, "x.go", "package p\n\nfunc LookupPath() int { return 1 }\n")
+	run("add", "x.go")
+	run("commit", "-qm", "one")
+
+	g := NewGit(dir)
+	if _, err := g.LastChanged("x.go", "LookupPath"); err != nil {
+		t.Fatalf("LookupPath: %v, want a date", err)
+	}
+	if _, err := g.LastChanged("x.go", "Lookup"); err != ErrUnresolvedSite {
+		t.Errorf("Lookup resolved (%v); want ErrUnresolvedSite — an unbounded name matched inside LookupPath", err)
+	}
+}

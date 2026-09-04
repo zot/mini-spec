@@ -113,6 +113,17 @@ that has since been rewritten is void, and nothing about a green suite says so.
 - An `**Inject:**` naming a symbol git cannot find is reported as **unresolvable**,
   not silently skipped. That is the anchor rotting, which is the failure the field
   exists to prevent.
+- **A method is named by its receiver — `Type.Method` — and that form resolves to
+  exactly that method's declaration.** Three `Parse` methods on three types are one
+  symbol to a bare name; the receiver is the only spelling that can tell them apart.
+  The tool does not hand git the anchor as written: `-L :Doc.Render:` matches no line
+  of Go, so the reclaimed census of 2026-09-04 called 69 of a sibling project's alarms
+  unresolvable over nothing but this. It hands git a **declaration-shaped pattern** —
+  `func (<name> *Type) Method` with the name and star optional — and, for a bare symbol,
+  the name **bounded on both sides**, so `Lookup` no longer resolves to `LookupPath`.
+  *What this does not yet fix, banked as gaps:* a bare name can still land on a use or a
+  doc comment above its declaration, since git takes the first matching line; only an
+  extent computed from a parse settles that, which is the reclaim behind this stopgap.
 
 **Only stale alarms are reported here, and that is deliberate.** An alarm with
 `**Inject:**` but no `**Pulled:**` is a *prescription* — an injection someone wrote

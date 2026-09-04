@@ -85,7 +85,9 @@ freshness feature exists to prevent, inside its own implementation
 **Fire alarm:** restore the `len(hash) != 40` gate and confirm the `sha256` case goes
 red reporting no change for a function just committed
 **Inject:** internal/project/git.go:LastChanged
-**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Pulled:** 2026-09-04 — rang again after the site changed: `sha256: LastChanged
+reported no change for a function that was just committed`; restore byte-clean by copy.
+First pulled 2026-08-13, same signature
 **Refs:** crc-Git.md — R180
 
 ## Test: a new function is told from a gone one
@@ -98,5 +100,45 @@ a symbol in neither
 **Fire alarm:** treat every `-L` failure as a rotted anchor — the pre-fix shape — and
 confirm the new function reports `ErrUnresolvedSite`
 **Inject:** internal/project/git.go:LastChanged
-**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Pulled:** 2026-09-04 — rang again after the site changed: `a newly written
+function = git cannot resolve that symbol in that file, want ErrNoHistory`; restore
+byte-clean by copy. First pulled 2026-08-13, same signature
 **Refs:** crc-Git.md — R182, R184
+
+## Test: a method anchor resolves to its declaration
+**Purpose:** validates R205 — `Type.Method` handed to git literally matches no line of Go,
+so every method-form anchor read *unresolvable* on 2026-09-04 (69 in a sibling project);
+handed as a declaration-shaped pattern it resolves, to the method and not to a
+same-named method on another type
+**Input:** a repository whose file declares `func (b B) Run()` first, followed by another
+function so its `-L` range never grows, committed on day one; `func (a *A) Run()` appended
+and committed on day two. Chosen so the wrong resolution has a different date: git's `-L`
+range includes the blank line after a declaration, so a method with nothing after it is
+reported changed whenever something is appended — measured 2026-09-04 while writing this
+**Expected:** `LastChanged("x.go", "A.Run")` reports day two and `("x.go", "B.Run")` day one;
+a pattern resolving to the first `Run` in the file reports day one for both
+**Fire alarm:** hand git the symbol as written — return it unchanged from `sitePattern` —
+and confirm both method cases go red. The error is `ErrNoHistory`, not `ErrUnresolvedSite`:
+the on-disk check still recognises the method, so the fallback reads "new, not gone"
+**Inject:** internal/project/git.go:sitePattern
+**Pulled:** 2026-09-04 — rang: `A.Run: git holds no history for that path`, and the bounded
+test went red beside it since the same return dropped its boundaries; restore byte-clean by
+copy. First written predicting `ErrUnresolvedSite`; corrected to what was observed
+**Refs:** crc-Git.md — R205
+**Code:** internal/project/git_test.go
+
+## Test: a bare anchor is bounded, not a substring
+**Purpose:** validates R206 — git takes the first line its pattern matches, so an unbounded
+`Lookup` resolves to `LookupPath` and the alarm watches the wrong function with a clean
+reading
+**Input:** a repository whose one committed file declares `func LookupPath()` and nothing
+named `Lookup`
+**Expected:** `LastChanged("x.go", "Lookup")` returns `ErrUnresolvedSite`; `"LookupPath"`
+returns a date
+**Fire alarm:** drop the `\b` boundaries from the bare-symbol pattern and confirm `Lookup`
+goes green with `LookupPath`'s date
+**Inject:** internal/project/git.go:sitePattern
+**Pulled:** 2026-09-04 — rang: `Lookup resolved (<nil>); want ErrUnresolvedSite`; the method
+test stayed green, so the two alarms discriminate; restore byte-clean by copy
+**Refs:** crc-Git.md — R206
+**Code:** internal/project/git_test.go

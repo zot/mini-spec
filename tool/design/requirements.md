@@ -269,6 +269,8 @@
 - **R182:** An `**Inject:**` site whose symbol git cannot find is reported as **unresolvable** rather than skipped, since that is the anchor rotting — the failure the field exists to prevent
 - **R183:** `validate` reports stale alarms only. Alarms lacking `**Pulled:**` or `**Inject:**` are reported by `query alarms` instead, because a count that stays non-zero for months is a nag rather than a closable gripe
 - **R184:** The freshness check is silent in a tree with no git, since a check that could not look must not return a clean result
+- **R205:** An `**Inject:**` symbol may name a method by its receiver — `Type.Method` — and that form resolves to exactly that method's declaration: git is handed a declaration-shaped pattern (`func (<name> *Type) Method`, name and star optional) rather than the anchor as written, which matches no line of Go
+- **R206:** A bare `**Inject:**` symbol is resolved on word boundaries, never as a substring, so `Lookup` does not resolve to `LookupPath`; whether the first bounded match is a declaration rather than a use or a comment is not settled here (see gaps O10, O11)
 - **R185:** `minispec query alarms` lists every recorded alarm with its state — `verified`, `stale`, `unrecorded`, `unanchored` — and closes with a census of the four counts
 - **R186:** `unrecorded` states that the repository does not record a verification, never that the injection was not run — the documents cannot answer the second question
 - **R187:** Without git, `query alarms` reports `verified` and `stale` alarms as `unchecked` rather than assuming either

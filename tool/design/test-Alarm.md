@@ -95,7 +95,7 @@ closing line still total the whole input
 the total drops to the number of unverified alarms while the listing stays byte-identical —
 the failure is invisible in the list, which is the point
 **Inject:** internal/cli/cli.go:queryAlarms
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller` at `2c90e41`, evidence read by hand, restore byte-clean): `TestUnverifiedNarrowsTheListNotTheCensus` reported `1 alarms: 1 unrecorded` over a population of 2 — the listing byte-identical, the total wrong. The puller had to move the census computation below the selection for the injection to compile, and said so
+**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestUnverifiedNarrowsTheListNotTheCensus` reported `1 alarms: 1 unrecorded` over a population of 2 — the listing byte-identical, the total wrong. The puller had to move the census computation below the selection for the injection to compile, and said so
 **Refs:** crc-Query.md — R199
 
 ## Test: the selection is applied before the output form is chosen
@@ -110,7 +110,7 @@ alarms
 case goes red while the text case stays green — one green branch beside one red is the
 signature of this defect
 **Inject:** internal/cli/cli.go:queryAlarms
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller` at `2c90e41`, evidence read by hand, restore byte-clean): `TestAlarmsJSONHonoursSelection` rendered 2 assessments where 1 was selected, and `TestBriefRidesOnTheAssessmentUnderJSON` likewise; the text branch stayed green — one green beside one red, as predicted. The puller left the brief branch unfiltered along with the JSON one and noted the choice
+**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestAlarmsJSONHonoursSelection` rendered 2 assessments where 1 was selected, and `TestBriefRidesOnTheAssessmentUnderJSON` likewise; the text branch stayed green — one green beside one red, as predicted. The puller left the brief branch unfiltered along with the JSON one and noted the choice
 **Refs:** crc-CLI.md, crc-Query.md — R204
 
 ## Test: a brief quotes the fire-alarm prose whole
@@ -123,7 +123,7 @@ line is a different injection. The parser already folds continuation lines into 
 truncated brief still reads as a complete, well-formed brief, which is why the assertion
 is on the last line rather than on the shape
 **Inject:** internal/alarm/brief.go:Brief
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller` at `2c90e41`, evidence read by hand, restore byte-clean): `TestBriefQuotesProseWhole` named the two dropped lines; every other test stayed green, since the truncated brief is well-formed
+**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestBriefQuotesProseWhole` named the two dropped lines; every other test stayed green, since the truncated brief is well-formed
 **Refs:** crc-Alarm.md — R200
 
 ## Test: a brief states an absent part rather than dropping its line
@@ -137,7 +137,7 @@ Artifacts manifest maps to nothing
 bare label, and confirm this goes red. The brief that results is shorter and entirely
 well-formed, so nothing but this assertion notices
 **Inject:** internal/alarm/brief.go:sitesLine, internal/alarm/brief.go:filesLine
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller` at `2c90e41`, evidence read by hand, restore byte-clean): `TestBriefStatesAnAbsentPart` failed both assertions and `TestAlarmBriefsCoverEverySelectedAlarm` failed on the unmapped document — two suites red from one edit, both on the absence rather than the shape
+**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestBriefStatesAnAbsentPart` failed both assertions and `TestAlarmBriefsCoverEverySelectedAlarm` failed on the unmapped document — two suites red from one edit, both on the absence rather than the shape
 **Refs:** crc-Alarm.md — R203
 
 ## Test: a brief names the design root relative to the repository root
@@ -151,7 +151,7 @@ root
 **Fire alarm:** return `p.RootPath` from `designRootRel` instead of the relative form, and
 confirm this goes red
 **Inject:** internal/cli/cli.go:designRootRel
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller` at `2c90e41`, evidence read by hand, restore byte-clean): `TestBriefResolvesTestFilesThroughTheManifest` failed on the absolute `Design root:` line
+**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestBriefResolvesTestFilesThroughTheManifest` failed on the absolute `Design root:` line
 **Refs:** crc-Query.md — R200
 
 ## Test: a brief carries the contract and no protocol

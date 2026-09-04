@@ -167,7 +167,7 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	if tracked, terr := g.Tracked(file); terr != nil || !tracked {
 		return time.Time{}, ErrNoHistory
 	}
-	out, err := g.run("log", "-L", ":"+symbol+":"+file, "--format=%H|%ad", "--date=short")
+	out, err := g.run("log", "-L", ":"+sitePattern(symbol)+":"+file, "--format=%H|%ad", "--date=short")
 	if err != nil {
 		// `-L` searches the file as committed, so a function added since the last
 		// commit is absent from history while being perfectly present on disk. Reporting
@@ -198,6 +198,35 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	return time.Time{}, nil
 }
 
+// CRC: crc-Git.md | R205, R206
+// sitePattern is the regex git is handed for `-L :<pattern>:<file>`, built from an
+// `**Inject:**` symbol.
+//
+// **The anchor is not handed over as written.** `Doc.Render` as a regex matches no line
+// of Go — the dot is any character and the shape never occurs on a declaration line — so
+// every method-form anchor read *unresolvable*; measured 2026-09-04, 69 alarms in a
+// sibling project over nothing else. A `Type.Method` symbol becomes a declaration-shaped
+// pattern over its receiver, with the receiver's name and pointer star optional, so it
+// resolves to *that* method and not to a same-named method on another type. A bare
+// symbol is bounded on both sides, so `Lookup` no longer resolves to `LookupPath` —
+// git takes the first line that matches, and an unbounded name matches inside a longer
+// one first.
+//
+// **The dialect is git's, POSIX basic regex, not Go's.** Parentheses are literal, a
+// group is `\(…\)`, an optional group is `\{0,1\}`, and `\b` is the GNU boundary. Each of
+// those was probed against a real repository before it was relied on, which is why the
+// tests for this function build one rather than asserting over strings.
+//
+// What it does not settle: a bare name's first bounded match may be a use or the doc
+// comment above the declaration. Only an extent computed from a parse can, and that is
+// the reclaim this is the stopgap for (gaps O10, O11).
+func sitePattern(symbol string) string {
+	if typ, method, ok := strings.Cut(symbol, "."); ok && typ != "" && method != "" {
+		return `func (\([A-Za-z_][A-Za-z0-9_]* \)\{0,1\}\*\{0,1\}` + typ + `) ` + method + `\b`
+	}
+	return `\b` + symbol + `\b`
+}
+
 // declaresSymbol reports whether the file on disk still contains a declaration of the
 // symbol. Deliberately loose — it asks "is this plausibly present" rather than parsing
 // Go — because it is only ever used to choose between two *failure* reports, and the
@@ -213,11 +242,45 @@ func declaresSymbol(path, symbol string) bool {
 			!strings.HasPrefix(t, "const ") && !strings.HasPrefix(t, "type ") {
 			continue
 		}
-		if strings.Contains(t, symbol) {
+		// R206 — bounded, as the pattern handed to git is: `func LookupPath` on disk
+		// does not declare `Lookup`, and saying it did turned a rotted anchor into
+		// "no history yet" — found by the test for the bounded pattern, which fell
+		// through to this fallback and read the wrong error.
+		if declaresName(t, symbol) {
+			return true
+		}
+		// R205 — a method's declaration line reads `func (x *Type) Method(`, never
+		// `Type.Method`; without this a method written since the last commit reports
+		// as a rotted anchor rather than as new.
+		if typ, method, ok := strings.Cut(symbol, "."); ok &&
+			strings.HasPrefix(t, "func (") && strings.Contains(t, typ+")") &&
+			strings.Contains(t, ") "+method+"(") {
 			return true
 		}
 	}
 	return false
+}
+
+// declaresName reports whether a declaration line names symbol as a whole word.
+func declaresName(line, symbol string) bool {
+	at := 0
+	for {
+		i := strings.Index(line[at:], symbol)
+		if i < 0 {
+			return false
+		}
+		i += at
+		before := i == 0 || !isIdent(line[i-1])
+		after := i+len(symbol) == len(line) || !isIdent(line[i+len(symbol)])
+		if before && after {
+			return true
+		}
+		at = i + 1
+	}
+}
+
+func isIdent(c byte) bool {
+	return c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
 // isObjectHash reports whether a token is a full object name in any format git

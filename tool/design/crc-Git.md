@@ -1,5 +1,5 @@
 # Git
-**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182
+**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R205, R206
 
 Answers questions about the version-controlled working tree by invoking the `git`
 command line. Every question it answers is a **computed property** — there is
@@ -28,6 +28,10 @@ repository: a fake `Git` states the world the check is being run against.
   busy file stale and so discriminates nothing. Four outcomes stay apart — no work tree,
   no history for the path, a tracked file whose symbol cannot be found, and a function
   that exists and has never changed. Only the last is a clean result (R180, R182, R184)
+- sitePattern(symbol): the pattern git is handed for `-L`. `Type.Method` becomes a
+  declaration-shaped pattern over the receiver, name and star optional; a bare symbol is
+  bounded on both sides. Git's `-L` regex is POSIX basic, so the escapes are git's, not
+  Go's, and the tests run against a real repository for that reason (R205, R206)
 
 **Unavailability is an error, not a boolean.** A "cannot determine" flag beside a map
 of falses invites a caller to read the map first and the flag never; an error cannot be
