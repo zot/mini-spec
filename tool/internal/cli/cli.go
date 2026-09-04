@@ -141,7 +141,7 @@ Query subcommands:
   gaps                  List gap items
   migrations            List in-flight migration specs
   unindexed-specs       List specs not referenced in the root index (specs/index.md)
-  alarms                List recorded fire alarms with their freshness state
+  alarms [--unverified] [--brief]  Fire alarms with their freshness state; --unverified lists only what carries a decision (the count still covers every alarm); --brief prints the spawn prompt for a delegated re-pull
   next-id <class>       Next free ID for item|gap|req, with the files it counted
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
@@ -463,7 +463,7 @@ func (c *CLI) runQuery(args []string) int {
 		}
 
 	case "alarms":
-		return c.queryAlarms(p)
+		return c.queryAlarms(p, args[1:])
 
 	case "unindexed-specs":
 		specs, err := q.UnindexedSpecs()
@@ -822,7 +822,12 @@ func (c *CLI) runPhase(args []string) int {
 // Asked rather than emitted. `validate` reports only the closable states; the two that
 // stay non-zero for months while a project adopts the convention live here, where
 // looking at them is a decision rather than a line you learn to scroll past.
-func (c *CLI) queryAlarms(p *project.Project) int {
+func (c *CLI) queryAlarms(p *project.Project, args []string) int {
+	unverified, brief, err := c.parseAlarmArgs(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
 	docs, err := filepath.Glob(filepath.Join(p.DesignDir, "test-*.md"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -839,12 +844,40 @@ func (c *CLI) queryAlarms(p *project.Project) int {
 	}
 	assessments := alarm.Assess(alarms, project.NewGit(p.RootPath))
 
+	// R199 — the census is computed over the **whole** population, before the selection
+	// narrows the list, and printed whichever way the list was filtered. A count filtered
+	// along with its list answers *how many are wrong* and silently drops *out of how many*.
+	census := alarmCensusLine(assessments)
+
+	// R199, R204 — the selection precedes the output form. Filtering inside the text branch
+	// renders everything under `--json` while every markdown test stays green, which is O28's
+	// silent ignore one level in — the same defect `query gaps` already met.
+	selected := query.SelectAlarms(assessments, unverified)
+
+	if brief {
+		artifacts, aerr := parser.ParseArtifacts(p.DesignMdPath())
+		if aerr != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", aerr)
+			return 1
+		}
+		briefs := query.AlarmBriefs(selected, designRootRel(p), artifacts)
+		if c.JSON {
+			c.output(briefs)
+			return 0
+		}
+		for _, b := range briefs {
+			fmt.Println(b.Brief)
+		}
+		fmt.Print(census)
+		return 0
+	}
+
 	if c.JSON {
-		c.output(assessments)
+		c.output(selected)
 		return 0
 	}
 	lastDoc := ""
-	for _, a := range assessments {
+	for _, a := range selected {
 		if a.Alarm.Doc != lastDoc {
 			lastDoc = a.Alarm.Doc
 			fmt.Printf("%s:\n", lastDoc)
@@ -867,6 +900,16 @@ func (c *CLI) queryAlarms(p *project.Project) int {
 		fmt.Printf("  %-13s %s%s\n", a.State, a.Alarm.Test, detail)
 	}
 
+	fmt.Print(census)
+	return 0
+}
+
+// CRC: crc-Query.md | Seq: seq-alarm-freshness.md#2.5 | R185, R199
+// alarmCensusLine renders the closing count, always over the whole population.
+//
+// Separated from the listing so that `--unverified` cannot narrow it by accident: the one
+// call site that could filter it is the one that computes it, and it takes the full slice.
+func alarmCensusLine(assessments []alarm.Assessment) string {
 	census := alarm.Census(assessments)
 	parts := make([]string, 0, len(alarm.CensusOrder))
 	for _, st := range alarm.CensusOrder {
@@ -874,8 +917,96 @@ func (c *CLI) queryAlarms(p *project.Project) int {
 			parts = append(parts, fmt.Sprintf("%d %s", census[st], st))
 		}
 	}
-	fmt.Printf("\n%d alarms: %s\n", len(assessments), strings.Join(parts, ", "))
-	return 0
+	return fmt.Sprintf("\n%d alarms: %s\n", len(assessments), strings.Join(parts, ", "))
+}
+
+// CRC: crc-Query.md | Seq: seq-alarm-freshness.md#3.1 | R200
+// designRootRel expresses the design root as a path relative to the repository root.
+//
+// A delegated puller runs in its own git worktree, where this checkout's absolute path
+// resolves to nothing — or worse, resolves to the very tree the worktree exists to protect,
+// so an injection would land in the working copy. When the repository root cannot be
+// resolved at all the answer is the empty string, which the brief states as unknown rather
+// than papering over with an absolute path or a confident `.`.
+func designRootRel(p *project.Project) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
+	repo, err := project.RepoRootFrom(p.RootPath, home)
+	if err != nil {
+		return ""
+	}
+	rel, err := filepath.Rel(repo, p.RootPath)
+	if err != nil || escapesRoot(rel) {
+		return ""
+	}
+	return rel
+}
+
+// CRC: crc-CLI.md | R200
+// escapesRoot reports whether a relative path climbs out of the directory it is relative to.
+//
+// The obvious `strings.HasPrefix(rel, "..")` also fires on a path whose first component
+// merely *begins* with two dots — `..foo/design` is a legitimate descendant — and answering
+// "unknown" there would tell a puller nothing can be located when everything can. Absurd as
+// the input is, the wrong answer is silent and the right test is one line.
+func escapesRoot(rel string) bool {
+	return rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// parseFlagsAnywhere parses fs from args and returns the positional arguments, **wherever the
+// flags sit among them**.
+//
+// Go's flag package stops at the first non-flag argument. So
+// `add-item --from x "a title" --skill mini-spec` silently folded `--skill mini-spec` into the
+// title — measured 2026-08-18, in the exact order the command's own usage line advertises, and
+// the corrupted title then rode into the done entry on completion.
+//
+// **The same trap had already been found and fixed in `finish` an hour earlier**, by lifting
+// its item number out before parsing, and the fix was not carried across. That is this
+// project's own recorded lesson arriving inside the session that recorded it: knowing the
+// failure mode is not a substitute for a mechanism that holds it. Lifting positionals out one
+// at a time and re-parsing the remainder makes the caller's ordering irrelevant for every verb
+// at once, which is why this is shared rather than repeated.
+func parseFlagsAnywhere(fs *flag.FlagSet, args []string) ([]string, error) {
+	var positional []string
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		args = fs.Args()
+		if len(args) == 0 {
+			return positional, nil
+		}
+		positional = append(positional, args[0])
+		args = args[1:]
+	}
+}
+
+// CRC: crc-CLI.md | R199, R204
+// parseAlarmArgs reads `query alarms`'s own flags.
+//
+// Subcommand flags rather than global ones, for the reason `query gaps` records: a global
+// flag written after the subcommand is silently dropped (O28). `--json` is accepted here
+// too, so `query alarms --brief --json` is not rejected as unknown by a flag set that owns
+// the tail — the same accommodation, and the same admission that O28's general repair is
+// still owed.
+func (c *CLI) parseAlarmArgs(args []string) (unverified, brief bool, err error) {
+	fs := flag.NewFlagSet("alarms", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	unv := fs.Bool("unverified", false, "only alarms whose state carries a decision")
+	br := fs.Bool("brief", false, "print the spawn prompt for a delegated re-pull")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	rest, perr := parseFlagsAnywhere(fs, args)
+	if perr != nil {
+		return false, false, perr
+	}
+	if len(rest) > 0 {
+		return false, false, fmt.Errorf("unexpected argument %q; usage: minispec query alarms [--unverified] [--brief]", rest[0])
+	}
+	c.JSON = c.JSON || *asJSON
+	return *unv, *br, nil
 }
 
 // CRC: crc-CLI.md | R191, R196, R198

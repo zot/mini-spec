@@ -26,3 +26,14 @@ dist-test/
 /tool/bin
 
 /.minispec/backup
+
+# Agent worktrees — the harness creates a full checkout per subagent under here.
+# Not ignoring them means git, magit and every project-file walker see N copies of
+# the whole repository (16 of them, 191M, measured 2026-08-20), and gopls offers to
+# run govulncheck once per newly-appearing go.mod. "Always" cannot suppress that,
+# because each worktree is a new path and therefore a new module every time.
+/.claude/worktrees/
+
+# fossil checkout marker — the whole tree is snapshotted in
+# ~/work/fossil/mini-spec.fossil (see CLAUDE.local.md), opened over this checkout
+.fslckout

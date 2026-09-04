@@ -21,12 +21,12 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
 - [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
-- [x] crc-Query.md → `internal/query/query.go`
+- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`
 - [x] crc-Update.md → `internal/update/update.go`
 - [ ] crc-Validate.md → `internal/validate/validate.go`
-- [x] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`
+- [ ] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`
 - [x] crc-Phase.md → `internal/phase/phase.go`
-- [ ] crc-Alarm.md → `internal/alarm/alarm.go`
+- [ ] crc-Alarm.md → `internal/alarm/alarm.go`, `internal/alarm/brief.go`
 - [x] crc-Trajectory.md → `internal/parser/trajectory.go`
 
 ### Sequences
@@ -51,7 +51,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Track.md → `internal/project/track_test.go`
 - [x] test-Init.md → `internal/project/init_test.go`
 - [x] test-Bootstrap.md → `internal/cli/bootstrap_test.go`
-- [ ] test-Alarm.md → `internal/alarm/alarm_test.go`
+- [ ] test-Alarm.md → `internal/alarm/alarm_test.go`, `internal/alarm/brief_test.go`, `internal/query/alarms_test.go`, `internal/cli/cli_alarms_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 
 ## Documentation

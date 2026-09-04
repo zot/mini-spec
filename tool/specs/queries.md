@@ -146,6 +146,73 @@ rather than as a clean result.
 Output: one line per alarm, grouped by document, plus a closing census —
 `27 alarms: 3 verified, 0 stale, 20 unrecorded, 4 unanchored`.
 
+### `--unverified` — the census minus the 96% that carries no decision
+
+A census is *asked*, not emitted, and nearly all of it is the answer *nothing to do
+here*. Measured 2026-08-20 in this repository: **188 lines / 11,309 bytes**, roughly
+3,000 tokens, of which **13 lines / 842 bytes** are every entry that is not `verified`.
+`--unverified` selects the states that carry a decision — `stale`, `unrecorded`,
+`unanchored`, `unresolvable`, `unchecked` — and leaves the bare form as the full census
+for the runs that want it. The command already builds the list and already labels each
+entry, so this is a filter over data in hand rather than new analysis. `query gaps` has
+taken `--open` and `--closed` for exactly this reason since it landed.
+
+**The list narrows; the count does not.** The closing census still reports the whole
+population under `--unverified`, so the filtered form is the full form minus 165
+repetitions of *nothing to do here* and minus nothing else. A filtered count would answer
+*how many are wrong* and silently drop *out of how many* — the shape of the standing
+workaround this flag replaces, `| tail -2`, which reports **whether** anything is wrong
+and never **which**.
+
+When nothing is unverified the output is the census line alone.
+
+### `--brief` — what a delegated re-pull is spawned with
+
+Re-pulling an alarm is a read-edit-test-restore-diff cycle, and the cycle is where the
+cost is. Measured 2026-08-20 by `/context` at the end of a long session: tool results
+**190.9k tokens, 19% of the window**, the largest single category and roughly four times
+what the exchanges themselves cost — and the bulk of it was nine pulls and re-pulls
+inside a single item, not the census. So the cycle is delegated, one alarm to one agent,
+and `--brief` is what that agent is spawned with.
+
+A brief is **complete about its alarm and silent about the protocol.** It names the
+design root as a path relative to the repository root, the test document and test title,
+the assessed state, the `**Inject:**` sites, the test files the `design.md` Artifacts
+manifest maps that document to together with the directories holding them, and the
+`**Fire alarm:**` prose verbatim. The protocol — baseline first, inject, diff, re-run,
+restore, prove the restore clean — belongs to the agent definition that runs it, which is
+where an invariant belongs. A brief carrying it would repeat some 350 words per alarm
+against a census whose entire purpose is to be small.
+
+**The one thing a brief does restate is the contract, because it is the half that decides
+whether delegating was worth anything: evidence, never a verdict.** What comes back is the
+command, its output before the injection, the diff applied, the output after, and the diff
+after restoring. Whether the alarm rang is read off that by someone who can weigh it. The
+reason is measured rather than principled — three times in one item the naive verdict would
+have been wrong: an injection at a correctly named site that did not ring because the rule
+had two guards, an injection that rang across three packages while being *incapable* of
+reaching the property it named, and an `**Inject:**` field naming a symbol the injection
+only consulted.
+
+**A brief names files and directories, never a command.** `minispec` knows document
+structure; it does not know build systems, and a guessed command that fails to build
+produces output a hurried reader scores as *rang* — which is precisely the failure
+`SKILL.md` names, *an injection that breaks the build teaches nothing, because the test
+never ran*. The protocol closes it from the other side: the baseline run comes first and
+must be green, so a wrong command is caught before anything is injected.
+
+**The filter selects; the output form does not second-guess it.** A brief is emitted for
+every alarm the filters selected, including ones that cannot be pulled as written, and
+where the material for a part is missing the brief **states the absence in place of that
+part** rather than dropping the line. An `unanchored` alarm has no sites to edit and a
+document with no Artifacts row has no test files to name; a missing *Tests:* line reads as
+an oversight, while a stated absence reads as what it is. Suppressing those briefs would
+also make their count disagree with the census, which is the one number a reader trusts.
+
+`--brief` is an output form and `--unverified` is a filter, so they compose;
+`query alarms --unverified --brief` is the ordinary call. Under `--json` the brief is a
+field on each assessment rather than a separate output.
+
 ## minispec query next-id \<item|gap|req\>
 
 The next free identifier for a class of permanent, never-reused number. Read-only and

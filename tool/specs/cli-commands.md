@@ -33,6 +33,7 @@
 | `query migrations` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | List in-flight migration specs under `specs/migrations/` (non-recursive). |
 | `query comment-patterns` | [config.md](config.md) | Show recognized comment patterns and closers per file extension. |
 | `query unindexed-specs` | [queries.md](queries.md) | List per-feature specs not referenced in the root index `specs/index.md` (exact `.md`-token match; lists all when index absent). |
+| `query alarms [--unverified] [--brief]` | [queries.md](queries.md) | Census of fault injections recorded in `design/test-*.md`, one line per alarm, with its state: `verified`, `stale`, `unrecorded`, `unanchored`, `unresolvable` — or `unchecked` where git cannot answer. `--unverified` lists only the states that carry a decision while the closing count still reports the whole population. `--brief` replaces each line with the spawn prompt for a delegated re-pull: sites, the test files the Artifacts manifest maps the document to, the `**Fire alarm:**` prose verbatim, and the evidence-never-a-verdict contract. The two compose. |
 | `query next-id <item\|gap\|req>` | [queries.md](queries.md) | Next free identifier for a class. `item` counts the pending **and** done files at the repository root; `gap` reports every gap type; `req` includes retired requirements. Missing files are reported, never defaulted to `1`. |
 
 ## `update` subcommands

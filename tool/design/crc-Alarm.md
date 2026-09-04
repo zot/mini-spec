@@ -1,5 +1,5 @@
 # Alarm
-**Requirements:** R179, R180, R181, R182, R183, R185, R186, R187
+**Requirements:** R179, R180, R181, R182, R183, R185, R186, R187, R200, R201, R202, R203
 
 Assesses recorded fault injections. Given the alarms a test design carries and a Git
 that can answer "has this function changed", it says which proofs are still good.
@@ -20,6 +20,41 @@ expiry a computed property instead of something a person has to remember.
 - staleness(alarm, git): for an alarm with sites and a pull date, ask Git whether any
   named symbol changed **on or after** that date (R179, R181)
 - census(assessments): the four counts `query alarms` closes with (R185)
+- Brief(assessment, designRoot, testFiles): the spawn prompt for one delegated re-pull.
+  Pure over its three inputs, so the whole shape is testable with no repository and no
+  agent (R200, R201, R202, R203)
+
+**Why the brief is complete about its alarm and silent about its protocol (R202).** The
+variant half — this document, this test, these sites, this prose — changes per alarm and
+so has to be minted per alarm. The invariant half — baseline first, inject, diff, re-run,
+restore, prove the restore clean — is the same every time, so it lives in the agent
+definition that runs it, which is what an agent definition is for. A brief carrying the
+protocol would repeat some 350 words per alarm against a census whose entire purpose is
+to be small.
+
+**The one invariant a brief does restate is the contract, and it is the load-bearing
+half: evidence, never a verdict (R202).** What comes back is the command, the output
+before the injection, the diff applied, the output after, and the diff after restoring.
+Whether the alarm rang is read off that by a reader who can weigh it. Measured rather
+than principled: three times inside a single item the naive verdict would have been
+wrong — an injection at a correctly named site that did not ring because the rule had two
+guards, an injection that rang across three packages while being *incapable* of reaching
+the property it named, and an `**Inject:**` field naming a symbol the injection only
+consulted.
+
+**Why files and directories, never a command (R201).** This tool knows document
+structure; it does not know build systems. A guessed command that fails to build produces
+output a hurried reader scores as *rang* — the failure `SKILL.md` names as *an injection
+that breaks the build teaches nothing, because the test never ran*. The protocol closes it
+from the other side, by demanding a green baseline before anything is injected, so a wrong
+command is caught while the tree is still clean.
+
+**Why an absent part is stated rather than dropped (R203).** An `unanchored` alarm has no
+sites to edit and a document with no Artifacts row has no test files to name. A missing
+*Tests:* line reads as an oversight in the generator; a line saying the manifest maps none
+reads as what it is. It also keeps the brief count equal to the census count, which is the
+one number a reader trusts — the same reason `Assess` reports an unresolvable site instead
+of skipping it.
 
 **Why the function and not the file (R180).** A file-level answer marks every alarm in
 a busy file stale, so it discriminates nothing and would be discarded as noise within a
@@ -52,6 +87,8 @@ finding. The same distinction a carve draws when it gives `NOT VERIFIED` its own
 ## Collaborators
 - Git: answers whether a named function has changed since a date
 - Parser: supplies the parsed alarms; this card does no file reading
+- Query: resolves the design root and the document's test files, and hands both in;
+  this card reads no manifest
 
 ## Sequences
 - seq-alarm-freshness.md

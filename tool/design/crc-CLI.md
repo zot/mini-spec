@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204
 
 Command-line interface handling.
 
@@ -65,6 +65,12 @@ else.
 **It is a separate message because the alternative was measurably wrong (R174).** Routing
 a missing `track` to the malformed refusal told the agent to hand-edit a file that
 `--repair` accepts, and a hand edit sets the value while leaving `.gitignore` alone.
+- query alarms: parses `--unverified` and `--brief` as **subcommand** flags through the same
+  mechanism, and for the same two reasons — a global flag written after the subcommand is
+  silently dropped, and a selection applied inside one rendering is a filter the other
+  rendering ignores without a word (R199, R204)
+  - The two are orthogonal by construction: `--unverified` chooses *which* alarms, `--brief`
+    chooses *what each one prints*. They compose, and neither implies the other
 
 ## Collaborators
 - Project: to initialize project context and to resolve the repository root for CheckVersion

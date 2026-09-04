@@ -1,8 +1,9 @@
 # Sequence: Fire alarm freshness — assessing a recorded proof
 
-**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187
+**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187, R199, R200, R202, R203, R204
 
-Two diagrams: assessing one alarm, and the two surfaces that consume the assessment.
+Three diagrams: assessing one alarm, the two surfaces that consume the assessment, and
+minting the brief a delegated re-pull is spawned with.
 
 ## 1. Assessing one alarm
 
@@ -52,6 +53,8 @@ nothing" — the failure mode this whole feature is a response to.
 2.3. validate: say nothing about unrecorded or unanchored alarms
 2.4. query alarms: list every alarm with its state, grouped by document
 2.5. query alarms: close with the census of the four counts
+2.6. query alarms --unverified: drop the verified entries from the list, and from the list only
+2.7. query alarms --brief: replace each surviving entry's line with its brief — diagram 3
 ```
 
 **Step 2.3 is the load-bearing omission.** Stale is closable and should normally read
@@ -60,3 +63,48 @@ neither: a project adopting the convention carries many, the counts fall slowly,
 line reporting a non-zero number every run for months is the recurring nag this project
 distinguishes from a gripe you can discharge. They are worth knowing on demand, which
 is what step 2.4 is for.
+
+**Steps 2.6 and 2.7 are applied before the output form is chosen**, not after. Choosing
+text or JSON first and filtering the text branch renders everything under `--json` while
+every markdown test stays green — the silent ignore `query gaps` already met one level in,
+and the reason its selection sits where this one does (R199, R204).
+
+**Step 2.6 narrows the list and never the census.** The closing count is computed over the
+whole population either way. A filtered count answers *how many are wrong* and silently
+drops *out of how many*, which is the standing `| tail -2` workaround wearing the whole
+question's clothes; keeping it whole means `--unverified` loses nothing at all.
+
+## 3. Minting one brief
+
+```
+3. Mint the brief a delegated re-pull is spawned with
+3.1. Express the design root as a path relative to the repository root
+3.2. Look the alarm's document up in design.md's Artifacts manifest; take its test files
+3.3. Reduce those files to the distinct directories holding them, in first-seen order
+3.4. Head the brief with the document, the test title and the assessed state
+3.5. Name the sites to edit, or say there are none and that nothing can be injected
+3.6. Name the test files and their directories, or say the manifest maps the document to none
+3.7. Quote the **Fire alarm:** prose verbatim
+3.8. Close with the evidence contract, and with no protocol
+```
+
+**Step 3.1 is not cosmetic.** A delegated puller runs in its own git worktree, where the
+absolute path of this checkout resolves to nothing. Naming the design root relative to the
+repository root is the one form that is true in every checkout of this repository (R200).
+
+**Steps 3.5 and 3.6 state an absence rather than dropping a line (R203).** A missing
+*Sites:* line reads as an oversight in the generator; a line saying the alarm is
+`unanchored` reads as what it is, and tells the reader the next move is to write the
+anchor rather than to spawn anyone. It also keeps the number of briefs equal to the number
+of selected alarms, so the two can be compared.
+
+**Step 3.7 quotes rather than summarises.** The prose is the injection, and a paraphrase of
+an injection is a different injection. The parser already folds an alarm's continuation
+lines into one body for exactly this reason (R178), so what is quoted here is the whole of
+what the document said.
+
+**Step 3.8 is the boundary, and it is where the value is.** The protocol belongs to the
+agent definition that runs it — invariant, so minting it per alarm would be repetition
+rather than information. The contract does not: *evidence, never a verdict* is the single
+sentence that decides whether the delegation is worth doing, since a puller that returns a
+verdict has pre-empted the judgment the delegation exists to keep (R202).

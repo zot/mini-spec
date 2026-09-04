@@ -272,6 +272,12 @@
 - **R185:** `minispec query alarms` lists every recorded alarm with its state — `verified`, `stale`, `unrecorded`, `unanchored` — and closes with a census of the four counts
 - **R186:** `unrecorded` states that the repository does not record a verification, never that the injection was not run — the documents cannot answer the second question
 - **R187:** Without git, `query alarms` reports `verified` and `stale` alarms as `unchecked` rather than assuming either
+- **R199:** `query alarms --unverified` lists only the alarms whose state carries a decision — everything that is not `verified` — while the closing census still counts the **whole** population, so the filtered form is the full census minus the repetitions of *nothing to do here* and minus nothing else
+- **R200:** `query alarms --brief` replaces each selected alarm's line with the spawn prompt for a delegated re-pull: the design root relative to the repository root, the document and test title, the state, the `**Inject:**` sites, the test files `design.md`'s Artifacts manifest maps that document to together with their directories, and the `**Fire alarm:**` prose verbatim
+- **R201:** A brief names test **files and directories and never a command**, because `minispec` knows document structure and not build systems, and a guessed command that fails to build produces output a hurried reader scores as *rang*
+- **R202:** A brief closes with the evidence contract — return the command, its output before the injection, the diff applied, the output after, and the diff after restoring, and never a verdict on whether the alarm rang — and carries no protocol, which belongs to the agent definition that runs it
+- **R203:** A brief is emitted for **every** alarm the filters selected, and where the material for one of its parts is missing — no `**Inject:**` sites, no Artifacts row for the document — it states the absence in place of that part rather than dropping the line, so the brief count never disagrees with the census
+- **R204:** `--brief` is an output form and `--unverified` a filter, so the two compose; under `--json` the brief is a field on each assessment rather than a separate output
 
 ## Feature: Next Free Identifier
 **Source:** specs/queries.md

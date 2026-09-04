@@ -456,6 +456,33 @@ Invoke the `code-simplifier` agent on the recently modified code. This refines c
 
 **CRITICAL: Preserve all traceability comments.** The `// CRC:`, `// Seq:`, and requirement references (`R123`) in code comments are load-bearing — they connect code to the design artifacts that justify its existence. Removing or reformatting them breaks the traceability chain that `minispec validate` checks. Simplification means cleaner *logic*, not fewer comments.
 
+**This phase voids fire-alarm proofs, and re-pulling them is part of it.** A refactor is
+*precisely* when a property moves: it is licensed to change structure while preserving
+behaviour, and "preserving behaviour" is adjudicated by the very tests whose adequacy the
+alarm was proving. A simplification pass will happily restructure the function **and**
+tighten its test in one go, which is exactly the pair that voids the proof — and nothing
+about it turns anything red. The suite stays green, the injection becomes a memory, and the
+alarm you proved was wired is now wired to a different building.
+
+So when the pass returns, run `~/.claude/bin/minispec query alarms --unverified`, and for every alarm
+whose `**Inject:**` names a symbol this pass touched, pull it again and update `**Pulled:**`.
+**Bumping the date without re-running the injection is the one thing that must never
+happen** — it converts a record into a claim, which is the whole failure the field exists to
+prevent. Do not treat this as a follow-up: the phase is not finished until the alarms it
+disturbed have rung again. Measured in this project 2026-08-17, a single simplification pass
+restructured five functions and voided six alarms; all six still rang, and nothing in the
+green suite would have said so had they not.
+
+**Re-pulling the recorded alarms is necessary and not sufficient — inject *past* the list as
+well as through it.** The list says which properties someone thought to guard; a pass that
+restructures a function can leave a property with **no alarm at all**, and re-running every
+alarm the pass disturbed cannot find that. Measured 2026-08-18: after a pass, disabling an
+entire branch left the whole suite green, because the property it carried — a blank line
+between two blocks — **merges no lines and drops none**, so every check built on *what
+survived* was structurally blind to it. So after re-pulling, break one more thing the pass
+touched that no alarm names, and see whether anything objects. Silence there is a missing
+alarm, not a passing one.
+
 **Upon completion**, proceed to Gaps Phase.
 
 6. Gaps Phase
@@ -876,6 +903,181 @@ what I am about to change" a grep instead of a memory — and the back-link is a
 the half that gets skipped, because the forward one is found by whoever is already
 looking.
 
+### Delegating the re-pull, and the one thing a delegate must never send back
+
+**Re-pulling is where alarm work actually costs.** Measured 2026-08-20 by `/context` at the
+end of a long session: tool results **190.9k tokens, 19% of the window** — the largest single
+category and roughly four times what the exchanges themselves cost. Almost none of it was the
+census. It was the **read-edit-test-restore-diff cycle**: nine pulls and re-pulls, two
+past-the-list probes and one cross-project reproduction, inside a single item. That cycle is
+mechanical, it is long, and every byte of it lands in the context of whoever is *also* holding
+the design decision the item is about.
+
+So hand the cycle out, one alarm to one agent:
+
+```bash
+~/.claude/bin/minispec query alarms --unverified --brief
+```
+
+Each brief is a complete spawn prompt — sites, test files, the `**Fire alarm:**` prose
+verbatim, and the contract. Spawn one `alarm-puller` per brief, **with worktree isolation**,
+since the job is to corrupt source on purpose and a puller working in the live tree is a
+puller that can lose your uncommitted work.
+
+**Commit before you fan out, and this is a harder precondition than the census's.** A
+worktree is a checkout of a **commit**; uncommitted edits and untracked files are not in it.
+So a puller sent at an alarm whose subject you wrote this session lands in a tree where the
+function does not exist — and what it reports is a build failure or a missing symbol, which
+costs a spawn and a round trip to learn something `git status` would have said for free. The
+census's blindness is at least *legible* (it says `unchecked`); this one is silent, because
+the puller's report is perfectly well-formed and about a different tree than you think.
+
+Measured 2026-08-20 while building this, and measured by **asking git rather than reasoning
+about it** — the rule one section down applies to worktrees too. `git worktree add --detach
+<dir> HEAD` over a tree holding five uncommitted injection sites produced a checkout with the
+old `alarm.go` present, the new `brief.go` absent, and zero occurrences of the function three
+of the alarms name. The probe cost one command; five confused reports would have cost five
+spawns and the round trip to work out why they disagreed with each other.
+
+**The contract is the whole design, and it is one sentence: evidence, never a verdict.** What
+comes back is the command, its output before the injection, the diff applied, the output
+after, and the diff after restoring. *You* decide whether the alarm rang, and *you* write the
+`**Pulled:**` line. Not because a delegate is untrustworthy in general, but because this
+particular judgment is exactly the one that fails from inside the loop. Measured, three times
+in one session: an injection at a correctly named site that **did not ring** because the rule
+had two guards; an injection that rang across three packages while being **incapable** of
+reaching the property it named; and an `**Inject:**` field naming a symbol the injection only
+*consulted*. Every one of those reads as a clean pull from inside and as a defect from
+outside.
+
+**A `**Pulled:**` date written by the agent that ran the injection is not a record.** It is
+the agent's own verdict on its own work, wearing the format of evidence — the same conversion
+of a record into a claim that bumping a date without re-running the injection performs, and
+the reason that move is forbidden two sections up. The date is written by the reader, from the
+evidence, or it is not written.
+
+*What delegation is not for:* the census itself. A subagent that runs `query alarms` and
+reports the interesting lines is strictly worse than `--unverified` on every axis — it costs a
+spawn per run, forever, to perform an omission a filter performs for nothing, and unlike a
+filter it can be **wrong**. Delegate the loop; filter the list.
+
+### The census is blind to whatever git cannot see — scaffolding, and dated as such
+
+`minispec query alarms` answers freshness by asking git when each `**Inject:**` symbol last
+changed. **So it can only speak for code git already holds.** On an untracked file, or a
+symbol written since the last commit, there is no history to search and the honest answer is
+`unchecked` — which is not `verified`, but a census that reports both in one line reads as
+fine at a glance.
+
+**Take the census after committing, and budget the re-pull.** Measured in this project
+2026-08-17: the pre-commit reading was *78 alarms, 0 stale* with `validate` green; the commit
+made one new package visible to git and **nine alarms went stale at once**, turning `validate`
+red. Nothing about the code changed between those two readings — only whether the checker
+could look. An earlier instance the same week hid seven unresolvable anchors the same way.
+
+Re-pulling nine took about twenty minutes, because every injection was written down. That is
+the argument for `**Inject:**` and `**Fire alarm:**` being *fields* rather than recollection,
+arriving from an unexpected direction: they are what makes an expected, schedulable cost out
+of one that would otherwise be a re-derivation nobody performs.
+
+**This section is temporary and should be deleted rather than maintained.** `unchecked`
+currently conflates three unrelated reasons a question could not be asked — no git at all, a
+subject with no history *yet*, and a subject that is a document with no resolvable symbol —
+and only the middle one is closable, by committing. When the tool separates them and names
+the closable one, it can say this itself, on the runs where it is true and silently on the
+rest. Delete this then; a notice that fired on all three would fire forever and be muted
+along with the ones that matter.
+
+## Delegating a measurement — and the half that is not delegable
+
+**Exploratory measurement is the other half of the context bill**, and it surfaced only once the
+re-pull cycle was handled. Measured by `/context` on 2026-08-21: tool results **171k tokens, 17%
+of the window**, against 19% the day before — nearly the same share, and almost none of it
+re-pulls this time. It was corpus censuses, throwaway probes, regex classification, and
+before-and-after diffs across two repositories. *Every finding landed in a gap, a carve or a
+commit message; the raw output stayed resident and was re-derivable from none of it.*
+
+**The line is not "delegate measurement."** *Delegating the re-pull* already says why a census
+must not be delegated — a subagent that runs a query and reports the interesting lines is
+strictly worse than a filter on every axis. The rule here is narrower, and it is a boundary
+rather than a permission:
+
+> **A measurement whose question is already precise is delegable. The search for what to measure
+> is not.**
+
+*Sorted from real probes, which is what makes the boundary measured rather than stipulated.*
+
+| delegable | not delegable |
+|---|---|
+| how many part lines carry text before their marker (0 of 68 in one project, 11 of 34 in a second) | *why is the marker not being read?* |
+| anchored versus unanchored regexes per layer (50 and 8) | *is this leniency safe?* |
+| which continuation indents are in live use (0, 2, 4 and 6) | *which of these three repairs is right?* |
+| whether a fit heuristic swallows a given marker (no — 2 of 5 lines taken) | *what should we measure next?* |
+
+Everything on the left is a throwaway script, a handful of numbers, and two or three failed
+compiles nobody needs to see. The entry on the right that proves the boundary is a truncation
+bug: finding it took a hypothesis chain — the part-line reader? no; the part reader? no; the
+content span? yes — and the diagnosis was **revised twice inside a banked gap before it was
+right**. A delegate handed *find why the marker is not read* returns an answer nobody can cheaply
+check, and that is the shape that produced the one hard failure in this project's adversarial
+delegation rig.
+
+**Spawn `measurer`, one per question.** `.claude/agents/measurer.md` carries the protocol; the
+brief carries only the question, the population, and the paths.
+
+**It runs without worktree isolation, and that is deliberate rather than an omission.** A
+measurement's population routinely spans two repositories, only one of which a worktree could be
+cut from — and isolation buys nothing here because the job is to read rather than to corrupt. It
+would also inherit both hazards *Delegating the re-pull* records: a worktree cut from the remote
+tracking branch, and a build-system workspace file routing commands back at the live checkout.
+What replaces it is narrower and checkable: **the probe is written outside every repository it
+measures**, and the agent reports its `git status` at the end.
+
+**The brief must name the population, and this is the requirement the whole thing turns on.** Not
+*the carve files* but *which files, found how*. A brief naming only a question invites the
+delegate to choose the scope, and choosing the scope is choosing the question.
+
+**Define it with a command that already knows the document model, never with a text match
+over the files.** Measured on this section's own first run: a population given as
+`grep -lx '## Status'` returned eleven checkbox-less lines in the second project, and
+**seven were inside a fenced *sample* of a status block, in a document about status
+blocks**. The project's own reader is fence-blind by construction and excludes that file
+correctly; a line-oriented predicate is not, and it then ran to end of file because the
+document had no later heading to stop at. `minispec query carves` lists the real set (that verb is on `old-sdom`, not yet reclaimed here).
+*The delegate counted exactly what it was given and was right to* — which is the design
+working rather than failing: a scope error surfaces as a wrong number you can see, instead
+of as a quiet correction you cannot.
+
+*The motivating error is worth carrying, because it shows what a prompt fixes and a habit does
+not.* The day this was proposed also produced its own counter-example: eight marker-shaped runs
+inspected, all eight genuine, **zero false positives** banked into a gap — overturned by counting
+all fifteen and finding that five were body prose. Nothing about the eight was wrong; the sample
+was not the population, and the report did not say so. **That error does not survive being
+written as a prompt**, which is the argument for the agent over the discipline: a delegate that
+must be told what to count cannot eyeball, while a person who already knows the rule can.
+
+**What comes back is counts and instances, never scrollback** — the inverse of `alarm-puller`,
+whose evidence *is* the test output. Returning the raw run would reimport precisely what the
+delegation was for. The report carries the command instead, so the run is reproducible without
+being repeated into your context.
+
+**And it reports what it could not classify.** `LEFTOVER` is a field rather than a footnote,
+because a probe that silently drops what it could not reach reports clean over the part it never
+saw — which is the defect most of these measurements are taken to find, arriving inside the
+instrument.
+
+**The contract is `alarm-puller`'s and is not re-derived: evidence, never a verdict.** What comes
+back is the population, the command, the counts and the leftovers — never *so the rule is safe*.
+You decide what the numbers mean, because that judgment is the one that fails from inside the
+loop.
+
+*One thing stated rather than implied:* the `model:` in the agent definition is **inherited, not
+measured**. This project's nine-puller rig measured `sonnet` for `alarm-puller` briefs, and that
+result does not transfer to a different job. The rig is cheap to re-run, and the more useful
+finding from it applies here directly — what decided every case was **which check the delegate
+happened to run**, not how strong it was, which is why the enumeration rule is written into the
+agent rather than left to the tier.
+
 ## Quality Checklist
 - [ ] Requirements: all spec items captured, numbered (R1, R2, ...), inferred items marked
 - [ ] CRC Cards: nouns/verbs covered, no god classes, Requirements linked
@@ -883,7 +1085,7 @@ looking.
 - [ ] UI Specs: ASCII layouts, refs to CRCs and manifest-ui.md
 - [ ] Traceability: design files in Artifacts, code files have checkboxes, all Rn referenced
 - [ ] Tests: test-*.md for key behaviors
-- [ ] Fire alarms: every guard written *after* its bug was fixed has been broken on purpose and confirmed red, with `**Inject:**` naming the edit site and `**Pulled:**` the date — and any alarm whose subject was rewritten since has been pulled again
+- [ ] Fire alarms: every guard written *after* its bug was fixed has been broken on purpose and confirmed red, with `**Inject:**` naming the edit site and `**Pulled:**` the date — and any alarm whose subject was rewritten since has been pulled again. `~/.claude/bin/minispec query alarms --unverified` reports every alarm that carries a decision, with the count still covering all of them; take that reading **after committing**, since it is blind to code git cannot yet see. Re-pulls can be fanned out — see *Delegating the re-pull*
 - [ ] Summary specs: any cross-cutting axis touched by this change has been mirrored in the relevant summary spec (CLI inventory, storage layout, API surface, capabilities, …) — see the project's pinned list
 - [ ] Root spec index: every per-feature spec is mapped under a system in the root index (created if absent); `~/.claude/bin/minispec query unindexed-specs` returns empty
 - [ ] Phase validation: `~/.claude/bin/minispec phase <phase>` passes after each phase
@@ -922,6 +1124,9 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 ~/.claude/bin/minispec query gaps            # List gap items
 ~/.claude/bin/minispec query requirements    # List all requirements
 ~/.claude/bin/minispec query migrations      # List in-flight migration specs
+~/.claude/bin/minispec query alarms          # Every recorded fire alarm with its state
+~/.claude/bin/minispec query alarms --unverified   # Only the ones that carry a decision; the count still covers all
+~/.claude/bin/minispec query alarms --unverified --brief  # One spawn prompt per alarm, for a delegated re-pull
 ~/.claude/bin/minispec query next-id req     # Next free Rn (counts retired ones too)
 ~/.claude/bin/minispec query next-id gap     # Next free number for every gap type
 ~/.claude/bin/minispec query next-id item    # Next free queue ID (pending + done files)

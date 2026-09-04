@@ -62,7 +62,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Code:** internal/cli/cli_next_id_test.go
 **Fire alarm:** delete the early-dispatch branch at the top of `runQuery`, so the subcommand falls through to `getProject()`. Goes red with `no design/ directory found` and exit 1. This is a **regression test for a real defect**, found by running the command rather than by reading it: the version first written failed in this very repository, whose design roots are `tool/` and `example/` while the queue sits above both
 **Inject:** internal/cli/cli.go:runQuery
-**Pulled:** 2026-08-16 — rang, `no design/ directory found`, exit 1. Restored byte-clean
+**Pulled:** 2026-09-04 — rang again after `abd78fd` staled it (delegated `alarm-puller` at `2c90e41`, evidence read by hand): `TestNextIDItemNeedsNoDesignRoot` exited 1 with `no design/ directory found`, restore byte-clean. First pulled 2026-08-16, same signature
 
 ## Test: per-file counts accompany the answer
 **Purpose:** the number carries its evidence, so a silent parse failure is visible (R197)

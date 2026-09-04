@@ -8,7 +8,7 @@ LDFLAGS := -ldflags "-X github.com/zot/minispec/internal/cli.Version=$(VERSION)"
 
 # Build the binary
 build:
-	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) ./$(CMD_DIR)
+	go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) ./$(CMD_DIR)
 
 # Install to ~/.claude/bin
 install: build
@@ -51,10 +51,10 @@ tidy:
 
 # Build for multiple platforms
 release:
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-linux-amd64 ./$(CMD_DIR)
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-amd64 ./$(CMD_DIR)
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-arm64 ./$(CMD_DIR)
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-windows-amd64.exe ./$(CMD_DIR)
+	GOOS=linux GOARCH=amd64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-linux-amd64 ./$(CMD_DIR)
+	GOOS=darwin GOARCH=amd64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-amd64 ./$(CMD_DIR)
+	GOOS=darwin GOARCH=arm64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-arm64 ./$(CMD_DIR)
+	GOOS=windows GOARCH=amd64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-windows-amd64.exe ./$(CMD_DIR)
 
 help:
 	@echo "minispec build targets:"
