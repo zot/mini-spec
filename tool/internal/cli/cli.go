@@ -100,6 +100,8 @@ func (c *CLI) Run(args []string) int {
 		return c.runValidate(cmdArgs)
 	case "phase":
 		return c.runPhase(cmdArgs)
+	case "pending":
+		return c.runPending(cmdArgs)
 	case "help", "-h", "--help":
 		c.printUsage()
 		return 0
@@ -131,6 +133,7 @@ Commands:
   update <subcommand>   Update design files
   validate              Run structural validations
   phase <phase-name>    Run phase-specific validation
+  pending <subcommand>  Trajectory-item operations and the backup slot
 
 Query subcommands:
   project               Show resolved paths (repo root, design root, design, src, specs)
@@ -160,6 +163,13 @@ Update subcommands:
   approve-gap <id>              Convert gap to approved (A) type
   retire <Rold> <Rnew|-> <reason>  Retire a requirement, append a Tn gap
   migration-complete <name>     Move migration spec to complete/ with NNN- prefix
+
+Pending subcommands (the trajectory files at the repository root):
+  add-item <title> --from <doc>#<part>|<gap-id> --status <text> [--skill S] [--next-action T] [--next|--nth N|--after N|--last]
+  start <N> [--context T|--context-file F]
+  finish <N> --commit <hash> [--body T|--body-file F] [--discharged T|--discharged-file F] (--resolve|--no-resolve)
+  revert                Undo the most recent trajectory change (one level)
+  replay                Redo what revert undid
 
 Phase subcommands:
   spec                  Validate spec files exist

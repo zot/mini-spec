@@ -288,6 +288,7 @@ needs.
 |---|---|
 | `LANDED (commit, date)` | the work is in the repository |
 | `OPEN (#N)` / `OPEN (not queued)` | not started; queued under that ID, or not yet scheduled |
+| `REVERTED (#N)` | the queue rolled back over this part's item (`pending revert`); replay returns it to `OPEN (#N)`, an abandoned attempt to `OPEN (not queued)` |
 | `SPLIT (name, date)` | issued as subparts; this line keeps no checkbox |
 | `MOVED (name, date — <where>)` | the part now lives in another document |
 | `MIGRATED (date, commit)` | the decisions here are now specified elsewhere, which is the authority |
@@ -296,6 +297,15 @@ needs.
 | `DEFERRED (name, date)` | parked on purpose, as distinct from merely unstarted |
 | `NOT VERIFIED` | the work happened; nobody has confirmed it does what was asked |
 | `ASSESSED (name, date)` | examined and judged, with no change made |
+
+**`OPEN` and `REVERTED` are the two *transient* verbs, and every other verb is a record.** A
+transient carries the queue state and is *replaced* by the next transition — a tool writing one
+replaces the transient already on the line, deletes any other, and never touches a record; a
+record is appended beside whatever is there. That rule is the tool's (its backup spec) and the
+distinction is stated here so a reader of the lexicon knows which two words it applies to.
+*`REVERTED` joined this table on 2026-09-05, having been written by the tool since August without
+the format ever naming it — which is how a reader built from this table came to treat it as a
+record.*
 
 **Coin a verb where it carries information.** Forcing `LANDED` onto a part that was sent,
 deferred or moved makes the marker a worse record than the prose it replaced.

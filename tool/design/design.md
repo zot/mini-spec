@@ -26,12 +26,14 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`
 - [ ] crc-Validate.md → `internal/validate/validate.go`
-- [ ] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`
+- [x] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`, `internal/cli/pending.go`
 - [x] crc-Phase.md → `internal/phase/phase.go`
 - [ ] crc-Alarm.md → `internal/alarm/alarm.go`, `internal/alarm/brief.go`
 - [x] crc-Trajectory.md → `internal/parser/trajectory.go`
+- [x] crc-Pending.md → `internal/pending/pending.go`
 
 ### Sequences
+- [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
 - [x] seq-init.md
 - [x] seq-parse.md
 - [x] seq-query.md
@@ -58,6 +60,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] test-Alarm.md → `internal/alarm/alarm_test.go`, `internal/alarm/brief_test.go`, `internal/query/alarms_test.go`, `internal/cli/cli_alarms_test.go`
 - [x] test-Carve.md → `internal/parser/carve_test.go`, `internal/cli/cli_carves_test.go`
 - [x] test-Backup.md → `internal/backup/backup_test.go`, `internal/project/git_test.go`, `internal/parser/trajectory_test.go`
+- [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 
 ## Documentation
@@ -85,3 +88,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O11: git's `-L` range for a declaration runs to the line before the next declaration, so it includes the trailing blank line — and appending code after a method makes that method report *changed*. Measured 2026-09-04 while testing R205: `func (a *A) Run()` with nothing after it was attributed to the commit that appended `B` below it, and the test had to place a function after each method to get a stable range. In a live repository this is a **spurious stale** on every alarm whose site is the last declaration in its file. The same repair as the gap above: an extent from a parse, which stops at the closing bracket.
 - [ ] O12: The per-item commit discipline is a rule an agent must remember, and nothing checks it. DECIDED (Bill, 2026-09-04): one squashed commit per queue item, checkpoints folded with `squash` (never `fixup`) so every message survives, the body rewritten as `Step N — <subject>` sections in commit order so the sequence is visible (successive checkpoints touch the same files and a later one can alter an earlier one), one sign-off, and no commit hash in a `**Pulled:**` line since the squash rewrites it away. The reason it is a rule and not a mechanism: the census asks git and git sees only committed code, so the honest shape was commit → pull → record → commit, three per item at the floor and five on 2026-09-04. The tool's half: `pending finish` is the natural place to perform or verify the squash — it already knows the item's first commit from the current file's context and leaves the carve flip as an uncommitted tail today — and a `**Pulled:**` record that named a commit the tool owns would close mini-spec-tool's `O20` (the same-day blind spot) at the same time. Until then the rule lives in SKILL.md and in memory.
 - A3: R235 — the slot is cranked out in full by its verbs and documented in `/mini-spec`, revert especially — has no code site in this design root. The documentation half is discharged in `.claude/skills/mini-spec/SKILL.md` (*When a queue operation goes wrong*), which is **outside this design root** and so earns the requirement no implementation coverage; the crank-out half is the `pending revert`/`replay` verbs' and lands with them (carves/sdom-reclaim.md Item 3), at which point this entry can be revisited. Approved rather than open because nothing in `tool/` will ever satisfy the documentation half, and a check that reports a permanent absence is a nag rather than a gap.
+- [ ] O13: The dependency's Pending reader reads an entry title with a lazy `\*\*(.*?)\*\*` match, so a title carrying emphasis inside it would read back cut at the interior run — the flanking-rule read the August tree had (old R389's second half). Measured 2026-09-05: 0 of 11 live entries carry one. Raised with mini-spec-tool; the write half (R255) refuses only a wrapped title
+- [ ] O14: `minispecsdom.Pending.Place` at the last position appends at the end of the document, after any `---` rule and commentary that follow the entries — a queue entry inside the commentary, which trajectory-format.md forbids (R260). Measured 2026-09-05 by probe on a fixture with trailing prose. The live PENDING.md ends with its entries, so `--last` places correctly there today. Raised with mini-spec-tool; the adapter has no API to insert before the rule
+- [ ] O15: `add-item --last` then `finish` leaves the pending file one blank line longer than it started: `Pending.Place` at the end prepends a newline when the document does not end in one, and `Remove` does not take it back, so the two are not inverses on the file (R270). Measured 2026-09-05 with and without trailing commentary. `TestAddThenFinishLeavesTheQueueFileByteIdentical` skips naming this gap until the dependency lands the fix
+- [ ] O16: `minispecsdom.Carve.SetMarker` treats only `OPEN` as a transient, so `pending replay` after `pending revert` appends `**OPEN (#N.)**` beside the `**REVERTED (#N.)**` it should replace — one line asserting both states, the contradiction the marker rule exists to prevent (R230). `specs/backup.md` (R230) and the skill name REVERTED as the transient a revert writes; the format's `### Markers` section never listed it, which is the gap on our side, closed the same day. Measured 2026-09-05 by smoke test on a copy of this repository and by probe; Item 2's replay test asserted the new marker's presence and could not see the survivor. Raised with mini-spec-tool
+- [ ] O17: `minispecsdom.Carve.SetMarker` with no transient to replace appends the marker at the end of the line, after any trailing prose — `… **REVERTED (#N.)** Needs Item 1. **OPEN (#N.)**` — where the format's grammar is Head Marker* Text?, so the written line is one the reader lists as non-conforming. Measured 2026-09-05 by probe. Raised with mini-spec-tool

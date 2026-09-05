@@ -24,6 +24,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 | [validate.md](validate.md) | full validation and its check classes |
 | [phase.md](phase.md) | per-phase validation gates |
 | [backup.md](backup.md) | the backup slot beneath the queue verbs — one level of undo and redo over the trajectory files, the stamp, drift refusal, release, and the worktree anchor |
+| [queue-items.md](queue-items.md) | the `pending` verbs — `add-item`, `start`, `finish` — that write the trajectory files and both sides of the item↔part link, over the dependency's readers |
 
 ### Migrations
 

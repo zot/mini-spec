@@ -703,11 +703,28 @@ file** and **the done file** throughout, so a path never needs qualifying;
 
 - **The top item is active.** Ordering is by intent, which is a judgment, not a
   score: position carries the priority and the number is only an identifier.
-- **Finishing an item, in this order:** first mark it done in its **source
-  file** (the carve, plan or spec where the work lives); then reset the current
-  file; then move the item from the pending file to the done file. Source first,
-  because that is the copy a future reader trusts, and the one nobody thinks to
-  check.
+- **Finishing an item is `minispec pending finish <N> --commit <hash>`**, and it writes all
+  four surfaces in one act: the source file first (the carve where the work lives), then the
+  current file's `## Active` section, then the move from the pending file to the done file.
+  Source first, because that is the copy a future reader trusts, and the one nobody thinks
+  to check.
+
+  *The order is stated because it is the reason, not because it is a checklist* — the verb
+  performs it. Give it `--body-file` and the done entry's body is placed in the same write, so
+  there is no anchor to get wrong and no hand edit into a file git shows no diff for. The
+  identifier slot takes `--discharged`, which the tool joins to the `#N` it owns.
+
+  **A gap-sourced item must also say what happened to its gap: `--resolve` or `--no-resolve`.**
+  Neither is a refusal, and there is no default, because a default would guess which of the two
+  happened. `--no-resolve` is a record rather than a shrug: a gap left open by decision and one
+  left open by oversight are identical in `design.md`, and the completion is the only place that
+  difference is known.
+
+  **Opening an item is `minispec pending start <N> --context-file <f>`**, and queueing one is
+  `minispec pending add-item --from <doc>#<part>|<gap-id> "<title>" --status <text>` — the tool
+  mints the number and writes both sides of the item↔part link. The only hand edit left in an
+  item's round trip is the carve flip that names the item's commit, which rides in the next
+  commit's tail.
 - **One commit per item, and the commit shows its steps.** An item takes checkpoint
   commits while it is worked — a delegated alarm pull needs a commit to check out, and
   the census sees only committed code — so fold them before finishing: `squash`, never
@@ -738,9 +755,6 @@ safety mechanism — which is why this sits here rather than only in the tool's 
 minispec pending revert     # undo the most recent trajectory change
 minispec pending replay     # redo what revert undid
 ```
-
-*(On `new-sdom` the slot is back as a package and its two verbs return with the `pending`
-verb family; until then the slot records nothing.)*
 
 **It is a slot, not a stack.** The most recent change is revertable and replayable;
 nothing older is recoverable. That is enough for the real emergency — a command that did
@@ -1199,6 +1213,16 @@ minispec query carves --open   # …and the open parts and stateless lines thems
 minispec query next-id req     # Next free Rn (counts retired ones too)
 minispec query next-id gap     # Next free number for every gap type
 minispec query next-id item    # Next free queue ID (pending + done files)
+
+# Trajectory items — the three verbs that write the queue files, and the slot beneath them
+minispec pending add-item --from <doc>#<part> "<title>" --status <text>   # mint + both sides
+minispec pending add-item --from O136 "<title>" --status <text>          # a gap is a source too
+minispec pending start <N> --context-file <f>     # write the current file's Active section
+minispec pending finish <N> --commit <hash> --body-file <f>        # all four surfaces, one act
+minispec pending finish <N> --commit <hash> --resolve              # ...and close the gap it named
+minispec pending finish <N> --commit <hash> --no-resolve           # ...or record that it did not
+minispec pending revert                          # undo the most recent trajectory change
+minispec pending replay                          # redo what revert undid
 
 # Updates - artifact checkboxes (in design.md)
 minispec update check design.md crc-Store.md     # Check artifact

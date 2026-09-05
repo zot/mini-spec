@@ -13,8 +13,8 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 ## Status
 
 - [x] ~~**Item 1 — the module dependency and the carve reader.**~~ **LANDED (`2a050a2`, 2026-09-04 — `#67`.)**
-- [ ] **Item 2 — the backup slot.** **OPEN (not queued.)** Needs Item 1.
-- [ ] **Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.** **OPEN (not queued.)** Needs Items 1 and 2.
+- [x] ~~**Item 2 — the backup slot.**~~ **LANDED (`7dd50a0`, 2026-09-04 — `#68`.)** Needs Item 1.
+- [ ] **Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.** **OPEN (#69.)** Needs Items 1 and 2.
 - [ ] **Item 4 — `validate trajectory`.** **OPEN (not queued.)** Needs Items 1 and 3.
 - [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 6 — the alarm site as a parsed extent, not a git pattern.** **OPEN (not queued.)** Needs Item 1.
@@ -85,3 +85,6 @@ owed, all landed the same day — write-path refusal (`DeviationError`, `ErrReop
 `Source:` (their `Entry.Kind`, `SourceKey`, `ErrBadGapSource`). Item 7, several parts per entry,
 is a door kept open. `requests/RESP-alarm-method-anchors.md` (in-progress) is this side's
 answer to their one request; Item 6 above closes it.
+`requests/pending-reader-defects.md` (2026-09-05, open) carries seven things Item 3's port found
+the readers still owe — five defects, a sentinel request, and the parse-check at the end of `Mutate`.
+@ark-request-sent: requests/pending-reader-defects.md

@@ -15,6 +15,7 @@
 | `minispec update <sub>` | [updates.md](updates.md) | Atomic modifications to structured parts of design files. |
 | `minispec validate` | [validate.md](validate.md) | Run all structural validations and report issues. |
 | `minispec phase <sub>` | [phase.md](phase.md) | Phase-specific validation after each workflow phase. |
+| `minispec pending <sub>` | [queue-items.md](queue-items.md), [backup.md](backup.md) | Trajectory-item operations, and the backup slot beneath them. `add-item` / `start` / `finish` write the trajectory files and both sides of the item↔part link; `revert` / `replay` give one level of undo and one of redo. Resolves the **repository root**, never a design root. |
 
 ## `query` subcommands
 
@@ -36,6 +37,16 @@
 | `query alarms [--unverified] [--brief]` | [queries.md](queries.md) | Census of fault injections recorded in `design/test-*.md`, one line per alarm, with its state: `verified`, `stale`, `unrecorded`, `unanchored`, `unresolvable` — or `unchecked` where git cannot answer. `--unverified` lists only the states that carry a decision while the closing count still reports the whole population. `--brief` replaces each line with the spawn prompt for a delegated re-pull: sites, the test files the Artifacts manifest maps the document to, the `**Fire alarm:**` prose verbatim, and the evidence-never-a-verdict contract. The two compose. |
 | `query carves [--open]` | [queries.md](queries.md) | Cross-document status view over `carves/` and `.carves/` at the repository root: open, landed and stateless counts per carve from its status block only, subparts included, fenced samples excluded; `--open` lists the open parts and clean stateless lines; non-conforming lines are listed always. Needs no design root. |
 | `query next-id <item\|gap\|req>` | [queries.md](queries.md) | Next free identifier for a class. `item` counts the pending **and** done files at the repository root; `gap` reports every gap type; `req` includes retired requirements. Missing files are reported, never defaulted to `1`. |
+
+## `pending` subcommands
+
+| Subcommand | Owning spec | Summary |
+|---|---|---|
+| `pending add-item --from <doc>#<part>\|<gap-id> "<title>" --status <text> [--skill <s>] [--next-action <text>] [--next\|--nth N\|--after N\|--last]` | [queue-items.md](queue-items.md) | Mint the next item ID and write **both** sides of the link in one act: the whole queue entry — heading, status sentence, part pointer or gap ID, optional `Next:` line — at the stated position, and the part line's `**OPEN (#N.)**` marker (nothing on a gap's side). Every prose slot has a `--<slot>-file` twin read byte for byte, refused alongside the inline form. |
+| `pending start <N> [--context <text>\|--context-file <path>]` | [queue-items.md](queue-items.md) | **Open an item**: write the current file's `## Active` section — the identity line `` `#N` — <title> `` from the queue entry, the caller's context beneath it byte for byte. Refuses a section that already holds an item. |
+| `pending finish <N> --commit <hash> [--body <text>\|--body-file <path>] [--discharged <text>\|--discharged-file <path>] (--resolve\|--no-resolve)` | [queue-items.md](queue-items.md) | Check off each discharged part in its carve — box, strikethrough, appended `LANDED` record — then reset `## Active`, then move the entry to the done file with its header (`#N / <discharged>`) and the body when given. A gap-sourced item must say `--resolve` or `--no-resolve`. |
+| `pending revert` | [backup.md](backup.md) | Undo the most recent trajectory change, and mark the part `**REVERTED (#N.)**`. |
+| `pending replay` | [backup.md](backup.md) | Redo what revert undid, returning the part to `**OPEN (#N.)**`. |
 
 ## `update` subcommands
 

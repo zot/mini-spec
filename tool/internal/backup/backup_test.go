@@ -295,6 +295,33 @@ func TestACarveIsWrittenNeverRestored(t *testing.T) {
 	}
 }
 
+// R230 — a replay **replaces** the revert trace rather than writing beside it. One line
+// asserting both states is the contradiction the marker rule exists to prevent, and a test that
+// only asks whether the new marker is present cannot see the survivor.
+//
+// Skips naming gap O16: the dependency's SetMarker treats only OPEN as a transient today, so the
+// REVERTED marker survives the replay. Skipped, not deleted, so the property stays asserted.
+func TestReplayReplacesTheRevertedMarker(t *testing.T) {
+	t.Skip("gap O16: the dependency's SetMarker does not replace a REVERTED transient; the property stays asserted here")
+	root := tree(t, map[string]string{"PENDING.md": "# Pending\n"})
+	carve, _ := carveWithOpenPart(t, root)
+	s := New(root)
+	queuePart(t, s, root, carve)
+	if err := s.Revert(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Replay(); err != nil {
+		t.Fatal(err)
+	}
+	got := read(t, carve)
+	if strings.Contains(got, "REVERTED") {
+		t.Errorf("the replay left the revert trace beside the reopened marker:\n%s", got)
+	}
+	if strings.Count(got, "**OPEN (#16.)**") != 1 {
+		t.Errorf("want exactly one OPEN marker after replay:\n%s", got)
+	}
+}
+
 // R231, R234 — an ended attempt reopens the part, frees the number, writes no ledger entry.
 func TestAnEndedAttemptReopensThePartAndFreesTheNumber(t *testing.T) {
 	root := tree(t, map[string]string{

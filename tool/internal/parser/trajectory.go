@@ -4,11 +4,14 @@ package parser
 import (
 	"bufio"
 	"errors"
-	"github.com/zot/simple-dom/minispecsdom"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
+
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 // The shapes below are defined by the skill's trajectory-format.md, which is normative
@@ -212,4 +215,243 @@ func PendingEntries(path string) ([]QueueEntry, error) {
 		})
 	}
 	return out, nil
+}
+
+// CRC: crc-Trajectory.md | R242, R251
+//
+// PartRef is one side of the item↔part link as the queue verbs carry it: the document, the
+// key inside it, and whether that key is a part key or a gap ID. The document side is written
+// as a pointer only here, on the **queue** side — a carve carries a bare key, because
+// trajectory files are private in every project and a carve cannot point at a file a cloner
+// does not have.
+type PartRef struct {
+	Doc  string                  `json:"doc"`
+	Key  string                  `json:"key"`
+	Kind minispecsdom.SourceKind `json:"kind,omitempty"`
+}
+
+// CRC: crc-Trajectory.md | R246, R251
+// Parts is what this entry discharges in a carve, as a list.
+//
+// The model permits several and the reader records at most one; returning a list keeps the
+// caller's loop honest when the entry shape grows. **Both halves, and the part kind**: a gap
+// source is not a part, and an entry naming a document with no key records nothing, which is
+// the ordinary case since most items point at a spec or a plain document.
+func (e QueueEntry) Parts() []PartRef {
+	if e.Kind != minispecsdom.SourcePart || e.SourceDoc == "" || e.SourceKey == "" {
+		return nil
+	}
+	return []PartRef{{Doc: e.SourceDoc, Key: e.SourceKey, Kind: minispecsdom.SourcePart}}
+}
+
+// CRC: crc-Trajectory.md | R251, R276
+// Gap is the gap this entry repairs, when its pointer names one. Scalar, exactly as the part
+// pointer is; kept apart from Parts because the two complete by different acts.
+func (e QueueEntry) Gap() (PartRef, bool) {
+	if e.Kind != minispecsdom.SourceGap || e.SourceDoc == "" || e.SourceKey == "" {
+		return PartRef{}, false
+	}
+	return PartRef{Doc: e.SourceDoc, Key: e.SourceKey, Kind: minispecsdom.SourceGap}, true
+}
+
+// CRC: crc-Trajectory.md | R252
+//
+// Entry is what add-item places: the caller composes title, skill, status and next action;
+// the shape they go into is the dependency's EntryText.
+type Entry struct {
+	ID     int
+	Title  string
+	Skill  string
+	Status string // the one-line status that follows the skill on the heading line
+	Next   string // the `Next:` line's text, or empty for an entry that has none
+	Part   PartRef
+}
+
+// PlaceKind names the four placement intents. R256
+type PlaceKind uint8
+
+const (
+	PlaceLast  PlaceKind = iota // the end of the queue — the default, spelled out
+	PlaceNext                   // *next to be worked*, resolved against the current file
+	PlaceNth                    // position N, 1-based
+	PlaceAfter                  // immediately after the entry whose item **ID** is N
+)
+
+// Place is where an entry goes: the caller's intent, not yet a position. R256
+type Place struct {
+	Kind PlaceKind
+	N    int
+}
+
+// readPending parses the pending file at path through the dependency's reader.
+func readPending(path string) (*minispecsdom.Pending, error) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return minispecsdom.ParsePending(string(src)), nil
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#1.10 | R256, R259, R260
+// ResolvePlace turns an intent into a 1-based position among the entries the reader sees,
+// and reports how many positions there are. `--next` is the orchestrator's to resolve
+// against the current file before it reaches here.
+func ResolvePlace(pendingPath string, p Place) (pos, total int, err error) {
+	pend, err := readPending(pendingPath)
+	if err != nil {
+		return 0, 0, err
+	}
+	n := len(pend.Entries())
+	switch p.Kind {
+	case PlaceLast:
+		return n + 1, n + 1, nil
+	case PlaceNth:
+		// Refused rather than clamped: a clamp is a silent reinterpretation of an
+		// instruction the caller was specific about. R259
+		if p.N < 1 || p.N > n+1 {
+			return 0, 0, fmt.Errorf("--nth %d is outside 1 … %d: the queue holds %d entries, and a position is refused rather than clamped", p.N, n+1, n)
+		}
+		return p.N, n + 1, nil
+	case PlaceAfter:
+		pos, err := pend.After(p.N)
+		if err != nil {
+			return 0, 0, fmt.Errorf("--after %d names no live entry; the queue holds %s", p.N, itemList(pend.Entries()))
+		}
+		return pos, n + 1, nil
+	}
+	return 0, 0, fmt.Errorf("--next is resolved against the current file before it reaches here")
+}
+
+// itemList renders IDs the way the caller wrote them, for a refusal that hands back what
+// would have worked.
+func itemList(entries []*minispecsdom.Entry) string {
+	if len(entries) == 0 {
+		return "no entries"
+	}
+	parts := make([]string, 0, len(entries))
+	for _, e := range entries {
+		parts = append(parts, fmt.Sprintf("#%d", e.ID))
+	}
+	return strings.Join(parts, ", ")
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#1.6.1 | R252, R260
+// PlaceItem writes the whole entry at pos through the dependency's Place, which inserts one
+// synthetic text beside the entry it precedes or after the last one and refuses a position
+// outside 1 … entries+1.
+func PlaceItem(pendingPath string, e Entry, pos int) error {
+	return editFile(pendingPath, func(src string) (string, error) {
+		pend := minispecsdom.ParsePending(src)
+		text := minispecsdom.EntryText{
+			ID: e.ID, Title: e.Title, Skill: e.Skill, Status: e.Status, Next: e.Next,
+			SourceDoc: e.Part.Doc, SourceKey: e.Part.Key, Kind: e.Part.Kind,
+		}
+		// R275 — the gap form is the dependency's; anything else writes the part form.
+		if text.Kind != minispecsdom.SourceGap {
+			text.Kind = minispecsdom.SourcePart
+		}
+		if err := pend.Place(text, pos); err != nil {
+			return "", err
+		}
+		return pend.Render()
+	})
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#2.3.4 | R244, R263, R270
+// CompleteItem removes the entry from the pending file and prepends the done entry — header
+// and body in one write. Two files, and the pending side first, so a failure on the done side
+// leaves an ID absent from both rather than present in both.
+func CompleteItem(pendingPath, donePath string, id int, header, body string) error {
+	err := editFile(pendingPath, func(src string) (string, error) {
+		pend := minispecsdom.ParsePending(src)
+		if err := pend.Remove(id); err != nil {
+			return "", fmt.Errorf("no entry for #%d in %s: %w", id, pendingPath, err)
+		}
+		return pend.Render()
+	})
+	if err != nil {
+		return err
+	}
+	return editFile(donePath, func(src string) (string, error) {
+		done := minispecsdom.ParseDone(src)
+		if err := done.Prepend(header, body); err != nil {
+			return "", err
+		}
+		return done.Render()
+	})
+}
+
+// editCurrent parses the current file, refusing as the reader does when `## Active` cannot
+// be told apart, and writes the edit back atomically. R249, R250
+func editCurrent(path string, edit func(*minispecsdom.Current) error) error {
+	return editFile(path, func(src string) (string, error) {
+		cur, err := parseCurrent(path, src)
+		if err != nil {
+			return "", err
+		}
+		if err := edit(cur); err != nil {
+			return "", fmt.Errorf("%s: %w", path, err)
+		}
+		return cur.Render()
+	})
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#2.3.3 | R249, R250
+// ResetCurrent clears the current file's `## Active` region and **nothing else**: the reader
+// enumerates the region's nodes and the write removes those and inserts the placeholder, so
+// standing context outside it is unreachable by construction.
+func ResetCurrent(path string) error {
+	return editCurrent(path, (*minispecsdom.Current).Reset)
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#3.3.2 | R265, R266, R267
+// SetActive opens an item: the identity line the orchestrator composed, then the caller's
+// context. The same reader and write path that clears the region; the reader refuses over a
+// held item.
+func SetActive(path, line, context string) error {
+	body := line
+	if context != "" {
+		body += "\n\n" + context
+	}
+	return editCurrent(path, func(c *minispecsdom.Current) error {
+		err := c.SetActive(body)
+		if errors.Is(err, minispecsdom.ErrOccupied) {
+			return fmt.Errorf("%w — opening another here would discard it; park it as a sub-item in the pending file, which is a stack you can push onto", err)
+		}
+		return err
+	})
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#1.10.2 | R257
+// ActiveInProgress asks the current file whether a step is being worked: `## Active` holding
+// something other than its placeholder.
+func ActiveInProgress(path string) (bool, error) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	cur, err := parseCurrent(path, string(src))
+	if err != nil {
+		return false, err
+	}
+	return cur.Occupied(), nil
+}
+
+// parseCurrent is ParseCurrent with the two refusals naming their repair. R250
+//
+// The reader says what it could not tell apart; the repair is this tool's to name, because the
+// shape it names is the skill's format. Matched on the reader's message for want of a sentinel
+// — raised with the dependency.
+func parseCurrent(path, src string) (*minispecsdom.Current, error) {
+	cur, err := minispecsdom.ParseCurrent(src)
+	if err == nil {
+		return cur, nil
+	}
+	switch {
+	case strings.Contains(err.Error(), "no `## Active`"):
+		return nil, fmt.Errorf("%s carries no `## Active` heading, so the active item cannot be told from the standing context; add the heading beneath the rule, holding `_No active item._`", path)
+	case strings.Contains(err.Error(), "more than one"):
+		return nil, fmt.Errorf("%s carries more than one `## Active` heading, so the region to write is ambiguous; keep one", path)
+	}
+	return nil, fmt.Errorf("%s: %w", path, err)
 }

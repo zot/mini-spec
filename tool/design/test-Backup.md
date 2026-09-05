@@ -66,6 +66,15 @@ adapters; every alarm is a prescription until pulled here.
 **Pulled:** 2026-09-04 — rang: `the carve does not carry the revert trace`; restore byte-clean by copy
 **Code:** internal/backup/backup_test.go
 
+## Test: a replay replaces the revert trace
+**Purpose:** validates R230 — a replay returns the part to `**OPEN (#N.)**` by replacing the `REVERTED` transient, never by writing beside it
+**Input:** mutation, revert, replay on a part line
+**Expected:** exactly one `**OPEN (#16.)**` and no `REVERTED` on the line
+**Refs:** crc-Backup.md, crc-Carve.md — R230
+**Code:** internal/backup/backup_test.go
+
+*Skips naming gap `O16`, found 2026-09-05 by smoke-testing the reclaimed `pending replay`:* the dependency's `SetMarker` treats only `OPEN` as a transient, so the `REVERTED` marker survives and the line reads both. The case above asserted the new marker's presence and could not see the survivor. No fire alarm until the dependency lands the fix; the injection then is *append rather than replace in `mark`*, which is not this side's code either — the case is a pin on the dependency's behaviour.
+
 ## Test: an ended attempt releases the number and reopens the part
 **Purpose:** validates R231, R234 — aborting an attempt is not aborting the part; no done entry
 **Input:** mutation, revert, then a second mutation ending the replayable window

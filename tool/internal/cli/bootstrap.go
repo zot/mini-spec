@@ -15,7 +15,7 @@ import (
 // decide whether it is exempt is visible rather than silent.
 var knownCommands = map[string]bool{
 	"init": true, "check-version": true, "query": true, "update": true,
-	"validate": true, "phase": true, "help": true, "-h": true, "--help": true,
+	"validate": true, "phase": true, "pending": true, "help": true, "-h": true, "--help": true,
 }
 
 // exemptCommands need no mini-spec files at all and so run before a project exists.

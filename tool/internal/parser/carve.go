@@ -320,15 +320,23 @@ func PartIsLanded(path, key string) (bool, error) {
 // editCarve reads, applies, and writes by temp-file-and-rename. The write happens only
 // after the edit returned nil, so a refusal leaves the file byte-identical. R220
 func editCarve(path string, edit func(*minispecsdom.Carve) error) error {
+	return editFile(path, func(src string) (string, error) {
+		c := minispecsdom.ParseCarve(src)
+		if err := edit(c); err != nil {
+			return "", err
+		}
+		return c.Render()
+	})
+}
+
+// editFile is the one atomic write every adapter shares: read, hand the bytes to render, and
+// replace the file by temp-file-and-rename only when render returned nil. R220
+func editFile(path string, render func(src string) (string, error)) error {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	c := minispecsdom.ParseCarve(string(src))
-	if err := edit(c); err != nil {
-		return err
-	}
-	out, err := c.Render()
+	out, err := render(string(src))
 	if err != nil {
 		return err
 	}
