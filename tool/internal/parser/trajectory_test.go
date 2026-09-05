@@ -191,7 +191,7 @@ func TestPendingEntriesReadThroughTheDependency(t *testing.T) {
 	path := filepath.Join(dir, "PENDING.md")
 	src := "# Pending\n\n---\n\n" +
 		"## 3. **a part-sourced item** (mini-spec). Active.\n" +
-		"   Source: [carves/x.md](carves/x.md), part `#Item 5`.\n\n" +
+		"   Source: [carves/x.md](carves/x.md), part `#5`.\n\n" +
 		"## 9. **a gap-sourced item**. Waiting.\n" +
 		"   Source: [tool/design/design.md](tool/design/design.md), gap `O12`.\n"
 	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
@@ -204,7 +204,7 @@ func TestPendingEntriesReadThroughTheDependency(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("got %d entries, want 2: %+v", len(got), got)
 	}
-	if got[0].ID != 3 || got[0].SourceDoc != "carves/x.md" || got[0].SourceKey != "Item 5" || got[0].Kind != minispecsdom.SourcePart || got[0].Line != 5 {
+	if got[0].ID != 3 || got[0].SourceDoc != "carves/x.md" || got[0].SourceKey != "5" || got[0].Kind != minispecsdom.SourcePart || got[0].Line != 5 {
 		t.Errorf("part entry = %+v", got[0])
 	}
 	if got[1].ID != 9 || got[1].SourceKey != "O12" || got[1].Kind != minispecsdom.SourceGap {

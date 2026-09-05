@@ -1,5 +1,5 @@
 # Trajectory
-**Requirements:** R190, R194, R195, R197, R240, R242, R244, R249, R250, R251, R252, R256, R257, R259, R260, R263, R265, R266, R267, R270
+**Requirements:** R190, R194, R195, R197, R240, R242, R244, R249, R250, R251, R252, R256, R257, R259, R260, R263, R265, R266, R267, R270, R287, R292, R296, R297
 
 Reads and writes the trajectory files at the repository root, as thin path-taking adapters
 over the dependency's `minispecsdom.Pending`, `Current` and `Done` readers. The format is **owned by the skill**

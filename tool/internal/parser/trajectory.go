@@ -196,25 +196,8 @@ type QueueEntry struct {
 // PendingEntries reads the pending file at path through minispecsdom.Pending. A missing file
 // is no entries and no error: the slot legitimately reads a side that has none.
 func PendingEntries(path string) ([]QueueEntry, error) {
-	src, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var out []QueueEntry
-	for _, e := range minispecsdom.ParsePending(string(src)).Entries() {
-		out = append(out, QueueEntry{
-			ID:        e.ID,
-			Title:     e.Title,
-			SourceDoc: e.SourceDoc,
-			SourceKey: e.SourceKey,
-			Kind:      e.Kind,
-			Line:      e.Line(),
-		})
-	}
-	return out, nil
+	out, _, err := pendingEntriesUnread(path)
+	return out, err
 }
 
 // CRC: crc-Trajectory.md | R242, R251
@@ -440,18 +423,119 @@ func ActiveInProgress(path string) (bool, error) {
 // parseCurrent is ParseCurrent with the two refusals naming their repair. R250
 //
 // The reader says what it could not tell apart; the repair is this tool's to name, because the
-// shape it names is the skill's format. Matched on the reader's message for want of a sentinel
-// — raised with the dependency.
+// shape it names is the skill's format. Told apart by the reader's sentinels (`ErrNoActive`,
+// `ErrManyActive`), which arrived the day they were asked for.
 func parseCurrent(path, src string) (*minispecsdom.Current, error) {
 	cur, err := minispecsdom.ParseCurrent(src)
 	if err == nil {
 		return cur, nil
 	}
 	switch {
-	case strings.Contains(err.Error(), "no `## Active`"):
+	case errors.Is(err, minispecsdom.ErrNoActive):
 		return nil, fmt.Errorf("%s carries no `## Active` heading, so the active item cannot be told from the standing context; add the heading beneath the rule, holding `_No active item._`", path)
-	case strings.Contains(err.Error(), "more than one"):
+	case errors.Is(err, minispecsdom.ErrManyActive):
 		return nil, fmt.Errorf("%s carries more than one `## Active` heading, so the region to write is ambiguous; keep one", path)
 	}
 	return nil, fmt.Errorf("%s: %w", path, err)
+}
+
+// CRC: crc-Trajectory.md | R287, R292
+//
+// DoneEntry is one done-file entry as the dependency's Done reader reads it: the IDs in the
+// header's identifier slot — the only source of queue IDs — whether the header carried a
+// slot at all, and the part pointer from the header or the body.
+type DoneEntry struct {
+	Date    string `json:"date"`
+	IDs     []int  `json:"ids"`
+	HasSlot bool   `json:"has_slot"`
+	Title   string `json:"title"`
+	Commit  string `json:"commit"`
+	PartDoc string `json:"part_doc,omitempty"`
+	PartKey string `json:"part_key,omitempty"`
+	Line    int    `json:"line"`
+}
+
+// CRC: crc-Trajectory.md | R287
+// DoneEntries reads the done file at path through minispecsdom.Done, with the count of
+// entry-like lines the reader did not recognize. A missing file is no entries and no error.
+func DoneEntries(path string) ([]DoneEntry, []minispecsdom.Unread, error) {
+	src, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	d := minispecsdom.ParseDone(string(src))
+	var out []DoneEntry
+	for _, e := range d.Entries() {
+		out = append(out, DoneEntry{
+			Date: e.Date, IDs: e.IDs, HasSlot: e.HasSlot, Title: e.Title, Commit: e.Commit,
+			PartDoc: e.PartDoc, PartKey: e.PartKey, Line: e.Line(),
+		})
+	}
+	return out, d.Unread(), nil
+}
+
+// CRC: crc-Trajectory.md | R287, R297
+//
+// QueueScan is both queue files read through the dependency's readers — the entries and
+// what each reader could not recognize — for the checks that need more than IDs.
+// ScanTrajectory's regex ID scan stays beside it for `next-id`; see gap O19.
+type QueueScan struct {
+	Pending       []QueueEntry
+	Done          []DoneEntry
+	PendingUnread []minispecsdom.Unread
+	DoneUnread    []minispecsdom.Unread
+}
+
+// CRC: crc-Trajectory.md | Seq: seq-validate-trajectory.md#1.2.1 | R287
+// ScanQueue reads both queue files beneath repoRoot through the dependency.
+func ScanQueue(repoRoot string) (QueueScan, error) {
+	var q QueueScan
+	var err error
+	q.Pending, q.PendingUnread, err = pendingEntriesUnread(filepath.Join(repoRoot, "PENDING.md"))
+	if err != nil {
+		return q, err
+	}
+	q.Done, q.DoneUnread, err = DoneEntries(filepath.Join(repoRoot, "DONE.md"))
+	if err != nil {
+		return q, err
+	}
+	return q, nil
+}
+
+// pendingEntriesUnread is PendingEntries with the reader's unread lines beside it.
+func pendingEntriesUnread(path string) ([]QueueEntry, []minispecsdom.Unread, error) {
+	src, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	p := minispecsdom.ParsePending(string(src))
+	var out []QueueEntry
+	for _, e := range p.Entries() {
+		out = append(out, QueueEntry{
+			ID: e.ID, Title: e.Title, SourceDoc: e.SourceDoc, SourceKey: e.SourceKey,
+			Kind: e.Kind, Line: e.Line(),
+		})
+	}
+	return out, p.Unread(), nil
+}
+
+// CRC: crc-Trajectory.md | R296
+// CheckActive reports the current file's shape: exactly one `## Active`, with the repair
+// named. A file that is not there is not this finding — absence is answered elsewhere.
+func CheckActive(path string) error {
+	src, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	_, err = parseCurrent(path, string(src))
+	return err
 }

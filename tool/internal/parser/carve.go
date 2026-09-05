@@ -102,13 +102,13 @@ func (p Part) Title() string {
 	return strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(b.String()), "."))
 }
 
-// QueueID is the #N inside the first OPEN marker's attribution, 0 when there is none.
-// Scoped to the marker so a superseded bare-#N key is never read as a queue reference.
+// QueueID is the #N inside the first marker attribution that carries one — `OPEN (#N.)`,
+// `REVERTED (#N.)` or a `LANDED (…— `#N`.)` record — and 0 when none does. Scoped to the
+// markers so a superseded bare-#N key is never read as a queue reference; widened past
+// `OPEN` on 2026-09-05 because a landed part's queue ID lives in its record and nowhere
+// else, and the orphan check (R291) reads it from there. R287
 func (p Part) QueueID() int {
 	for _, m := range p.part.Markers() {
-		if !strings.EqualFold(rendered(m.Verb()), "OPEN") {
-			continue
-		}
 		if id, ok := m.QueueID(); ok {
 			return id
 		}
@@ -125,6 +125,20 @@ func (p Part) Depth() int { return p.part.Depth }
 // Deviations are the rules the line breaks, each with its target, as the reader reports
 // them. R219
 func (p Part) Deviations() []minispecsdom.Deviation { return p.part.Deviations() }
+
+// Struck reports whether the head's bold run is wrapped in `~~`, read from the line's own
+// nodes by the dependency. R288
+func (p Part) Struck() bool { return p.part.IsStruck() }
+
+// Verbs are the marker verbs on the line, upper-cased, in order. R288
+func (p Part) Verbs() []string {
+	var out []string
+	for _, m := range p.part.Markers() {
+		v, _ := m.Verb().Render()
+		out = append(out, strings.ToUpper(strings.TrimSpace(v)))
+	}
+	return out
+}
 
 // Conforms is the absence of deviations.
 func (p Part) Conforms() bool { return len(p.part.Deviations()) == 0 }
@@ -331,11 +345,24 @@ func editCarve(path string, edit func(*minispecsdom.Carve) error) error {
 
 // editFile is the one atomic write every adapter shares: read, hand the bytes to render, and
 // replace the file by temp-file-and-rename only when render returned nil. R220
-func editFile(path string, render func(src string) (string, error)) error {
+func editFile(path string, render func(src string) (string, error)) (err error) {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
+	// A write the reader cannot read back panics inside the dependency with a ReadBackError:
+	// a library invariant, not caller input, so it is not an error a caller could swallow. Here
+	// it becomes a refusal naming the file, and the file stays untouched because nothing has
+	// been written yet. Any other panic is still a panic. R220
+	defer func() {
+		if r := recover(); r != nil {
+			if rb, ok := r.(*minispecsdom.ReadBackError); ok {
+				err = fmt.Errorf("%s: %w — nothing was written", path, rb)
+				return
+			}
+			panic(r)
+		}
+	}()
 	out, err := render(string(src))
 	if err != nil {
 		return err

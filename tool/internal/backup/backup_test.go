@@ -250,7 +250,7 @@ func carveWithOpenPart(t *testing.T, root string) (path, body string) {
 }
 
 const entry16 = "# Pending\n\n## 16. **the backup slot**. Active.\n" +
-	"   Source: [carves/x.md](carves/x.md), part `#Item 5`.\n"
+	"   Source: [carves/x.md](carves/x.md), part `#5`.\n"
 
 // queuePart records the mutation a vend performs: the entry pointing at the part, and the
 // part's marker carrying the number — both in one Record, the pair a revert rolls back in
@@ -261,7 +261,7 @@ func queuePart(t *testing.T, s *Slot, root, carve string) {
 		if err := os.WriteFile(filepath.Join(root, "PENDING.md"), []byte(entry16), 0o644); err != nil {
 			return err
 		}
-		return parser.SetMarker(carve, "Item 5", "OPEN", "#16.")
+		return parser.SetMarker(carve, "5", "OPEN", "#16.")
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -299,10 +299,9 @@ func TestACarveIsWrittenNeverRestored(t *testing.T) {
 // asserting both states is the contradiction the marker rule exists to prevent, and a test that
 // only asks whether the new marker is present cannot see the survivor.
 //
-// Skips naming gap O16: the dependency's SetMarker treats only OPEN as a transient today, so the
-// REVERTED marker survives the replay. Skipped, not deleted, so the property stays asserted.
+// Skipped for half a day naming gap O16 — the dependency's SetMarker treated only OPEN as a
+// transient — and un-skipped the same day their fix landed (mini-spec-tool #30).
 func TestReplayReplacesTheRevertedMarker(t *testing.T) {
-	t.Skip("gap O16: the dependency's SetMarker does not replace a REVERTED transient; the property stays asserted here")
 	root := tree(t, map[string]string{"PENDING.md": "# Pending\n"})
 	carve, _ := carveWithOpenPart(t, root)
 	s := New(root)
@@ -388,7 +387,7 @@ func TestACompletedPartIsNotReopenedByTheNextMutation(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(root, "PENDING.md"), []byte("# Pending\n"), 0o644); err != nil {
 			return err
 		}
-		return parser.SetPartLanded(carve, "Item 5", "`abc`, 2026-09-04 — `#16`.")
+		return parser.SetPartLanded(carve, "5", "`abc`, 2026-09-04 — `#16`.")
 	}); err != nil {
 		t.Fatal(err)
 	}

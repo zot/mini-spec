@@ -124,7 +124,7 @@ func read(t *testing.T, root, rel string) string {
 // from the queue side, which is the side anyone checks first.
 func TestBothSidesOfTheLinkAreWritten(t *testing.T) {
 	root := fixture(t)
-	got, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec")
+	got, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestBothSidesOfTheLinkAreWritten(t *testing.T) {
 	if !strings.Contains(pending, "## 4. **a part to queue** (mini-spec).") {
 		t.Errorf("the queue entry is missing:\n%s", pending)
 	}
-	if !strings.Contains(pending, "part `#Item 7`") {
+	if !strings.Contains(pending, "part `#7`") {
 		t.Error("the entry carries no part pointer — the queue side of the link")
 	}
 	carve := read(t, root, "carves/x.md")
@@ -150,11 +150,11 @@ func TestTheMintReadsBothQueueFiles(t *testing.T) {
 	root := fixture(t)
 	// The highest ID lives in the *done* file, which is the case a pending-only mint gets
 	// wrong — and gets wrong plausibly, which is worse.
-	done := read(t, root, "DONE.md") + "\n- **2026-08-01 — #9: an older completion.** (`abc1234`) Part `carves/x.md#Item 1`.\n"
+	done := read(t, root, "DONE.md") + "\n- **2026-08-01 — #9: an older completion.** (`abc1234`) Part `carves/x.md#1`.\n"
 	if err := os.WriteFile(filepath.Join(root, "DONE.md"), []byte(done), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "")
+	got, err := addItem(root, "carves/x.md#7", "a part to queue", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func TestAnUnresolvablePartIsRefusedAndNothingIsWritten(t *testing.T) {
 		// A part records exactly **one** item. Re-queuing would leave the older pointer
 		// resolving to work it never described, and both entries would be individually
 		// well-formed — so nothing downstream could detect it.
-		{"already queued", "carves/x.md#Item 1", "already carries queue ID #3"},
+		{"already queued", "carves/x.md#1", "already carries queue ID #3"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := fixture(t)
@@ -194,14 +194,14 @@ func TestAnUnresolvablePartIsRefusedAndNothingIsWritten(t *testing.T) {
 // R244, R245 — the completion, all four surfaces.
 func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	got, err := Finish(root, 4, "abc1234", FinishOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Parts) != 1 || got.Parts[0].Key != "Item 7" {
+	if len(got.Parts) != 1 || got.Parts[0].Key != "7" {
 		t.Fatalf("completed parts = %+v, want the one the entry recorded", got.Parts)
 	}
 
@@ -219,7 +219,7 @@ func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 	if !strings.Contains(carve, "prose that must not move.") {
 		t.Error("the completion moved prose")
 	}
-	if d := read(t, root, "DONE.md"); !strings.Contains(d, "#4: a part to queue.") || !strings.Contains(d, "Part `carves/x.md#Item 7`.") {
+	if d := read(t, root, "DONE.md"); !strings.Contains(d, "#4: a part to queue.") || !strings.Contains(d, "Part `carves/x.md#7`.") {
 		t.Errorf("the done entry header is wrong:\n%s", d)
 	}
 	if p := read(t, root, "PENDING.md"); strings.Contains(p, "## 4.") {
@@ -255,7 +255,7 @@ func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 // R247 — the tool writes the header and never the body.
 func TestTheDoneEntryCarriesAHeaderAndNoBody(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
@@ -267,7 +267,7 @@ func TestTheDoneEntryCarriesAHeaderAndNoBody(t *testing.T) {
 		}
 		// Everything on the header line is a fact the tool was handed. A body would be a
 		// judgment about what a future reader needs, which is authoring.
-		for _, fact := range []string{"#4:", "a part to queue.", "`abc1234`", "Part `carves/x.md#Item 7`."} {
+		for _, fact := range []string{"#4:", "a part to queue.", "`abc1234`", "Part `carves/x.md#7`."} {
 			if !strings.Contains(l, fact) {
 				t.Errorf("header is missing %q:\n%s", fact, l)
 			}
@@ -318,7 +318,7 @@ func TestAParentPartIsNeverChecked(t *testing.T) {
 // fails, the queue must be untouched: the carve is the copy a future reader trusts.
 func TestASourceFailureLeavesTheQueueUntouched(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
 	before := read(t, root, "PENDING.md")
@@ -337,14 +337,16 @@ func TestASourceFailureLeavesTheQueueUntouched(t *testing.T) {
 	}
 }
 
+// Skipped for half a day naming gaps O14 and O15 — the dependency's Place-at-end landed after
+// trailing commentary and left a newline Remove did not take back — and un-skipped the same day
+// their fix landed (mini-spec-tool #29).
 // The two verbs are **inverses on the queue file**, which nothing asked for and which falls
 // out of the separator belonging to the entry rather than to its neighbour. Found by running
 // them back to back, 2026-08-18.
 func TestAddThenFinishLeavesTheQueueFileByteIdentical(t *testing.T) {
-	t.Skip("gap O15: the dependency's Place-at-end prepends a newline that Remove does not take back (and O14: it lands after trailing commentary); skipped, not deleted, so the property stays asserted")
 	root := fixture(t)
 	before := read(t, root, "PENDING.md")
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
@@ -359,7 +361,7 @@ func TestAddThenFinishLeavesTheQueueFileByteIdentical(t *testing.T) {
 // rather than a repair. These verbs are the slot's first production callers.
 func TestTheInvocationIsOneSlotTransaction(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
 	stamp := filepath.Join(root, ".minispec", "backup", "stamp")
@@ -391,7 +393,7 @@ func TestTheInvocationIsOneSlotTransaction(t *testing.T) {
 // error rather than as silence is this project's standing rule, applied to its own file.
 func TestACurrentFileWithNoActiveHeadingIsRefused(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "CURRENT.md"), []byte("# Current\n\n---\n\nno heading here.\n"), 0o644); err != nil {
@@ -415,7 +417,7 @@ func TestACurrentFileWithNoActiveHeadingIsRefused(t *testing.T) {
 // It happened to `carves/trajectory-tool.md` Item 6 in a tracked public file.
 func TestACompletedPartIsNotReopenedByTheNextMutation(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
@@ -432,7 +434,7 @@ func TestACompletedPartIsNotReopenedByTheNextMutation(t *testing.T) {
 	}
 	after := read(t, root, "carves/x.md")
 	for _, line := range strings.Split(after, "\n") {
-		if !strings.Contains(line, "Item 7") {
+		if !strings.Contains(line, "7") {
 			continue
 		}
 		if strings.Contains(line, "OPEN (not queued.)") {
@@ -465,7 +467,7 @@ func TestAHandRemovedEntryIsNotTreatedAsAnAbandonedAttempt(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A second mutation, so the backup now holds the first entry.
-	if _, err := addItem(root, "carves/x.md#Item 7", "another part", ""); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "another part", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -519,7 +521,7 @@ func placed(t *testing.T, root, from, title string, place parser.Place) (Created
 // exactly the objection `--next` was designed to dissolve.
 func TestNextMeansNextToBeWorked(t *testing.T) {
 	busy := fixture(t)
-	got, err := placed(t, busy, "carves/x.md#Item 7", "a part to queue", parser.Place{Kind: parser.PlaceNext})
+	got, err := placed(t, busy, "carves/x.md#7", "a part to queue", parser.Place{Kind: parser.PlaceNext})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,7 +531,7 @@ func TestNextMeansNextToBeWorked(t *testing.T) {
 
 	free := fixture(t)
 	idle(t, free)
-	got, err = placed(t, free, "carves/x.md#Item 7", "a part to queue", parser.Place{Kind: parser.PlaceNext})
+	got, err = placed(t, free, "carves/x.md#7", "a part to queue", parser.Place{Kind: parser.PlaceNext})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,7 +547,7 @@ func TestNextMeansNextToBeWorked(t *testing.T) {
 // the active item read as forbidden — a real thing to want, refused by omission.
 func TestNthOneRefusedWhileAStepIsInProgress(t *testing.T) {
 	root := fixture(t)
-	_, err := placed(t, root, "carves/x.md#Item 7", "a part to queue", parser.Place{Kind: parser.PlaceNth, N: 1})
+	_, err := placed(t, root, "carves/x.md#7", "a part to queue", parser.Place{Kind: parser.PlaceNth, N: 1})
 	if err == nil {
 		t.Fatal("--nth 1 was accepted while a step was in progress")
 	}
@@ -558,7 +560,7 @@ func TestNthOneRefusedWhileAStepIsInProgress(t *testing.T) {
 		t.Errorf("a refused placement wrote anyway:\n%s", before)
 	}
 	idle(t, root)
-	if _, err := placed(t, root, "carves/x.md#Item 7", "a part to queue", parser.Place{Kind: parser.PlaceNth, N: 1}); err != nil {
+	if _, err := placed(t, root, "carves/x.md#7", "a part to queue", parser.Place{Kind: parser.PlaceNth, N: 1}); err != nil {
 		t.Errorf("--nth 1 with nothing in progress: %v", err)
 	}
 }
@@ -567,7 +569,7 @@ func TestNthOneRefusedWhileAStepIsInProgress(t *testing.T) {
 // The body lands beneath the header the same invocation minted, in one write.
 func TestFinishPlacesTheBodyBeneathTheHeader(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	body := "  A first line, mentioning `a code span`.\n  A second line.\n"
@@ -602,7 +604,7 @@ func TestFinishPlacesTheBodyBeneathTheHeader(t *testing.T) {
 // With no body the verb behaves exactly as it did, and writes nothing extra.
 func TestFinishWithNoBodyWritesNoBody(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
@@ -627,7 +629,7 @@ func TestFinishWithNoBodyWritesNoBody(t *testing.T) {
 // The identity line comes from the queue entry; the context comes from the caller.
 func TestStartWritesTheActiveSection(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	// The fixture opens with an item already active, which is `finish`'s business, not this one's.
@@ -666,7 +668,7 @@ func TestStartWritesTheActiveSection(t *testing.T) {
 // Opening over an item discards it, in a file with no diff — so it is refused.
 func TestStartRefusesAnOccupiedActiveSection(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	before, err := os.ReadFile(filepath.Join(root, "CURRENT.md"))
@@ -693,7 +695,7 @@ func TestStartRefusesAnOccupiedActiveSection(t *testing.T) {
 // The slot carries the queue ID the tool owns joined to what the caller says was discharged.
 func TestTheIdentifierSlotCarriesWhatTheItemDischarged(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Finish(root, 4, "abc1234", FinishOpts{Discharged: "R268–R269"}); err != nil {
@@ -709,7 +711,7 @@ func TestTheIdentifierSlotCarriesWhatTheItemDischarged(t *testing.T) {
 // A colon ends the slot early, so one inside it is refused rather than written.
 func TestAColonInTheIdentifierSlotIsRefused(t *testing.T) {
 	root := fixture(t)
-	if _, err := addItem(root, "carves/x.md#Item 7", "a part to queue", "mini-spec"); err != nil {
+	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
 	before := read(t, root, "DONE.md")

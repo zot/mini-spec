@@ -76,11 +76,21 @@ assertion goes red. *The first injection written here could not ring:* writing t
 bytes before checking the reader's error left the file byte-identical anyway, because the
 reader does not mutate the document when it refuses — so "byte-identical on refusal" has two
 independent guards, and only the cleanup half is this adapter's to prove
-**Inject:** internal/parser/carve.go:editCarve
-**Pulled:** 2026-09-04 — rang: `temp files left behind: 4 entries in the directory`; restore byte-clean by copy.
+**Inject:** internal/parser/carve.go:editFile
+**Pulled:** 2026-09-05 — rang: `temp files left behind: 4 entries in the directory`; restored byte-identical. Re-pulled twice this day: after `#69` moved the temp-and-rename into `editFile`, shared with the trajectory adapters (Inject re-sited), and after `#70` added the read-back recovery around it. *Earlier —* 2026-09-04 — rang, same signature.
 The write-before-check injection was pulled first the same day and stayed green, recorded above
 **Refs:** crc-Carve.md — R220
 **Code:** internal/parser/carve_test.go
+
+## Test: a read-back panic becomes a refusal and the file is untouched
+**Purpose:** the dependency panics with a `ReadBackError` when a write does not read itself back; `editFile` recovers exactly that into a refusal naming the file, writes nothing, and lets any other panic through (R220)
+**Input:** `editFile` over a one-line file, with a render function that panics with a `ReadBackError`
+**Expected:** an error naming the file and `did not read back`; the file byte-identical; no temp file left
+**Refs:** crc-Carve.md, crc-Trajectory.md
+**Code:** internal/parser/carve_test.go
+**Fire alarm:** drop the `ReadBackError` branch from the deferred recover so every panic re-panics. Red is the test process dying on the panic rather than an assertion — `panic: &minispecsdom.ReadBackError{…}` — which is the crank handle the recovery exists to replace with a message a caller can read
+**Inject:** internal/parser/carve.go:editFile
+**Pulled:** 2026-09-05 — rang, the test binary panicked out of `TestAReadBackPanicBecomesARefusalAndTheFileIsUntouched` with the ReadBackError text; restored byte-identical
 
 ## Test: the command answers with no design root
 **Purpose:** validates R213 — this repository's queue sits above two design roots

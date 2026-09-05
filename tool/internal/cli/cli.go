@@ -132,6 +132,7 @@ Commands:
   query <subcommand>    Query design files
   update <subcommand>   Update design files
   validate              Run structural validations
+  validate trajectory   Check the queue files and carves against each other
   phase <phase-name>    Run phase-specific validation
   pending <subcommand>  Trajectory-item operations and the backup slot
 
@@ -763,7 +764,14 @@ func retireReminder(oldReq string, sources []string) string {
 	return b.String()
 }
 
-func (c *CLI) runValidate(_ []string) int {
+func (c *CLI) runValidate(args []string) int {
+	// CRC: crc-CLI.md | Seq: seq-validate-trajectory.md#1.1 | R285
+	// Repository-scoped, and dispatched before any design root is resolved: a repository
+	// may hold several design roots — this one holds tool/ and example/ — so the trajectory
+	// layer above them is a subcommand rather than a section.
+	if len(args) > 0 && args[0] == "trajectory" {
+		return c.runValidateTrajectory()
+	}
 	p, err := c.getProject()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -784,6 +792,30 @@ func (c *CLI) runValidate(_ []string) int {
 	}
 
 	if result.HasIssues() {
+		return 1
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-validate-trajectory.md#1.4 | R285, R299
+// runValidateTrajectory checks the queue files and carves against each other.
+func (c *CLI) runValidateTrajectory() int {
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	issues, err := validate.RunTrajectory(repoRoot)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(issues)
+	} else {
+		fmt.Print(issues.FormatText())
+	}
+	if issues.HasIssues() {
 		return 1
 	}
 	return 0

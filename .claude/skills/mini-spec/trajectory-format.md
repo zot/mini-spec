@@ -228,9 +228,12 @@ The fragment resolves *inside* the named document, so the key scheme is a per-do
 property and no project-wide convention is needed: `carves/x.md#7` is whatever `x.md` keys
 as `7`, and cannot mean a `#7` from somewhere else.
 
-**There is one key form: `Item N`.** The status block writes `**Item 9 — <title>**`, the
-elaboration below is keyed `**Item 9**`, subparts are `9.1`, `9.2`, and the fragment
-carries the bare number — `carves/x.md#9.1`.
+**There is one key form, and the key is the fragment.** The status block writes
+`**Item 9 — <title>**`, the elaboration below is keyed `**Item 9**`, subparts are `9.1`,
+`9.2`. The **key** — what a pointer's fragment carries, what a `Source:` line names, what a
+tool passes when it marks or lands a part — is the bare `9` or `9.1`; `Item` is the head's
+display word and no part of the key. So `carves/x.md#9`, never `carves/x.md#Item 9`
+(DECIDED, Bill, 2026-09-05).
 
 **Why this one, and not the queue's `#N`:** a part exists long before it is scheduled, and
 most parts are unqueued at any moment, so a key drawn from the queue is undefined exactly

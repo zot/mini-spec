@@ -44,7 +44,7 @@ func TestSubpartsCountAndTheStatusBlockBoundsTheCount(t *testing.T) {
 	for _, p := range c.Parts {
 		keys[p.Key()] = true
 	}
-	for _, want := range []string{"Item 3", "8.1", "8.2"} {
+	for _, want := range []string{"3", "8.1", "8.2"} {
 		if !keys[want] {
 			t.Errorf("part %q missing from %v", want, keys)
 		}
@@ -59,7 +59,7 @@ func TestAStatelessLineCarriesItsLineAndReason(t *testing.T) {
 		t.Fatalf("want 1 stateless line, got %d", len(c.Stateless))
 	}
 	s := c.Stateless[0]
-	if s.Line != 6 || s.Reason != "no checkbox" || !strings.Contains(s.Text, "Item 8") {
+	if s.Line != 6 || s.Reason != "no checkbox" || !strings.Contains(s.Text, "8") {
 		t.Errorf("stateless = L%d %q %q; want L6, no checkbox, the Item 8 line", s.Line, s.Reason, s.Text)
 	}
 }
@@ -121,7 +121,7 @@ func TestNoCarveDirectoryHasNoAnswer(t *testing.T) {
 func TestAMarkerWriteIsAtomicAndARefusalLeavesTheFileByteIdentical(t *testing.T) {
 	root := t.TempDir()
 	path := writeCarve(t, root, "carves/x.md", fixture)
-	if err := SetMarker(path, "Item 3", "OPEN", "#40."); err != nil {
+	if err := SetMarker(path, "3", "OPEN", "#40."); err != nil {
 		t.Fatalf("SetMarker: %v", err)
 	}
 	after, _ := os.ReadFile(path)
@@ -143,7 +143,7 @@ func TestAMarkerWriteIsAtomicAndARefusalLeavesTheFileByteIdentical(t *testing.T)
 	}{
 		{"OPEN over a landed part", minispecsdom.ErrReopen, func() error { return SetMarker(path, "8.1", "OPEN", "#41.") }},
 		{"Land over a landed part", minispecsdom.ErrLanded, func() error { return SetPartLanded(path, "8.1", "`abc`, 2026-09-04 — `#41`.") }},
-		{"a key no part carries", minispecsdom.ErrNoPart, func() error { return SetMarker(path, "Item 99", "OPEN", "#41.") }},
+		{"a key no part carries", minispecsdom.ErrNoPart, func() error { return SetMarker(path, "99", "OPEN", "#41.") }},
 	} {
 		err := tc.do()
 		if !errors.Is(err, tc.err) {
@@ -177,5 +177,32 @@ func TestThisRepositorysCarvesStayConformant(t *testing.T) {
 				t.Errorf("%s L%d (stateless): %v", c.Path, s.Line, s.Deviations)
 			}
 		}
+	}
+}
+
+// R220. A write the dependency cannot read back panics with a ReadBackError; editFile turns
+// that into a refusal naming the file and leaves the file untouched. Any other panic is
+// still a panic — the recovery is for the one invariant the dependency chose to panic on.
+func TestAReadBackPanicBecomesARefusalAndTheFileIsUntouched(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "x.md")
+	if err := os.WriteFile(path, []byte("before\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := editFile(path, func(string) (string, error) {
+		panic(&minispecsdom.ReadBackError{Reader: "Carve", Write: "SetMarker", Key: "3", Want: "OPEN", Got: "nothing"})
+	})
+	if err == nil {
+		t.Fatal("a read-back panic was not turned into a refusal")
+	}
+	if !strings.Contains(err.Error(), "x.md") || !strings.Contains(err.Error(), "did not read back") {
+		t.Errorf("the refusal does not name the file and the cause: %v", err)
+	}
+	if got, _ := os.ReadFile(path); string(got) != "before\n" {
+		t.Errorf("the file was written despite the refusal: %q", got)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Errorf("temp files left behind: %d entries", len(entries))
 	}
 }

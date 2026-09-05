@@ -437,5 +437,8 @@ func splitPointer(from string) (parser.PartRef, error) {
 	if !ok || doc == "" || key == "" {
 		return parser.PartRef{}, fmt.Errorf("part pointer %q is not <doc>#<part>", from)
 	}
-	return parser.PartRef{Doc: doc, Key: key, Kind: minispecsdom.SourcePart}, nil
+	// R243. The key is the fragment — `4`, `2.2` — and `Item ` is the head's display word
+	// (Bill, 2026-09-05, in the dependency). Flexible on input, rigid on output: a caller who
+	// types the head's word is understood, and the entry is written in the one form.
+	return parser.PartRef{Doc: doc, Key: strings.TrimPrefix(key, "Item "), Kind: minispecsdom.SourcePart}, nil
 }

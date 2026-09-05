@@ -14,8 +14,8 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 
 - [x] ~~**Item 1 — the module dependency and the carve reader.**~~ **LANDED (`2a050a2`, 2026-09-04 — `#67`.)**
 - [x] ~~**Item 2 — the backup slot.**~~ **LANDED (`7dd50a0`, 2026-09-04 — `#68`.)** Needs Item 1.
-- [ ] **Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.** **OPEN (#69.)** Needs Items 1 and 2.
-- [ ] **Item 4 — `validate trajectory`.** **OPEN (not queued.)** Needs Items 1 and 3.
+- [x] ~~**Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.**~~ **LANDED (`eaf9604`, 2026-09-05 — `#69`.)** Needs Items 1 and 2.
+- [ ] **Item 4 — `validate trajectory`.** **OPEN (#70.)** Needs Items 1 and 3.
 - [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 6 — the alarm site as a parsed extent, not a git pattern.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
@@ -46,6 +46,15 @@ would leave `validate` reporting a 164-wide numbering gap for good.
 
 **DECIDED (Bill, 2026-09-04): one squashed commit per item, its steps visible in the body, and
 no commit hash in a `Pulled` line** — `SKILL.md` carries the rule; gap `O12` banks the tool's half.
+
+**DECIDED (Bill, 2026-09-05): the dependency's markdown table gets bracket groups for runs of
+five backticks down to one**, longest first. CommonMark allows any run length and a native
+run-of-the-same-character opener would express it in one rule, but five suffices: measured across
+every markdown file ark indexes (3,171 files), the longest run is four, twenty-one times. Sent as
+`requests/backtick-run-groups.md`, correcting `double-backtick-span-absorbs`: the mechanism is
+parity inversion — a two-backtick opener read as an empty one-backtick span — not a span running
+to end of file.
+@ark-request-sent: requests/backtick-run-groups.md
 
 **Inherited from mini-spec-tool (Bill, 2026-09-03): early comparisons, then wean, then one
 cut.** Their readers' acceptance is their own tests over committed fixtures; this side's
@@ -88,3 +97,6 @@ answer to their one request; Item 6 above closes it.
 `requests/pending-reader-defects.md` (2026-09-05, open) carries seven things Item 3's port found
 the readers still owe — five defects, a sentinel request, and the parse-check at the end of `Mutate`.
 @ark-request-sent: requests/pending-reader-defects.md
+`requests/double-backtick-span-absorbs.md` (2026-09-05, open) is Item 4's finding: a two-backtick span
+absorbs the rest of a document, silently — 41 of this repository's 58 done entries (`O20`).
+@ark-request-sent: requests/double-backtick-span-absorbs.md

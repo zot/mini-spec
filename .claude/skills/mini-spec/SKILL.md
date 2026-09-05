@@ -1170,6 +1170,7 @@ agent rather than left to the tier.
 - [ ] Root spec index: every per-feature spec is mapped under a system in the root index (created if absent); `~/.claude/bin/minispec query unindexed-specs` returns empty
 - [ ] Phase validation: `~/.claude/bin/minispec phase <phase>` passes after each phase
 - [ ] Full validation: `~/.claude/bin/minispec validate` passes
+- [ ] Trajectory validation: `~/.claude/bin/minispec validate trajectory` passes — repository-scoped, so it runs once per repository and never per design root; `make validate` runs both
 
 ## Minispec Tool
 

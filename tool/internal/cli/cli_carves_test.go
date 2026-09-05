@@ -43,7 +43,7 @@ func TestTheRenderedLineAndTheListingRule(t *testing.T) {
 	if !strings.Contains(plain.String(), "(unkeyed)") || strings.Contains(plain.String(), "Item 1 ") || strings.Contains(plain.String(), "(stateless)") {
 		t.Errorf("without --open, want only the non-conforming row:\n%s", plain.String())
 	}
-	if !strings.Contains(open.String(), "Item 1    #7") || !strings.Contains(open.String(), "(stateless) L8") {
+	if !strings.Contains(open.String(), "1         #7") || !strings.Contains(open.String(), "(stateless) L8") {
 		t.Errorf("with --open, want the open part and the stateless row:\n%s", open.String())
 	}
 	want := "1 carve: 2 open, 1 landed, 1 stateless, 1 non-conforming; 0 documents with no status block"

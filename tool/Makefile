@@ -36,6 +36,7 @@ cursor-check:
 # Run minispec validate on this project
 validate: build cursor-check
 	./$(BUILD_DIR)/$(BINARY) validate
+	./$(BUILD_DIR)/$(BINARY) validate trajectory
 
 # Format code
 fmt:

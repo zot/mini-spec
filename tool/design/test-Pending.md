@@ -13,9 +13,9 @@ only when it is a transient* are `minispecsdom.Carve.Land`'s and the marker rule
 R220), tested where they live. The adapter's own guarantee — atomic write, byte-identical on
 refusal — is in `test-Carve.md`.
 
-**One case skips, and says why.** The add-then-finish round trip is not byte-identical on the
-dependency's `Place`/`Remove` pair (gaps `O14`, `O15`); the test skips naming them so the
-property stays asserted and the skip shows in every verbose run.
+**One case skipped for half a day, and says so.** The add-then-finish round trip was not
+byte-identical on the dependency's `Place`/`Remove` pair (gaps `O14`, `O15`); the test skipped
+naming them, and was un-skipped the same afternoon when their fix landed (mini-spec-tool #29).
 
 **Pulled on this tree 2026-09-05, all thirty, with a probe past the list.** Twenty-eight rang
 first time; one (the slot transaction) needed its test strengthened with a revert witness and

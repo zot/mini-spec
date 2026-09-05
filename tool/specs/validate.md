@@ -138,6 +138,135 @@ normally read zero, and a non-zero reading is a specific worklist.
 repository cannot answer the question, and a check that could not look must not
 return a clean result.
 
+## minispec validate trajectory
+
+The consistency of the trajectory layer — the queue files at the repository root and the
+carves that point at them. Read-only, and **a separate subcommand rather than part of bare
+`validate`.**
+
+**Why separate, and it is not a preference.** `validate` is *design-scoped*: it resolves a
+design root and checks `design/` against `specs/` and the code. The trajectory layer is
+*repository-scoped* — one repository holds one queue and may hold several design roots, as
+this project does with `tool/` and `example/`. Folding a repository-scoped check into a
+design-scoped command would run it once per design root and report the same drift twice,
+and it is the project's own two-roots theme violated at the seam that theme was written
+about. So this resolves the repository root and never a project, like `query next-id item`
+and `query carves` before it. `make validate` runs both; the gate is the Makefile's job,
+not a scoping compromise.
+
+**A project running no trajectory layer passes.** No queue files and no carve directory is
+not a failure — there is nothing that could be inconsistent. It says so and exits 0, which
+is a different report from *could not check* and must not be confused with it.
+
+### Referential integrity
+
+Both directions, because each catches what the other cannot.
+
+- **Carve → queue.** Every `#N` a carve's status block cites resolves to an entry in the
+  pending file or the done file. A citation to an item that never existed, or to one whose
+  ID was reused, is a pointer into nothing.
+- **Queue → carve.** Every queue entry whose `Source:` names a carve appears in that
+  carve's status block under the key it claims. An item can otherwise complete against a
+  part the carve never recorded, which is how a carve comes to under-report its own work.
+
+**Ingest by position, never by pattern.** What the tool reads as a citation comes from a
+fixed position — a part line inside the status block, and the marker on it, as the
+dependency's carve reader hands it over — and never from a pattern swept over prose. This is stated because the alternative was tried and
+failed: an extractor sweeping `**VERB (…)**` across a whole status block read a prose
+sentence quoting another project's shape, inside backticks, as a live citation and reported
+a dangling `#121` in a repository that never had one. That was the fifth ad-hoc instrument
+in this layer's history to return a confident wrong answer, and the first written by
+someone who had read the record of the other four.
+
+### Ledger and status checks
+
+- **An item ID held by *both* the pending and the done file.** That is a live item and a
+  completed one sharing a number, so every pointer to it is ambiguous.
+
+  **Repetition *within* the done file is not a collision, and checking for it was wrong.**
+  An item that lands in stages is legitimately recorded across several entries — measured
+  2026-08-16 in ark, `#41` appears in five (`Pass 1`, `2a`, `2b`, `2c`, `CLOSED`) and `#65`
+  and `#98` in two each — and from the number alone a staged record is indistinguishable
+  from a reuse. The first draft of this check reported all three as reused IDs, which is a
+  check firing on correct work: the shape that gets muted and then reports nothing at all.
+  Only the cross-file case is decidable, and ark has none.
+- **Orphans** — a carve part marked landed against a queue ID with no done entry, and a
+  done entry naming a part that no carve records.
+- **A done entry whose header carries no identifier slot** is reported as *unmigrated*
+  rather than skipped. The slot is read between the date's em dash and the title's colon;
+  a header with no colon yields nothing, and nothing is also the correct answer for an
+  entry that legitimately discharged no ID, so the two are indistinguishable and the skip
+  is silent today. Measured 2026-08-16: 2 of ark's 54 entries, hiding three queue IDs.
+- **Item numbers that appear in no readable entry.** Every number from 1 to the maximum
+  assigned should be accounted for, since an ID is assigned at creation. A deliberately
+  abandoned ID is the expected exception and the format says so — but *expected* is a claim
+  worth testing rather than assuming. Measured 2026-08-16: this project has none; ark has
+  **17**, and **16 of them are mentioned in its queue files** — `#46` nineteen times, `#35`
+  ten — so they are losses rather than abandonments.
+
+- **Entry-like lines the reader could not recognize**, reported as coverage rather than as
+  a defect. This is the honest half, and the gap list above is its symptom. A shape-based
+  check is blind by construction to a line outside the shape: "does this entry carry an
+  identifier slot?" cannot be answered for a line never recognized as an entry, so the
+  check reports clean over everything it never saw. Measured 2026-08-16 in ark:
+  **139 top-level entry lines in the done file, 54 recognized** — the other 85 put the date
+  outside the bold, an older shape — so `query next-id item` reports what it read from 39%
+  of the ledger with nothing saying so.
+
+  When both fire, the gap report names the unread count, because it very likely explains
+  them. A gap in a fully-readable ledger is a different and more interesting finding.
+
+- **Checkbox agreement.** A status line states its state three ways — checkbox,
+  strikethrough, marker — for three readers, and the checkbox is authoritative where they
+  disagree. Measured 2026-08-16 the corpus is clean: no line among nine live carves
+  disagrees with itself. That makes this a **sentry** rather than a repair — the corpus was
+  normalised by hand, and nothing keeps it so.
+
+- **A status-block line the reader could not read as a part and lists as deviating** is an
+  issue, named with its file, line and the reader's reason. A checkbox-less line with no
+  deviation — a `SPLIT` or `MOVED` parent — is the format's own shape and is not one. A carve that loses a part line loses it from
+  `query carves` and from every check above at once, all of them then agreeing on a smaller
+  number, so it cannot be a note. *On this branch the finding is the dependency's own
+  `Stateless()` list*; the August tree also asked a **second, independent** flat-scan question
+  of every status block, and that cross-check is not carried yet — see gap `O18`, whose home is
+  queue item `#55`.
+
+- **The two readers of the queue files must agree.** `next-id item`'s line scan and the
+  dependency's document readers read the same two files; every item ID one saw and the other
+  did not is a finding, listed first, because every finding below it reads through the
+  document reader alone. *Found the day the check was ported, on this repository:* the line
+  scan read 58 IDs from the done file, the document reader returned 17 entries and reported
+  nothing unread — one unclosed backtick in an entry body absorbed the remaining 41 entries
+  into a single text node — and four landed parts were reported as orphans. A second reader
+  is the only thing that can see what the first one swallowed.
+
+- **`CURRENT.md` carries exactly one `## Active`**, the region `pending finish` clears. The
+  write path refuses both the missing heading and a duplicated one, but only when someone runs
+  the verb; measured 2026-08-19 on the August tree, a corrupted file sat green until the next
+  completion met it. The trajectory files are gitignored, so git cannot diff them, and the
+  backup slot holds one level of undo which the next operation spends — a check running
+  between operations is the only thing standing where a diff would normally stand. Reported
+  before the reference-level findings, because a file whose own shape is wrong makes every
+  statement about the references inside it a claim about a document nobody can trust. A
+  missing current file is not this finding; absence is already answered.
+
+- **Output.** Markdown to stdout, the global `--json` flag honoured with one key convention
+  (snake_case), exit 0 when consistent and 1 when issues were found. Coverage notes — unread
+  entries, unreachable citations — print whether or not anything else fired.
+
+### Conformance is named, not complained about
+
+Where a document predates a decided format, the report says which target it should migrate
+to rather than that it is wrong. A carve keyed on the superseded bare `#N` or `Part X` is
+not ambiguous, it is **unmigrated**, and an agent given a target can act where one given a
+complaint cannot.
+
+This has a measured consequence worth stating: ark's carves yield only 3 marker citations,
+not because they are clean but because they put queue IDs in *key* position. Most of that
+project's references are unreachable to the integrity check until it migrates — which the
+report says, rather than reporting a clean result over references it could not see.
+
+
 ## Output
 
 Show what was found so the AI can verify assumptions and correct mismatches:

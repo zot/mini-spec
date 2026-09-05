@@ -73,7 +73,7 @@ func TestStatusSlotIsRequired(t *testing.T) {
 	// guard removed the verb still exits 1, because it goes on to fail on a repository that
 	// does not exist. The refusal has to be read, not counted.
 	said := capturingStderr(t, func() {
-		code = c.runAddItem(t.TempDir(), []string{"--from", "carves/x.md#Item 7", "a title"})
+		code = c.runAddItem(t.TempDir(), []string{"--from", "carves/x.md#7", "a title"})
 	})
 	if code == 0 {
 		t.Error("add-item accepted a missing --status and reported success")
@@ -200,7 +200,7 @@ func TestFinishWiresTheResolvedBodyThrough(t *testing.T) {
 		}
 	}
 	write("PENDING.md", "# Pending\n\n---\n\n## 4. **a part to queue** (mini-spec). Status.\n"+
-		"   Source: [carves/x.md](carves/x.md), part `#Item 7`.\n")
+		"   Source: [carves/x.md](carves/x.md), part `#7`.\n")
 	write("DONE.md", "# Done\n\n---\n")
 	write("CURRENT.md", "# Current\n\n## Active\n\n`#4` — a part to queue.\n")
 	write("carves/x.md", "# Carve: x\n\n## Status\n\n- [ ] **Item 7 — a part to queue.** **OPEN (#4.)**\n")
