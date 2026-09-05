@@ -1061,7 +1061,7 @@ over the files.** Measured on this section's own first run: a population given a
 **seven were inside a fenced *sample* of a status block, in a document about status
 blocks**. The project's own reader is fence-blind by construction and excludes that file
 correctly; a line-oriented predicate is not, and it then ran to end of file because the
-document had no later heading to stop at. `minispec query carves` lists the real set (that verb is on `old-sdom`, not yet reclaimed here).
+document had no later heading to stop at. `minispec query carves` lists the real set.
 *The delegate counted exactly what it was given and was right to* — which is the design
 working rather than failing: a scope error surfaces as a wrong number you can see, instead
 of as a quiet correction you cannot.
@@ -1145,6 +1145,8 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 ~/.claude/bin/minispec query alarms          # Every recorded fire alarm with its state
 ~/.claude/bin/minispec query alarms --unverified   # Only the ones that carry a decision; the count still covers all
 ~/.claude/bin/minispec query alarms --unverified --brief  # One spawn prompt per alarm, for a delegated re-pull
+~/.claude/bin/minispec query carves          # Open, landed and stateless parts per carve, from the status block only
+~/.claude/bin/minispec query carves --open   # …and the open parts and stateless lines themselves
 ~/.claude/bin/minispec query next-id req     # Next free Rn (counts retired ones too)
 ~/.claude/bin/minispec query next-id gap     # Next free number for every gap type
 ~/.claude/bin/minispec query next-id item    # Next free queue ID (pending + done files)

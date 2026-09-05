@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/zot/minispec/internal/query"
 	"github.com/zot/minispec/internal/update"
 	"github.com/zot/minispec/internal/validate"
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 // Version is set at build time via -ldflags
@@ -142,6 +144,7 @@ Query subcommands:
   migrations            List in-flight migration specs
   unindexed-specs       List specs not referenced in the root index (specs/index.md)
   alarms [--unverified] [--brief]  Fire alarms with their freshness state; --unverified lists only what carries a decision (the count still covers every alarm); --brief prints the spawn prompt for a delegated re-pull
+  carves [--open]       Open and landed parts per carve, from the status block only; --open lists the open parts and stateless lines
   next-id <class>       Next free ID for item|gap|req, with the files it counted
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
@@ -282,6 +285,12 @@ func (c *CLI) runQuery(args []string) int {
 	// running it, not by review.
 	if len(args) > 1 && args[0] == "next-id" && args[1] == "item" {
 		return c.emitNextID(query.NextItemID())
+	}
+	// CRC: crc-CLI.md | Seq: seq-carve-status.md#1 | R213
+	// Carves are repository-scoped too, and this repository's two design roots sit below
+	// the queue and the carves alike.
+	if args[0] == "carves" {
+		return c.queryCarves(args[1:])
 	}
 
 	p, err := c.getProject()
@@ -1061,4 +1070,195 @@ func gapIDList(res *query.NextIDResult) []string {
 		out = append(out, res.ByType[t])
 	}
 	return out
+}
+
+// CRC: crc-CLI.md | Seq: seq-carve-status.md#1 | R207, R213, R214, R215
+// queryCarves is the cross-document census over carves/ and .carves/ at the repository root.
+func (c *CLI) queryCarves(args []string) int {
+	fs := flag.NewFlagSet("carves", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	open := fs.Bool("open", false, "list each carve's open parts and stateless lines")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	if len(rest) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: unexpected argument %q; usage: minispec query carves [--open]\n", rest[0])
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	scan, err := parser.ScanCarves(repoRoot)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(carveReport(&scan, *open))
+	} else {
+		printCarves(os.Stdout, &scan, *open)
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-carve-status.md#1.4 | R207, R211, R212, R216, R217, R218
+// printCarves renders one line per carve, the listed rows beneath it, and the census.
+func printCarves(w io.Writer, scan *parser.CarveScan, open bool) {
+	width := 0
+	for _, cv := range scan.Carves {
+		width = max(width, len(cv.Path))
+	}
+	for _, cv := range scan.Carves {
+		// R211 — a document with no status block prints that rather than counts, and prints
+		// at all rather than being dropped.
+		if !cv.HasStatus {
+			fmt.Fprintf(w, "%-*s  no status block\n", width, cv.Path)
+			continue
+		}
+		fmt.Fprintf(w, "%-*s  %3d open  %3d landed", width, cv.Path, cv.Open(), cv.Landed())
+		if n := cv.NonConforming(); n > 0 {
+			fmt.Fprintf(w, "  %d non-conforming", n)
+		}
+		if n := len(cv.Stateless); n > 0 {
+			fmt.Fprintf(w, "  %d stateless", n) // R217 — the word names the line
+		}
+		fmt.Fprintln(w)
+		for _, p := range cv.Parts {
+			if !listed(p, open) {
+				continue
+			}
+			fmt.Fprintf(w, "  %-9s %-11s %s\n", partKeyLabel(p), queueLabel(p), p.Title())
+			printDeviations(w, p.Deviations())
+		}
+		// R216 — a clean stateless line lists under --open; one carrying a deviation lists
+		// always, since a defect behind a flag is hidden exactly when nobody looks again.
+		for _, d := range cv.Stateless {
+			if !listedStateless(d, open) {
+				continue
+			}
+			fmt.Fprintf(w, "  %-11s L%-8d %s: %s\n", "(stateless)", d.Line, d.Reason, ellipsis(d.Text, 58))
+			printDeviations(w, d.Deviations)
+		}
+	}
+	fmt.Fprintln(w, carveCensus(scan))
+}
+
+// listed decides whether a part appears under its carve: any deviation lists it, and --open
+// lists the open ones. One rule rather than two, so a non-conforming open part appears once. R212
+func listed(p parser.Part, open bool) bool {
+	return !p.Conforms() || (open && p.State() == parser.PartOpen)
+}
+
+// listedStateless is the same rule for a status-block line with no checkbox, so the text and
+// JSON forms cannot drift apart on which lines they show. R216
+func listedStateless(s parser.Stateless, open bool) bool {
+	return len(s.Deviations) > 0 || open
+}
+
+func printDeviations(w io.Writer, devs []minispecsdom.Deviation) {
+	for _, d := range devs {
+		fmt.Fprintf(w, "      %s: %s\n", d.Rule, d.Target)
+	}
+}
+
+func partKeyLabel(p parser.Part) string {
+	if !p.Keyed() {
+		return "(unkeyed)"
+	}
+	return p.Key()
+}
+
+func queueLabel(p parser.Part) string {
+	if id := p.QueueID(); id != 0 {
+		return fmt.Sprintf("#%d", id)
+	}
+	return "not queued"
+}
+
+func ellipsis(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
+}
+
+// carveCensus states every count, zeros included — a zero is evidence the check ran. R218
+func carveCensus(scan *parser.CarveScan) string {
+	return fmt.Sprintf("%s: %d open, %d landed, %d stateless, %d non-conforming; %s with no status block",
+		countLabel(scan.WithStatus(), "carve"), scan.Open(), scan.Landed(), scan.Stateless(),
+		scan.NonConforming(), countLabel(scan.NoStatus(), "document"))
+}
+
+func countLabel(n int, noun string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, noun)
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
+}
+
+// carveJSON resolves the counts, which the markdown form computes, into fields. R215
+type carveJSON struct {
+	Path           string             `json:"path"`
+	HasStatus      bool               `json:"has_status"`
+	Open           int                `json:"open"`
+	Landed         int                `json:"landed"`
+	Unkeyed        int                `json:"unkeyed"`
+	NonConforming  int                `json:"non_conforming"`
+	Stateless      int                `json:"stateless"`
+	StatelessLines []parser.Stateless `json:"stateless_lines,omitempty"`
+	Parts          []parser.Part      `json:"parts,omitempty"`
+}
+
+type carveReportJSON struct {
+	Dirs   []parser.CarveDir `json:"dirs"`
+	Carves []carveJSON       `json:"carves"`
+	Census struct {
+		Carves        int `json:"carves"`
+		Open          int `json:"open"`
+		Landed        int `json:"landed"`
+		Unkeyed       int `json:"unkeyed"`
+		NonConforming int `json:"non_conforming"`
+		Stateless     int `json:"stateless"`
+		NoStatus      int `json:"no_status"`
+	} `json:"census"`
+}
+
+func carveReport(scan *parser.CarveScan, open bool) carveReportJSON {
+	rep := carveReportJSON{Dirs: scan.Dirs}
+	for _, cv := range scan.Carves {
+		entry := carveJSON{
+			Path:          cv.Path,
+			HasStatus:     cv.HasStatus,
+			Open:          cv.Open(),
+			Landed:        cv.Landed(),
+			Unkeyed:       cv.Unkeyed(),
+			NonConforming: cv.NonConforming(),
+			Stateless:     len(cv.Stateless),
+		}
+		for _, d := range cv.Stateless {
+			if listedStateless(d, open) {
+				entry.StatelessLines = append(entry.StatelessLines, d)
+			}
+		}
+		for _, p := range cv.Parts {
+			if listed(p, open) {
+				entry.Parts = append(entry.Parts, p)
+			}
+		}
+		rep.Carves = append(rep.Carves, entry)
+	}
+	rep.Census.Carves = scan.WithStatus()
+	rep.Census.Open = scan.Open()
+	rep.Census.Landed = scan.Landed()
+	rep.Census.Unkeyed = scan.Unkeyed()
+	rep.Census.NonConforming = scan.NonConforming()
+	rep.Census.Stateless = scan.Stateless()
+	rep.Census.NoStatus = scan.NoStatus()
+	return rep
 }

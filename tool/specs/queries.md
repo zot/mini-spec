@@ -274,3 +274,71 @@ files, gaps for `design.md` and requirements for `requirements.md`, so naming it
 be wrong for two classes out of three.
 
 Output is markdown on stdout; `--json` gives the machine-readable form.
+
+## minispec query carves
+
+The cross-document status view over every live carve: one line each, with how many of its
+parts are open and how many have landed, and — with `--open` — the open parts themselves.
+It replaces `grep -rn '^- \[ \]' carves/*.md`, the machine view the trajectory format
+documents and the instrument this project used to count its own work.
+
+**The reader is `github.com/zot/simple-dom`'s `minispecsdom.Carve`, and this tool adds only
+what a file system and a terminal need.** What a part line is, how it is keyed, which
+interiors a checkbox may carry, what an `OPEN` attribution must read — those rules are the
+reader's, stated in its `part-line.md` and `carve-schema.md` specs, and every deviation it
+reports names the rule and the shape the line must take. This tool never re-derives a rule;
+it surfaces the reader's `Deviations()` and refuses on them where it writes.
+
+**Carves are found by location, not by name.** Every `*.md` directly in `<repo root>/carves/`
+and `<repo root>/.carves/` is read; `carves/done/` holds finished carves and is not read, since
+the question this answers is what is still open. The siting is `trajectory-format.md`'s.
+**When neither directory exists the query reports that it cannot answer** — an empty census
+over no directory is a confident wrong one.
+
+**Counts come from the status block and nowhere else.** A carve's body carries other
+checkbox lists — open questions, breakdowns inside an elaboration — that track different
+things. Measured 2026-08-16: `carves/trajectory-tool.md` held 16 checkbox lines inside its
+status block and 9 outside, all answered open questions; a whole-document count was right
+that day by luck. The reader bounds the block on heading *nodes*, so a status block or a part
+line inside a fence is invisible by construction — a document *about* the format quotes one,
+and a line-oriented scan counted it (ark's `carves/README.md`: 14 open reported where 13
+existed).
+
+**Subparts count, and indentation is not exclusion.** They nest one level under their parent
+and the documented grep's `^- \[ \]` cannot see them at all; measured 2026-08-16 here, the
+grep reported 9 open where 12 existed and the three it missed were all subparts.
+
+**Open is `[ ]` and landed is `[x]`; a status-block line with no checkbox is `stateless`.** No
+checkbox *means* something — a `SPLIT` parent, a `MOVED` part, a standing constraint — so the
+line is counted and named, never dropped and never given a state the document declined to
+state. It is reported as **existence and a reason**, with its line number, and is **listed
+under `--open` rather than unconditionally**: a stateless line is legitimate, and printing
+every one on every routine census is a warning about healthy documents. A stateless line that
+carries a format deviation takes the other rule and lists always. **The word is `stateless`**
+— it names the line, never the reader's action; the column beside it holds part states, and
+`declined` in that column once reported two split parents as refused.
+
+**Every non-conformance is listed by every read path, whatever the line's key or state, with
+the shape it must take; and refused by every write path.** A count says a document needs
+migrating; only the line says which one, and only the target says what to do. Never behind
+`--open`: a defect behind a flag is hidden exactly when the part is landed, the case nobody
+revisits. The checkbox still counts on a non-conforming line — the state is legible where the
+address is not, and dropping the line would understate the open count to hide a different
+defect.
+
+**A document in a carve directory with no status block is reported as such, never dropped**,
+because the tool cannot tell a carve missing its block from a file that was never a carve,
+and those want opposite repairs.
+
+**The census states every count, zeros included.** A zero is evidence the check ran.
+
+**The query resolves at the repository root and needs no design root** — this repository has
+two design roots and the queue above both. Markdown to stdout; `--json` honoured wherever it
+appears among the arguments.
+
+**The write adapters live beside the reader.** `SetMarker(path, key, verb, attribution)` and
+`SetPartLanded(path, key, attribution)` read the file, apply the reader's `SetMarker` or
+`Land`, and write the rendered bytes by temp-file-and-rename. The reader refuses over a line
+carrying deviations, over an `OPEN` written onto a checked part, and over a landing of a
+landed part; the adapter passes those refusals through unchanged and **leaves the file
+byte-identical on any refusal**. A key no part carries is an error, never a silent no-op.

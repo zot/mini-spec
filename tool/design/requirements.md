@@ -294,3 +294,21 @@
 - **R196:** `next-id` writes markdown to stdout and honors the global `--json` flag
 - **R197:** `next-id` reports which files it read and how many identifiers each contributed. The number alone is uncheckable: a regex that matches nothing and a genuinely empty queue both answer 1, and the counts are what distinguish a broken parser from a correct answer
 - **R198:** `next-id item` answers in a repository with **no design root at all**. The queue is repository-scoped, so requiring a project would make the command unusable exactly where it is meant to run — this repository is the proving case, with design roots at `tool/` and `example/` and the queue above both
+
+## Feature: Carve Status View
+**Source:** specs/queries.md
+
+- **R207:** `minispec query carves` prints one line per live carve — its repository-relative path, how many of its parts are open and how many have landed — followed by a census over every carve read, ordered `carves/` before `.carves/` and alphabetically within
+- **R208:** Carves are found by **location, not by name**: every `*.md` directly in `<repo root>/carves/` and `<repo root>/.carves/`; `carves/done/` is not read
+- **R209:** Counts come from the **status block and nowhere else** in the document; the block is bounded on heading nodes, so a fenced `## Status` or a fenced part line contributes nothing
+- **R210:** Subparts, indented one level under their parent, are counted as parts
+- **R211:** A document in a carve directory with **no status block is reported as such**, never dropped
+- **R212:** A part is listed under its carve when it carries any deviation, or when `--open` is given and it is open; a non-conforming part is **never** behind the flag
+- **R213:** `query carves` resolves at the **repository root** and answers in a repository with no design root
+- **R214:** When **neither carve directory exists**, the query reports that it cannot answer rather than printing an empty census
+- **R215:** `query carves` writes markdown to stdout and honours `--json` wherever it appears among the arguments
+- **R216:** A status-block list item with **no checkbox is `stateless`**: counted on its carve's line and in the census always, reported as existence, a line number and a reason and never a state, listed under `--open` — unless it carries a format deviation, in which case it lists always
+- **R217:** The per-carve count and the census total for such lines are labelled **`stateless`**, naming the line and never the reader's action
+- **R218:** The census states **every count, zeros included**: carves with a status block, open, landed, stateless, non-conforming, documents with no status block
+- **R219:** The part line's rules — key form, separator, checkbox interior, `OPEN` attribution, marker verb case — are **`minispecsdom`'s**, and this tool surfaces the reader's `Deviations()` with their targets rather than re-deriving any rule
+- **R220:** `SetMarker(path, key, verb, attribution)` and `SetPartLanded(path, key, attribution)` read the carve, apply the reader's `SetMarker` or `Land`, and write the rendered bytes by **temp-file-and-rename**; a refusal from the reader — deviations on the line, `OPEN` over a checked part, a landing of a landed part, a key no part carries — is passed through and **leaves the file byte-identical**
