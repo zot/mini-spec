@@ -707,6 +707,19 @@ file** and **the done file** throughout, so a path never needs qualifying;
   file; then move the item from the pending file to the done file. Source first,
   because that is the copy a future reader trusts, and the one nobody thinks to
   check.
+- **One commit per item, and the commit shows its steps.** An item takes checkpoint
+  commits while it is worked — a delegated alarm pull needs a commit to check out, and
+  the census sees only committed code — so fold them before finishing: `squash`, never
+  `fixup`, because every checkpoint's message is part of the record. Rewrite the folded
+  body as `Step 1 — <subject>`, `Step 2 — …` in commit order, one sign-off at the end,
+  and say up top what the later steps did to the earlier ones; successive checkpoints
+  touch the same files and a later one can alter an earlier one, so the record only
+  reads true in sequence. Never `#`-led headers — git strips them as comments. Re-read
+  the subject afterwards: it came from the first checkpoint and must describe the item's
+  final state. *This is a rule an agent must remember until `pending finish` can do it*
+  (gap `O12` in this repository's `tool/design/design.md`); it is what keeps a queue
+  item from spreading over five commits, which is what it took on the day it was
+  decided (Bill, 2026-09-04).
 - **The current file is a resume buffer.** To pause an item, lift its context
   into a sub-item under that item's `##` heading in the pending file, then reset
   the current file — freeing it for whatever you pick up next.
@@ -892,7 +905,12 @@ its subject is rewritten and nothing in a green suite will say so.
   meaningful and must not be filled in by guessing:** an alarm with no `Pulled` is a
   *prescription* (here is the injection to run) rather than a *record* (I ran it, it
   rang). Those read identically in prose and are entirely different claims — the same
-  reason `NOT VERIFIED` earns its own words in a carve's status block.
+  reason `NOT VERIFIED` earns its own words in a carve's status block. **Write the date
+  and the failure's signature; never a commit hash.** Items are squashed to one commit
+  before they finish, so a hash written during the work names a commit the squash
+  rewrites away — a record pointing at nothing, in the field that exists to be a
+  record. When the tool owns the hash it can compare against a commit instead of a
+  date; until then the line carries what cannot go stale (Bill, 2026-09-04).
 - **`**Code:**`** — the test file, so the alarm and the test it vouches for are
   linked in the direction a tool can follow.
 
