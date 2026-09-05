@@ -312,3 +312,27 @@
 - **R218:** The census states **every count, zeros included**: carves with a status block, open, landed, stateless, non-conforming, documents with no status block
 - **R219:** The part line's rules — key form, separator, checkbox interior, `OPEN` attribution, marker verb case — are **`minispecsdom`'s**, and this tool surfaces the reader's `Deviations()` with their targets rather than re-deriving any rule
 - **R220:** `SetMarker(path, key, verb, attribution)` and `SetPartLanded(path, key, attribution)` read the carve, apply the reader's `SetMarker` or `Land`, and write the rendered bytes by **temp-file-and-rename**; a refusal from the reader — deviations on the line, `OPEN` over a checked part, a landing of a landed part, a key no part carries — is passed through and **leaves the file byte-identical**
+
+## Feature: Backup Slot
+**Source:** specs/backup.md
+
+- **R221:** The backup slot gives **one level of undo and one of redo** over the trajectory files — the most recent change is revertable and replayable and nothing older is recoverable; it is not an undo stack
+- **R222:** The slot covers the **trajectory files only** — the pending, current and done files at the repository root — and never a carve, which is written on a revert rather than restored
+- **R223:** The copies and the stamp live together in `.minispec/backup/`, the path `init` already has git ignoring
+- **R224:** Every operation — change, revert, replay — is the **same swap**: copy the live files to a temporary location, perform the operation, write the stamp, then **move** the temporary copies over the old backups; the move is last and atomic, so a crash leaves the old backup intact or the new one complete
+- **R225:** **One backup set suffices**, because it always holds *the other state*; revert and replay are one mechanism in two directions
+- **R226:** The stamp records the **state and nothing else** — not the item ID, since the snapshot is the pending file and holds the entry with its number
+- **R227:** Revert and replay first verify that **no covered file changed since the stamp**, by modification time against the single stamp; if any did, the operation **refuses** and names the files and where their backups are
+- **R228:** The slot has **three states** — `changed`, `reverted`, `replayed` — and from every state **exactly one** of revert and replay is legal; a refusal names the state and what it accepts
+- **R229:** A new mutation from **any** state resets the slot to `changed` and replaces the backup; whatever was revertable is gone
+- **R230:** Revert **restores** the trajectory files and marks the departed item's carve part `REVERTED (#N.)`; replay returns it to `OPEN (#N.)`; the item is derived from the pending file's two sides, never stored
+- **R231:** A release — a new mutation arriving while the slot holds a **reverted** attempt — returns the part to `OPEN (not queued.)`, returns the number to the pool, and writes **no done entry**
+- **R232:** A release happens **only from the reverted state**: a completion produces the same entry diff as a revert, so the diff alone must never trigger one
+- **R233:** A release **never touches a part whose checkbox is `[x]`**, a second guard independent of the state guard
+- **R234:** The released item IDs are **queryable before the mutation** that releases them, so the vend can announce a reuse
+- **R235:** Every change the slot makes is **cranked out in full** by the verb that drives it, and `/mini-spec` documents the slot and revert especially
+- **R236:** The **worktree anchor** records the working tree as it stood immediately before every transition, at a ref the tool owns outside the stash, replacing what it held in one act; it is reference, never undo
+- **R237:** The anchor holds untracked file **contents** and **excludes ignored paths by construction**, built from a scratch index so the repository's real index and working tree are never touched
+- **R238:** The anchor's **first parent is the commit that was checked out**, so what it was taken from is recoverable from the anchor itself; a repository with no commits gets an anchor with no parent
+- **R239:** A tree with no git is not a failure of the slot: the anchor is skipped and the trajectory files are still restored
+- **R240:** Pending entries are read through `minispecsdom.Pending` as `QueueEntry{ID, Title, SourceDoc, SourceKey, Kind, Line}`; the slot reads them on both sides of the swap and needs nothing else from the pending file

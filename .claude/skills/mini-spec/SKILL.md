@@ -727,6 +727,54 @@ file** and **the done file** throughout, so a path never needs qualifying;
   file. This is the rule most often broken, because leaving the last item's
   context in place costs nothing at the moment you do it.
 
+### When a queue operation goes wrong: `pending revert`
+
+**There is one level of undo and one of redo over the trajectory files, and you should
+know it exists before you need it.** A safety mechanism nobody knows about is not a
+safety mechanism — which is why this sits here rather than only in the tool's help.
+
+```
+minispec pending revert     # undo the most recent trajectory change
+minispec pending replay     # redo what revert undid
+```
+
+*(On `new-sdom` the slot is back as a package and its two verbs return with the `pending`
+verb family; until then the slot records nothing.)*
+
+**It is a slot, not a stack.** The most recent change is revertable and replayable;
+nothing older is recoverable. That is enough for the real emergency — a command that did
+the wrong thing thirty seconds ago — and it deliberately avoids owning a history git
+already owns better. **Any new queue operation discards what was revertable**, without
+ceremony.
+
+Four things worth knowing before you reach for it:
+
+- **It refuses rather than clobbering.** If you hand-edited a trajectory file since the
+  change, revert stops and names which file and where its backup is. You are better
+  placed than the tool to reconcile a hand edit with a pending undo, so it does not
+  guess. The backups are in `.minispec/backup/`.
+- **Exactly one of revert / replay is legal at any moment**, and a refusal tells you
+  which. There is no "revert twice."
+- **It covers the trajectory files only** — not `design/`, not your source. The `update`
+  verbs have no undo, and neither does anything else. Reverting a queue operation does
+  not touch the code you wrote under it; the done entry that names its commit is how you
+  find that work.
+- **A carve is not restored, on purpose.** Revert marks the part `**REVERTED (#N.)**`
+  instead. That is what keeps the part's vended number visible rather than silently
+  un-vending it — the queue rolls backward while the carve moves forward.
+
+**When an attempt is abandoned rather than replayed**, the part returns to
+`**OPEN (not queued.)**` and its number goes back into the pool. Aborting an attempt is
+not aborting the part: it is still open and still to be done. Nothing is written to the
+done file, which records completions and would be diluted by non-events. If a released
+number is handed out again, the tool says so.
+
+**And the worktree anchor.** Every transition first records the whole working tree — untracked
+files included, ignored paths excluded — at `refs/minispec/snapshot`, outside the stash so
+nothing can pop or clear it. It is reference, never undo: `git show refs/minispec/snapshot:<path>`
+gives a file back as it stood before the transition, and `refs/minispec/snapshot^1` is the
+commit that was checked out. The tool never restores from it; you do, by hand.
+
 ### Interleaving with migrations
 
 A **state item** and a **migration** are two orthogonal lifecycles,

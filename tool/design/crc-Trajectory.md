@@ -1,5 +1,5 @@
 # Trajectory
-**Requirements:** R190, R194, R195, R197
+**Requirements:** R190, R194, R195, R197, R240
 
 Reads the trajectory files at the repository root. The format is **owned by the skill**
 — `trajectory-format.md` is normative for every shape — so this card names which shapes
@@ -16,6 +16,9 @@ opening them.
   look like an empty queue
 
 ## Does
+- PendingEntries(path): the pending file's entries through `minispecsdom.Pending` — ID, title,
+  source document, source key and kind (part or gap), line — as `QueueEntry`. A missing file is
+  no entries and no error, since the slot legitimately reads a side that has none (R240)
 - ScanTrajectory(repoRoot): read both files and report them **per file** rather than
   merged, so the caller can say what each contributed (R197). A package function, not a
   method — it touches no design-root state, and a signature claiming otherwise is what

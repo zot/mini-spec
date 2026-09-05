@@ -23,6 +23,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
 - [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
+- [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`
 - [ ] crc-Validate.md → `internal/validate/validate.go`
 - [ ] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`
@@ -42,6 +43,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] seq-bootstrap.md
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
+- [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
 
 ### Test Designs
 - [ ] test-Parser.md → `internal/parser/parser_test.go`
@@ -55,6 +57,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Bootstrap.md → `internal/cli/bootstrap_test.go`
 - [ ] test-Alarm.md → `internal/alarm/alarm_test.go`, `internal/alarm/brief_test.go`, `internal/query/alarms_test.go`, `internal/cli/cli_alarms_test.go`
 - [x] test-Carve.md → `internal/parser/carve_test.go`, `internal/cli/cli_carves_test.go`
+- [x] test-Backup.md → `internal/backup/backup_test.go`, `internal/project/git_test.go`, `internal/parser/trajectory_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 
 ## Documentation
@@ -81,3 +84,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O10: A bare `**Inject:**` anchor may resolve to a *use* or a *doc comment* rather than its declaration. `sitePattern` (R206) hands git a bounded name, and git's `-L` takes the first line that matches — which in this repository's own `sdom/doc.go` on `old-sdom` was the `// Render returns …` comment two lines above `func (d *Doc) Render`. Measured 2026-09-04. The alarm then watches the comment's lines and reports a clean reading over a rewritten body. `old-sdom` fixed this with an extent computed from a parse (its R404–R406) instead of asking git for the range; that is the reclaim behind the stopgap, over `github.com/zot/simple-dom`'s declarations once the module dependency is wired.
 - [ ] O11: git's `-L` range for a declaration runs to the line before the next declaration, so it includes the trailing blank line — and appending code after a method makes that method report *changed*. Measured 2026-09-04 while testing R205: `func (a *A) Run()` with nothing after it was attributed to the commit that appended `B` below it, and the test had to place a function after each method to get a stable range. In a live repository this is a **spurious stale** on every alarm whose site is the last declaration in its file. The same repair as the gap above: an extent from a parse, which stops at the closing bracket.
 - [ ] O12: The per-item commit discipline is a rule an agent must remember, and nothing checks it. DECIDED (Bill, 2026-09-04): one squashed commit per queue item, checkpoints folded with `squash` (never `fixup`) so every message survives, the body rewritten as `Step N — <subject>` sections in commit order so the sequence is visible (successive checkpoints touch the same files and a later one can alter an earlier one), one sign-off, and no commit hash in a `**Pulled:**` line since the squash rewrites it away. The reason it is a rule and not a mechanism: the census asks git and git sees only committed code, so the honest shape was commit → pull → record → commit, three per item at the floor and five on 2026-09-04. The tool's half: `pending finish` is the natural place to perform or verify the squash — it already knows the item's first commit from the current file's context and leaves the carve flip as an uncommitted tail today — and a `**Pulled:**` record that named a commit the tool owns would close mini-spec-tool's `O20` (the same-day blind spot) at the same time. Until then the rule lives in SKILL.md and in memory.
+- A3: R235 — the slot is cranked out in full by its verbs and documented in `/mini-spec`, revert especially — has no code site in this design root. The documentation half is discharged in `.claude/skills/mini-spec/SKILL.md` (*When a queue operation goes wrong*), which is **outside this design root** and so earns the requirement no implementation coverage; the crank-out half is the `pending revert`/`replay` verbs' and lands with them (carves/sdom-reclaim.md Item 3), at which point this entry can be revisited. Approved rather than open because nothing in `tool/` will ever satisfy the documentation half, and a check that reports a permanent absence is a nag rather than a gap.

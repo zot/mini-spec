@@ -2,6 +2,7 @@
 package parser
 
 import (
+	"github.com/zot/simple-dom/minispecsdom"
 	"os"
 	"path/filepath"
 	"slices"
@@ -181,5 +182,35 @@ func TestNextGapNumIsPerType(t *testing.T) {
 	}
 	if got := NextGapNum(gaps, "T"); got != 1 {
 		t.Errorf("T = %d, want 1 (a type with no gaps starts at 1)", got)
+	}
+}
+
+// R240 — the pending-entry adapter maps the dependency's fields, including a gap source.
+func TestPendingEntriesReadThroughTheDependency(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "PENDING.md")
+	src := "# Pending\n\n---\n\n" +
+		"## 3. **a part-sourced item** (mini-spec). Active.\n" +
+		"   Source: [carves/x.md](carves/x.md), part `#Item 5`.\n\n" +
+		"## 9. **a gap-sourced item**. Waiting.\n" +
+		"   Source: [tool/design/design.md](tool/design/design.md), gap `O12`.\n"
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := PendingEntries(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d entries, want 2: %+v", len(got), got)
+	}
+	if got[0].ID != 3 || got[0].SourceDoc != "carves/x.md" || got[0].SourceKey != "Item 5" || got[0].Kind != minispecsdom.SourcePart || got[0].Line != 5 {
+		t.Errorf("part entry = %+v", got[0])
+	}
+	if got[1].ID != 9 || got[1].SourceKey != "O12" || got[1].Kind != minispecsdom.SourceGap {
+		t.Errorf("gap entry = %+v", got[1])
+	}
+	if none, err := PendingEntries(filepath.Join(dir, "absent.md")); err != nil || none != nil {
+		t.Errorf("a missing file should be no entries and no error; got %v, %v", none, err)
 	}
 }

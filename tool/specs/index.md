@@ -23,6 +23,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 | [updates.md](updates.md) | the `update` subcommands — atomic edits to structured parts of design files |
 | [validate.md](validate.md) | full validation and its check classes |
 | [phase.md](phase.md) | per-phase validation gates |
+| [backup.md](backup.md) | the backup slot beneath the queue verbs — one level of undo and redo over the trajectory files, the stamp, drift refusal, release, and the worktree anchor |
 
 ### Migrations
 

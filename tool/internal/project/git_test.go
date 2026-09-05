@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -364,5 +365,130 @@ func TestLastChangedBoundsABareSymbol(t *testing.T) {
 	}
 	if _, err := g.LastChanged("x.go", "Lookup"); err != ErrUnresolvedSite {
 		t.Errorf("Lookup resolved (%v); want ErrUnresolvedSite — an unbounded name matched inside LookupPath", err)
+	}
+}
+
+// R237 — the anchor touches neither the working tree nor the real index.
+func TestAnchorTouchesNeitherWorkingTreeNorIndex(t *testing.T) {
+	dir := newRepo(t)
+	write(t, dir, "seed.txt", "modified since the commit\n")
+	g := NewGit(dir)
+	before, err := g.run("status", "--porcelain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(filepath.Join(dir, "seed.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "modified since the commit\n" {
+		t.Errorf("the anchor moved the modification out of the working tree: %q", body)
+	}
+	after, err := g.run("status", "--porcelain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before != after {
+		t.Errorf("the anchor changed index or worktree state:\n  before %q\n  after  %q", before, after)
+	}
+}
+
+// R237 — untracked contents in, ignored paths out.
+func TestAnchorHoldsUntrackedContentsAndNoIgnoredPaths(t *testing.T) {
+	dir := newRepo(t)
+	write(t, dir, ".gitignore", "ignored.txt\n")
+	write(t, dir, "ignored.txt", "the slot's business, never the anchor's\n")
+	write(t, dir, "new-carve.md", "untracked and wanted back\n")
+	g := NewGit(dir)
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	listed, err := g.run("ls-tree", "-r", "--name-only", SnapshotRef)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := strings.Fields(listed)
+	if !slices.Contains(names, "new-carve.md") {
+		t.Errorf("untracked contents are absent from the anchor: %v", names)
+	}
+	if slices.Contains(names, "ignored.txt") {
+		t.Errorf("an ignored path reached the anchor: %v", names)
+	}
+	body, err := g.run("show", SnapshotRef+":new-carve.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body != "untracked and wanted back\n" {
+		t.Errorf("the anchor holds the name but not the contents: %q", body)
+	}
+}
+
+// R236 — exactly one anchor exists.
+func TestAnchorIsReplacedRatherThanAccumulated(t *testing.T) {
+	dir := newRepo(t)
+	write(t, dir, "seed.txt", "first\n")
+	g := NewGit(dir)
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	write(t, dir, "seed.txt", "second\n")
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	body, err := g.run("show", SnapshotRef+":seed.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body != "second\n" {
+		t.Errorf("the anchor still holds the earlier tree: %q", body)
+	}
+}
+
+// R238 — a fresh repository still gets an anchor, with no parent.
+func TestAnchorIsWrittenInARepositoryWithNoCommits(t *testing.T) {
+	requireGit(t)
+	dir := t.TempDir()
+	cmd := exec.Command("git", "init")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+	write(t, dir, "a.txt", "untracked, and the only thing here\n")
+	g := NewGit(dir)
+	if err := g.Snapshot(); err != nil {
+		t.Fatalf("no anchor in a repository with no commits: %v", err)
+	}
+	listed, err := g.run("ls-tree", "-r", "--name-only", SnapshotRef)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(strings.Fields(listed), "a.txt") {
+		t.Errorf("the anchor is empty in a fresh repository: %q", listed)
+	}
+	if _, err := g.run("rev-parse", SnapshotRef+"^1"); err == nil {
+		t.Error("the anchor claims a first parent in a repository with no commits")
+	}
+}
+
+// R238 — the anchor's first parent is the checked-out commit.
+func TestAnchorCarriesItsBaseCommitAsFirstParent(t *testing.T) {
+	dir := newRepo(t)
+	g := NewGit(dir)
+	head, err := g.run("rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	base, err := g.run("rev-parse", SnapshotRef+"^1")
+	if err != nil {
+		t.Fatalf("the anchor has no first parent, so what it was taken from is unrecoverable: %v", err)
+	}
+	if strings.TrimSpace(base) != strings.TrimSpace(head) {
+		t.Errorf("anchor^1 = %s, want the commit that was checked out, %s", base, head)
 	}
 }

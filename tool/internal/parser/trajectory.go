@@ -4,6 +4,7 @@ package parser
 import (
 	"bufio"
 	"errors"
+	"github.com/zot/simple-dom/minispecsdom"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -172,4 +173,43 @@ func submatchInts(re *regexp.Regexp, s string) []int {
 		}
 	}
 	return ids
+}
+
+// CRC: crc-Trajectory.md | R240
+//
+// QueueEntry is one pending-file entry as the backup slot and the queue verbs consume it,
+// read through the dependency's Pending reader. The source is a carve part or a gap, told
+// apart by Kind; SourceKey is the part key or the gap ID.
+type QueueEntry struct {
+	ID        int                     `json:"id"`
+	Title     string                  `json:"title"`
+	SourceDoc string                  `json:"source_doc,omitempty"`
+	SourceKey string                  `json:"source_key,omitempty"`
+	Kind      minispecsdom.SourceKind `json:"kind"`
+	Line      int                     `json:"line"`
+}
+
+// CRC: crc-Trajectory.md | R240
+// PendingEntries reads the pending file at path through minispecsdom.Pending. A missing file
+// is no entries and no error: the slot legitimately reads a side that has none.
+func PendingEntries(path string) ([]QueueEntry, error) {
+	src, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []QueueEntry
+	for _, e := range minispecsdom.ParsePending(string(src)).Entries() {
+		out = append(out, QueueEntry{
+			ID:        e.ID,
+			Title:     e.Title,
+			SourceDoc: e.SourceDoc,
+			SourceKey: e.SourceKey,
+			Kind:      e.Kind,
+			Line:      e.Line(),
+		})
+	}
+	return out, nil
 }

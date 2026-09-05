@@ -12,7 +12,7 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 
 ## Status
 
-- [ ] **Item 1 — the module dependency and the carve reader.** **OPEN (#67.)**
+- [x] ~~**Item 1 — the module dependency and the carve reader.**~~ **LANDED (`2a050a2`, 2026-09-04 — `#67`.)**
 - [ ] **Item 2 — the backup slot.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.** **OPEN (not queued.)** Needs Items 1 and 2.
 - [ ] **Item 4 — `validate trajectory`.** **OPEN (not queued.)** Needs Items 1 and 3.

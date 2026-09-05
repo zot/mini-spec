@@ -3,6 +3,7 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -295,6 +296,102 @@ func isObjectHash(s string) bool {
 		}
 	}
 	return true
+}
+
+// ErrGitFailed reports a git invocation that failed for a reason other than the ones the
+// callers name; the wrapped message carries git's own words.
+var ErrGitFailed = errors.New("git failed")
+
+// SnapshotRef is where the worktree anchor lives — a ref the tool owns outright.
+//
+// **Deliberately not the stash**: a stash entry can be applied by someone reaching for their
+// own work, `git stash clear` destroys it at any position in the stack, and replacing it
+// would mean finding the previous entry by message and dropping it instead of one atomic
+// write. R236
+const SnapshotRef = "refs/minispec/snapshot"
+
+// CRC: crc-Git.md | Seq: seq-backup.md#4 | R236, R237, R238
+// Snapshot writes the worktree anchor: the working tree as it stands, recorded and reachable,
+// with nothing moved, staged or restored.
+//
+// **Reference, not undo.** Building the object destroys nothing, which is what makes it safe
+// to take over work in progress the tool has no business owning.
+//
+// **The obvious command is the wrong one and it is one word away**: the familiar stash verb
+// *relocates* the changes. Worse, the flag that looks like the fix is a lie — `git stash
+// create -u` exits 0, hands back a plausible object, and holds no untracked file at all
+// (measured 2026-08-17). A check asking only "did it error?" reports it working.
+func (g *Git) Snapshot() error {
+	if !g.IsRepo() {
+		return ErrNoGit
+	}
+	tree, err := g.scratchTree()
+	if err != nil {
+		return err
+	}
+	// The current commit becomes the anchor's first parent, so what it was taken from is
+	// recoverable from the anchor itself. A repository with no commits has no parent. R238
+	//
+	// **Both guards are load-bearing, and the error one is the half that looks droppable.**
+	// In a repository with no commits `git rev-parse HEAD` exits 128 *and prints `HEAD` to
+	// stdout* — measured 2026-08-17. Keeping only the emptiness check passes `-p HEAD` to
+	// `commit-tree` and the anchor cannot be written at all.
+	args := []string{"commit-tree", tree, "-m", "minispec worktree anchor"}
+	if head, err := g.run("rev-parse", "HEAD"); err == nil {
+		if h := strings.TrimSpace(head); h != "" {
+			args = append(args, "-p", h)
+		}
+	}
+	out, err := g.run(args...)
+	if err != nil {
+		return fmt.Errorf("%w: git commit-tree: %v", ErrGitFailed, err)
+	}
+	// One write, so exactly one anchor exists and nothing has to be found and dropped. R236
+	if _, err := g.run("update-ref", SnapshotRef, strings.TrimSpace(out)); err != nil {
+		return fmt.Errorf("%w: git update-ref: %v", ErrGitFailed, err)
+	}
+	return nil
+}
+
+// R237
+// scratchTree writes a tree object for the whole working tree, using an index of its own.
+//
+// The scratch index is the entire mechanism, and it buys three properties **structurally**:
+// untracked file *contents* are included, ignored paths are excluded — so the trajectory
+// files remain the backup slot's business and the two mechanisms cannot overlap — and the
+// repository's real index and working tree are never touched.
+func (g *Git) scratchTree() (string, error) {
+	f, err := os.CreateTemp("", "minispec-index-")
+	if err != nil {
+		return "", err
+	}
+	idx := f.Name()
+	f.Close()
+	// Removed rather than truncated: git wants to create this file itself, and an existing
+	// empty file is not a valid index.
+	os.Remove(idx)
+	defer os.Remove(idx)
+
+	env := []string{"GIT_INDEX_FILE=" + idx}
+	if _, err := g.runEnv(env, "add", "-A"); err != nil {
+		return "", fmt.Errorf("%w: git add -A: %v", ErrGitFailed, err)
+	}
+	out, err := g.runEnv(env, "write-tree")
+	if err != nil {
+		return "", fmt.Errorf("%w: git write-tree: %v", ErrGitFailed, err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
+// runEnv is run with additional environment. Separate rather than a variadic option on run
+// because exactly one caller needs it and the whole point of that caller is that its index
+// is *not* the repository's.
+func (g *Git) runEnv(env []string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = g.workDir
+	cmd.Env = append(os.Environ(), env...)
+	out, err := cmd.Output()
+	return string(out), err
 }
 
 // run invokes git in the working directory. Shelling out rather than linking a library
