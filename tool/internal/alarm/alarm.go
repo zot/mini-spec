@@ -92,6 +92,11 @@ func assessOne(a parser.Alarm, g project.GitFacts) Assessment {
 		case errors.Is(err, project.ErrUnresolvedSite):
 			// step 1.6 — the anchor no longer points at anything.
 			return Assessment{Alarm: a, State: Unresolvable, Site: site.String()}
+		case errors.Is(err, project.ErrAmbiguousSite):
+			// step 1.6 — the anchor points at more than one thing, which is the same
+			// failure from the other side: nothing has been watched. The site carries
+			// the count and the repair. R307
+			return Assessment{Alarm: a, State: Unresolvable, Site: site.String() + " (" + err.Error() + ")"}
 		case err != nil:
 			if unchecked == nil {
 				unchecked = &Assessment{Alarm: a, State: Unchecked, Site: site.String()}

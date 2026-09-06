@@ -39,7 +39,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 2
 **Fire alarm:** delete the queue→carve pass entirely. Goes red here and **stays green on every other test**, which is the point: an item completing against a part its carve never recorded is invisible from the carve side, so only this direction reports it
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-05 — rang, `got 0 missing-part findings, want 1`, and every other test stayed green, as the prose predicts
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `got 0 missing-part findings, want 1`; restore byte-clean by copy. Previously 2026-09-05, same signature, every other test green
 
 ## Test: a backquoted prose example is not a citation
 **Purpose:** citations are ingested by position — a part line's marker — and never from a pattern swept over prose (R289)
@@ -61,7 +61,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 4
 **Fire alarm:** return an error, or an empty clean result with no statement. Both go red — the first on the exit assertion, the second on the report. The second half matters more: a silent clean result over an absent layer is indistinguishable from a clean result over a checked one, which is this project's own theme violated
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-05 — rang, `the report does not state that the layer is absent`
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `a repository with no trajectory layer was not reported absent` and `the report does not state that the layer is absent`; restore byte-clean by copy. Previously 2026-09-05
 
 ## Test: only a cross-file ID collision is reported
 **Purpose:** an ID held by **both** queue files is a collision; repetition *within* the done file is a legitimate staged record (R290)
@@ -138,7 +138,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 11
 **Fire alarm:** drop the per-file count. Goes red on the coverage note. **The fixture had to be built around a real limit of the sibling check**, which is worth knowing before trusting either: an unrecognized entry holding the *highest* ID does not raise the maximum, so it leaves no gap and `checkNumbering` cannot see it at all. Only this count can — which is why this is the honest half and R295 the symptom. Measured 2026-08-16 in ark: 139 entry-like lines in the done file, 54 recognized, and 6 unnumbered items in the pending file, two of them titled "add to the list"
 **Inject:** internal/validate/trajectory.go:countUnread
-**Pulled:** 2026-09-05 — rang, `Unread = map[], want one per file`
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `Unread = map[], want one per file` (the `record` closure made to return always); restore byte-clean by copy. Previously 2026-09-05, same signature
 
 ## Test: the current file and each carve are counted as unread too
 **Purpose:** the coverage note names every file a reader could leave partly unread, not the two queue files alone (R302)
@@ -148,7 +148,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Code:** internal/validate/trajectory_test.go
 **Fire alarm:** drop the carve loop from `countUnread`, so only the queue files and the current file are counted. Goes red on `carves/x.md (1)` missing from the note
 **Inject:** internal/validate/trajectory.go:countUnread
-**Pulled:** 2026-09-05 — rang twice: first as written, then again after the simplification pass rewrote `countUnread` around a `record` closure, same signature `Unread = map[CURRENT.md:1], want one for the current file and one for the carve`; restore byte-clean by copy both times
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `Unread = map[CURRENT.md:1], want one for the current file and one for the carve`; restore byte-clean by copy. Pulled twice on 2026-09-05, the second after the simplification pass rewrote `countUnread` around a `record` closure
 
 ## Test: the machine-readable form uses one key convention
 **Purpose:** every JSON key is snake_case, and the fields a consumer needs are present (R299)
@@ -192,4 +192,4 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 15
 **Fire alarm:** drop the `t.checkReaderAgreement(traj, q)` call from `RunTrajectory`. Red as `the two readers disagreed about the done file and nothing said so` — and on this repository's ledger the report goes back to four confident orphans over a file the document reader saw 17 of 58 entries of
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-05 — rang, `the two readers disagreed about the done file and nothing said so`
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `the two readers disagreed about the done file and nothing said so`; restore byte-clean by copy. Previously 2026-09-05

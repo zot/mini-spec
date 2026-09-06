@@ -1,6 +1,6 @@
 # Sequence: Fire alarm freshness — assessing a recorded proof
 
-**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187, R199, R200, R202, R203, R204
+**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187, R199, R200, R202, R203, R204, R303, R305, R307, R308
 
 Three diagrams: assessing one alarm, the two surfaces that consume the assessment, and
 minting the brief a delegated re-pull is spawned with.
@@ -14,6 +14,10 @@ minting the brief a delegated re-pull is spawned with.
 1.3. No Pulled date — unrecorded; stop, and say only that no verification is recorded
 1.4. Ask Git whether this is a working tree; if not, unchecked; stop
 1.5. For each site, ask Git when that function last changed
+1.5.1. Read the file as committed at HEAD, once per file
+1.5.2. Compute the declaration's extent from the Go parse: declaring line through the line its groups close on
+1.5.3. Two declarations answer to the name — ambiguous; report it as unresolvable with the count
+1.5.4. git log -L start,end over that range; the first format line is the answer
 1.6. A site git cannot resolve — unresolvable; name the site and stop
 1.7. Any change dated strictly after the pull date — stale; name the site and the date
 1.8. Otherwise verified
@@ -27,6 +31,13 @@ has many unrecorded alarms and few pulled ones, so the expensive path is the sma
 marks every alarm in a busy file stale and so discriminates nothing. Measured before
 this existed: file granularity called 8 of 13 alarms stale, function granularity called
 3, and hand-checking those left 1.
+
+**Steps 1.5.1–1.5.4 compute the range before asking git (R303, R305, R308).** Handing git a
+pattern asked it to find the symbol as well as bound it, and git bounds a declaration at the
+line before the next one: the successor's doc comment and the trailing blank line were in
+every range, so a comment edit or an append staled the neighbour. The range is computed over
+HEAD's bytes because that is the coordinate system `-L <start>,<end>` walks. Step 1.5.3 is
+counted before the extent is trusted, because the extent cannot report it (R307).
 
 **Step 1.6 reports rather than skipping (R182).** Git states plainly whether it found
 the symbol, so a site it cannot find is the anchor rotting — the precise failure the

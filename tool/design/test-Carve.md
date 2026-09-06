@@ -128,7 +128,7 @@ restore byte-clean by copy
 **Code:** internal/cli/cli_carves_test.go
 **Fire alarm:** stop carrying the reader's list — `Unread: rc.Unread()` dropped from `parseCarve` — so the carve reports zero unread while two of its parts are gone. Goes red on the carve line and the census at once
 **Inject:** internal/parser/carve.go:parseCarve
-**Pulled:** 2026-09-05 — rang on all three checks: `want the count on the carve line and no row`, `want the opener's line and text`, `want the unread total`; restore byte-clean by copy
+**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, same injection, `want the count on the carve line and no row` and `want the opener's line and text`; restore byte-clean by copy. First pulled 2026-09-05
 
 ## Test: this repository's carves stay conformant
 **Purpose:** validates R219 against the live corpus — the reader's rules over this

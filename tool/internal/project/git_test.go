@@ -1,8 +1,9 @@
-// CRC: crc-Git.md | Seq: seq-bootstrap.md#1.7 | R151, R164, R166, R167, R168
+// CRC: crc-Git.md | Seq: seq-bootstrap.md#1.7 | R151, R164, R166, R167, R168, R303, R304, R305, R306, R307
 package project
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -491,4 +492,131 @@ func TestAnchorCarriesItsBaseCommitAsFirstParent(t *testing.T) {
 	if strings.TrimSpace(base) != strings.TrimSpace(head) {
 		t.Errorf("anchor^1 = %s, want the commit that was checked out, %s", base, head)
 	}
+}
+
+// R303, R306 — the range is the declaration's own lines and nobody's comment. Git's
+// funcname range gave a declaration the *successor's* doc comment, and old-sdom's first
+// repair gave it its own; measured against the live corpus the second turned three
+// verified alarms stale, every one a traceability line rewritten inside the doc block.
+func TestLastChangedIgnoresACommentOnlyEdit(t *testing.T) {
+	dir := newRepo(t)
+	run := dated(t, dir)
+	body := "package p\n\n// Foo does a thing.\nfunc Foo() int {\n\treturn 1\n}\n\n// Bar is next.\nfunc Bar() int { return 2 }\n"
+	write(t, dir, "x.go", body)
+	run(day(1), "add", "x.go")
+	run(day(1), "commit", "-qm", "one")
+	write(t, dir, "x.go", strings.NewReplacer("// Foo does a thing.", "// Foo does a thing, reworded.",
+		"// Bar is next.", "// Bar is next, reworded at length.").Replace(body))
+	run(day(2), "add", "x.go")
+	run(day(2), "commit", "-qm", "comments only")
+
+	g := NewGit(dir)
+	when, err := g.LastChanged("x.go", "Foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := when.Format("2006-01-02"); got != "2026-01-01" {
+		t.Errorf("Foo changed %s after a comment-only edit; want 2026-01-01 — a comment is in the range", got)
+	}
+}
+
+// R305 — the range ends where the declaration's groups close, not at the line before
+// the next declaration: appending after the last function in a file must not stale it
+// (gap O11, measured 2026-09-04: `func (a *A) Run()` with nothing after it was
+// attributed to the commit that appended `B` below it).
+func TestLastChangedIgnoresAnAppendAfterTheLastDeclaration(t *testing.T) {
+	dir := newRepo(t)
+	run := dated(t, dir)
+	body := "package p\n\ntype A struct{}\n\nfunc (a *A) Run() int {\n\treturn 1\n}\n"
+	write(t, dir, "x.go", body)
+	run(day(1), "add", "x.go")
+	run(day(1), "commit", "-qm", "one")
+	write(t, dir, "x.go", body+"\nfunc B() int { return 2 }\n")
+	run(day(2), "add", "x.go")
+	run(day(2), "commit", "-qm", "append")
+
+	when, err := NewGit(dir).LastChanged("x.go", "A.Run")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := when.Format("2006-01-02"); got != "2026-01-01" {
+		t.Errorf("A.Run changed %s after an append below it; want 2026-01-01 — the trailing blank line is in the range", got)
+	}
+}
+
+// R307 — a bare name two declarations answer to is ambiguous, not resolved to the first.
+func TestLastChangedRefusesAnAmbiguousBareName(t *testing.T) {
+	dir := newRepo(t)
+	run := dated(t, dir)
+	write(t, dir, "x.go", "package p\n\ntype A struct{}\ntype B struct{}\n\nfunc (a A) Run() int { return 1 }\n\nfunc (b B) Run() int { return 2 }\n")
+	run(day(1), "add", "x.go")
+	run(day(1), "commit", "-qm", "one")
+
+	g := NewGit(dir)
+	_, err := g.LastChanged("x.go", "Run")
+	var amb *AmbiguousSiteError
+	if !errors.As(err, &amb) || amb.N != 2 || !errors.Is(err, ErrAmbiguousSite) {
+		t.Errorf("Run = %v; want AmbiguousSiteError{N: 2} — the anchor watched an arbitrary one of two", err)
+	}
+	if _, err := g.LastChanged("x.go", "A.Run"); err != nil {
+		t.Errorf("A.Run = %v; want a date — the receiver form disambiguates", err)
+	}
+}
+
+// R303, R304, R305 — the extent itself, over shapes the repository tests do not reach: a
+// signature spanning lines, a nested group, a grouped var, a receiver with a type parameter.
+func TestSiteExtentShapes(t *testing.T) {
+	src := "package p\n" + // 1
+		"\n" + // 2
+		"var (\n" + // 3
+		"\tA = 1\n" + // 4
+		"\tB = 2\n" + // 5
+		")\n" + // 6
+		"\n" + // 7
+		"// Doc for Multi.\n" + // 8
+		"func Multi(\n" + // 9
+		"\ta int,\n" + // 10
+		") (int, error) {\n" + // 11
+		"\tif a > 0 {\n" + // 12
+		"\t\treturn a, nil\n" + // 13
+		"\t}\n" + // 14
+		"\treturn 0, nil\n" + // 15
+		"}\n" + // 16
+		"\n" + // 17
+		"func (s *Set[T]) Add(v T) {}\n" + // 18
+		"\n" + // 19
+		"func One() {}\n" // 20
+	for _, c := range []struct {
+		symbol     string
+		start, end int
+		count      int
+	}{
+		{"A", 4, 4, 1}, {"B", 5, 5, 1}, {"Multi", 9, 16, 1}, {"Set.Add", 18, 18, 1},
+		{"Add", 18, 18, 1}, {"One", 20, 20, 1}, {"Other.Add", 0, 0, 0}, {"Nope", 0, 0, 0},
+	} {
+		start, end, n := siteExtent(src, c.symbol)
+		if start != c.start || end != c.end || n != c.count {
+			t.Errorf("%s: got %d-%d count %d, want %d-%d count %d", c.symbol, start, end, n, c.start, c.end, c.count)
+		}
+	}
+}
+
+// dated returns a git runner for dir taking a date's environment first.
+func dated(t *testing.T, dir string) func(env []string, args ...string) {
+	return func(env []string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(append(os.Environ(),
+			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+			"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"), env...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+}
+
+func day(n int) []string {
+	stamp := fmt.Sprintf("2026-01-%02dT12:00:00", n)
+	return []string{"GIT_AUTHOR_DATE=" + stamp, "GIT_COMMITTER_DATE=" + stamp}
 }

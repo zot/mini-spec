@@ -113,17 +113,25 @@ that has since been rewritten is void, and nothing about a green suite says so.
 - An `**Inject:**` naming a symbol git cannot find is reported as **unresolvable**,
   not silently skipped. That is the anchor rotting, which is the failure the field
   exists to prevent.
+- **The reader computes the site's line range; git is asked only when those lines
+  changed.** `git log -L :pattern:file` asks git to *find* the symbol as well as bound
+  it, and git bounds a declaration at the line before the next one — so its range
+  carried the successor's doc comment and the trailing blank line, the last declaration
+  in a file read stale on every append, and a bare name's first match could be a use
+  or a comment (measured 2026-09-04, the stopgap's gaps `O10` and `O11`). The range now
+  comes from the dependency's Go declarations over the file **as committed at HEAD**,
+  since `-L <start>,<end>` resolves against HEAD: **the declaring line through the line
+  on which every bracket group opened inside it has closed**, a grouped `const` member
+  at its own line, and **no comment in the range** — not the successor's, and not the
+  declaration's own, which old-sdom measured wrong when three verified alarms went
+  stale over traceability lines rewritten inside their doc blocks.
 - **A method is named by its receiver — `Type.Method` — and that form resolves to
   exactly that method's declaration.** Three `Parse` methods on three types are one
-  symbol to a bare name; the receiver is the only spelling that can tell them apart.
-  The tool does not hand git the anchor as written: `-L :Doc.Render:` matches no line
-  of Go, so the reclaimed census of 2026-09-04 called 69 of a sibling project's alarms
-  unresolvable over nothing but this. It hands git a **declaration-shaped pattern** —
-  `func (<name> *Type) Method` with the name and star optional — and, for a bare symbol,
-  the name **bounded on both sides**, so `Lookup` no longer resolves to `LookupPath`.
-  *What this does not yet fix, banked as gaps:* a bare name can still land on a use or a
-  doc comment above its declaration, since git takes the first matching line; only an
-  extent computed from a parse settles that, which is the reclaim behind this stopgap.
+  symbol to a bare name; the receiver is the only spelling that can tell them apart, and
+  the receiver group between keyword and name is what it is matched on. **A symbol
+  declared more than once in its file is reported unresolvable with the count and the
+  repair**, never resolved to the first: the anchor has been watching an arbitrary one
+  since it was written. Only Go sources have an extent today (gap `O21`).
 
 **Only stale alarms are reported here, and that is deliberate.** An alarm with
 `**Inject:**` but no `**Pulled:**` is a *prescription* — an injection someone wrote

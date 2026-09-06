@@ -54,6 +54,8 @@ type Git struct {
 	// git-managed or is not for the whole of a run, so asking twice cannot differ.
 	probed bool
 	isRepo bool
+	// head caches each file as committed at HEAD, nil for a path HEAD does not hold. R308
+	head map[string]*string
 }
 
 // NewGit returns a Git answering about the given directory.
@@ -138,7 +140,7 @@ func (g *Git) Tracked(path string) (bool, error) {
 	return strings.TrimSpace(out) != "", nil
 }
 
-// CRC: crc-Git.md | Seq: seq-alarm-freshness.md#1.5 | R180, R182, R184
+// CRC: crc-Git.md | Seq: seq-alarm-freshness.md#1.5 | R180, R182, R184, R303, R307, R308
 // LastChanged reports when the named function in the named file last changed.
 //
 // **The question is asked of the function, not the file**, because a file-level answer
@@ -148,15 +150,25 @@ func (g *Git) Tracked(path string) (bool, error) {
 // check that reports everything is discarded as noise within a week, which makes the
 // coarse version worse than none.
 //
-// `git log -L :symbol:file` answers it directly. Its output interleaves format lines
-// with diff hunks, and commits arrive newest-first, so the first format line is the
-// answer.
+// **The reader computes the range; git is asked when those lines changed.** The query
+// was `git log -L :pattern:file`, which asks git to *find* the symbol as well as bound
+// it, and git bounds a declaration at the line before the next one — so the range
+// carried the successor's doc comment and the trailing blank line, and the last
+// declaration in a file read stale on every append (gaps O10, O11). The bounds now come
+// from a parse of the file **as committed at HEAD**, because `-L <start>,<end>` resolves
+// those numbers against HEAD and walks them backwards: an uncommitted edit higher in
+// the file moves every later declaration, and working-tree numbers would then name
+// somebody else's code in history. Measured on old-sdom, 2026-08-21: two alarms stale
+// over a function nobody had touched.
 //
-// Four outcomes are kept apart deliberately: no working tree (ErrNoGit), a path git
-// holds no history for (ErrNoHistory), a tracked file whose symbol git cannot find
-// (ErrUnresolvedSite), and a function that exists and has never changed (zero time, no
-// error). Only the last is a clean result, and the three before it must never be
-// mistaken for one.
+// `git log` output interleaves format lines with diff hunks, and commits arrive
+// newest-first, so the first format line is the answer.
+//
+// Five outcomes are kept apart deliberately: no working tree (ErrNoGit), a path git
+// holds no history for (ErrNoHistory), a tracked file whose symbol the parse cannot
+// find (ErrUnresolvedSite), a symbol declared more than once (AmbiguousSiteError), and
+// a function that exists and has never changed (zero time, no error). Only the last is
+// a clean result, and the four before it must never be mistaken for one.
 func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	if !g.IsRepo() {
 		return time.Time{}, ErrNoGit
@@ -168,16 +180,30 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	if tracked, terr := g.Tracked(file); terr != nil || !tracked {
 		return time.Time{}, ErrNoHistory
 	}
-	out, err := g.run("log", "-L", ":"+sitePattern(symbol)+":"+file, "--format=%H|%ad", "--date=short")
-	if err != nil {
-		// `-L` searches the file as committed, so a function added since the last
-		// commit is absent from history while being perfectly present on disk. Reporting
-		// that as a rotted anchor is false and fires on every newly written function —
-		// found by running this check against its own new code. If the working tree
-		// still declares the symbol, the honest answer is that there is no history yet.
-		if declaresSymbol(g.abs(file), symbol) {
-			return time.Time{}, ErrNoHistory
+	head, ok := g.headFile(file)
+	if !ok {
+		return time.Time{}, ErrNoHistory
+	}
+	start, end, n := siteExtent(head, symbol)
+	switch {
+	case n > 1:
+		// R307 — counted before the extent is trusted, because the extent cannot report
+		// this: the anchor has been watching an arbitrary one of them since it was
+		// written, and every answer about it has been confident and unfounded.
+		return time.Time{}, &AmbiguousSiteError{Symbol: symbol, N: n}
+	case n == 0:
+		// A symbol absent from HEAD's file and present on disk is one written since the
+		// last commit — *no history yet* rather than a rotted anchor, which is the
+		// distinction this check would otherwise get backwards on every new function.
+		if src, rerr := os.ReadFile(g.abs(file)); rerr == nil {
+			if _, _, live := siteExtent(string(src), symbol); live > 0 {
+				return time.Time{}, ErrNoHistory
+			}
 		}
+		return time.Time{}, ErrUnresolvedSite
+	}
+	out, err := g.run("log", "-L", fmt.Sprintf("%d,%d:%s", start, end, file), "--format=%H|%ad", "--date=short")
+	if err != nil {
 		return time.Time{}, ErrUnresolvedSite
 	}
 	for _, line := range strings.Split(out, "\n") {
@@ -199,90 +225,49 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	return time.Time{}, nil
 }
 
-// CRC: crc-Git.md | R205, R206
-// sitePattern is the regex git is handed for `-L :<pattern>:<file>`, built from an
-// `**Inject:**` symbol.
-//
-// **The anchor is not handed over as written.** `Doc.Render` as a regex matches no line
-// of Go — the dot is any character and the shape never occurs on a declaration line — so
-// every method-form anchor read *unresolvable*; measured 2026-09-04, 69 alarms in a
-// sibling project over nothing else. A `Type.Method` symbol becomes a declaration-shaped
-// pattern over its receiver, with the receiver's name and pointer star optional, so it
-// resolves to *that* method and not to a same-named method on another type. A bare
-// symbol is bounded on both sides, so `Lookup` no longer resolves to `LookupPath` —
-// git takes the first line that matches, and an unbounded name matches inside a longer
-// one first.
-//
-// **The dialect is git's, POSIX basic regex, not Go's.** Parentheses are literal, a
-// group is `\(…\)`, an optional group is `\{0,1\}`, and `\b` is the GNU boundary. Each of
-// those was probed against a real repository before it was relied on, which is why the
-// tests for this function build one rather than asserting over strings.
-//
-// What it does not settle: a bare name's first bounded match may be a use or the doc
-// comment above the declaration. Only an extent computed from a parse can, and that is
-// the reclaim this is the stopgap for (gaps O10, O11).
-func sitePattern(symbol string) string {
-	if typ, method, ok := strings.Cut(symbol, "."); ok && typ != "" && method != "" {
-		return `func (\([A-Za-z_][A-Za-z0-9_]* \)\{0,1\}\*\{0,1\}` + typ + `) ` + method + `\b`
+// R308
+// headFile is the file's content as committed at HEAD, cached per file for one
+// invocation: a census asks about many sites in one file, and the range is computed
+// once per site over the same bytes. False when HEAD holds no such path.
+func (g *Git) headFile(file string) (string, bool) {
+	if g.head == nil {
+		g.head = map[string]*string{}
 	}
-	return `\b` + symbol + `\b`
-}
-
-// declaresSymbol reports whether the file on disk still contains a declaration of the
-// symbol. Deliberately loose — it asks "is this plausibly present" rather than parsing
-// Go — because it is only ever used to choose between two *failure* reports, and the
-// looseness errs toward "cannot tell", never toward a clean result.
-func declaresSymbol(path, symbol string) bool {
-	data, err := os.ReadFile(path)
+	if cached, seen := g.head[file]; seen {
+		if cached == nil {
+			return "", false
+		}
+		return *cached, true
+	}
+	// `./` makes the path relative to the working directory, as `-L` already treats it;
+	// bare `HEAD:path` is relative to the repository root, and a design root beneath
+	// it (this repository's `tool/`) read every site as having no history.
+	out, err := g.run("show", "HEAD:./"+filepath.ToSlash(file))
 	if err != nil {
-		return false
+		g.head[file] = nil
+		return "", false
 	}
-	for _, line := range strings.Split(string(data), "\n") {
-		t := strings.TrimSpace(line)
-		if !strings.HasPrefix(t, "func ") && !strings.HasPrefix(t, "var ") &&
-			!strings.HasPrefix(t, "const ") && !strings.HasPrefix(t, "type ") {
-			continue
-		}
-		// R206 — bounded, as the pattern handed to git is: `func LookupPath` on disk
-		// does not declare `Lookup`, and saying it did turned a rotted anchor into
-		// "no history yet" — found by the test for the bounded pattern, which fell
-		// through to this fallback and read the wrong error.
-		if declaresName(t, symbol) {
-			return true
-		}
-		// R205 — a method's declaration line reads `func (x *Type) Method(`, never
-		// `Type.Method`; without this a method written since the last commit reports
-		// as a rotted anchor rather than as new.
-		if typ, method, ok := strings.Cut(symbol, "."); ok &&
-			strings.HasPrefix(t, "func (") && strings.Contains(t, typ+")") &&
-			strings.Contains(t, ") "+method+"(") {
-			return true
-		}
-	}
-	return false
+	g.head[file] = &out
+	return out, true
 }
 
-// declaresName reports whether a declaration line names symbol as a whole word.
-func declaresName(line, symbol string) bool {
-	at := 0
-	for {
-		i := strings.Index(line[at:], symbol)
-		if i < 0 {
-			return false
-		}
-		i += at
-		before := i == 0 || !isIdent(line[i-1])
-		after := i+len(symbol) == len(line) || !isIdent(line[i+len(symbol)])
-		if before && after {
-			return true
-		}
-		at = i + 1
-	}
+// CRC: crc-Git.md | R307
+// AmbiguousSiteError reports a symbol declared more than once in its file. A state of
+// its own rather than ErrUnresolvedSite, because the repair differs: the anchor points
+// at something, and the fix is to say which one — `Type.Method`.
+type AmbiguousSiteError struct {
+	Symbol string
+	N      int
 }
 
-func isIdent(c byte) bool {
-	return c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+func (e *AmbiguousSiteError) Error() string {
+	return fmt.Sprintf("%s is declared %d times in that file; name the receiver", e.Symbol, e.N)
 }
+
+// ErrAmbiguousSite is the sentinel every AmbiguousSiteError matches under errors.Is.
+var ErrAmbiguousSite = errors.New("symbol declared more than once")
+
+func (e *AmbiguousSiteError) Is(target error) bool { return target == ErrAmbiguousSite }
 
 // isObjectHash reports whether a token is a full object name in any format git
 // supports — 40 hex characters for SHA-1, 64 for SHA-256.

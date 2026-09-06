@@ -17,10 +17,10 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [x] ~~**Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.**~~ **LANDED (`eaf9604`, 2026-09-05 — `#69`.)** Needs Items 1 and 2.
 - [x] ~~**Item 4 — `validate trajectory`.**~~ **LANDED (`7e6e293`, 2026-09-05 — `#70`.)** Needs Items 1 and 3.
 - [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
-- [ ] **Item 6 — the alarm site as a parsed extent, not a git pattern.** **OPEN (not queued.)** Needs Item 1.
+- [ ] **Item 6 — the alarm site as a parsed extent, not a git pattern.** **OPEN (#72.)** Needs Item 1.
 - [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 8 — the skill re-derived as each verb returns.** **OPEN (not queued.)**
-- [ ] **Item 9 — the readers' backtick and key-fragment landings, absorbed.** **OPEN (#71.)** Needs Items 3 and 4.
+- [x] ~~**Item 9 — the readers' backtick and key-fragment landings, absorbed.**~~ **LANDED (`9716bca`, 2026-09-06 — `#71`.)** Needs Items 3 and 4.
 
 ## Decisions
 
@@ -86,6 +86,16 @@ match may be a use or a doc comment, and git's range includes the trailing blank
 last declaration in a file reads stale on any append. Their `DeclarationName` carries the bare
 method name and jumps the receiver, so the qualified `Type.Method` is computable from their DOM
 but not exposed — noted to them in `requests/RESP-alarm-method-anchors.md`.
+
+*Landed 2026-09-06 as `#72`.* `siteExtent` in `project/extent.go` over `sdom.LangGo` and
+`schema.Go`: the declaring line through the line its groups close on, no comment, the receiver
+read from the group between keyword and name (so their `DeclarationName` needed no change);
+two declarations answering to one bare name is reported, not guessed. `LastChanged` reads
+`git show HEAD:./file` once per file — `./` because a design root beneath the repository root
+(`tool/`) otherwise reads every site as having no history, measured the same day — and hands
+git `-L start,end`. R205 and R206 retired at the source (`T2`, `T3` → R304, R303); `O10`,
+`O11` resolved; `O21` banks the markdown extent (old R402) until a non-Go site exists.
+Measured on mini-spec-tool's tree: 123 alarms, 123 verified, 0 unresolvable.
 
 ## Item 9
 

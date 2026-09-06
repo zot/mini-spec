@@ -117,14 +117,12 @@ range includes the blank line after a declaration, so a method with nothing afte
 reported changed whenever something is appended — measured 2026-09-04 while writing this
 **Expected:** `LastChanged("x.go", "A.Run")` reports day two and `("x.go", "B.Run")` day one;
 a pattern resolving to the first `Run` in the file reports day one for both
-**Fire alarm:** hand git the symbol as written — return it unchanged from `sitePattern` —
-and confirm both method cases go red. The error is `ErrNoHistory`, not `ErrUnresolvedSite`:
-the on-disk check still recognises the method, so the fallback reads "new, not gone"
-**Inject:** internal/project/git.go:sitePattern
-**Pulled:** 2026-09-04 — rang: `A.Run: git holds no history for that path`, and the bounded
-test went red beside it since the same return dropped its boundaries; restore byte-clean by
-copy. First written predicting `ErrUnresolvedSite`; corrected to what was observed
-**Refs:** crc-Git.md — R205
+**Fire alarm:** ignore the receiver in `siteExtent` — compare `receiverType` against a value no receiver can be, `typ+"!"` (dropping the condition or replacing it with `false` leaves a variable unused and does not compile, which is not a pull) —
+and confirm `A.Run` goes red: it resolves to the first `Run`, B's, and reports day one.
+*Until 2026-09-06 the site was `sitePattern`, the stopgap the extent replaced*
+**Inject:** internal/project/extent.go:siteExtent
+**Pulled:** 2026-09-06 — rang, and not where predicted: with the receiver ignored both `Run`s answer to `A.Run`, so it read `A.Run is declared 2 times in that file; name the receiver` — the ambiguity check caught it before the date comparison could; restore byte-clean by copy, and rang again the same day after the simplification pass restructured `siteExtent` and `groupEnd`. Previously 2026-09-04 against `sitePattern`, signature `A.Run: git holds no history for that path`
+**Refs:** crc-Git.md — R304
 **Code:** internal/project/git_test.go
 
 ## Test: a bare anchor is bounded, not a substring
@@ -135,10 +133,50 @@ reading
 named `Lookup`
 **Expected:** `LastChanged("x.go", "Lookup")` returns `ErrUnresolvedSite`; `"LookupPath"`
 returns a date
-**Fire alarm:** drop the `\b` boundaries from the bare-symbol pattern and confirm `Lookup`
-goes green with `LookupPath`'s date
-**Inject:** internal/project/git.go:sitePattern
-**Pulled:** 2026-09-04 — rang: `Lookup resolved (<nil>); want ErrUnresolvedSite`; the method
-test stayed green, so the two alarms discriminate; restore byte-clean by copy
-**Refs:** crc-Git.md — R206
+**Fire alarm:** match the name as a prefix in `siteExtent` — `strings.HasPrefix(text, want)`
+in place of equality — and confirm `Lookup` goes green with `LookupPath`'s date. *Until
+2026-09-06 the site was `sitePattern` and the injection dropped its `\b` boundaries*
+**Inject:** internal/project/extent.go:siteExtent
+**Pulled:** 2026-09-06 — rang: `Lookup resolved (<nil>); want ErrUnresolvedSite — an unbounded name matched inside LookupPath`; restore byte-clean by copy, and rang again the same day after the simplification pass restructured `siteExtent` and `groupEnd`. Previously 2026-09-04 against `sitePattern`, same signature
+**Refs:** crc-Git.md — R303
+
+## Test: a comment-only edit does not stale the declaration
+**Purpose:** validates R303 and R306 — the range is the declaration's own lines and nobody's comment. Git's range gave a declaration its successor's doc block, and old-sdom's first repair gave it its own; the second turned three verified alarms stale over traceability lines rewritten inside doc blocks
+**Input:** a repository committing `Foo` with a doc comment and `Bar` after it on day one; on day two only the two comments change
+**Expected:** `LastChanged("x.go", "Foo")` reports day one
+**Fire alarm:** start the extent one line above the keyword — `d.Line(from) - 1`, which takes the doc comment in — and confirm `Foo` goes red reporting day two
+**Inject:** internal/project/extent.go:siteExtent
+**Pulled:** 2026-09-06 — rang: `Foo changed 2026-01-02 after a comment-only edit; want 2026-01-01`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
+**Refs:** crc-Git.md — R303, R306
+**Code:** internal/project/git_test.go
+
+## Test: an append after the last declaration does not stale it
+**Purpose:** validates R305 — the range ends where the groups close, not at the line before the next declaration; git's range took the trailing blank line and staled the last function in a file on every append (gap O11)
+**Input:** a repository committing `A.Run` as the last declaration on day one, and appending `B` below it on day two
+**Expected:** `LastChanged("x.go", "A.Run")` reports day one
+**Fire alarm:** extend the extent by one line past the close in `groupEnd` and confirm `A.Run` goes red reporting day two
+**Inject:** internal/project/extent.go:groupEnd
+**Pulled:** 2026-09-06 — rang: `A.Run changed 2026-01-02 after an append below it; want 2026-01-01`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
+**Refs:** crc-Git.md — R305
+**Code:** internal/project/git_test.go
+
+## Test: an ambiguous bare name is refused, and the receiver form resolves
+**Purpose:** validates R307 — two declarations answering to one name is reported with the count, never resolved to the first
+**Input:** a repository committing `A.Run` and `B.Run`
+**Expected:** `LastChanged("x.go", "Run")` returns an `AmbiguousSiteError` with `N` 2 matching `ErrAmbiguousSite`; `"A.Run"` returns a date
+**Fire alarm:** stop counting past the first match in `siteExtent` — `break` after the first hit — and confirm `Run` goes green with a date
+**Inject:** internal/project/extent.go:siteExtent
+**Pulled:** 2026-09-06 — rang: `Run = <nil>; want AmbiguousSiteError{N: 2}`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
+**Refs:** crc-Git.md — R307
+**Code:** internal/project/git_test.go
+
+## Test: the extent over the shapes a repository test does not reach
+**Purpose:** validates R303, R304, R305 on the parse alone — a signature spanning lines, a nested group, grouped `var` members at their own lines, a receiver carrying a type parameter, the bare form of a method, a receiver that does not match
+**Input:** one twenty-line Go source
+**Expected:** `Multi` is lines 9–16, `A` and `B` are 4 and 5, `Set.Add` and `Add` are 18, `One` is 20, `Other.Add` and `Nope` are absent
+**Fire alarm:** stop the walk in `groupEnd` at the first closer instead of the last — confirm `Multi` reads 9–11, the parameter group's close
+**Inject:** internal/project/extent.go:groupEnd
+**Pulled:** 2026-09-06 — rang: `Multi: got 9-11 count 1, want 9-16 count 1`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
+**Refs:** crc-Git.md — R303, R304, R305
+**Code:** internal/project/git_test.go
 **Code:** internal/project/git_test.go
