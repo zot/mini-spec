@@ -45,6 +45,9 @@ type Carve struct {
 	HasStatus bool        `json:"has_status"`
 	Parts     []Part      `json:"parts"`
 	Stateless []Stateless `json:"stateless"`
+	// Unread is what the reader could not read — today, every bracket group still open at end
+	// of input, at its opener's line — so a fence that swallowed the tail says so here. R301
+	Unread []minispecsdom.Unread `json:"unread,omitempty"`
 }
 
 // PartState is what the checkbox says. A stateless line has none and is not a Part.
@@ -219,7 +222,8 @@ func ReadCarve(path, rel string) (Carve, error) {
 
 func parseCarve(rel, src string) Carve {
 	rc := minispecsdom.ParseCarve(src)
-	c := Carve{Path: rel, HasStatus: rc.HasStatus()}
+	// R301 — what the reader could not read rides beside the parts, never instead of them.
+	c := Carve{Path: rel, HasStatus: rc.HasStatus(), Unread: rc.Unread()}
 	for _, p := range rc.Parts() {
 		c.Parts = append(c.Parts, Part{part: p})
 	}
@@ -283,6 +287,7 @@ func (s CarveScan) Landed() int        { return s.total(Carve.Landed) }
 func (s CarveScan) Unkeyed() int       { return s.total(Carve.Unkeyed) }
 func (s CarveScan) NonConforming() int { return s.total(Carve.NonConforming) }
 func (s CarveScan) Stateless() int     { return s.total(func(c Carve) int { return len(c.Stateless) }) }
+func (s CarveScan) Unread() int        { return s.total(func(c Carve) int { return len(c.Unread) }) } // R301
 func (s CarveScan) NoStatus() int {
 	n := 0
 	for _, c := range s.Carves {

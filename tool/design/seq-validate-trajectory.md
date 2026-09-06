@@ -83,7 +83,8 @@ pin to a step.
        a status-block line the reader could not read as a part and lists as
        deviating; a checkbox-less SPLIT parent carries no deviation            // R298
 
-   2.9 coverage: entry-like lines the readers did not recognize                   // R297
+   2.9 coverage: what the readers could not read, per file — the queue files,      // R297, R302
+       the current file, and each carve
        the honest half, and 2.7 is its symptom — a shape-based check cannot
        answer for a line it never recognized as an entry
 

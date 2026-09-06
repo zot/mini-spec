@@ -17,6 +17,7 @@ import (
 const (
 	pendingFile = "PENDING.md"
 	doneFile    = "DONE.md"
+	currentFile = "CURRENT.md"
 )
 
 // doneVerbs and openVerbs are the marker classes a checkbox has to agree with. The
@@ -115,7 +116,7 @@ func RunTrajectory(repoRoot string) (*TrajectoryIssues, error) {
 	t.checkNumbering(traj)
 	t.checkStateless(carves)
 	t.countUnreachable(carves)
-	t.countUnread(q)
+	t.countUnread(q, carves)
 	return t, nil
 }
 
@@ -334,18 +335,24 @@ func (t *TrajectoryIssues) checkNumbering(traj parser.TrajectoryScan) {
 	}
 }
 
-// Seq: seq-validate-trajectory.md#2.9 | R297
-// countUnread records what each reader could not recognize, per file.
-func (t *TrajectoryIssues) countUnread(q parser.QueueScan) {
-	counts := map[string]int{pendingFile: len(q.PendingUnread), doneFile: len(q.DoneUnread)}
-	for name, n := range counts {
+// Seq: seq-validate-trajectory.md#2.9 | R297, R302
+// countUnread records what each reader could not recognize, per file: the two queue files,
+// the current file, and every carve.
+func (t *TrajectoryIssues) countUnread(q parser.QueueScan, carves parser.CarveScan) {
+	record := func(name string, n int) {
 		if n == 0 {
-			continue
+			return
 		}
 		if t.Unread == nil {
 			t.Unread = map[string]int{}
 		}
 		t.Unread[name] = n
+	}
+	record(pendingFile, len(q.PendingUnread))
+	record(doneFile, len(q.DoneUnread))
+	record(currentFile, len(q.CurrentUnread))
+	for _, c := range carves.Carves {
+		record(c.Path, len(c.Unread))
 	}
 }
 
@@ -504,9 +511,9 @@ func (t *TrajectoryIssues) unreadNote() string {
 		parts[i] = fmt.Sprintf("%s (%d)", name, t.Unread[name])
 	}
 	return fmt.Sprintf(
-		"note: %d entry-like line(s) were not in the recognized shape — %s. Their identifiers\n"+
-			"      were not read, and every shape-based check above is blind to them by\n"+
-			"      construction. Migrate them and the checks can see them.\n",
+		"note: %d line(s) were not read — %s. An entry-like line outside the recognized\n"+
+			"      shape, or a bracket group never closed, which takes the rest of its file with it;\n"+
+			"      every shape-based check above is blind to them by construction.\n",
 		t.unreadTotal(), strings.Join(parts, ", "))
 }
 

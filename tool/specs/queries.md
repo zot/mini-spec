@@ -318,6 +318,13 @@ carries a format deviation takes the other rule and lists always. **The word is 
 — it names the line, never the reader's action; the column beside it holds part states, and
 `declined` in that column once reported two split parents as refused.
 
+**What the reader could not read is counted on the carve's line and in the census, and listed
+under `--open` — the opener's line and its marker.** Today that is every bracket group still
+open at end of input: a fence or code span never closed takes the rest of its file with it,
+and every part after it is gone from every count above with nothing else saying so. Measured
+2026-09-05 on this repository's done file: 17 entries read where 58 existed, nothing reported.
+The word is `unread`, the reader's own; it names what was not read, never a state of the part.
+
 **Every non-conformance is listed by every read path, whatever the line's key or state, with
 the shape it must take; and refused by every write path.** A count says a document needs
 migrating; only the line says which one, and only the target says what to do. Never behind

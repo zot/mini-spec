@@ -15,11 +15,12 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [x] ~~**Item 1 — the module dependency and the carve reader.**~~ **LANDED (`2a050a2`, 2026-09-04 — `#67`.)**
 - [x] ~~**Item 2 — the backup slot.**~~ **LANDED (`7dd50a0`, 2026-09-04 — `#68`.)** Needs Item 1.
 - [x] ~~**Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.**~~ **LANDED (`eaf9604`, 2026-09-05 — `#69`.)** Needs Items 1 and 2.
-- [ ] **Item 4 — `validate trajectory`.** **OPEN (#70.)** Needs Items 1 and 3.
+- [x] ~~**Item 4 — `validate trajectory`.**~~ **LANDED (`7e6e293`, 2026-09-05 — `#70`.)** Needs Items 1 and 3.
 - [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 6 — the alarm site as a parsed extent, not a git pattern.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
 - [ ] **Item 8 — the skill re-derived as each verb returns.** **OPEN (not queued.)**
+- [ ] **Item 9 — the readers' backtick and key-fragment landings, absorbed.** **OPEN (#71.)** Needs Items 3 and 4.
 
 ## Decisions
 
@@ -85,6 +86,28 @@ match may be a use or a doc comment, and git's range includes the trailing blank
 last declaration in a file reads stale on any append. Their `DeclarationName` carries the bare
 method name and jumps the receiver, so the qualified `Type.Method` is computable from their DOM
 but not exposed — noted to them in `requests/RESP-alarm-method-anchors.md`.
+
+## Item 9
+
+Their 2026-09-05 landings — one pattern code group with `Unclosed` on the context and `Unread` on
+every reader (`c42cd24`, `f3c947e`), and `PartLine.Key()` returning the fragment (`8819819`) —
+reach this tool through the `replace`, not a version. Measured the same evening against their
+head: build, tests and `validate` green, so the two requests asking for a bump are mostly
+discharged already; Item 4 adopted the fragment key and `trajectory-format.md` states it. What
+is left, one squashed commit:
+
+- The `--from` shim in `pending.go` **stays**: it converts a typed `#Item 1` to the fragment by
+  decision (R243, pattern 23 — flexible on input, rigid on output), and their `Key()` no longer
+  returning that form makes it harmless rather than dead. The queue entry's `Next:` line said
+  to refuse the form; it was wrong, and this is the record of why.
+- `parser.Carve` and `QueueScan` carry the readers' `Unread()`; `query carves` prints an
+  `unread` count per carve and in the census and lists the opener's line under `--open`
+  (R301); `validate trajectory`'s coverage note counts per file across both queue files, the
+  current file and every carve (R302). Both alarms pulled the same evening.
+- Gap `O20` resolved: the done file reads whole (58 entries, reader disagreement gone).
+  Both requests had already been answered `completed` the same afternoon
+  (`requests/RESP-both-backtick-halves-landed.md`, `RESP-sdomification-key-fragment.md`);
+  the evening's inbox sweep missed them, and the duplicates it prompted were removed.
 
 ## The requests exchange
 

@@ -487,6 +487,7 @@ type QueueScan struct {
 	Done          []DoneEntry
 	PendingUnread []minispecsdom.Unread
 	DoneUnread    []minispecsdom.Unread
+	CurrentUnread []minispecsdom.Unread // R302
 }
 
 // CRC: crc-Trajectory.md | Seq: seq-validate-trajectory.md#1.2.1 | R287
@@ -502,7 +503,23 @@ func ScanQueue(repoRoot string) (QueueScan, error) {
 	if err != nil {
 		return q, err
 	}
+	q.CurrentUnread = currentUnread(filepath.Join(repoRoot, "CURRENT.md"))
 	return q, nil
+}
+
+// R302
+// currentUnread is the current file's unread list. A file that is missing or that the reader
+// refuses contributes nothing here: absence and shape are each answered by their own check.
+func currentUnread(path string) []minispecsdom.Unread {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	cur, err := minispecsdom.ParseCurrent(string(src))
+	if err != nil {
+		return nil
+	}
+	return cur.Unread()
 }
 
 // pendingEntriesUnread is PendingEntries with the reader's unread lines beside it.

@@ -1119,7 +1119,7 @@ func gapIDList(res *query.NextIDResult) []string {
 func (c *CLI) queryCarves(args []string) int {
 	fs := flag.NewFlagSet("carves", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-	open := fs.Bool("open", false, "list each carve's open parts and stateless lines")
+	open := fs.Bool("open", false, "list each carve's open parts, stateless lines and unread lines")
 	asJSON := fs.Bool("json", false, "machine-readable output")
 	rest, err := parseFlagsAnywhere(fs, args)
 	if err != nil {
@@ -1169,6 +1169,9 @@ func printCarves(w io.Writer, scan *parser.CarveScan, open bool) {
 		if n := len(cv.Stateless); n > 0 {
 			fmt.Fprintf(w, "  %d stateless", n) // R217 — the word names the line
 		}
+		if n := len(cv.Unread); n > 0 {
+			fmt.Fprintf(w, "  %d unread", n) // R301
+		}
 		fmt.Fprintln(w)
 		for _, p := range cv.Parts {
 			if !listed(p, open) {
@@ -1185,6 +1188,14 @@ func printCarves(w io.Writer, scan *parser.CarveScan, open bool) {
 			}
 			fmt.Fprintf(w, "  %-11s L%-8d %s: %s\n", "(stateless)", d.Line, d.Reason, ellipsis(d.Text, 58))
 			printDeviations(w, d.Deviations)
+		}
+		// R301 — what the reader could not read lists under --open, like a clean stateless
+		// line: the count on the carve's line is always there, and it is the count that says
+		// the rest of the file may be missing from every number above it.
+		if open {
+			for _, u := range cv.Unread {
+				fmt.Fprintf(w, "  %-11s L%-8d %s\n", "(unread)", u.Line, u.Text)
+			}
 		}
 	}
 	fmt.Fprintln(w, carveCensus(scan))
@@ -1232,9 +1243,9 @@ func ellipsis(s string, n int) string {
 
 // carveCensus states every count, zeros included — a zero is evidence the check ran. R218
 func carveCensus(scan *parser.CarveScan) string {
-	return fmt.Sprintf("%s: %d open, %d landed, %d stateless, %d non-conforming; %s with no status block",
+	return fmt.Sprintf("%s: %d open, %d landed, %d stateless, %d non-conforming, %d unread; %s with no status block",
 		countLabel(scan.WithStatus(), "carve"), scan.Open(), scan.Landed(), scan.Stateless(),
-		scan.NonConforming(), countLabel(scan.NoStatus(), "document"))
+		scan.NonConforming(), scan.Unread(), countLabel(scan.NoStatus(), "document"))
 }
 
 func countLabel(n int, noun string) string {
@@ -1246,15 +1257,17 @@ func countLabel(n int, noun string) string {
 
 // carveJSON resolves the counts, which the markdown form computes, into fields. R215
 type carveJSON struct {
-	Path           string             `json:"path"`
-	HasStatus      bool               `json:"has_status"`
-	Open           int                `json:"open"`
-	Landed         int                `json:"landed"`
-	Unkeyed        int                `json:"unkeyed"`
-	NonConforming  int                `json:"non_conforming"`
-	Stateless      int                `json:"stateless"`
-	StatelessLines []parser.Stateless `json:"stateless_lines,omitempty"`
-	Parts          []parser.Part      `json:"parts,omitempty"`
+	Path           string                `json:"path"`
+	HasStatus      bool                  `json:"has_status"`
+	Open           int                   `json:"open"`
+	Landed         int                   `json:"landed"`
+	Unkeyed        int                   `json:"unkeyed"`
+	NonConforming  int                   `json:"non_conforming"`
+	Stateless      int                   `json:"stateless"`
+	StatelessLines []parser.Stateless    `json:"stateless_lines,omitempty"`
+	Unread         int                   `json:"unread"`
+	UnreadLines    []minispecsdom.Unread `json:"unread_lines,omitempty"`
+	Parts          []parser.Part         `json:"parts,omitempty"`
 }
 
 type carveReportJSON struct {
@@ -1267,6 +1280,7 @@ type carveReportJSON struct {
 		Unkeyed       int `json:"unkeyed"`
 		NonConforming int `json:"non_conforming"`
 		Stateless     int `json:"stateless"`
+		Unread        int `json:"unread"`
 		NoStatus      int `json:"no_status"`
 	} `json:"census"`
 }
@@ -1282,6 +1296,10 @@ func carveReport(scan *parser.CarveScan, open bool) carveReportJSON {
 			Unkeyed:       cv.Unkeyed(),
 			NonConforming: cv.NonConforming(),
 			Stateless:     len(cv.Stateless),
+			Unread:        len(cv.Unread),
+		}
+		if open {
+			entry.UnreadLines = cv.Unread
 		}
 		for _, d := range cv.Stateless {
 			if listedStateless(d, open) {
@@ -1298,6 +1316,7 @@ func carveReport(scan *parser.CarveScan, open bool) carveReportJSON {
 	rep.Census.Carves = scan.WithStatus()
 	rep.Census.Open = scan.Open()
 	rep.Census.Landed = scan.Landed()
+	rep.Census.Unread = scan.Unread()
 	rep.Census.Unkeyed = scan.Unkeyed()
 	rep.Census.NonConforming = scan.NonConforming()
 	rep.Census.Stateless = scan.Stateless()

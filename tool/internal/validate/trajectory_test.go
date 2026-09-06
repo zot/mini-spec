@@ -1,4 +1,4 @@
-// CRC: crc-TrajectoryValidate.md | R286, R287, R288, R290, R291, R292, R293, R294
+// CRC: crc-TrajectoryValidate.md | R286, R287, R288, R290, R291, R292, R293, R294, R297, R302
 package validate
 
 import (
@@ -288,7 +288,7 @@ func TestUnrecognizedEntryLinesAreCounted(t *testing.T) {
 	}
 
 	out := got.FormatText()
-	if !strings.Contains(out, "not in the recognized shape") {
+	if !strings.Contains(out, "were not read") {
 		t.Errorf("the report does not state its coverage:\n%s", out)
 	}
 	// The pairing is the point. #3 sits in the unrecognized line, so it shows as a gap —
@@ -447,5 +447,24 @@ func TestTheTwoReadersOfTheQueueFilesMustAgree(t *testing.T) {
 	})
 	if len(agree.ReaderDisagreement) != 0 {
 		t.Errorf("readers that agree were reported: %v", agree.ReaderDisagreement)
+	}
+}
+
+// R302. The coverage note names every file a reader could leave partly unread: the current
+// file and each carve, beside the two queue files. A fence never closed in a carve takes
+// its later parts out of every check above, and this count is the only one that says so.
+func TestCurrentFileAndCarveUnreadAreCounted(t *testing.T) {
+	got := run(t, map[string]string{
+		"PENDING.md":  "# Pending\n\n---\n\n## 2. **live**. Active.\n   Source: [carves/x.md](carves/x.md), part `#1`.\n",
+		"DONE.md":     "# Done\n",
+		"CURRENT.md":  "# Current\n\n---\n\n## Active\n\n#2 — live.\n\n```\nnever closed\n",
+		"carves/x.md": "# Carve: x\n\n## Status\n\n- [ ] **Item 1 — live.** **OPEN (#2.)**\n\n## Item 1\n\n`never closed\n",
+	})
+	if got.Unread["CURRENT.md"] != 1 || got.Unread["carves/x.md"] != 1 {
+		t.Fatalf("Unread = %v, want one for the current file and one for the carve", got.Unread)
+	}
+	out := got.FormatText()
+	if !strings.Contains(out, "CURRENT.md (1)") || !strings.Contains(out, "carves/x.md (1)") {
+		t.Errorf("the note does not name both files:\n%s", out)
 	}
 }

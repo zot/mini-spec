@@ -1,5 +1,5 @@
 # Carve
-**Requirements:** R207, R208, R209, R210, R211, R212, R214, R216, R217, R218, R219, R220
+**Requirements:** R207, R208, R209, R210, R211, R212, R214, R216, R217, R218, R219, R220, R301
 
 The carve documents at the repository root, read and written **through
 `github.com/zot/simple-dom`'s `minispecsdom.Carve`**. This card is an adapter: it owns the
@@ -28,6 +28,9 @@ refused by write paths" meets the file system is one place (R219, R220).
 - Stateless: a status-block line with no checkbox — its 1-based line, derived from the node's
   offset in the source since the dependency numbers only parts, its head text so a reader can
   recognise it, and the deviations the part-line reader found on it (R216)
+- Unread: the reader's own `Unread()` list — every bracket group still open at end of input,
+  at its opener's line — carried on the carve as handed, because a fence never closed takes
+  every later part out of `Parts()` and this is the only field that says so (R301)
 
 ## Does
 - ScanCarves(repoRoot): read every `*.md` directly in `carves/` and `.carves/`; `carves/done/`
@@ -35,8 +38,8 @@ refused by write paths" meets the file system is one place (R219, R220).
 - ReadCarve(path, rel): read the bytes, `minispecsdom.ParseCarve`, and take `Parts()` and
   `Stateless()` as the reader hands them — the status region, the fence rule and the subpart
   depth are all the reader's (R209, R210)
-- Open(), Landed(), Stateless(), NonConforming(), NoStatus(): the counts, per carve and across
-  the scan, every one stated so a zero is evidence the check ran (R218)
+- Open(), Landed(), Stateless(), NonConforming(), NoStatus(), Unread(): the counts, per carve
+  and across the scan, every one stated so a zero is evidence the check ran (R218, R301)
 - SetMarker(path, key, verb, attribution), SetPartLanded(path, key, attribution): read, apply
   `Carve.SetMarker` / `Carve.Land`, write by temp-file-and-rename. The reader's refusals —
   `DeviationError`, `ErrReopen`, `ErrLanded`, `ErrNoPart` — pass through unchanged, and no

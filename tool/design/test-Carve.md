@@ -120,6 +120,16 @@ restore byte-clean by copy
 **Refs:** crc-CLI.md — R207, R212, R216, R217, R218
 **Code:** internal/cli/cli_carves_test.go
 
+## Test: an unclosed fence is counted as unread
+**Purpose:** validates R301 — a fence never closed swallows every later part; the count on the carve's line and in the census is the only number that says so, and the opener's line lists under `--open`
+**Input:** the census fixture followed by a body with an opening fence that never closes and a second status block with one more part behind it
+**Expected:** `1 unread` on the carve line and `, 1 unread;` in the census without `--open` and no row; with `--open` an `(unread)` row at the opener's line carrying its text; the swallowed part does not raise the open count
+**Refs:** crc-Carve.md, crc-CLI.md — R301
+**Code:** internal/cli/cli_carves_test.go
+**Fire alarm:** stop carrying the reader's list — `Unread: rc.Unread()` dropped from `parseCarve` — so the carve reports zero unread while two of its parts are gone. Goes red on the carve line and the census at once
+**Inject:** internal/parser/carve.go:parseCarve
+**Pulled:** 2026-09-05 — rang on all three checks: `want the count on the carve line and no row`, `want the opener's line and text`, `want the unread total`; restore byte-clean by copy
+
 ## Test: this repository's carves stay conformant
 **Purpose:** validates R219 against the live corpus — the reader's rules over this
 repository's own carves, zero deviations

@@ -140,6 +140,16 @@ open part citing a live item, which is now part of alarm 6's case.
 **Inject:** internal/validate/trajectory.go:countUnread
 **Pulled:** 2026-09-05 — rang, `Unread = map[], want one per file`
 
+## Test: the current file and each carve are counted as unread too
+**Purpose:** the coverage note names every file a reader could leave partly unread, not the two queue files alone (R302)
+**Input:** a current file whose Active section opens a fence it never closes, and a carve whose body opens a code span it never closes, beside a pending file and an empty done file
+**Expected:** one unread line under `CURRENT.md` and one under `carves/x.md`, and the note naming both with their counts
+**Refs:** crc-TrajectoryValidate.md, crc-Trajectory.md, crc-Carve.md
+**Code:** internal/validate/trajectory_test.go
+**Fire alarm:** drop the carve loop from `countUnread`, so only the queue files and the current file are counted. Goes red on `carves/x.md (1)` missing from the note
+**Inject:** internal/validate/trajectory.go:countUnread
+**Pulled:** 2026-09-05 — rang twice: first as written, then again after the simplification pass rewrote `countUnread` around a `record` closure, same signature `Unread = map[CURRENT.md:1], want one for the current file and one for the carve`; restore byte-clean by copy both times
+
 ## Test: the machine-readable form uses one key convention
 **Purpose:** every JSON key is snake_case, and the fields a consumer needs are present (R299)
 **Input:** a scan with findings in several buckets, marshalled

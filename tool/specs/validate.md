@@ -252,7 +252,10 @@ someone who had read the record of the other four.
 
 - **Output.** Markdown to stdout, the global `--json` flag honoured with one key convention
   (snake_case), exit 0 when consistent and 1 when issues were found. Coverage notes — unread
-  entries, unreachable citations — print whether or not anything else fired.
+  lines, unreachable citations — print whether or not anything else fired. The unread note
+  counts per file across **every document a reader touched**: both queue files, the current
+  file, and each carve, since a bracket group never closed in any of them takes that file's
+  tail out of every check above.
 
 ### Conformance is named, not complained about
 

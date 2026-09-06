@@ -1,5 +1,5 @@
 # TrajectoryValidate
-**Requirements:** R284, R285, R286, R287, R288, R290, R291, R292, R293, R294, R295, R296, R297, R298, R299, R289, R300
+**Requirements:** R284, R285, R286, R287, R288, R290, R291, R292, R293, R294, R295, R296, R297, R298, R299, R289, R300, R302
 
 Checks the trajectory layer for consistency: the queue files at the repository root against
 the carves that point at them. Read-only, like [Validate](crc-Validate.md), and separate
