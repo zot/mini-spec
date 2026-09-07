@@ -199,7 +199,7 @@ parent moves with its sub-items, since they are one entry.
 *Brought up to this tree on 2026-09-06.* This branch restarted from `abd78fd` (Item 13's commit)
 on 2026-09-04, so six parts that landed on `old-sdom` between 08-16 and 08-18 have their done
 entries in the shared ledger but their code only on that branch. Four of them were re-landed here
-over simple-dom by [sdom-reclaim.md](sdom-reclaim.md) and are marked with both commits; the
+over simple-dom by [sdom-reclaim.md](done/sdom-reclaim.md) and are marked with both commits; the
 worktree anchor came across with the backup port; `add-req` did not, and is open again. The
 `carve-stencils` carve that Item 10 and half of Item 7 moved to on `old-sdom` is not in this
 tree either, so both read as they did on 2026-08-16.
@@ -208,7 +208,7 @@ tree either, so both read as they did on 2026-08-16.
 
 - [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)** Landed
   on `old-sdom` as `d367eee` (2026-08-18 — `#32`) and not in this tree; returns as
-  [sdom-reclaim.md](sdom-reclaim.md) Item 7.
+  [sdom-reclaim.md](done/sdom-reclaim.md) Item 7.
 - [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
   checkbox: the sub-items carry the state.

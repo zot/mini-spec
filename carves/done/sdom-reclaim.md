@@ -18,7 +18,7 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [x] ~~**Item 4 — `validate trajectory`.**~~ **LANDED (`7e6e293`, 2026-09-05 — `#70`.)** Needs Items 1 and 3.
 - [x] ~~**Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.**~~ **LANDED (`630aab0`, 2026-09-07 — `#74`.)** Needs Item 1.
 - [x] ~~**Item 6 — the alarm site as a parsed extent, not a git pattern.**~~ **LANDED (`3931bcc`, 2026-09-06 — `#72`.)** Needs Item 1.
-- [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (#75.)** Needs Item 1.
+- [x] ~~**Item 7 — `update add-req` and the `query gaps` selectors.**~~ **LANDED (`a543897`, 2026-09-07 — `#75`.)** Needs Item 1.
 - [x] ~~**Item 8 — the skill re-derived as each verb returns.**~~ **LANDED (`0700965`, 2026-09-06 — `#73`.)**
 - [x] ~~**Item 9 — the readers' backtick and key-fragment landings, absorbed.**~~ **LANDED (`9716bca`, 2026-09-06 — `#71`.)** Needs Items 3 and 4.
 
