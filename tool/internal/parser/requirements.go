@@ -6,15 +6,13 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 var (
-	featureRe = regexp.MustCompile(`^## Feature:\s*(.+)`)
-	sourceRe  = regexp.MustCompile(`^\*\*Source:\*\*\s*(.+)`)
-	// requirementRe matches `- **R1:** text` and `- **~~R1:~~** text` (retired form).
-	requirementRe = regexp.MustCompile(`^- \*\*(~~)?R(\d+):(?:~~)?\*\*\s*(.+)`)
-	inferredRe    = regexp.MustCompile(`^\(inferred\)\s*`)
-	retiredPrefix = regexp.MustCompile(`^\(Retired\s+T\d+[^)]*\)\s*`)
+	sourceRe   = regexp.MustCompile(`^\*\*Source:\*\*\s*(.+)`)
+	inferredRe = regexp.MustCompile(`^\(inferred\)\s*`)
 	// suspiciousSourceRe matches lines that look like attempted Source markers
 	// (markdown emphasis + "Source" + a colon somewhere) but don't necessarily
 	// match the canonical sourceRe pattern. R91
@@ -35,63 +33,49 @@ func splitSourceList(s string) []string {
 	return out
 }
 
-// ParseRequirements parses a requirements.md file
+// CRC: crc-Parser.md | R326
+// ParseRequirements reads requirements.md through the dependency's requirements reader: a
+// section is a heading at any level with its own content, a requirement is a column-0
+// `**Rn:**` or `**~~Rn:~~**` bullet with its text folded and the retired clause read out,
+// and a fenced example is body. A section with no `**Source:**` of its own inherits its
+// nearest ancestor's, which is what a `### Notes` under a `## Feature:` always meant.
 func ParseRequirements(path string) ([]Requirement, error) {
-	file, err := os.Open(path)
+	reqs, _, err := ParseRequirementsReport(path)
+	return reqs, err
+}
+
+// CRC: crc-Parser.md | R326
+// ParseRequirementsReport is ParseRequirements with the reader's unread list beside it.
+func ParseRequirementsReport(path string) ([]Requirement, []minispecsdom.Unread, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	defer file.Close()
-
-	var requirements []Requirement
-	var currentSource string
-	scanner := bufio.NewScanner(file)
-	lineNum := 0
-
-	for scanner.Scan() {
-		lineNum++
-		line := scanner.Text()
-
-		if featureRe.MatchString(line) {
-			currentSource = ""
-			continue
-		}
-
-		if matches := sourceRe.FindStringSubmatch(line); matches != nil {
-			currentSource = strings.TrimSpace(matches[1])
-			continue
-		}
-
-		matches := requirementRe.FindStringSubmatch(line)
-		if matches == nil {
-			continue
-		}
-
-		retired := matches[1] != ""
-		text := strings.TrimSpace(matches[3])
-		// R77: strip a leading "(Retired Tn — see Rxxx)" or "(Retired Tn — no replacement)"
-		// marker if present, leaving the original text.
-		if retired {
-			text = retiredPrefix.ReplaceAllString(text, "")
-		}
-
-		inferred := false
-		if inferredRe.MatchString(text) {
-			inferred = true
-			text = inferredRe.ReplaceAllString(text, "")
-		}
-
-		requirements = append(requirements, Requirement{
-			ID:       "R" + matches[2],
-			Text:     text,
-			Sources:  splitSourceList(currentSource),
+	r := minispecsdom.ParseRequirements(string(data))
+	var out []Requirement
+	for _, q := range r.Requirements() {
+		text := strings.TrimSpace(q.Text)
+		inferred := inferredRe.MatchString(text)
+		out = append(out, Requirement{
+			ID:       q.ID,
+			Text:     inferredRe.ReplaceAllString(text, ""),
+			Sources:  splitSourceList(sectionSource(q.Section)),
 			Inferred: inferred,
-			Retired:  retired,
-			Line:     lineNum,
+			Retired:  q.Retired,
+			Line:     q.Line(),
 		})
 	}
+	return out, r.Unread(), nil
+}
 
-	return requirements, scanner.Err()
+// sectionSource is the nearest `**Source:**` at or above a section.
+func sectionSource(s *minispecsdom.Section) string {
+	for ; s != nil; s = s.Parent {
+		if s.Source != "" {
+			return s.Source
+		}
+	}
+	return ""
 }
 
 // ScanSourceLineIssues re-scans a requirements.md file for lines that look

@@ -85,9 +85,10 @@ crc-View.md
   [x] src/view.ts
 ```
 
-## minispec query gaps
+## minispec query gaps [RANGE...] [--open] [--closed]
 
-List all items from the Gaps section of design.md.
+List items from the Gaps section of design.md. With no arguments, every gap — which is what it
+has always done.
 
 Output:
 ```
@@ -95,6 +96,49 @@ Output:
 [x] R1: resolved requirement gap
 [ ] D1: design without code
 ```
+
+**It can be asked a question, because a gap list outgrows a reading.** Measured 2026-08-18 in
+this project: **49 lines, one long paragraph per gap** — 31 open, 11 resolved, 7 permanent. A
+reader wanting one gap had no way to say so and reached for `grep` instead, which is the half
+of the dogfooding rule that keeps failing, and it failed here for a reason that is not
+forgetfulness: the command could not answer the question at all.
+
+**RANGE selects by ID, in the syntax the tool already parses.** `O22`, `O22-O28`, `O22,O25`,
+and mixed lists all key on the same form used for inline requirement refs, where the second
+letter is optional (`O22-28`) and a reversed range contributes only its low end. Reusing it is
+the point: a second grammar for the same idea is a grammar nobody chose.
+
+- **A range may not cross types.** `O22-R5` is refused. The letter is the namespace, so `R1`
+  here is the gap `R1` and never requirement `R1` — the same spelling in two ID spaces, which
+  is why the command that means one of them says which.
+- **A range selecting nothing is a refusal naming what it looked for**, never empty output and
+  exit 0. `O99` must not read as *there are no gaps*, which is precisely the shape this project
+  keeps meeting: a check that reports absence rather than error is indistinguishable from one
+  that passed.
+- **A range whose members are missing is not an error.** `O22-O28` where no `O25` was ever
+  assigned selects what exists, because gaps in an ID sequence are expected by the ID rule
+  rather than a symptom.
+
+**`--open` and `--closed` select by checkbox state**, and **neither selects a permanent gap.**
+An `A` or `T` entry carries no checkbox by rule — it records an approval or a retirement, not
+work — so it is neither open nor closed, and a filter about work in progress must not claim it.
+Permanent entries stay reachable by naming them in a range. Passing both flags means every gap
+that *has* a checkbox, which is the natural reading rather than a refusal.
+
+**Both are subcommand flags, deliberately.** A *global* flag placed after the subcommand is
+silently ignored (`O28`), so a global `--open` would be dropped without a word on the day it
+shipped. They parse wherever they sit among the positional arguments, by the shared mechanism
+the queue verbs already use, so `--open O22-O28` and `O22-O28 --open` are the same command.
+
+**Selection applies to `--json` too**, and is performed before the output form is chosen. A
+filter honoured by one rendering and dropped by the other is the same silent-ignore failure one
+level in.
+
+**The section is read through the dependency's gaps reader** (R326): a gap is a keyed bullet
+at any depth with its text folded across continuation lines, nested ones included; a fenced
+example is body; a permanent gap with a checkbox, a tracked one without, or a repeated ID is a
+deviation the reader names and every write refuses. The pre-sdom line reader of this section
+retired with it on 2026-09-07.
 
 ## minispec query traceability [file]
 
@@ -134,7 +178,7 @@ has carried a number since 2026-09-07.
 `## Test:` heading's region, a field is `**Name:**` at a line head outside any code group, the
 prose fields fold, a fenced example is body, and a doubled field is a deviation the reader
 names. What is judged here rather than there: a site with no file or symbol is dropped, and a
-`**Pulled:**` whose date does not parse records nothing.
+`**Pulled:**` whose date does not parse records nothing. **What the reader could not read is printed beneath the count**, never dropped: a group never closed takes every later entry with it, and a census silent about that reports clean over alarms it never saw — measured 2026-09-07 here, when a stray backslash before a backtick hid four alarms and a numbering run for a day.
 
 | state | meaning |
 |---|---|

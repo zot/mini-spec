@@ -33,3 +33,11 @@ Query -> Query: filter where files == empty
 Query --> CLI: []string{R3, R7}
 CLI --> User: "R3\nR7"
 ```
+
+## `query gaps` with a selection
+
+The RANGE arguments are expanded in the inline-ref grammar first (a range across two types is
+refused there), the flags parsed wherever they sit, the gaps read through the dependency's
+reader, and the selection applied — IDs, then checkbox state — before the output form is
+chosen, so `--json` renders exactly the selected set. Nothing matched by ID is an error naming
+the ask; a valid selection matching nothing prints what was asked (R317–R323).

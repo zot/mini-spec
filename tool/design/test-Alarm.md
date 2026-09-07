@@ -112,7 +112,7 @@ closing line still total the whole input
 the total drops to the number of unverified alarms while the listing stays byte-identical —
 the failure is invisible in the list, which is the point
 **Inject:** internal/cli/cli.go:queryAlarms
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestUnverifiedNarrowsTheListNotTheCensus` reported `1 alarms: 1 unrecorded` over a population of 2 — the listing byte-identical, the total wrong. The puller had to move the census computation below the selection for the injection to compile, and said so
+**Pulled:** 2026-09-07 — rang again after the listing gained the `<doc>#<n>` name for `#74`: `the census under --unverified does not cover the whole population`; restore byte-clean by copy. Previously 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestUnverifiedNarrowsTheListNotTheCensus` reported `1 alarms: 1 unrecorded` over a population of 2 — the listing byte-identical, the total wrong. The puller had to move the census computation below the selection for the injection to compile, and said so
 **Refs:** crc-Query.md — R199
 
 ## Test: the selection is applied before the output form is chosen
@@ -128,8 +128,19 @@ alarms
 case goes red while the text case stays green — one green branch beside one red is the
 signature of this defect
 **Inject:** internal/cli/cli.go:queryAlarms
-**Pulled:** 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestAlarmsJSONHonoursSelection` rendered 2 assessments where 1 was selected, and `TestBriefRidesOnTheAssessmentUnderJSON` likewise; the text branch stayed green — one green beside one red, as predicted. The puller left the brief branch unfiltered along with the JSON one and noted the choice
+**Pulled:** 2026-09-07 — rang again after the listing changed for `#74`, injected as the JSON path emitting every assessment: `--json rendered 2 assessments; want 1 — the selection was dropped on the JSON path`, the text case green; restore byte-clean by copy. Previously 2026-09-04 — rang (pulled by a delegated `alarm-puller`, evidence read by hand, restore byte-clean): `TestAlarmsJSONHonoursSelection` rendered 2 assessments where 1 was selected, and `TestBriefRidesOnTheAssessmentUnderJSON` likewise; the text branch stayed green — one green beside one red, as predicted. The puller left the brief branch unfiltered along with the JSON one and noted the choice
 **Refs:** crc-CLI.md, crc-Query.md — R204
+
+## Test: the census prints what the reader could not read
+**Purpose:** validates R316 — a group never closed takes every later entry with it, so the census prints the reader's unread list beneath its count rather than reporting clean over alarms it never saw
+**Input:** the alarm fixture with a third entry opening a code span it never closes and a fourth alarm entry after it
+**Expected:** the fourth alarm is absent from the listing, and the output carries `note: 1 line(s) not read` naming the opener as never closed
+**Refs:** crc-Query.md, crc-Parser.md — R316
+**Code:** internal/cli/cli_alarms_test.go
+**Alarm:** 12
+**Fire alarm:** make `printUnread` return unconditionally and confirm the note disappears while the listing is byte-identical — the failure is invisible in the list, which is the point
+**Inject:** internal/cli/cli.go:printUnread
+**Pulled:** 2026-09-07 — rang: `the census did not say what the reader could not read`, the listing byte-identical; restore byte-clean by copy
 
 ## Test: a brief quotes the fire-alarm prose whole
 **Purpose:** validates R200 — the prose *is* the injection, so a paraphrase or a first

@@ -29,7 +29,7 @@
 | `query uncovered` | [queries.md](queries.md) | List requirements with no design file references. |
 | `query orphan-designs` | [queries.md](queries.md) | List CRC cards missing or with empty Requirements field. |
 | `query artifacts` | [queries.md](queries.md) | List all artifacts from design.md with checkbox states. |
-| `query gaps` | [queries.md](queries.md) | List all items from the design.md Gaps section. |
+| `query gaps [RANGE...] [--open] [--closed]` | [queries.md](queries.md) | Gap items from `design.md`'s Gaps section, read through the dependency's gaps reader; RANGE selects by ID in the inline-ref grammar (`O22`, `O22-O28`, `O22,O25`), one type per range, nothing matched refused, partly unassigned fine; `--open`/`--closed` select by checkbox and never claim a permanent gap; both flags mean every checkbox; a valid empty selection says so. |
 | `query traceability [file]` | [queries.md](queries.md) | Check traceability comments in one code file. |
 | `query traceability --all` | [queries.md](queries.md) | Scan all artifact code files and report traceability status. |
 | `query migrations` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | List in-flight migration specs under `specs/migrations/` (non-recursive). |
@@ -61,6 +61,7 @@
 | `update resolve-gap [id]` | [updates.md](updates.md) | Mark a gap as resolved. Alias for `update check design.md [id]`. |
 | `update approve-gap [id]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Convert an existing gap to approved (A) type. Migration spec amends: A entries have no checkbox. |
 | `update retire R<old> <R<new>\|-> "<reason>"` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Retire a requirement: strikethrough the Rn line, append a Tn gap, and print a supersede-at-source reconcile reminder (naming the retired requirement's **Source:** spec) to stderr. |
+| `update add-req --section <heading> (--req <text>... \| --req-file <path>...)` | [updates.md](updates.md) | Mints the next free `Rn` for each text and appends it to the named section of `requirements.md` in one act, before the section's first sub-heading; unknown or ambiguous heading refused; a body writing its own `**Rn:**` refused. |
 | `update number-alarms [file...]` | [updates.md](updates.md) | Assigns `**Alarm:**` numbers to every alarm lacking one, all of `design/test-*.md` by default. Append-only, never renumbering, idempotent; writes nothing but the added lines and reports per file. |
 | `update pulled <doc>#<n> --body-file <f>` | [updates.md](updates.md) | Records a fire alarm as pulled: today's date from the system clock, then the body from a file byte for byte; the previous line folds after it as history. |
 | `update inject <doc>#<n> <file:symbol>...` | [updates.md](updates.md) | Re-sites a fire alarm and voids its `**Pulled:**` when the sites resolve to different code — old sites in HEAD, new on disk — demoting the record to history rather than deleting it. |

@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326
 
 Read-only operations that query parsed design data.
 
@@ -29,7 +29,11 @@ Read-only operations that query parsed design data.
 - Uncovered(): list Rn with no design references
 - OrphanDesigns(): list CRC cards with no/empty Requirements field
 - Artifacts(): list artifacts with checkbox states
-- Gaps(): list gap items
+- Gaps(): list gap items, through the dependency's gaps reader (R326)
+- ExpandGapRefs(args), SelectGaps(gaps, selection): the RANGE grammar — one type per range, a
+  reversed range its low end — and the selection over it: nothing matched is an error naming
+  the ask, partly unassigned is not, `--open`/`--closed` never claim a permanent gap, both
+  flags mean every checkbox, document order always (R317, R318, R319, R320, R321, R322)
 - Migrations(): list specs/migrations/*.md (non-recursive, excludes complete/)
 - UnindexedSpecs(): list specs/*.md not referenced in specs/index.md (exact .md-token match; all specs when index absent)
 - Traceability(path): check single file for CRC/Seq comments (passes pattern+closer from Project)

@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 var (
@@ -15,8 +17,6 @@ var (
 	subsectionRe     = regexp.MustCompile(`^### .+`)
 	designFileRe     = regexp.MustCompile(`^- (.+\.md)`)
 	codeFileRe       = regexp.MustCompile(`^  - \[([ x])\] (.+)`)
-	checkboxedGapRe  = regexp.MustCompile(`^- \[([ x])\] ([SRDCIOAT])(\d+):\s*(.+)`)
-	plainGapRe       = regexp.MustCompile(`^- ([SRDCIOAT])(\d+):\s*(.+)`)
 	inlineArtifactRe = regexp.MustCompile(`^- \[([ x])\] ([^\s→]+\.md)(?:\s*→\s*(.+))?$`)
 )
 
@@ -114,72 +114,40 @@ func ParseArtifacts(path string) ([]Artifact, error) {
 	return artifacts, scanner.Err()
 }
 
-// ParseGaps parses the Gaps section of design.md.
-// Recognizes both checkboxed and checkbox-less forms; A and T entries
-// are written without checkboxes (R74, R75) but legacy `- [ ] A1: ...`
-// is still parsed for back-compat with HasCheckbox=true.
+// CRC: crc-Parser.md | R326
+// ParseGaps reads the Gaps section of design.md through the dependency's gaps reader: a gap
+// is a bullet at any depth whose head is `X<n>:`, nested ones included, its text folded
+// across continuation lines; a fenced example is body; a permanent gap with a checkbox or a
+// tracked one without is a deviation the reader lists. What the reader could not read is
+// dropped here; ParseGapsReport carries it.
 func ParseGaps(path string) ([]Gap, error) {
-	file, err := os.Open(path)
+	gaps, _, err := ParseGapsReport(path)
+	return gaps, err
+}
+
+// CRC: crc-Parser.md | R326
+// ParseGapsReport is ParseGaps with the reader's unread list beside the gaps.
+func ParseGapsReport(path string) ([]Gap, []minispecsdom.Unread, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	defer file.Close()
-
-	var gaps []Gap
-	inGaps := false
-	scanner := bufio.NewScanner(file)
-	lineNum := 0
-
-	for scanner.Scan() {
-		lineNum++
-		line := scanner.Text()
-
-		if matches := sectionRe.FindStringSubmatch(line); matches != nil {
-			section := strings.TrimSpace(matches[1])
-			if section == "Gaps" {
-				inGaps = true
-				continue
-			} else if inGaps {
-				break
-			}
-			continue
-		}
-
-		if !inGaps {
-			continue
-		}
-
-		if matches := checkboxedGapRe.FindStringSubmatch(line); matches != nil {
-			gaps = append(gaps, Gap{
-				ID:          matches[2] + matches[3],
-				Type:        matches[2],
-				Description: strings.TrimSpace(matches[4]),
-				Resolved:    matches[1] == "x",
-				HasCheckbox: true,
-				Line:        lineNum,
-			})
-			continue
-		}
-
-		if matches := plainGapRe.FindStringSubmatch(line); matches != nil {
-			gaps = append(gaps, Gap{
-				ID:          matches[1] + matches[2],
-				Type:        matches[1],
-				Description: strings.TrimSpace(matches[3]),
-				Resolved:    false,
-				HasCheckbox: false,
-				Line:        lineNum,
-			})
-		}
+	g := minispecsdom.ParseGaps(string(data))
+	var out []Gap
+	for _, item := range g.Items() {
+		out = append(out, Gap{
+			ID:          item.ID,
+			Type:        item.Type,
+			Description: item.Text,
+			Resolved:    item.Checked,
+			HasCheckbox: item.Checkbox,
+			Line:        item.Line(),
+		})
 	}
-
-	return gaps, scanner.Err()
+	return out, g.Unread(), nil
 }
 
 // GapTypes are the gap classes in the order they are reported. R192
-//
-// Each runs its own numbering sequence, which is why "the next free gap ID" is a set of
-// answers rather than one.
 var GapTypes = []string{"S", "R", "D", "C", "I", "O", "A", "T"}
 
 // IsGapType reports whether s names one of the gap classes.

@@ -21,7 +21,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
 - [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
-- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`
+- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
 - [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`, `internal/update/alarmfields.go`
@@ -51,7 +51,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 
 ### Test Designs
 - [ ] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
-- [ ] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`
+- [ ] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`, `internal/update/addreq_test.go`
+- [ ] test-Query.md → `internal/query/gaps_test.go`
 - [ ] test-Validate.md → `internal/validate/validate_test.go`
 - [x] test-RepoRoot.md → `internal/project/reporoot_test.go`
 - [ ] test-Config.md → `internal/project/config_test.go`

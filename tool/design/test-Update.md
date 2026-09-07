@@ -61,6 +61,7 @@
 **Expected:** the unnumbered alarm becomes 4, inserted above its `**Fire alarm:**`; stripping that line reproduces the input byte for byte; a second run assigns nothing and changes no byte
 **Refs:** crc-Update.md — R311, R313
 **Code:** internal/update/alarmfields_test.go
+**Alarm:** 1
 **Fire alarm:** skip the reader's write — `assigned, werr = nil, nil` in place of `td.NumberAlarms()` — and confirm the run assigns nothing (dropping the call outright leaves `werr` unused and does not compile, which is not a pull)
 **Inject:** internal/update/alarmfields.go:NumberAlarms
 **Pulled:** 2026-09-07 — rang: `assigned [... []], want [4] — the freed 2 must not be reused`; restore byte-clean by copy, and again the same day after the simplification pass restructured the file, same signature
@@ -71,6 +72,7 @@
 **Expected:** `**Pulled:** 2026-09-07 — … *Earlier —* 2026-08-05 — …`; the first pull directly under its `**Inject:**`; both bad keys refused
 **Refs:** crc-Update.md — R314
 **Code:** internal/update/alarmfields_test.go
+**Alarm:** 2
 **Fire alarm:** format the date as `02-01-2006` and confirm the write is refused by the reader's read-back — a `**Pulled:**` must lead with `YYYY-MM-DD`, so a wrongly formatted stamp cannot reach the file
 **Inject:** internal/update/alarmfields.go:SetPulled
 **Pulled:** 2026-09-07 — rang, through the reader's guard rather than the assertion: `TestDoc.SetPulled on "1" did not read back … leads with a YYYY-MM-DD date … nothing was written`; restore byte-clean by copy, and again the same day after the simplification pass restructured the file, same signature
@@ -78,9 +80,43 @@
 ## Test: re-siting voids the record only when the code moves
 **Purpose:** validates R315 — a rewrite to the same text changes nothing; a disambiguation resolving to the same lines keeps the record; a move to other lines demotes it to history naming the old sites; an empty site list is refused
 **Input:** a fake ranger placing `a.go:F` in HEAD and `a.go:T.F` on disk at the same lines, and `c.go:Moved` elsewhere
-**Expected:** no-op: unchanged and byte-identical; `T.F`: rewritten, `**Pulled:**` standing; `Moved`: `**Pulled:**` gone, a `*Pulled at \`a.go:T.F\`` sentence in its place
+**Expected:** no-op: unchanged and byte-identical; `T.F`: rewritten, `**Pulled:**` standing; `Moved`: `**Pulled:**` gone, a `*Pulled at ...` sentence naming `a.go:T.F` in its place
 **Refs:** crc-Update.md, crc-Git.md — R315
 **Code:** internal/update/alarmfields_test.go
+**Alarm:** 3
 **Fire alarm:** void on any text change — drop the `!sameCode(...)` conjunct — and confirm the disambiguation case goes red with the record cleared
 **Inject:** internal/update/alarmfields.go:SetInject
 **Pulled:** 2026-09-07 — rang: `disambiguating to the same lines: cleared=true err=<nil>; want the record kept`; restore byte-clean by copy, and again the same day after the simplification pass restructured the file, same signature
+
+## Test: add-req mints, appends before the sub-heading, and refuses with nothing written
+**Purpose:** validates R324 and R325 — numbers count retired and note-level entries, a batch lands in order at the end of the section's own content, the `Feature: ` prefix is optional, an unknown heading and a self-labelled body are refused by name with nothing written
+**Input:** a requirements file with a retired R2 and a `### Notes` sub-section holding R4; two texts for `Alpha`, one for `Feature: Beta`, one for an unknown `Gamma`, one opening with `**R9:**`
+**Expected:** R5 and R6 before `### Notes`, R7 under Beta, both refusals naming what they refuse, the file byte-identical after them
+**Refs:** crc-Update.md — R324, R325
+**Code:** internal/update/addreq_test.go
+**Alarm:** 4
+**Fire alarm:** strip the marker instead of refusing — replace the refusal with `texts[i] = ownMarkerRe.ReplaceAllString(...)` — and confirm the self-labelled body is accepted
+**Inject:** internal/update/update.go:AddReq
+**Pulled:** 2026-09-07 — rang: `a body writing its own label was not refused naming it: <nil>`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature
+
+## Test: the gap verbs write through the reader
+**Purpose:** validates R326 — add mints counting resolved entries and appends after the last gap, resolve checks and refuses a resolved or permanent gap, approve converts and is idempotent on an approved one
+**Input:** a Gaps section with O1 open, O2 resolved, A1, T1
+**Expected:** O3 appended before the next heading; O1 checked; O2 and A1 refused; O3 becomes A2; approving A2 returns A2 and writes nothing
+**Refs:** crc-Update.md — R326
+**Code:** internal/update/addreq_test.go
+**Alarm:** 5
+**Fire alarm:** return the minted ID from `ApproveGap` without calling the reader's `Approve` — confirm the head line stays `O3`
+**Inject:** internal/update/update.go:ApproveGap
+**Pulled:** 2026-09-07 — rang: `O3 was not rewritten as A2`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature
+
+## Test: retire writes both documents through the readers
+**Purpose:** validates R80 and R326 — the head line is rewritten in requirements.md, the Tn gap added in design.md, the Source returned, and a second retirement refused
+**Input:** R3 retired by R1
+**Expected:** `- **~~R3:~~** (Retired T2 — see R1) third`; `- T2: R3 retired by R1 (folded)`; `specs/beta.md`; the second call refused
+**Refs:** crc-Update.md — R80, R326
+**Code:** internal/update/addreq_test.go
+**Alarm:** 6
+**Fire alarm:** skip the gaps write — return after the requirements render — and confirm the Tn line is missing
+**Inject:** internal/update/update.go:Retire
+**Pulled:** 2026-09-07 — rang: `the Tn gap was not added`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature

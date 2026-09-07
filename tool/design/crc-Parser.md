@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R310, R312, R316, R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104, R105, R106, R178
+**Requirements:** R310, R312, R316, R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104, R105, R106, R178, R326
 
 Parses mini-spec design file formats into structured data.
 

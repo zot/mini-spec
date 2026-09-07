@@ -449,26 +449,8 @@ func (c *CLI) runQuery(args []string) int {
 		}
 
 	case "gaps":
-		gaps, err := q.Gaps()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			return 1
-		}
-		if c.JSON {
-			c.output(gaps)
-		} else {
-			for _, g := range gaps {
-				if !g.HasCheckbox {
-					fmt.Printf("    %s: %s\n", g.ID, g.Description)
-					continue
-				}
-				mark := " "
-				if g.Resolved {
-					mark = "x"
-				}
-				fmt.Printf("[%s] %s: %s\n", mark, g.ID, g.Description)
-			}
-		}
+		// CRC: crc-CLI.md | Seq: seq-query.md | R317, R321, R322, R323
+		return c.queryGaps(q, args[1:])
 
 	case "migrations":
 		migs, err := q.Migrations()
@@ -723,6 +705,10 @@ func (c *CLI) runUpdate(args []string) int {
 			fmt.Fprint(os.Stderr, retireReminder(args[1], sources))
 		}
 
+	case "add-req":
+		// CRC: crc-CLI.md | Seq: seq-update.md | R324
+		return c.runAddReq(u, args[1:])
+
 	case "pulled":
 		// CRC: crc-CLI.md | Seq: seq-update.md | R314
 		return c.runPulled(u, args[1:])
@@ -914,13 +900,21 @@ func (c *CLI) queryAlarms(p *project.Project, args []string) int {
 		return 1
 	}
 	var alarms []parser.Alarm
+	var unread []string
 	for _, d := range docs {
-		found, ferr := parser.ParseTestDoc(d)
+		found, left, ferr := parser.ParseTestDocReport(d)
 		if ferr != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s: %v\n", d, ferr)
 			return 1
 		}
 		alarms = append(alarms, found...)
+		// R316 — what the reader could not read is printed, never dropped: a group never
+		// closed takes every later entry with it, and a census silent about that reports
+		// clean over alarms it never saw. Measured 2026-09-07 on this repository: a stray
+		// backslash before a backtick hid four alarms and a numbering run for a day.
+		for _, u := range left {
+			unread = append(unread, fmt.Sprintf("%s L%d: %s", filepath.Base(d), u.Line, u.Text))
+		}
 	}
 	assessments := alarm.Assess(alarms, project.NewGit(p.RootPath))
 
@@ -989,7 +983,20 @@ func (c *CLI) queryAlarms(p *project.Project, args []string) int {
 	}
 
 	fmt.Print(census)
+	printUnread(unread)
 	return 0
+}
+
+// R316
+// printUnread is the census's coverage note: what the test-document reader could not read.
+func printUnread(unread []string) {
+	if len(unread) == 0 {
+		return
+	}
+	fmt.Printf("note: %d line(s) not read — an entry-like line outside the shape, or a group never\n      closed, which takes the rest of its file with it; the census is blind to what they hold:\n", len(unread))
+	for _, u := range unread {
+		fmt.Printf("      %s\n", u)
+	}
 }
 
 // CRC: crc-CLI.md | Seq: seq-update.md | R314
@@ -1214,6 +1221,60 @@ func gapIDList(res *query.NextIDResult) []string {
 	return out
 }
 
+// CRC: crc-CLI.md | Seq: seq-query.md | R317, R321, R322, R323
+// queryGaps prints design.md's Gaps section, narrowed to the IDs the RANGE arguments name
+// and the checkbox states the flags ask for.
+func (c *CLI) queryGaps(q *query.Query, args []string) int {
+	fs := flag.NewFlagSet("gaps", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	open := fs.Bool("open", false, "only gaps whose checkbox is unchecked")
+	closed := fs.Bool("closed", false, "only gaps whose checkbox is checked")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	ids, err := query.ExpandGapRefs(rest)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	gaps, err := q.Gaps()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	sel := query.GapSelection{IDs: ids, Open: *open, Closed: *closed}
+	selected, err := query.SelectGaps(gaps, sel)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	// R323 — the selection precedes the output form, so --json renders exactly the set
+	// the arguments selected.
+	if c.JSON {
+		c.output(selected)
+		return 0
+	}
+	if len(selected) == 0 {
+		fmt.Printf("no %s\n", sel.Describe(rest))
+		return 0
+	}
+	for _, g := range selected {
+		if !g.HasCheckbox {
+			fmt.Printf("    %s: %s\n", g.ID, g.Description)
+			continue
+		}
+		mark := " "
+		if g.Resolved {
+			mark = "x"
+		}
+		fmt.Printf("[%s] %s: %s\n", mark, g.ID, g.Description)
+	}
+	return 0
+}
+
 // CRC: crc-CLI.md | Seq: seq-carve-status.md#1 | R207, R213, R214, R215
 // queryCarves is the cross-document census over carves/ and .carves/ at the repository root.
 func (c *CLI) queryCarves(args []string) int {
@@ -1422,4 +1483,55 @@ func carveReport(scan *parser.CarveScan, open bool) carveReportJSON {
 	rep.Census.Stateless = scan.Stateless()
 	rep.Census.NoStatus = scan.NoStatus()
 	return rep
+}
+
+// repeated collects a flag given several times, in order.
+type repeated []string
+
+func (r *repeated) String() string     { return strings.Join(*r, ", ") }
+func (r *repeated) Set(v string) error { *r = append(*r, v); return nil }
+
+// CRC: crc-CLI.md | Seq: seq-update.md | R324
+// runAddReq mints and appends requirements: `update add-req --section <heading> --req <text>...`
+// or `--req-file <path>...`, never both — the two are separate repeated flags and nothing
+// preserves their interleaved order, which is exactly what assigns the numbers.
+func (c *CLI) runAddReq(u *update.Update, args []string) int {
+	fs := flag.NewFlagSet("add-req", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	section := fs.String("section", "", "the heading to append under, with or without `Feature: `")
+	var reqs, files repeated
+	fs.Var(&reqs, "req", "a requirement's text (repeatable)")
+	fs.Var(&files, "req-file", "a requirement's text read from a file byte for byte (repeatable)")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	if len(rest) > 0 || *section == "" || (len(reqs) == 0 && len(files) == 0) {
+		fmt.Fprintln(os.Stderr, "Usage: minispec update add-req --section <heading> (--req <text>... | --req-file <path>...)")
+		return 1
+	}
+	if len(reqs) > 0 && len(files) > 0 {
+		fmt.Fprintln(os.Stderr, "Error: --req and --req-file may not be mixed; their interleaved order is what assigns the numbers, and nothing preserves it")
+		return 1
+	}
+	texts := []string(reqs)
+	for _, f := range files {
+		body, rerr := os.ReadFile(f)
+		if rerr != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", rerr)
+			return 1
+		}
+		texts = append(texts, string(body))
+	}
+	ids, err := u.AddReq(*section, texts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if len(ids) == 1 {
+		fmt.Println(ids[0])
+	} else {
+		fmt.Printf("%s-%s\n", ids[0], ids[len(ids)-1])
+	}
+	return 0
 }

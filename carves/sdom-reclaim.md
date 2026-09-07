@@ -16,9 +16,9 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [x] ~~**Item 2 — the backup slot.**~~ **LANDED (`7dd50a0`, 2026-09-04 — `#68`.)** Needs Item 1.
 - [x] ~~**Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.**~~ **LANDED (`eaf9604`, 2026-09-05 — `#69`.)** Needs Items 1 and 2.
 - [x] ~~**Item 4 — `validate trajectory`.**~~ **LANDED (`7e6e293`, 2026-09-05 — `#70`.)** Needs Items 1 and 3.
-- [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (#74.)** Needs Item 1.
+- [x] ~~**Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.**~~ **LANDED (`630aab0`, 2026-09-07 — `#74`.)** Needs Item 1.
 - [x] ~~**Item 6 — the alarm site as a parsed extent, not a git pattern.**~~ **LANDED (`3931bcc`, 2026-09-06 — `#72`.)** Needs Item 1.
-- [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
+- [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (#75.)** Needs Item 1.
 - [x] ~~**Item 8 — the skill re-derived as each verb returns.**~~ **LANDED (`0700965`, 2026-09-06 — `#73`.)**
 - [x] ~~**Item 9 — the readers' backtick and key-fragment landings, absorbed.**~~ **LANDED (`9716bca`, 2026-09-06 — `#71`.)** Needs Items 3 and 4.
 
@@ -133,6 +133,19 @@ designs, nothing else touched; the first run refused a doubled `**Code:**` I had
 day before, which is the reader's deviation rule doing its job. Their reader cuts a test title
 at a code span (`requests/testdoc-title-stops-at-code-span.md`); display only, the name is the
 number now. `--alarm` selection and the missing-`Code:`-file report stay unreclaimed.
+
+## Item 7
+
+*Landed 2026-09-07 as `#75`, the last part.* Their `Gaps` and `Requirements` readers came
+with the test-document one overnight. Both of this tool's line readers became adapters over
+them — every consumer, coverage and `next-id` included, unchanged on the suite — and the four
+gap and retire verbs moved onto the readers' writes, so the second owner the carve decision
+retires is gone from both documents. `query gaps` gained the RANGE grammar and the state flags
+(R317–R323); `update add-req --section --req|--req-file` mints and appends in one act
+(R324, R325); R326 says the readers own the documents and this tool owns the numbers. Dogfooded
+twice the same morning: the selectors on this repository's own gaps, and R317–R326 minted
+through `add-req` itself, ten lines and nothing else. Not reclaimed: `add-req`'s wrapping at
+the body width (old R442; the reader writes one line), banked in the REVISE map.
 
 ## Item 8
 

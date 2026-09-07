@@ -13,6 +13,7 @@ import (
 
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 // Update provides atomic modification operations on design files
@@ -148,124 +149,65 @@ func nextGapID(gaps []parser.Gap, gapType string) string {
 	return fmt.Sprintf("%s%d", gapType, parser.NextGapNum(gaps, gapType))
 }
 
-// AddGap adds a new gap item with auto-numbered ID. R82, R83
+// editGaps reads design.md through the dependency's gaps reader, applies one write, and
+// renders back through the atomic file write; a refusal reaches the caller with no byte
+// written. R326
+func (u *Update) editGaps(write func(g *minispecsdom.Gaps) error) error {
+	return parser.EditFile(u.Project.DesignMdPath(), func(src string) (string, error) {
+		g := minispecsdom.ParseGaps(src)
+		if err := write(g); err != nil {
+			return "", err
+		}
+		return g.Render()
+	})
+}
+
+// CRC: crc-Update.md | Seq: seq-update.md | R82, R83, R326
+// AddGap mints the next free ID of the type — the maximum ever assigned plus one, retired
+// and resolved ones counted — and appends the entry through the reader, which writes the
+// checkbox for a tracked type and none for a permanent one (R74, R75).
 func (u *Update) AddGap(gapType, description string) (string, error) {
-	path := u.Project.DesignMdPath()
-	gaps, err := parser.ParseGaps(path)
+	gaps, err := parser.ParseGaps(u.Project.DesignMdPath())
 	if err != nil {
 		return "", err
 	}
-
 	newID := nextGapID(gaps, gapType)
-	return newID, u.appendGapLine(path, formatGapLine(gapType, newID, description))
+	return newID, u.editGaps(func(g *minispecsdom.Gaps) error { return g.Add(newID, description) })
 }
 
-// formatGapLine returns the canonical Gaps-section line for the given gap. R74, R75
-func formatGapLine(gapType, id, description string) string {
-	if permanentTypes[gapType] {
-		return fmt.Sprintf("- %s: %s", id, description)
-	}
-	return fmt.Sprintf("- [ ] %s: %s", id, description)
-}
-
-func (u *Update) appendGapLine(path, newLine string) error {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	lines := strings.Split(string(content), "\n")
-	gapsSectionRe := regexp.MustCompile(`^## Gaps`)
-	nextSectionRe := regexp.MustCompile(`^## `)
-
-	inGaps := false
-	insertIdx := -1
-
-	for i, line := range lines {
-		if gapsSectionRe.MatchString(line) {
-			inGaps = true
-			continue
-		}
-		if inGaps && nextSectionRe.MatchString(line) {
-			insertIdx = i
-			break
-		}
-		if inGaps {
-			insertIdx = i + 1
-		}
-	}
-
-	if insertIdx == -1 {
-		return fmt.Errorf("Gaps section not found in design.md")
-	}
-
-	newLines := make([]string, 0, len(lines)+1)
-	newLines = append(newLines, lines[:insertIdx]...)
-	newLines = append(newLines, newLine)
-	newLines = append(newLines, lines[insertIdx:]...)
-
-	return os.WriteFile(path, []byte(strings.Join(newLines, "\n")), 0644)
-}
-
-// ResolveGap marks a gap as resolved. Refuses A and T (permanent) types.
+// CRC: crc-Update.md | Seq: seq-update.md | R326
+// ResolveGap checks a tracked gap's box through the reader, which refuses a permanent gap
+// (nothing to close) and one already resolved (so a second resolution is visible).
 func (u *Update) ResolveGap(gapID string) error {
-	if len(gapID) > 0 && permanentTypes[string(gapID[0])] {
-		return fmt.Errorf("%s is a permanent gap type and cannot be resolved", gapID)
-	}
-	return u.Check("design.md", gapID)
+	return u.editGaps(func(g *minispecsdom.Gaps) error { return g.Resolve(gapID) })
 }
 
-// ApproveGap converts an existing gap to approved (A) type, written without a
-// checkbox. R83
+// CRC: crc-Update.md | Seq: seq-update.md | R83, R326
+// ApproveGap converts a tracked gap to an approved one, minting the next `A` number here
+// and rewriting the head line through the reader; a gap already approved is left as it is
+// and its own ID is returned.
 func (u *Update) ApproveGap(gapID string) (string, error) {
-	path := u.Project.DesignMdPath()
-	gaps, err := parser.ParseGaps(path)
+	gaps, err := parser.ParseGaps(u.Project.DesignMdPath())
 	if err != nil {
 		return "", err
 	}
-
-	var target *parser.Gap
-	for i := range gaps {
-		if gaps[i].ID == gapID {
-			target = &gaps[i]
-			break
+	for _, g := range gaps {
+		if g.ID == gapID && g.Type == "A" && !g.HasCheckbox {
+			return g.ID, nil
 		}
 	}
-	if target == nil {
-		return "", fmt.Errorf("gap %s not found", gapID)
-	}
-
-	if target.Type == "A" && !target.HasCheckbox {
-		return target.ID, nil
-	}
-
-	newID := target.ID
-	if target.Type != "A" {
-		newID = nextGapID(gaps, "A")
-	}
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	lines := strings.Split(string(content), "\n")
-	if target.Line > 0 && target.Line <= len(lines) {
-		lines[target.Line-1] = formatGapLine("A", newID, target.Description)
-	}
-
-	return newID, os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+	newID := nextGapID(gaps, "A")
+	return newID, u.editGaps(func(g *minispecsdom.Gaps) error { return g.Approve(gapID, newID) })
 }
 
 // reqIDRe matches a bare Rn requirement identifier.
 var reqIDRe = regexp.MustCompile(`^R\d+$`)
 
-// Retire rewrites the oldReq line in requirements.md with the strikethrough/
-// Retired marker AND appends a new T-typed gap to design.md. Returns the
-// assigned Tn and the retired requirement's **Source:** spec(s) — the latter
-// lets the CLI emit the supersede-at-source reminder. If replacement is "-" or
-// empty, the marker says "no replacement".
-// R80, R103
+// CRC: crc-Update.md | Seq: seq-update.md | R80, R103, R326
+// Retire rewrites the requirement's head line to its retired form through the requirements
+// reader and appends the `Tn` gap through the gaps reader — two documents, one verb — and
+// returns the assigned Tn with the requirement's `**Source:**` specs, so the CLI can print
+// the supersede-at-source reminder. `-` or "" as the replacement means no replacement.
 func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, error) {
 	if !reqIDRe.MatchString(oldReq) {
 		return "", nil, fmt.Errorf("invalid requirement ID: %q", oldReq)
@@ -274,13 +216,10 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, e
 	if !noReplacement && !reqIDRe.MatchString(replacement) {
 		return "", nil, fmt.Errorf("invalid replacement requirement ID: %q (use Rn or -)", replacement)
 	}
-
-	reqsPath := u.Project.RequirementsPath()
-	reqs, err := parser.ParseRequirements(reqsPath)
+	reqs, err := parser.ParseRequirements(u.Project.RequirementsPath())
 	if err != nil {
 		return "", nil, err
 	}
-
 	var target *parser.Requirement
 	for i := range reqs {
 		if reqs[i].ID == oldReq {
@@ -294,51 +233,97 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, e
 	if target.Retired {
 		return "", nil, fmt.Errorf("requirement %s is already retired", oldReq)
 	}
-
-	gapsPath := u.Project.DesignMdPath()
-	gaps, err := parser.ParseGaps(gapsPath)
+	gaps, err := parser.ParseGaps(u.Project.DesignMdPath())
 	if err != nil {
 		return "", nil, err
 	}
 	newTn := nextGapID(gaps, "T")
-
-	replacementClause := fmt.Sprintf("see %s", replacement)
-	gapDesc := fmt.Sprintf("%s retired by %s (%s)", oldReq, replacement, reason)
+	var clause, gapDesc string
 	if noReplacement {
-		replacementClause = "no replacement"
+		clause = "no replacement"
 		gapDesc = fmt.Sprintf("%s retired (%s)", oldReq, reason)
+	} else {
+		clause = fmt.Sprintf("see %s", replacement)
+		gapDesc = fmt.Sprintf("%s retired by %s (%s)", oldReq, replacement, reason)
 	}
-
-	if err := u.rewriteRetiredLine(reqsPath, target, newTn, replacementClause); err != nil {
+	err = parser.EditFile(u.Project.RequirementsPath(), func(src string) (string, error) {
+		r := minispecsdom.ParseRequirements(src)
+		if err := r.Retire(oldReq, newTn, clause); err != nil {
+			return "", err
+		}
+		return r.Render()
+	})
+	if err != nil {
 		return "", nil, err
 	}
-	if err := u.appendGapLine(gapsPath, formatGapLine("T", newTn, gapDesc)); err != nil {
+	if err := u.editGaps(func(g *minispecsdom.Gaps) error { return g.Add(newTn, gapDesc) }); err != nil {
 		return "", nil, err
 	}
 	return newTn, target.Sources, nil
 }
 
-// rewriteRetiredLine rewrites a requirement line in-place to its retired form.
-func (u *Update) rewriteRetiredLine(path string, req *parser.Requirement, tn, replacementClause string) error {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	lines := strings.Split(string(content), "\n")
-	if req.Line <= 0 || req.Line > len(lines) {
-		return fmt.Errorf("requirement %s line %d out of range", req.ID, req.Line)
-	}
+// ownMarkerRe matches a requirement body that opens with its own `**Rn:**` label.
+var ownMarkerRe = regexp.MustCompile(`^\*\*(R\d+):\*\*`)
 
-	original := lines[req.Line-1]
-	prefixRe := regexp.MustCompile(`^(- \*\*)R\d+:(\*\*\s*)(.*)$`)
-	matches := prefixRe.FindStringSubmatch(original)
-	if matches == nil {
-		return fmt.Errorf("could not rewrite line %d (unexpected format): %q", req.Line, original)
+// CRC: crc-Update.md | Seq: seq-update.md | R324, R325, R326
+// AddReq mints the next free Rn for each text — the maximum ever assigned, retired ones
+// counted — and appends them to the named section in one invocation: no command hands out
+// a number without recording it. The section is addressed by heading text at whatever level
+// it lives, with or without the `Feature: ` prefix; an unknown heading is refused, since a
+// section title is a judgment about how the design decomposes and the tool owns IDs, not
+// prose; a title several headings carry is refused too. Entries land at the end of the
+// section's own content, before its first sub-heading — the reader's rule.
+//
+// A body opening with its own `**Rn:**` is refused, not stripped: the verb mints both the
+// identifier and the label, so a caller writing one is duplicating rather than choosing —
+// measured 2026-08-22, when `**R414:** …` produced a well-formed line with a doubled marker
+// that every check accepted.
+func (u *Update) AddReq(section string, texts []string) ([]string, error) {
+	if len(texts) == 0 {
+		return nil, fmt.Errorf("nothing to add: give at least one --req or --req-file")
 	}
-	prefix, sep, text := matches[1], matches[2], matches[3]
-	lines[req.Line-1] = fmt.Sprintf("%s~~%s:~~%s(Retired %s — %s) %s",
-		prefix, req.ID, sep, tn, replacementClause, text)
-	return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+	for i, text := range texts {
+		if m := ownMarkerRe.FindStringSubmatch(strings.TrimSpace(text)); m != nil {
+			return nil, fmt.Errorf("requirement %d opens with %s, and this verb writes that label itself; pass the text alone — the number is assigned here, so a written one is a duplicate or a guess", i+1, m[1])
+		}
+	}
+	reqs, err := parser.ParseRequirements(u.Project.RequirementsPath())
+	if err != nil {
+		return nil, err
+	}
+	maxNum := 0
+	for _, req := range reqs {
+		if n, err := strconv.Atoi(strings.TrimPrefix(req.ID, "R")); err == nil {
+			maxNum = max(maxNum, n)
+		}
+	}
+	ids := make([]string, len(texts))
+	err = parser.EditFile(u.Project.RequirementsPath(), func(src string) (string, error) {
+		r := minispecsdom.ParseRequirements(src)
+		title := section
+		found := r.Section(title)
+		if len(found) == 0 {
+			title = "Feature: " + section
+			found = r.Section(title)
+		}
+		switch {
+		case len(found) == 0:
+			return "", fmt.Errorf("no section of requirements.md is named %q; write the heading by hand first — a section title is a judgment about how the design decomposes, and it carries no ID, so writing it races nothing", section)
+		case len(found) > 1:
+			return "", fmt.Errorf("%d sections of requirements.md are named %q; the reader does not pick", len(found), title)
+		}
+		for i, text := range texts {
+			ids[i] = fmt.Sprintf("R%d", maxNum+1+i)
+			if err := r.Add(title, ids[i], strings.TrimSpace(text)); err != nil {
+				return "", err
+			}
+		}
+		return r.Render()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // MigrationComplete moves specs/migrations/<name>.md to

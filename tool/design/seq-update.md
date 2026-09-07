@@ -79,3 +79,11 @@ same atomic file write the carve adapter uses. The reader decides refusals — n
 a doubled field — before any byte moves and reads its own write back; what is decided here
 is the `<doc>#<n>` name, the system-clock date, and `inject`'s `void`, which compares the old
 sites resolved in HEAD against the new sites resolved on disk (R313, R314, R315, R316).
+
+## `add-req` and the gap verbs
+
+`add-req` reads `requirements.md` through the dependency's reader to mint — the maximum ID
+ever assigned, retired ones counted — then appends every text through `Add` in one render,
+the section addressed by heading text, refusals decided before any byte moves. `add-gap`,
+`resolve-gap`, `approve-gap` and `retire` go the same way through the gaps reader, `retire`
+touching both documents in one verb (R324, R325, R326).

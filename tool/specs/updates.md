@@ -92,6 +92,95 @@ minispec update retire R12 R40 "ec-rekey: keys moved to chunkID"
 #           completion test: could an agent reading only specs + design undo this?
 ```
 
+## minispec update add-req --section [heading] --req [text] ...
+
+Mint the next free `Rn` for each requirement given, append them to the named section
+of `design/requirements.md`, and crank out what was minted. Assignment and the write
+are **one act**: the tool never hands out a bare number for the caller to write down
+later, because a number the caller is holding is a second copy of the numbering state.
+
+**A batch is the primary form, not an accommodation.** Requirements arrive in blocks —
+the skill's own instruction is to *"merge all specs into numbered requirements"* — so
+`--req` may be given repeatedly and the entries are appended in the order supplied. The
+crank handle reports a run as a range, `R963-R966`, in the syntax the tool already
+parses in traceability comments and `query gaps` arguments.
+
+*Why a repeated flag rather than trailing positional arguments.* `add-gap` joins
+everything after its type into **one** description, so a sibling verb that split the
+same tail into **many** requirements would give two neighbouring commands opposite
+readings of the same shape — and an unquoted five-word requirement would silently
+become five requirements. The flag cannot be misread that way.
+
+**The destination is addressed by heading text, at whatever level it exists.** Not by
+`**Source:**`, which is emphatically non-unique — 195 lines carry 142 distinct values
+in ark — and not by feature alone, which is too coarse: `Source Monitoring` there holds
+68 entries across its sub-sections.
+
+A heading matches when the argument is its **literal text**, or its literal text with a
+leading `Feature: ` removed. So `--section "Updates"` reaches `## Feature: Updates` in a
+flat file, `--section "Go API"` reaches a sub-heading, and one flag serves both without
+the caller having to know which level a title lives at.
+
+**A new requirement lands at the end of the addressed heading's *own* content, never
+inside a child.** A heading's own content runs to the next heading of **any** level, so
+a `## Feature:` carrying both direct requirements and sub-sections gets the new entry
+after its own last one and before its first sub-heading. Four of ark's 193 features are
+that shape, and the rule is what keeps `--section "Table Sort"` from appending into
+`### InboxEntry statusDate field`.
+
+**An unknown heading is refused.** The tool owns IDs, not prose: a section title is a
+judgment about how the design decomposes, and inventing one would be authoring. Write
+the heading by hand first — it carries no ID, so it races nothing.
+
+**An ambiguous heading is refused, and the refusal hands back forms that are not.** Each
+candidate is listed with its level and its parent, and with the exact argument that
+selects it: a sub-heading is selected by `<parent>/<title>`, and a feature by its literal
+`Feature: <title>`. Nothing is written.
+
+*Measured in ark, where the ambiguity is larger than a count of sub-headings shows.*
+Eight titles are ambiguous across sixteen sites: six duplicated among sub-headings
+(`CLI`, `Endpoint Integration`, `Go API`, `Lua Integration`, `Package Structure`,
+`Store API`), and **two that collide across levels** — `Chunk Retrieval` and
+`Server Lifecycle` each exist as both a feature and a sub-heading. The level-crossing
+pair is the one worth guarding: `## Feature: Server Lifecycle` and the
+`### Server Lifecycle` under `## Feature: Embedded UI Engine` sit 187 lines and one
+unrelated feature apart, so a wrong choice files a requirement about the embedded UI
+engine under `ark serve`. Both qualified forms resolve to exactly one heading, because
+no sub-heading in either corpus begins with `Feature: `.
+
+Output conforms to the markdown-by-default rule rather than deviating from it: a prose
+sentence on stdout, suppressed by `--quiet`.
+
+Examples:
+```
+minispec update add-req --section "Fuzzy Search" \
+  --req "search --fuzzy accepts a maximum edit distance" \
+  --req "(inferred) the default maximum edit distance is 2"
+# stdout: Added R963-R964 to "Fuzzy Search"
+
+minispec update add-req --section "Server Lifecycle" --req "..."
+# stderr: "Server Lifecycle" names 2 headings, so the destination is ambiguous:
+#           ## Feature: Server Lifecycle          --section "Feature: Server Lifecycle"
+#           ### Server Lifecycle                  --section "Embedded UI Engine/Server Lifecycle"
+#              under ## Feature: Embedded UI Engine
+#         Re-run with one of the forms on the right. Nothing was written.
+```
+
+**`--req-file` is the file twin of `--req`**, repeatable like it and never mixed with it: the
+two are separate repeated flags and nothing preserves their interleaved order, while the order
+is exactly what assigns the numbers. Measured 2026-09-07 on this repository: R317–R326 were the
+first requirements minted through the verb, ten lines added and nothing else touched.
+
+## The gap verbs and `retire` write through the readers
+
+`add-gap`, `resolve-gap`, `approve-gap` and `retire` edit `design.md`'s Gaps section and
+`requirements.md` through the dependency's gaps and requirements readers (R326): the reader
+decides every refusal — a permanent gap resolved, a gap resolved twice, a requirement retired
+twice, an unknown or ambiguous section — before a byte moves, and reads its own write back.
+What stays this tool's is minting: the next `On`, `An`, `Tn` or `Rn` is computed here from what
+the reader returned, retired and resolved numbers counted, and passed in. `retire` is two
+documents in one verb — the head line rewritten in one, the `Tn` gap added in the other.
+
 ## minispec update number-alarms [file...]
 
 Assigns `**Alarm:**` numbers to every alarm that has none, writing the field into the
