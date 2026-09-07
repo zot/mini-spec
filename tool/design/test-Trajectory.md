@@ -16,6 +16,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Expected:** both directions answer 10
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go
+**Alarm:** 1
 **Fire alarm:** make `MaxItemID` return the pending file's maximum alone. The first case goes red with `next=4, want 10`; the mirror case still passes, which is the point — one direction alone cannot detect it
 **Inject:** internal/parser/trajectory.go:MaxItemID
 **Pulled:** 2026-08-16 — rang, `next = 4, want 10`, and only the done-file-highest subtest failed. Restored byte-clean. *Re-pulled the same day after `parseDoneIDs` was rewritten for the adopted shape — same signature*
@@ -26,6 +27,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Expected:** 5, not 100
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go
+**Alarm:** 2
 **Fire alarm:** drop the header guard in `parseDoneIDs` so every line is offered to the slot regex. Goes red with `next=100, want 5`. The body line is **ark's real shape** — an older pending entry quoted verbatim inside a later done entry — and measured 2026-08-16, five such lines sit in its ledger
 **Inject:** internal/parser/trajectory.go:parseDoneIDs
 **Pulled:** 2026-08-16 — rang, `next = 100, want 5`. Restored byte-clean. *This is the second pull: the first, earlier the same day, used a body-prose fixture that the rewritten parser would no longer have caught, so both the fixture and the injection are new*
@@ -36,6 +38,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Expected:** exactly `[117 84 83 4]`, maximum 117
 **Refs:** crc-Trajectory.md
 **Code:** internal/parser/trajectory_test.go
+**Alarm:** 3
 **Fire alarm:** scan the whole header line rather than the slot. Goes red with `DONE.md contributed [117 84 83 4 13 500], want [117 84 83 4]` and `max = 500, want 117` — 13 being a **part key** and 500 prose. The part pointer is the sharp one: the adopted format appends `` Part `<doc>#<key>` `` to every entry, spelled exactly like a queue ID, so this slot restriction is load-bearing against the format's own addition
 **Inject:** internal/parser/trajectory.go:parseDoneIDs
 **Pulled:** 2026-08-16 — rang, both assertions, message as recorded above. Restored byte-clean
@@ -60,6 +63,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Expected:** exit 0 and an answer
 **Refs:** crc-CLI.md, crc-Trajectory.md
 **Code:** internal/cli/cli_next_id_test.go
+**Alarm:** 4
 **Fire alarm:** delete the early-dispatch branch at the top of `runQuery`, so the subcommand falls through to `getProject()`. Goes red with `no design/ directory found` and exit 1. This is a **regression test for a real defect**, found by running the command rather than by reading it: the version first written failed in this very repository, whose design roots are `tool/` and `example/` while the queue sits above both
 **Inject:** internal/cli/cli.go:runQuery
 **Pulled:** 2026-09-04 — rang again after the done-entry reader change staled it (delegated `alarm-puller`, evidence read by hand): `TestNextIDItemNeedsNoDesignRoot` exited 1 with `no design/ directory found`, restore byte-clean. First pulled 2026-08-16, same signature

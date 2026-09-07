@@ -124,6 +124,18 @@ the test document, the test title, the `**Inject:**` sites, and its state.
 
 Four states, and the distinction between the middle two is the point:
 
+**An alarm is named `<document>#<n>`**, where `n` is its `**Alarm:**` field — an identifier,
+never a position, local to the document as sequence-step anchors are. The listing leads each
+alarm with `#n`; one with no number is listed by title with its repair named
+(`update number-alarms`), never silently numbered by position. Every alarm in this repository
+has carried a number since 2026-09-07.
+
+**The test designs are read through the dependency's test-document reader** — an entry is a
+`## Test:` heading's region, a field is `**Name:**` at a line head outside any code group, the
+prose fields fold, a fenced example is body, and a doubled field is a deviation the reader
+names. What is judged here rather than there: a site with no file or symbol is dropped, and a
+`**Pulled:**` whose date does not parse records nothing.
+
 | state | meaning |
 |---|---|
 | `verified` | has `**Pulled:**`, and no injection site has changed since |

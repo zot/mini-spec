@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104, R105, R106, R178
+**Requirements:** R310, R312, R316, R5, R6, R7, R8, R9, R51, R52, R53, R59, R61, R66, R67, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R104, R105, R106, R178
 
 Parses mini-spec design file formats into structured data.
 
@@ -16,6 +16,9 @@ Parses mini-spec design file formats into structured data.
 - SeqNode: {ID string, Children []*SeqNode}
 
 ## Does
+- ParseTestDoc(path), ParseTestDocReport(path): the fire alarms a test design records, read
+  through the dependency's `TestDoc` reader, with its unread list beside them; `Alarm` carries
+  the entry's number, code files and line, `Key()` its `<doc>#<n>` name (R178, R310, R316)
 - ParseRequirements(path): parse requirements.md -> []Requirement
   - Accepts strikethrough retired form `- **~~Rn:~~** (Retired Tk — see Rxxx) <text>`; sets Retired flag
   - Splits comma-separated paths on `**Source:**` line into Sources []string

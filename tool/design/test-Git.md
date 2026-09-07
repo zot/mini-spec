@@ -82,6 +82,7 @@ a check that could not look returning a clean result, which is the precise failu
 freshness feature exists to prevent, inside its own implementation
 **Input:** a repository per object format, one file, one function, one commit
 **Expected:** a real date and no error from both
+**Alarm:** 1
 **Fire alarm:** restore the `len(hash) != 40` gate and confirm the `sha256` case goes
 red reporting no change for a function just committed
 **Inject:** internal/project/git.go:LastChanged
@@ -95,6 +96,7 @@ Reporting that as a rotted anchor is false and fires on every newly written func
 **Input:** a repository with one committed function and one added but uncommitted; and
 a symbol in neither
 **Expected:** `ErrNoHistory` for the new one, `ErrUnresolvedSite` for the absent one
+**Alarm:** 2
 **Fire alarm:** treat every `-L` failure as a rotted anchor — the pre-fix shape — and
 confirm the new function reports `ErrUnresolvedSite`
 **Inject:** internal/project/git.go:LastChanged
@@ -113,6 +115,7 @@ range includes the blank line after a declaration, so a method with nothing afte
 reported changed whenever something is appended — measured 2026-09-04 while writing this
 **Expected:** `LastChanged("x.go", "A.Run")` reports day two and `("x.go", "B.Run")` day one;
 a pattern resolving to the first `Run` in the file reports day one for both
+**Alarm:** 3
 **Fire alarm:** ignore the receiver in `siteExtent` — compare `receiverType` against a value no receiver can be, `typ+"!"` (dropping the condition or replacing it with `false` leaves a variable unused and does not compile, which is not a pull) —
 and confirm `A.Run` goes red: it resolves to the first `Run`, B's, and reports day one.
 *Until 2026-09-06 the site was `sitePattern`, the stopgap the extent replaced*
@@ -129,6 +132,7 @@ reading
 named `Lookup`
 **Expected:** `LastChanged("x.go", "Lookup")` returns `ErrUnresolvedSite`; `"LookupPath"`
 returns a date
+**Alarm:** 4
 **Fire alarm:** match the name as a prefix in `siteExtent` — `strings.HasPrefix(text, want)`
 in place of equality — and confirm `Lookup` goes green with `LookupPath`'s date. *Until
 2026-09-06 the site was `sitePattern` and the injection dropped its `\b` boundaries*
@@ -140,6 +144,7 @@ in place of equality — and confirm `Lookup` goes green with `LookupPath`'s dat
 **Purpose:** validates R303 and R306 — the range is the declaration's own lines and nobody's comment. Git's range gave a declaration its successor's doc block, and old-sdom's first repair gave it its own; the second turned three verified alarms stale over traceability lines rewritten inside doc blocks
 **Input:** a repository committing `Foo` with a doc comment and `Bar` after it on day one; on day two only the two comments change
 **Expected:** `LastChanged("x.go", "Foo")` reports day one
+**Alarm:** 5
 **Fire alarm:** start the extent one line above the keyword — `d.Line(from) - 1`, which takes the doc comment in — and confirm `Foo` goes red reporting day two
 **Inject:** internal/project/extent.go:siteExtent
 **Pulled:** 2026-09-06 — rang: `Foo changed 2026-01-02 after a comment-only edit; want 2026-01-01`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
@@ -150,6 +155,7 @@ in place of equality — and confirm `Lookup` goes green with `LookupPath`'s dat
 **Purpose:** validates R305 — the range ends where the groups close, not at the line before the next declaration; git's range took the trailing blank line and staled the last function in a file on every append (gap O11)
 **Input:** a repository committing `A.Run` as the last declaration on day one, and appending `B` below it on day two
 **Expected:** `LastChanged("x.go", "A.Run")` reports day one
+**Alarm:** 6
 **Fire alarm:** extend the extent by one line past the close in `groupEnd` and confirm `A.Run` goes red reporting day two
 **Inject:** internal/project/extent.go:groupEnd
 **Pulled:** 2026-09-06 — rang: `A.Run changed 2026-01-02 after an append below it; want 2026-01-01`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
@@ -160,6 +166,7 @@ in place of equality — and confirm `Lookup` goes green with `LookupPath`'s dat
 **Purpose:** validates R307 — two declarations answering to one name is reported with the count, never resolved to the first
 **Input:** a repository committing `A.Run` and `B.Run`
 **Expected:** `LastChanged("x.go", "Run")` returns an `AmbiguousSiteError` with `N` 2 matching `ErrAmbiguousSite`; `"A.Run"` returns a date
+**Alarm:** 7
 **Fire alarm:** stop counting past the first match in `siteExtent` — `break` after the first hit — and confirm `Run` goes green with a date
 **Inject:** internal/project/extent.go:siteExtent
 **Pulled:** 2026-09-06 — rang: `Run = <nil>; want AmbiguousSiteError{N: 2}`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
@@ -170,9 +177,9 @@ in place of equality — and confirm `Lookup` goes green with `LookupPath`'s dat
 **Purpose:** validates R303, R304, R305 on the parse alone — a signature spanning lines, a nested group, grouped `var` members at their own lines, a receiver carrying a type parameter, the bare form of a method, a receiver that does not match
 **Input:** one twenty-line Go source
 **Expected:** `Multi` is lines 9–16, `A` and `B` are 4 and 5, `Set.Add` and `Add` are 18, `One` is 20, `Other.Add` and `Nope` are absent
+**Alarm:** 8
 **Fire alarm:** stop the walk in `groupEnd` at the first closer instead of the last — confirm `Multi` reads 9–11, the parameter group's close
 **Inject:** internal/project/extent.go:groupEnd
 **Pulled:** 2026-09-06 — rang: `Multi: got 9-11 count 1, want 9-16 count 1`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
 **Refs:** crc-Git.md — R303, R304, R305
-**Code:** internal/project/git_test.go
 **Code:** internal/project/git_test.go

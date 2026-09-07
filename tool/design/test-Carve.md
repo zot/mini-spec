@@ -10,6 +10,7 @@ path's atomicity and refusals, and the rendering.
 and a line-oriented scan counted it (ark's `carves/README.md`, 14 open reported where 13 existed)
 **Input:** a document whose only `## Status` and only checkbox lines sit inside a fence
 **Expected:** `HasStatus` false, no parts
+**Alarm:** 1
 **Fire alarm:** none here — the property is the dependency's, proven by its `carve_test.go`;
 this test pins that the adapter does not re-scan by line
 **Refs:** crc-Carve.md — R209
@@ -21,6 +22,7 @@ subpart; a whole-document count reads open questions as parts
 **Input:** a status block with a top-level part, a `SPLIT` parent, two subparts, then a
 `## Open questions` section with two more checkboxes
 **Expected:** 2 open, 1 landed, 1 stateless; the open questions contribute nothing
+**Alarm:** 2
 **Fire alarm:** none here — the status region and the subpart depth are the dependency's,
 proven by its `carve_test.go`; this test pins that the adapter takes `Parts()` and
 `Stateless()` as handed and re-scans nothing
@@ -32,6 +34,7 @@ proven by its `carve_test.go`; this test pins that the adapter takes `Parts()` a
 **Input:** a carve directory holding one document with a status block and one without
 **Expected:** two carves in the scan, one with `HasStatus` false; the census names one document
 with no status block
+**Alarm:** 3
 **Fire alarm:** skip a document with no status block in `ScanCarves` and confirm this goes red
 with one carve
 **Inject:** internal/parser/carve.go:ScanCarves
@@ -43,6 +46,7 @@ with one carve
 **Purpose:** validates R214 — an empty census over no directory is a confident wrong one
 **Input:** a repository root with neither `carves/` nor `.carves/`
 **Expected:** `ErrNoCarveDirs`
+**Alarm:** 4
 **Fire alarm:** return an empty scan and nil when both are absent and confirm this goes red
 **Inject:** internal/parser/carve.go:ScanCarves
 **Pulled:** 2026-09-04 — rang: `got <nil>; want ErrNoCarveDirs`; restore byte-clean by copy
@@ -55,6 +59,7 @@ derives the number from the node's offset; a wrong derivation points a reader at
 **Input:** a status block whose third line is a `SPLIT` parent
 **Expected:** one stateless entry, its `Line` the parent's 1-based line, its reason naming the
 missing checkbox
+**Alarm:** 5
 **Fire alarm:** report the offset instead of the line and confirm this goes red
 **Inject:** internal/parser/carve.go:lineOf
 **Pulled:** 2026-09-04 — rang: `stateless = L85 … want L6`, and the CLI listing test went red beside it on
@@ -71,6 +76,7 @@ and `SetMarker` on a key no part carries
 **Expected:** the first write changes exactly the marker and the file re-reads as one part
 landed and one open; the three refusals return `ErrReopen`, `ErrLanded`, `ErrNoPart` and the
 file's bytes are unchanged after each
+**Alarm:** 6
 **Fire alarm:** on a refusal, create the temp file and leave it — confirm the leftover-file
 assertion goes red. *The first injection written here could not ring:* writing the rendered
 bytes before checking the reader's error left the file byte-identical anyway, because the
@@ -88,6 +94,7 @@ The write-before-check injection was pulled first the same day and stayed green,
 **Expected:** an error naming the file and `did not read back`; the file byte-identical; no temp file left
 **Refs:** crc-Carve.md, crc-Trajectory.md
 **Code:** internal/parser/carve_test.go
+**Alarm:** 7
 **Fire alarm:** drop the `ReadBackError` branch from the deferred recover so every panic re-panics. Red is the test process dying on the panic rather than an assertion — `panic: &minispecsdom.ReadBackError{…}` — which is the crank handle the recovery exists to replace with a message a caller can read
 **Inject:** internal/parser/carve.go:editFile
 **Pulled:** 2026-09-05 — rang, the test binary panicked out of `TestAReadBackPanicBecomesARefusalAndTheFileIsUntouched` with the ReadBackError text; restored byte-identical
@@ -96,6 +103,7 @@ The write-before-check injection was pulled first the same day and stayed green,
 **Purpose:** validates R213 — this repository's queue sits above two design roots
 **Input:** a repository root with `carves/` and no `design/` anywhere
 **Expected:** exit 0 and a census
+**Alarm:** 8
 **Fire alarm:** route `carves` through `getProject()` like the other subcommands and confirm
 this goes red with `no design/ directory found`
 **Inject:** internal/cli/cli.go:runQuery
@@ -112,6 +120,7 @@ scheme (`#4`), and a `SPLIT` parent
 **Expected:** without `--open` the only part row is the non-conforming one and no stateless
 row; with `--open` the open part and the stateless row appear; the census reads
 `1 carve: 1 open, 1 landed, 1 stateless, 1 non-conforming; 0 documents with no status block`
+**Alarm:** 9
 **Fire alarm:** list a part only when `--open` is given and confirm the no-flag case goes red
 with no rows
 **Inject:** internal/cli/cli.go:listed
@@ -126,6 +135,7 @@ restore byte-clean by copy
 **Expected:** `1 unread` on the carve line and `, 1 unread;` in the census without `--open` and no row; with `--open` an `(unread)` row at the opener's line carrying its text; the swallowed part does not raise the open count
 **Refs:** crc-Carve.md, crc-CLI.md — R301
 **Code:** internal/cli/cli_carves_test.go
+**Alarm:** 10
 **Fire alarm:** stop carrying the reader's list — `Unread: rc.Unread()` dropped from `parseCarve` — so the carve reports zero unread while two of its parts are gone. Goes red on the carve line and the census at once
 **Inject:** internal/parser/carve.go:parseCarve
 **Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, same injection, `want the count on the carve line and no row` and `want the opener's line and text`; restore byte-clean by copy. First pulled 2026-09-05
@@ -135,6 +145,7 @@ restore byte-clean by copy
 repository's own carves, zero deviations
 **Input:** `carves/` of this repository
 **Expected:** every part conforms and every stateless line carries no deviation
+**Alarm:** 11
 **Fire alarm:** none — a corpus check, not a guard; it goes red when a carve is edited badly,
 which is its purpose
 **Refs:** crc-Carve.md — R219

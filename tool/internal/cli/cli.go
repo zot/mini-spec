@@ -9,7 +9,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zot/minispec/internal/alarm"
 	"github.com/zot/minispec/internal/parser"
@@ -721,6 +723,33 @@ func (c *CLI) runUpdate(args []string) int {
 			fmt.Fprint(os.Stderr, retireReminder(args[1], sources))
 		}
 
+	case "pulled":
+		// CRC: crc-CLI.md | Seq: seq-update.md | R314
+		return c.runPulled(u, args[1:])
+
+	case "inject":
+		// CRC: crc-CLI.md | Seq: seq-update.md | R315
+		return c.runInject(u, p, args[1:])
+
+	case "number-alarms":
+		// CRC: crc-CLI.md | Seq: seq-update.md | R313
+		docs, err := u.NumberAlarms(args[1:])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		for _, d := range docs {
+			if len(d.Assigned) == 0 {
+				fmt.Printf("%s: nothing to number\n", filepath.Base(d.Path))
+				continue
+			}
+			nums := make([]string, len(d.Assigned))
+			for i, n := range d.Assigned {
+				nums[i] = strconv.Itoa(n)
+			}
+			fmt.Printf("%s: assigned %s\n", filepath.Base(d.Path), strings.Join(nums, ", "))
+		}
+
 	case "migration-complete":
 		if len(args) < 2 {
 			fmt.Fprintln(os.Stderr, "Usage: minispec update migration-complete <name>")
@@ -948,10 +977,81 @@ func (c *CLI) queryAlarms(p *project.Project, args []string) int {
 		case alarm.Unanchored:
 			detail = " — no Inject:, so nothing can check it"
 		}
-		fmt.Printf("  %-13s %s%s\n", a.State, a.Alarm.Test, detail)
+		// R310, R312 — an alarm is named `<doc>#<n>`; one with no number is unmigrated and
+		// says so with its repair, never numbered by position.
+		name := a.Alarm.Test
+		if a.Alarm.Numbered() {
+			name = fmt.Sprintf("#%d %s", a.Alarm.ID, a.Alarm.Test)
+		} else {
+			detail += " (unnumbered — run update number-alarms)"
+		}
+		fmt.Printf("  %-13s %s%s\n", a.State, name, detail)
 	}
 
 	fmt.Print(census)
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-update.md | R314
+// runPulled records an alarm as pulled: `update pulled <doc>#<n> --body-file <f>`.
+func (c *CLI) runPulled(u *update.Update, args []string) int {
+	fs := flag.NewFlagSet("pulled", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	bodyFile := fs.String("body-file", "", "what happened, read from a file byte for byte")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	if len(rest) != 1 || *bodyFile == "" {
+		fmt.Fprintln(os.Stderr, "Usage: minispec update pulled <doc>#<n> --body-file <file>")
+		return 1
+	}
+	body, err := os.ReadFile(*bodyFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	now := time.Now()
+	if err := u.SetPulled(rest[0], string(body), now); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	fmt.Printf("Pulled %s, %s\n", rest[0], now.Format("2006-01-02"))
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-update.md | R315
+// runInject re-sites an alarm: `update inject <doc>#<n> <file:symbol>...`, comma- or
+// space-separated. Reports whether the record was voided.
+func (c *CLI) runInject(u *update.Update, p *project.Project, args []string) int {
+	if len(args) < 2 {
+		fmt.Fprintln(os.Stderr, "Usage: minispec update inject <doc>#<n> <file:symbol>[, ...]")
+		return 1
+	}
+	var sites []parser.AlarmSite
+	for _, raw := range strings.Split(strings.Join(args[1:], ","), ",") {
+		raw = strings.TrimSpace(strings.Trim(strings.TrimSpace(raw), "`"))
+		if raw == "" {
+			continue
+		}
+		file, symbol, ok := strings.Cut(raw, ":")
+		file, symbol = strings.TrimSpace(file), strings.TrimSpace(symbol)
+		if !ok || file == "" || symbol == "" {
+			fmt.Fprintf(os.Stderr, "Error: a site is <file>:<symbol>, not %q\n", raw)
+			return 1
+		}
+		sites = append(sites, parser.AlarmSite{File: file, Symbol: symbol})
+	}
+	cleared, err := u.SetInject(args[0], sites, project.NewGit(p.RootPath))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if cleared {
+		fmt.Printf("Re-sited %s; the record earned at the old sites is history now — the alarm is unrecorded until pulled here\n", args[0])
+	} else {
+		fmt.Printf("Re-sited %s; the record stands\n", args[0])
+	}
 	return 0
 }
 

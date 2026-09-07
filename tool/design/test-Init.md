@@ -142,6 +142,7 @@ not have to infer what changed
 it must not be refused as damage
 **Input:** a `config.yaml` holding only `design_dir`; `init --track-all --repair`
 **Expected:** succeeds, and `LoadTrack` afterwards reads `all`
+**Alarm:** 1
 **Fire alarm:** make `validateWellFormed` reject an empty `Track` as well as an
 unparseable one, and confirm this goes red
 **Inject:** internal/project/init.go:validateWellFormed
@@ -156,6 +157,7 @@ shipped
 entry, and a `future_setting: 42` this binary does not model; `--repair`
 **Expected:** every comment, the quoted form, the unknown key and the original key
 order all survive, with `track` appended last
+**Alarm:** 2
 **Fire alarm:** restore the struct round-trip — unmarshal into `Config`, set `Track`,
 `yaml.Marshal` back — and confirm every preserved string is reported dropped. This is
 the literal defect, measured on ark: it deleted a ten-line comment block explaining a
@@ -171,6 +173,7 @@ either direction must edit the one scalar and leave its annotation standing
 `private-trajectory`
 **Expected:** the comment survives, the value changes, the neighbouring setting is
 untouched
+**Alarm:** 3
 **Fire alarm:** replace the value node wholesale instead of setting it in place, and
 clear the key's head comment — confirm the comment is reported dropped
 **Inject:** internal/project/init.go:setTrack
@@ -183,6 +186,7 @@ alone, so a repair cannot reformat what it had no reason to touch
 **Input:** a `config.yaml` with irregular spacing (`track:   all`) and a comment;
 `--repair` to the same value
 **Expected:** the file is byte-identical afterwards and the report says `unchanged`
+**Alarm:** 4
 **Fire alarm:** delete the already-correct early return from `setTrack` so it always
 re-encodes, and confirm the byte comparison goes red on the collapsed spacing
 **Inject:** internal/project/init.go:setTrack
@@ -194,6 +198,7 @@ re-encodes, and confirm the byte comparison goes red on the collapsed spacing
 content, which the node walk must not dereference
 **Input:** `""`, `"\n\n"`, and a comments-only body
 **Expected:** each yields a document setting `track`, and none contains `null`
+**Alarm:** 5
 **Fire alarm:** disable the empty/non-mapping guard and confirm an `index out of
 range [0] with length 0` panic
 **Inject:** internal/project/init.go:setTrack

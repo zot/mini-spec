@@ -146,6 +146,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Expected:** one unread line under `CURRENT.md` and one under `carves/x.md`, and the note naming both with their counts
 **Refs:** crc-TrajectoryValidate.md, crc-Trajectory.md, crc-Carve.md
 **Code:** internal/validate/trajectory_test.go
+**Alarm:** 16
 **Fire alarm:** drop the carve loop from `countUnread`, so only the queue files and the current file are counted. Goes red on `carves/x.md (1)` missing from the note
 **Inject:** internal/validate/trajectory.go:countUnread
 **Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `Unread = map[CURRENT.md:1], want one for the current file and one for the carve`; restore byte-clean by copy. Pulled twice on 2026-09-05, the second after the simplification pass rewrote `countUnread` around a `record` closure

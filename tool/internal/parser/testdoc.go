@@ -1,12 +1,14 @@
-// CRC: crc-Parser.md | Seq: seq-alarm-freshness.md#1.1 | R178
+// CRC: crc-Parser.md | Seq: seq-alarm-freshness.md#1.1 | R178, R316
 package parser
 
 import (
 	"os"
 	"path/filepath"
-	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 // CRC: crc-Parser.md | R178
@@ -23,125 +25,87 @@ type AlarmSite struct {
 
 func (s AlarmSite) String() string { return s.File + ":" + s.Symbol }
 
-// CRC: crc-Parser.md | R178
+// CRC: crc-Parser.md | R178, R310
 // Alarm is one recorded fault injection from a test design.
 //
 // Pulled is zero when the document records no verification. That absence is data, not
 // a missing value to be defaulted: an alarm with no pull date is a *prescription* —
 // an injection someone wrote down and may never have run — and the two read identically
-// in prose.
+// in prose. ID is zero when the entry carries no `**Alarm:**` field: unmigrated, and
+// reported as such rather than numbered by position (R312).
 type Alarm struct {
 	Doc    string // the test document's base name
 	Test   string // the `## Test:` heading it sits under
 	Prose  string // the `**Fire alarm:**` body
 	Sites  []AlarmSite
 	Pulled time.Time
+	Code   []string // the `**Code:**` files, as written
+	ID     int      // the `**Alarm:**` number, 0 when unnumbered
+	Line   int      // the entry's heading line, 1-based
 }
 
 // HasPulled reports whether a verification date was recorded.
 func (a Alarm) HasPulled() bool { return !a.Pulled.IsZero() }
 
-var (
-	alarmRe  = regexp.MustCompile(`^\*\*Fire alarm:\*\*\s*(.*)$`)
-	injectRe = regexp.MustCompile(`^\*\*Inject:\*\*\s*(.*)$`)
-	pulledRe = regexp.MustCompile(`^\*\*Pulled:\*\*\s*(\d{4}-\d{2}-\d{2})`)
-	fieldRe  = regexp.MustCompile(`^(\*\*[A-Z]|##)`)
-)
+// Numbered reports whether the entry carries an `**Alarm:**` field. R312
+func (a Alarm) Numbered() bool { return a.ID != 0 }
 
-// CRC: crc-Parser.md | Seq: seq-alarm-freshness.md#1.1 | R178
-// ParseTestDoc reads the fire alarms a test design records.
-//
-// Fields are matched only at the **start of a line**, which is what keeps a mention
-// inside prose from being read as a field. Continuation lines are folded into the alarm
-// body until the next field or heading, because these documents wrap — and a reader
-// that assumed one line per field would silently see half of every alarm. That failure
-// is not hypothetical: three separate greps during this feature's own measurement
-// reported absence because a phrase broke across lines.
+// Key is the alarm's name, `<doc>#<n>`, or "" while it is unnumbered. R310
+func (a Alarm) Key() string {
+	if !a.Numbered() {
+		return ""
+	}
+	return a.Doc + "#" + strconv.Itoa(a.ID)
+}
+
+// CRC: crc-Parser.md | Seq: seq-alarm-freshness.md#1.1 | R178, R316
+// ParseTestDoc reads the fire alarms a test design records, through the dependency's
+// test-document reader: an entry is a `## Test:` heading's region, a field is
+// `**Name:**` at a line head outside any code group, the two prose fields fold across
+// wrapped lines, and a fenced example is body. What the reader could not read is dropped
+// here; ParseTestDocReport carries it.
 func ParseTestDoc(path string) ([]Alarm, error) {
+	alarms, _, err := ParseTestDocReport(path)
+	return alarms, err
+}
+
+// CRC: crc-Parser.md | R178, R316
+// ParseTestDocReport is ParseTestDoc with the reader's unread list beside the alarms.
+func ParseTestDocReport(path string) ([]Alarm, []minispecsdom.Unread, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	td := minispecsdom.ParseTestDoc(string(data))
 	doc := filepath.Base(path)
-	lines := strings.Split(string(data), "\n")
-
 	var out []Alarm
-	test := "(file-level)"
-	for i, line := range lines {
-		if strings.HasPrefix(line, "## Test:") {
-			test = strings.TrimSpace(strings.TrimPrefix(line, "## Test:"))
+	for _, e := range td.Tests() {
+		if !e.HasAlarm() {
 			continue
 		}
-		m := alarmRe.FindStringSubmatch(line)
-		if m == nil {
-			continue
-		}
-		// Fold the wrapped remainder of the alarm, then read the fields that follow it.
-		prose, fieldsAt := foldProse(lines, i, m[1])
-		sites, pulled := readAlarmFields(lines, fieldsAt)
-		out = append(out, Alarm{Doc: doc, Test: test, Prose: prose, Sites: sites, Pulled: pulled})
+		out = append(out, alarmOf(doc, e))
 	}
-	return out, nil
+	return out, td.Unread(), nil
 }
 
-// foldProse joins a `**Fire alarm:**` value with the wrapped lines that continue it, and
-// reports where the fold stopped — the index at which that alarm's fields begin.
-//
-// It ends at a blank line, the next field, or the next heading, and never consumes the
-// line that stopped it. That is also why the caller can keep walking from where it left
-// off instead of skipping ahead: a line folded here matched neither `## Test:` nor
-// `**Fire alarm:**` by construction, since both of those start a field or heading and so
-// would have ended the fold. Advancing the caller's cursor past the body would be an
-// optimisation paid for in index arithmetic, which is the reading this parser can least
-// afford to get subtly wrong.
-func foldProse(lines []string, start int, first string) (string, int) {
-	body := []string{strings.TrimSpace(first)}
-	i := start + 1
-	for ; i < len(lines) && strings.TrimSpace(lines[i]) != "" && !fieldRe.MatchString(lines[i]); i++ {
-		body = append(body, strings.TrimSpace(lines[i]))
-	}
-	return strings.Join(body, " "), i
-}
-
-// readAlarmFields collects the Inject sites and Pulled date belonging to the alarm that
-// ends at `from`, stopping at the next test heading so one alarm never adopts the next
-// one's fields.
-func readAlarmFields(lines []string, from int) ([]AlarmSite, time.Time) {
-	var sites []AlarmSite
-	var pulled time.Time
-	for k := from; k < len(lines); k++ {
-		line := lines[k]
-		if strings.HasPrefix(line, "## ") || alarmRe.MatchString(line) {
-			break
-		}
-		if m := injectRe.FindStringSubmatch(line); m != nil {
-			sites = append(sites, parseSites(m[1])...)
+// R178
+// alarmOf is the census's view of one entry. A site with no file or no symbol is
+// dropped rather than guessed at — half an anchor points somewhere, and somewhere is
+// worse than nowhere — and a `**Pulled:**` whose date does not parse records nothing:
+// the reader carries what was written, the judgment is this tool's.
+func alarmOf(doc string, e *minispecsdom.TestEntry) Alarm {
+	a := Alarm{Doc: doc, Test: e.Title, Prose: e.FireAlarm, Code: e.Code, ID: e.Alarm, Line: e.Line()}
+	for _, s := range e.Inject {
+		file, symbol := strings.TrimSpace(s.File), strings.TrimSpace(s.Symbol)
+		if file == "" || symbol == "" {
 			continue
 		}
-		if m := pulledRe.FindStringSubmatch(line); m != nil {
-			if when, err := time.Parse("2006-01-02", m[1]); err == nil {
-				pulled = when
-			}
+		a.Sites = append(a.Sites, AlarmSite{File: file, Symbol: symbol})
+	}
+	if e.Pulled != nil {
+		if when, perr := time.Parse("2006-01-02", e.Pulled.Date); perr == nil {
+			a.Pulled = when
 		}
 	}
-	return sites, pulled
-}
-
-// parseSites splits a comma-separated `**Inject:**` value into file/symbol pairs. An
-// entry with no colon is dropped rather than guessed at: half an anchor points
-// somewhere, and somewhere is worse than nowhere.
-func parseSites(value string) []AlarmSite {
-	var out []AlarmSite
-	for _, part := range strings.Split(value, ",") {
-		part = strings.TrimSpace(strings.Trim(strings.TrimSpace(part), "`"))
-		if part == "" {
-			continue
-		}
-		file, symbol, ok := strings.Cut(part, ":")
-		if !ok || strings.TrimSpace(file) == "" || strings.TrimSpace(symbol) == "" {
-			continue
-		}
-		out = append(out, AlarmSite{File: strings.TrimSpace(file), Symbol: strings.TrimSpace(symbol)})
-	}
-	return out
+	return a
 }

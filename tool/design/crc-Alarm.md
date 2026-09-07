@@ -1,5 +1,5 @@
 # Alarm
-**Requirements:** R179, R180, R181, R182, R183, R185, R186, R187, R200, R201, R202, R203, R309
+**Requirements:** R179, R180, R181, R182, R183, R185, R186, R187, R200, R201, R202, R203, R309, R310, R312
 
 Assesses recorded fault injections. Given the alarms a test design carries and a Git
 that can answer "has this function changed", it says which proofs are still good.

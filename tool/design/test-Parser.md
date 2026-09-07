@@ -97,11 +97,13 @@ is the strongest false claim this parser could make: it would report an unverifi
 guard as verified
 **Input:** an unrecorded alarm followed by a recorded one
 **Expected:** the first has no sites and no pull date; the second keeps both
-**Fire alarm:** stop `readAlarmFields` only at a heading level no document uses, and
-confirm the first alarm reports the second's pull date
-**Inject:** internal/parser/testdoc.go:readAlarmFields
-**Pulled:** 2026-08-13 — rang: the first alarm adopted `2026-08-05`; restore byte-clean
-**Refs:** crc-Parser.md — R178
+**Alarm:** 1
+**Fire alarm:** *structural since 2026-09-07:* the entry is a region of the dependency's
+reader, so a field cannot cross into the next entry by construction and no edit in this
+tool reaches the property. The test still guards it; the injection would be in
+`minispecsdom.ParseTestDoc`, which is theirs. Until 2026-09-07 the site was
+`readAlarmFields`, pulled 2026-08-13: the first alarm adopted `2026-08-05`
+**Refs:** crc-Parser.md — R178, R316
 
 ## Test: a half-written injection site is dropped, not guessed at
 **Purpose:** validates R178 — an entry with no colon has no symbol, and half an anchor
@@ -109,8 +111,11 @@ points somewhere, which is worse than nowhere because every future check follows
 **Input:** an `**Inject:**` mixing one good site with three malformed ones, and an
 unparseable `**Pulled:**`
 **Expected:** one site kept; no pull date recorded
-**Fire alarm:** accept entries with no colon and confirm the malformed three appear
-**Inject:** internal/parser/testdoc.go:parseSites
-**Pulled:** 2026-08-13 — rang, restore byte-clean
-**Refs:** crc-Parser.md — R178
+**Alarm:** 2
+**Fire alarm:** keep a site with an empty symbol — drop the `symbol == ""` half of the
+filter in `alarmOf` — and confirm the malformed sites appear. *Re-sited 2026-09-07 from
+`parseSites`, which went with the line reader*
+**Inject:** internal/parser/testdoc.go:alarmOf
+**Pulled:** 2026-09-07 — rang: `Sites = [good.go:Fine garbage-no-colon: nosymbol:], want only good.go:Fine`; restore byte-clean by copy, and again after the simplification pass touched the file, same signature. Previously 2026-08-13 against `parseSites`
+**Refs:** crc-Parser.md — R178, R316
 

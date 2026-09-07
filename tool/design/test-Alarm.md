@@ -22,6 +22,7 @@ a check that fires on arrival is ignored
 **Input:** an alarm pulled `2026-08-05` and one pulled `2026-08-04`, against a fake
 reporting the site changed `2026-08-05`
 **Expected:** `verified` and `stale` respectively
+**Alarm:** 1
 **Fire alarm:** make the comparison inclusive (`!when.Before(a.Pulled)`) — the literal
 first version — and confirm the same-day case goes red while the later one stays green.
 The two differ only in the boundary, which is the whole property
@@ -34,6 +35,7 @@ The two differ only in the boundary, which is the whole property
 there would be the tool declining to report its own mechanism failing
 **Input:** an alarm whose site names a symbol the fake reports as unfindable
 **Expected:** `unresolvable`, and the site is named
+**Alarm:** 2
 **Fire alarm:** treat the lookup error as "unchanged" and confirm the alarm reports
 `verified` instead — the exact silent-pass this field exists to prevent
 **Inject:** internal/alarm/alarm.go:assessOne
@@ -44,6 +46,7 @@ there would be the tool declining to report its own mechanism failing
 **Purpose:** validates R309 — an anchored alarm with no `**Pulled:**` has its sites resolved before it reads `unrecorded`; a site naming nothing reads `unresolvable`, an intact one stays `unrecorded`, and with no git it stays `unrecorded` because nothing could be checked
 **Input:** three prescriptions on `a.go:Foo` against a fake that reports the site unfindable, a fake that resolves it, and a fake with no repository
 **Expected:** `unresolvable` naming the site; `unrecorded`; `unrecorded`
+**Alarm:** 3
 **Fire alarm:** restore the short-circuit — return `unrecorded` before resolving any site — and confirm the rotted case goes red
 **Inject:** internal/alarm/alarm.go:assessOne
 **Pulled:** 2026-09-06 — rang: `state = "unrecorded" site = ""; want unresolvable at a.go:Foo`; restore byte-clean by copy, and again the same day after the simplification pass rewrote the check as a switch, same signature
@@ -55,6 +58,7 @@ there would be the tool declining to report its own mechanism failing
 clean result
 **Input:** an alarm with sites and a pull date; fake Git reporting no repository
 **Expected:** `unchecked`; `unrecorded` and `unanchored` still resolve, needing no git
+**Alarm:** 4
 **Fire alarm:** return `verified` when git is absent and confirm this goes red
 **Inject:** internal/alarm/alarm.go:assessOne
 **Pulled:** 2026-09-06 — rang again after `assessOne` gained the ambiguous-site case (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand); pulled again by hand the same day after the simplification pass restructured `assessOne` for `#37`, same signature): `with no git = "verified", want unchecked`; restore byte-clean. First pulled 2026-08-13
@@ -74,6 +78,7 @@ convention, and a permanent non-zero line is the nag this project distinguishes 
 gripe you can discharge
 **Input:** one alarm of each of the four states
 **Expected:** two assessments, both closable
+**Alarm:** 5
 **Fire alarm:** widen the filter to everything that is not `verified` and confirm the
 count assertion goes red at 4
 **Inject:** internal/alarm/alarm.go:Voided
@@ -87,6 +92,7 @@ reach. Only with nothing worse to report does the alarm read `unchecked`
 **Input:** an alarm whose first site has no history and whose second is definitely
 stale; and the same first site alone
 **Expected:** `stale` for the pair, `unchecked` for the lone one
+**Alarm:** 6
 **Fire alarm:** return `Unchecked` on the first erroring site — the pre-fix
 short-circuit — and confirm the pair reports `unchecked` instead of `stale`
 **Inject:** internal/alarm/alarm.go:assessOne
@@ -101,6 +107,7 @@ its list answers *how many are wrong* and silently drops *out of how many*, whic
 **Input:** assessments covering `verified`, `stale`, `unrecorded` and `unanchored`
 **Expected:** the selection holds every state but `verified`; the counts computed for the
 closing line still total the whole input
+**Alarm:** 7
 **Fire alarm:** pass `selected` to `alarmCensusLine` instead of `assessments`, and confirm
 the total drops to the number of unverified alarms while the listing stays byte-identical —
 the failure is invisible in the list, which is the point
@@ -116,6 +123,7 @@ defect guarded in a second place rather than a new one
 **Input:** `query alarms --unverified --json` over a design holding verified and stale
 alarms
 **Expected:** the JSON array holds only the unverified assessments
+**Alarm:** 8
 **Fire alarm:** move the `--unverified` filter inside the text branch and confirm the JSON
 case goes red while the text case stays green — one green branch beside one red is the
 signature of this defect
@@ -129,6 +137,7 @@ line is a different injection. The parser already folds continuation lines into 
 (R178); this pins that the brief carries all of what it folded
 **Input:** an assessment whose alarm prose spans three wrapped lines
 **Expected:** every one of the three lines appears in the brief
+**Alarm:** 9
 **Fire alarm:** emit only the first line of `Prose` and confirm this goes red. The
 truncated brief still reads as a complete, well-formed brief, which is why the assertion
 is on the last line rather than on the shape
@@ -143,6 +152,7 @@ reads as what it is, and keeps the number of briefs equal to the number of selec
 **Input:** an `unanchored` assessment with no sites, and a `stale` one whose document the
 Artifacts manifest maps to nothing
 **Expected:** both briefs carry a *Sites:* and a *Tests:* line; each names its absence
+**Alarm:** 10
 **Fire alarm:** return the empty string when the list is empty, so the line collapses to a
 bare label, and confirm this goes red. The brief that results is shorter and entirely
 well-formed, so nothing but this assertion notices
@@ -158,6 +168,7 @@ working copy the worktree exists to protect
 **Input:** a brief minted with a design root of `tool`
 **Expected:** the brief names `tool`, and contains no path beginning with the filesystem
 root
+**Alarm:** 11
 **Fire alarm:** return `p.RootPath` from `designRootRel` instead of the relative form, and
 confirm this goes red
 **Inject:** internal/cli/cli.go:designRootRel

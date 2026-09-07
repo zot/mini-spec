@@ -73,6 +73,7 @@ requirements — which is the failure it exists to prevent and the one no check 
 **Input:** a `ValidationResult` with one missing Source path
 **Expected:** the block mentions renamed, merged, deleted, `minispec update retire`,
 `specs/deleted.md`, and that numbers are never renumbered or reused
+**Alarm:** 1
 **Fire alarm:** restore the pre-R188 gate — in `sourceFixInstructions`, stop appending
 `missingSourceFix` (change its guard to `if false`), which is exactly how the function
 read before this change — and confirm the missing-only and both cases go red along with

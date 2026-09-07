@@ -24,7 +24,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
 - [x] crc-Backup.md → `internal/backup/backup.go`
-- [x] crc-Update.md → `internal/update/update.go`
+- [x] crc-Update.md → `internal/update/update.go`, `internal/update/alarmfields.go`
 - [ ] crc-Validate.md → `internal/validate/validate.go`
 - [x] crc-CLI.md → `internal/cli/cli.go`, `internal/cli/bootstrap.go`, `internal/cli/pending.go`
 - [x] crc-Phase.md → `internal/phase/phase.go`
@@ -50,8 +50,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
 
 ### Test Designs
-- [ ] test-Parser.md → `internal/parser/parser_test.go`
-- [ ] test-Update.md → `internal/update/update_test.go`
+- [ ] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
+- [ ] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`
 - [ ] test-Validate.md → `internal/validate/validate_test.go`
 - [x] test-RepoRoot.md → `internal/project/reporoot_test.go`
 - [ ] test-Config.md → `internal/project/config_test.go`
@@ -104,3 +104,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O21: Only Go sources have a site extent: `siteExtent` parses with `sdom.LangGo` and `schema.Go`, so an `**Inject:**` naming a markdown heading or a symbol in another bundled language reads unresolvable. Every site in this repository and mini-spec-tool is Go today (225 of 225, measured 2026-09-06); old-sdom's `headingExtent` (its R402) is the markdown half to reclaim when one appears
 - [ ] O22: `validate` does not report an unclosed backtick run, fence or `<!--` in `design/` or `specs/` documents. `validate trajectory` reports it for the queue files, the current file and every carve (R302); the design-document readers here are the pre-sdom line readers and say nothing. On `old-sdom` R443 reported both, wired 2026-08-22 after one unclosed run hid 78 of 115 gap entries for a day. Returns with the readers `requests/three-readers.md` asks for
 - [ ] O23: `update add-gap` and `update retire` take their prose as a shell argument; the trajectory verbs take `--…-file` forms because a backtick in a double-quoted argument is command substitution and the text vanishes silently. `old-sdom` gave every prose-taking verb a file form (`add-gap --body-file`, `retire --reason-file`); these two are the ones this tree still lacks
+- [ ] O24: `pending add-item` on a part marked `REVERTED` refuses ("part N already carries queue ID #M; a part records exactly one item") before the backup slot's release of the reverted attempt runs, so re-adding the very part that was reverted — the common case — is refused, while a mutation on a sibling part releases it and the re-add then succeeds. Measured by mini-spec-tool 2026-09-06 (`requests/reverted-part-readd-collision.md`). Repair: run the release before the collision check, or exempt a `REVERTED` marker naming the slot's own reverted item

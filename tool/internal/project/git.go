@@ -226,6 +226,34 @@ func (g *Git) SiteResolves(file, symbol string) error {
 	return err
 }
 
+// CRC: crc-Git.md | R315
+// SiteRange is the site's line range in HEAD's copy of the file — what a recorded pull
+// was earned against — and DiskRange the same over the working tree, which is what a
+// rewritten anchor names now. `update inject` compares the two: the old sites in
+// history, where a renamed symbol still exists, and the new sites on disk.
+func (g *Git) SiteRange(file, symbol string) (start, end int, err error) {
+	if !g.IsRepo() {
+		return 0, 0, ErrNoGit
+	}
+	return g.siteRange(file, symbol)
+}
+
+// R315
+func (g *Git) DiskRange(file, symbol string) (start, end int, err error) {
+	src, rerr := os.ReadFile(g.abs(file))
+	if rerr != nil {
+		return 0, 0, ErrUnresolvedSite
+	}
+	start, end, n := siteExtent(string(src), symbol)
+	switch {
+	case n > 1:
+		return 0, 0, &AmbiguousSiteError{Symbol: symbol, N: n}
+	case n == 0:
+		return 0, 0, ErrUnresolvedSite
+	}
+	return start, end, nil
+}
+
 // Seq: seq-alarm-freshness.md#1.5.1, seq-alarm-freshness.md#1.5.2, seq-alarm-freshness.md#1.5.3 | R307, R308
 // siteRange is the site's line range in HEAD's copy of the file, or the failure that
 // stands in for it.

@@ -90,6 +90,7 @@ Asserting only "an error" is what let the two collapse
 **Expected:** the first three satisfy `errors.Is(err, ErrNoTrack)` and carry no
 hand-edit authorisation; the last two carry it and are not `ErrNoTrack`; the sentinel
 names `--repair`
+**Alarm:** 1
 **Fire alarm:** wrap the absence case in `malformedConfigError` again — the literal
 pre-fix line — and confirm the three absence rows go red on the authorisation
 assertion. Separately, drop `--repair` from the sentinel's text and confirm the naming

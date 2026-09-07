@@ -350,6 +350,13 @@ func editCarve(path string, edit func(*minispecsdom.Carve) error) error {
 
 // editFile is the one atomic write every adapter shares: read, hand the bytes to render, and
 // replace the file by temp-file-and-rename only when render returned nil. R220
+// EditFile is editFile for the verbs outside this package that write a design document
+// through a dependency reader: read, render, temp-file-and-rename, and no byte reaches the
+// file when render refuses. R220
+func EditFile(path string, render func(src string) (string, error)) error {
+	return editFile(path, render)
+}
+
 func editFile(path string, render func(src string) (string, error)) (err error) {
 	src, err := os.ReadFile(path)
 	if err != nil {

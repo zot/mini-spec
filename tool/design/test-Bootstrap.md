@@ -73,6 +73,7 @@ edit sets `track` while leaving `.gitignore` unreconciled
 **Input:** `preTrackMessage` with a configuration path
 **Expected:** names `--repair`, names the path, and carries **no** hand-edit
 authorisation
+**Alarm:** 1
 **Fire alarm:** put the malformed refusal's "you are authorised to edit this file by
 hand" clause into this message and confirm the negative assertion goes red
 **Inject:** internal/cli/bootstrap.go:preTrackMessage
@@ -86,6 +87,7 @@ the question no inspection can answer, and then stops
 **Input:** `preTrackMessage`
 **Expected:** carries the stop and the private-or-ships question; carries **neither**
 of the no-configuration refusal's inspection clauses
+**Alarm:** 2
 **Fire alarm:** covered by the routing injection below, which swaps whole messages
 **Inject:** internal/cli/bootstrap.go:preTrackMessage
 **Refs:** seq-bootstrap.md#1.6.1 — R175, R176
@@ -102,6 +104,7 @@ returns the loader's own message unchanged
 **Guard the guard:** whole-message equality rather than clause checks — the two tests
 above own what each message *says*, this owns only which one an error earns, and
 comparing whole messages additionally pins `cfgPath` being threaded through
+**Alarm:** 3
 **Fire alarm:** branch on `==` instead of `errors.Is` and confirm the wrapped row goes
 red — that is the real-world slip. Separately, pass a literal in place of `cfgPath` and
 confirm this goes red while both clause-style tests stay green, which is what proves

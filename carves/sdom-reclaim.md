@@ -16,10 +16,10 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [x] ~~**Item 2 — the backup slot.**~~ **LANDED (`7dd50a0`, 2026-09-04 — `#68`.)** Needs Item 1.
 - [x] ~~**Item 3 — the `pending` verbs: `add-item`, `start`, `finish`, `revert`, `replay`.**~~ **LANDED (`eaf9604`, 2026-09-05 — `#69`.)** Needs Items 1 and 2.
 - [x] ~~**Item 4 — `validate trajectory`.**~~ **LANDED (`7e6e293`, 2026-09-05 — `#70`.)** Needs Items 1 and 3.
-- [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
+- [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (#74.)** Needs Item 1.
 - [x] ~~**Item 6 — the alarm site as a parsed extent, not a git pattern.**~~ **LANDED (`3931bcc`, 2026-09-06 — `#72`.)** Needs Item 1.
 - [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
-- [ ] **Item 8 — the skill re-derived as each verb returns.** **OPEN (#73.)**
+- [x] ~~**Item 8 — the skill re-derived as each verb returns.**~~ **LANDED (`0700965`, 2026-09-06 — `#73`.)**
 - [x] ~~**Item 9 — the readers' backtick and key-fragment landings, absorbed.**~~ **LANDED (`9716bca`, 2026-09-06 — `#71`.)** Needs Items 3 and 4.
 
 ## Decisions
@@ -118,6 +118,21 @@ is left, one squashed commit:
   Both requests had already been answered `completed` the same afternoon
   (`requests/RESP-both-backtick-halves-landed.md`, `RESP-sdomification-key-fragment.md`);
   the evening's inbox sweep missed them, and the duplicates it prompted were removed.
+
+## Item 5
+
+*Landed 2026-09-07 as `#74`.* Blocked until their `TestDoc` reader landed overnight
+(`478875e`, asked for in `requests/three-readers.md`); with it the port is thin. The parser's
+line reader became an adapter over `minispecsdom.ParseTestDoc` (`Alarm` gained `ID`, `Code`,
+`Line`, `Key()`), the census names alarms `<doc>#<n>` and lists an unnumbered one with its
+repair, and three verbs sit on the reader's writes: `number-alarms`, `pulled --body-file`,
+`inject`. What is decided here and not there: the name, the system-clock date, and `inject`'s
+`void` — the old sites resolved in HEAD, the new on disk, which is the asymmetry old-sdom's
+`O120` asked for. R310–R316. Dogfooded the same morning: 22 alarms numbered across eight test
+designs, nothing else touched; the first run refused a doubled `**Code:**` I had written the
+day before, which is the reader's deviation rule doing its job. Their reader cuts a test title
+at a code span (`requests/testdoc-title-stops-at-code-span.md`); display only, the name is the
+number now. `--alarm` selection and the missing-`Code:`-file report stay unreclaimed.
 
 ## Item 8
 

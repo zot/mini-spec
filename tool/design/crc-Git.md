@@ -1,5 +1,5 @@
 # Git
-**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309
+**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309, R315
 
 Answers questions about the version-controlled working tree by invoking the `git`
 command line. Every question it answers is a **computed property** — there is

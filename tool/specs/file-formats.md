@@ -13,7 +13,8 @@
 | `requirements.md` | Requirements grouped by feature with source-spec backref. Each requirement: `- **R5:** text` or `- **R5:** (inferred) text`. Retired form: `- **~~R5:~~** (Retired T1 — see R10) text`. | [validate.md](validate.md) (parse and format rules), [phase.md](phase.md) (`phase requirements`), [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) (retired form) |
 | `crc-*.md` | CRC card. Heading sets class name; `**Requirements:** R1, R3, R7` line links to requirements; optional `## Sequences` section lists related `seq-*.md` files. | [validate.md](validate.md) (Requirements field rules, Sequences validation), [updates.md](updates.md) (`add-ref`, `remove-ref`) |
 | `seq-*.md` | Sequence diagram. Optional dotted-number anchors (`1.`, `1.1`, `1.1.1.`) within tree/UML/lane drawings. Numbering is opt-in per file; once present it must be contiguous from `1.` per diagram. | [validate.md](validate.md) (numbering rules, anchor resolution) |
-| `ui-*.md`, `test-*.md`, `manifest-*.md` | Other design artifacts. Tool tracks presence/listing only — content is not parsed. | [validate.md](validate.md) (Artifacts manifest completeness) |
+| `ui-*.md`, `manifest-*.md` | Other design artifacts. Tool tracks presence/listing only — content is not parsed. | [validate.md](validate.md)
+| `test-*.md` | Test designs, read through the dependency's test-document reader: `## Test:` entries with the five alarm fields (`**Fire alarm:**`, `**Inject:**`, `**Pulled:**`, `**Code:**`, `**Alarm:**`); written by `update pulled`, `update inject`, `update number-alarms`. | [queries.md](queries.md), [updates.md](updates.md) (Artifacts manifest completeness) |
 
 ## Spec files (`specs/`)
 

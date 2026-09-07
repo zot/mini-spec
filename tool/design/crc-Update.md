@@ -1,5 +1,5 @@
 # Update
-**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62, R80, R81, R82, R83, R103
+**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62, R80, R81, R82, R83, R103, R310, R313, R314, R315, R316, R311
 
 Atomic modifications to structured parts of design files.
 
@@ -8,6 +8,17 @@ Atomic modifications to structured parts of design files.
 
 ## Does
 - Check(file, item): check a checkbox in file
+- NumberAlarms(paths): number every unnumbered alarm in the named test designs, all by
+  default, through the reader's append-only `NumberAlarms`; reports what each document was
+  assigned and refuses a document whose entry deviates, before any byte moves (R311, R313)
+- SetPulled(key, body, now): write an alarm's `**Pulled:**` line through the reader —
+  `now` from the system clock, the body from the caller's file — the old line folded after
+  it (R314)
+- SetInject(key, sites, ranger): rewrite the sites and decide `void` by comparing the old
+  sites' extents in HEAD with the new sites' on disk through a `Ranger`, so a rename or a
+  disambiguation keeps the record and a move demotes it (R315)
+- resolveAlarm(key): `<doc>#<n>` to a design-directory path and a number; anything else is
+  refused by name (R310)
 - Uncheck(file, item): uncheck a checkbox in file
 - AddRef(crcFile, reqID): add Rn to CRC card's Requirements field
 - RemoveRef(crcFile, reqID): remove Rn from CRC card's Requirements field

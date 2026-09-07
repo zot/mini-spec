@@ -61,6 +61,9 @@
 | `update resolve-gap [id]` | [updates.md](updates.md) | Mark a gap as resolved. Alias for `update check design.md [id]`. |
 | `update approve-gap [id]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Convert an existing gap to approved (A) type. Migration spec amends: A entries have no checkbox. |
 | `update retire R<old> <R<new>\|-> "<reason>"` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Retire a requirement: strikethrough the Rn line, append a Tn gap, and print a supersede-at-source reconcile reminder (naming the retired requirement's **Source:** spec) to stderr. |
+| `update number-alarms [file...]` | [updates.md](updates.md) | Assigns `**Alarm:**` numbers to every alarm lacking one, all of `design/test-*.md` by default. Append-only, never renumbering, idempotent; writes nothing but the added lines and reports per file. |
+| `update pulled <doc>#<n> --body-file <f>` | [updates.md](updates.md) | Records a fire alarm as pulled: today's date from the system clock, then the body from a file byte for byte; the previous line folds after it as history. |
+| `update inject <doc>#<n> <file:symbol>...` | [updates.md](updates.md) | Re-sites a fire alarm and voids its `**Pulled:**` when the sites resolve to different code — old sites in HEAD, new on disk — demoting the record to history rather than deleting it. |
 | `update migration-complete <name>` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | Move `specs/migrations/<name>.md` to `specs/migrations/complete/<NNN>-<name>.md`. |
 
 ## `phase` subcommands

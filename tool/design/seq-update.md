@@ -70,3 +70,12 @@ CLI --> User (stdout): "Tn"
 CLI --> User (stderr, unless --quiet): supersede-at-source reminder
             naming specs/storage.md (R12's **Source:**) + the completion test
 ```
+
+## The alarm-field verbs
+
+`update pulled`, `update inject` and `update number-alarms` read the test design through
+the dependency's `TestDoc` reader, apply one of its writes, and render back through the
+same atomic file write the carve adapter uses. The reader decides refusals — no such alarm,
+a doubled field — before any byte moves and reads its own write back; what is decided here
+is the `<doc>#<n>` name, the system-clock date, and `inject`'s `void`, which compares the old
+sites resolved in HEAD against the new sites resolved on disk (R313, R314, R315, R316).
