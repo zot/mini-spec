@@ -92,6 +92,11 @@ the queue did. See `config-reference.md`.
 - **An entry is a pointer, not the design.** Subject, the skill that runs it (or nothing),
   a one-line status, and one doc link. Rationale, findings and open questions live in the
   linked document. No instructions in entries.
+- **The one-line status is part of the heading; the `Next:` line is a line of its own.** That
+  is why `pending add-item` requires the status and not the next action: a tool may decline to
+  write a line, but a heading it mints without the status is *two thirds of a line*, finished
+  by hand in a file with no diff. Ten of ten entries carried both when the verb could produce
+  neither.
 - **Completing an item removes its entry.** Remaining entries keep their numbers.
 - **A source is a carve part or a gap, told apart by shape.** The `Source:` line names the
   document as a markdown link, then either `part `` `#<key>` `` or `gap `` `<gap ID>` `` — the
@@ -112,15 +117,42 @@ then reset here, freeing it for what you pick up next.
 
 ---
 
+## Active
+
 _No active item._
+
+## <a standing section>
+
+<what outlives every item: answers already given, pointers that are expensive to find
+again, the state of things>
 ```
 
-- **The active item only.** Never a log of finished work — that is the done file.
-- **With nothing active it holds a one-line placeholder**, not the last item's leftovers.
+- **The active item lives under `## Active`, and that section is the only region a tool
+  may clear.** It ends at the next heading of the same level or higher, so the active
+  item's context may use `###` and below as freely as it likes.
+- **With nothing active the section holds a one-line placeholder**, not the last item's
+  leftovers.
+- **Standing context lives in its own `##` sections**, before or after the active one.
+  It is what outlives every item and has nowhere else to live: answers already obtained
+  from the user, pointers to work sitting outside this repository, the state of things.
+  The pending file is per-item, the done file is history, and a carve is per-problem — so
+  material that belongs to the project rather than to any one item is lost without this.
+- **Exactly one `## Active`.** Two make the region ambiguous, and a tool that cannot tell
+  which one it was asked to clear refuses rather than picks.
 - **It is a resume buffer.** To change styles mid-flight, park the active item's context
   as a sub-item under its `##` heading in the pending file — the pending file is a stack
   you can push onto — freeing the current file, then resume later from the parked
   sub-item.
+- **Never a log.** Finished work goes to the done file. Standing context is not a log: a
+  log is *what happened*, which the done file owns, while standing context is *what is
+  still true*, which nothing else holds.
+
+*The heading was added 2026-08-18, after a reset verb deleted 320 lines of standing
+context from a live current file.* Before it the active item was defined as **everything
+after the `---` rule**, so a verb honouring that definition deletes whatever else is down
+there — correctly targeted against a wrong model of the document. A named region can be
+found; a region defined as *the rest of the file* can only be assumed. A file with no
+`## Active` is legacy: add the heading beneath the rule, above the placeholder.
 
 ## The done file
 
@@ -196,7 +228,9 @@ so "what is still open?" has to be answerable from the first screen.
   each part's elaboration is keyed by **bare number, with no title and no description** —
   `**Item 1** (…)`. Neither repeats the other, so there is no second copy to drift. A
   status *table* restating body prose is worse than none, because the two will disagree
-  and nothing will say which is right.
+  and nothing will say which is right. **A decision about one part is detail**, so it sits
+  with that part rather than in `## Decisions` — see *Decisions* below for the test and the
+  shape.
 - **The machine view across every live carve is one grep:** `grep -rn '^- \[ \]' carves/*.md`.
 
 ### Parts, subparts, and the split rule
@@ -235,6 +269,19 @@ tool passes when it marks or lands a part — is the bare `9` or `9.1`; `Item` i
 display word and no part of the key. So `carves/x.md#9`, never `carves/x.md#Item 9`
 (DECIDED, Bill, 2026-09-05).
 
+**The word is required where the key carries no dot and forbidden where it does**, so
+`Item 9` and `9.1` are heads and a bare `9` or an `Item 9.1` is not. **The separator
+between the head and the title is the em dash** — `—`, not an en dash and not a hyphen.
+Both were stated only by example until 2026-08-20, and a reader that admitted the
+variants made two spellings of one key and three of one separator; measured across two
+projects' 13 carves, all 63 keyed part lines already used the mandated forms, so nothing
+was migrated to say so.
+
+**A line breaking either is *unkeyed*** — listed by every read path with the shape it must
+take, refused by every write path, and its checkbox still counted. That is the treatment
+a superseded scheme already gets, for the reason given below: the state is legible even
+where the address is not.
+
 **Why this one, and not the queue's `#N`:** a part exists long before it is scheduled, and
 most parts are unqueued at any moment, so a key drawn from the queue is undefined exactly
 when you need to point at the part. `Item N` always resolves. `Part A`/`Part B` letters
@@ -269,6 +316,10 @@ optional.
   as the gaps list, so one query spans both. A section tracking progress in prose alone is
   invisible to the one view the format is built around: however carefully a human marked
   it up, `grep '^- \[ \]'` does not see it.
+- **The interior is `[ ]` or `[x]` and nothing else.** Any other interior — `[X]`, a tick —
+  counts toward neither state and is listed with `[x]` named as its target. A reader that
+  took *any non-empty interior* as landed made three spellings of one state until
+  2026-08-20; no carve part line in either project had ever written one.
 - **The checkbox is authoritative** where the markings on a line disagree. A line states
   the same fact three ways — checkbox, strikethrough, marker — because three readers want
   it: a grep, a skimmer, and someone wanting provenance.
@@ -285,7 +336,18 @@ name and date for a judgment.
 state a machine reads, so the verb never has to be parsed — which frees it to carry
 information instead. Ten verbs are in live use and four of them were coined in a single
 ten-day stretch; a set closed on any given day would refuse the words the next month
-needs.
+needs. **The table below is a census, not a permitted set.**
+
+**A verb is written in capitals, and it may be several words joined by spaces or hyphens**
+— `NOT VERIFIED`, `RE-CUT` — with lowercase appearing only inside the attribution's
+parentheses. *Stated 2026-08-21 (Bill), because it never had been:* the reader admitted an
+interior space and refused an interior hyphen, so `RE-CUT` was non-conforming from the day
+it was first written here and nothing reported it. That is drift running its **unusual**
+direction — the reader stricter than the format it enforces — which is why it was silent:
+nothing goes red when a document obeys a rule stated nowhere. The reader's leniency is
+unchanged and is not a second spelling: a verb typed in another case is still read,
+canonicalized, and **rewritten in capitals** by the tool, which is what keeps a mis-cased
+marker visible to the writer instead of accumulating a second queue state beside it.
 
 | verb | means |
 |---|---|
@@ -328,6 +390,34 @@ format.
 `LANDED (commit, date)` mirrors it deliberately — same shape, same greppability — and the
 commit is what makes the claim checkable.
 
+**A decision naming exactly one part lives with that part; a decision spanning parts, or
+governing the document as a whole, stays in `## Decisions`** — the carve's chronological
+section for them. The test is mechanical rather than editorial: *does this decision name
+exactly one part?* Chronology survives either way, since every decision already carries its
+date. And a decision does not move because it grew important — it moves only because it
+names one part.
+
+**The sited shape is a `### Item N's decisions` subsection** under that part's elaboration,
+dated where a group was taken in one sitting. This is codified rather than designed: two
+carves reached for it independently before any rule said to, which is the cheapest evidence
+available that a shape is the right one.
+
+**What the rule buys is that a *partial* read of a carve becomes safe.** A carve keeps a
+part's information in several places and only some are keyed by the part number: the status
+line and the elaboration are both found by grepping `Item N`, while a decision in
+`## Decisions` is keyed by nothing, so grep finds only the phrasings you can guess. Measured
+2026-08-16 — everything about one part sat in **four places spanning 1047 lines**, two of them
+unkeyed and missed until the document was read end to end, and one of those two had already
+**superseded** the keyed elaboration on the day both were written. The stale text read as
+current and the work was scoped wrong. Without the rule the standing mitigation is to read
+every carve end to end before touching one part of it, which is a tax paid on every item
+forever.
+
+**An `@undecided:` sits where its decision will.** One naming a single part goes with that
+part, by the same test, because it converts to `DECIDED` **in place** — a rule requiring a
+move at the moment of conversion would be skipped exactly when someone is busy settling
+something.
+
 **Supersede in place.** When a decision overturns an earlier one, say so at the earlier
 one rather than only at the new one. A dated `DECIDED` sitting beside an unmarked
 paragraph that contradicts it will be read as current, because nothing about the unmarked
@@ -353,6 +443,69 @@ instruction to go and decide.
   effort closes the item and only an answer does.
 
 ---
+
+## The tool/agent contract
+
+**The rule is one line: the tool ingests by position.** What it reads as data comes from
+fixed positions in the file. Everything else — every other line, every phrase inside one —
+is yours to write freely, and no amount of prose can be mistaken for a record.
+
+That is what makes your writing safe *by construction* rather than by inspection. You never
+have to ask whether a sentence will be misread, because the tool is not reading sentences.
+
+### What the tool reads
+
+| file | position | what is taken |
+|---|---|---|
+| pending | `## N.` at column 0 | the item's number |
+| pending | the `Source:` line beneath that heading | the document it links to, and the `` `#key` `` after `part` |
+| done | `- **` at column 0 | the entry begins here |
+| done | between the header's em dash and the colon that opens the title | every `#N` in that slot, and nothing outside it |
+| done | a backquoted `` `<doc>#<key>` `` in the entry | the part it discharged |
+| current | a level-2 `## Active` heading | the region a reset clears; it ends at the next heading of the same level or higher |
+| carve | a level-2 `## Status` heading | the status block begins; it ends at the next heading of the same level or higher |
+| carve | a `- [ ]` / `- [x]` list item **inside that block** | one part |
+| part line | the checkbox | the state, and it is authoritative over the other two markings |
+| part line | the bullet's leading whitespace | the depth — a subpart is an indented sibling |
+| part line | `Item N` or `N.M` after any `~~` and `**` | the key — the bare `N` or `N.M`; `Item` is the display word |
+| part line | `#N` inside a `**VERB (…)**` marker | the queue ID |
+
+**Everything not in that table is prose.** A done entry's body may quote another item freely
+— measured, five body lines in one ledger would contribute a queue ID if bodies were read.
+A carve may hold examples of the format it is written in. Both are safe because neither sits
+in a listed position.
+
+### Why by position, and not by pattern
+
+Because the alternative was tried, five times, and returned a confident wrong answer every
+time. The most instructive is the fifth: an extractor sweeping `**VERB (…)**` across a whole
+status block read a prose sentence quoting another project's shape — inside backticks, a
+mention rather than a use — as a live citation, and reported a dangling `#121` in a
+repository that never had one. It was written by someone who had read the record of the
+other four while building the check that replaces them.
+
+So the rule is not enforced by remembering it. It is enforced by the reader: a citation is
+read from a part line's marker or not at all, and a code span is a code span.
+
+### The companion rule: say what you could not ingest
+
+Ingesting by position has a cost, and stating it is the other half of the contract. **A
+shape-based check is blind by construction to anything outside the shape** — "does this
+entry carry an identifier slot?" has no answer for a line never recognized as an entry — so
+such a check reports *clean* over everything it never saw.
+
+That is not hypothetical. Measured 2026-08-16 in one live ledger: **139 entry-like lines,
+54 recognized.** The other 85 wrote the date outside the bold, an older shape. Every
+shape-based check reported clean over 61% of the file, and the next-free-ID query answered
+from what it read of the remaining 39% with nothing saying so.
+
+**So a tool reading these files reports two things, always: what it found, and what it could
+not read.** A count of unrecognized entry-like lines, and a count of references it could not
+reach. Both are printed even when nothing else is, because a reader takes silence about
+coverage as a claim of completeness.
+
+For you as an author this is the useful half: if the tool says it could not read something,
+that is a migration to perform, not a complaint to argue with. It names the target shape.
 
 ## What this file deliberately does not carry
 

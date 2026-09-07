@@ -36,6 +36,8 @@ alwaysApply: true
 
 Do NOT proceed until these todos exist (user visibility).
 
+**If this mode has no todo list**, the requirement does not lapse, it relocates: list the phases in your response before starting, and name each one as you enter and finish it. What is mandatory here is that the user can see which phase you are in. The todo list is *how*, not *what*, and a mandate with no defined outcome in the world the reader is standing in gets ignored whole — along with the version check and the migration check either side of it, which are real.
+
 ## MANDATORY: Check for In-Flight Migrations
 
 Before any phase, run `minispec query migrations`. It
@@ -108,6 +110,8 @@ Maintenance rules:
 **Mark phases complete** in the todo list as you finish them.
 **Use Quality Checklist items** as todos before finalizing.
 
+**With no todo list**, the same breakdown and the same completions go in your responses.
+
 ## Core Principles
 - use SOLID principles, comprehensive unit tests
 - when adding code, verify whether it needs to be factored
@@ -146,6 +150,32 @@ sentence, the CRC bullet, the sequence step — has none. It rots in place until
 future agent reads it as current intent and "fixes" the code back to match. So
 retirement is not done when the `Rn` is struck out; it is done when every
 sentence that described the old behavior is gone or rewritten at its source.
+
+### Balance your backticks — and the tool reports it where it reads
+
+**Delimit a backtick or fence mention with a run longer than the one inside it, padded with
+spaces, and never let it begin a line.** A run at the head of a line opens a fenced block
+however well balanced it is inline, so a correct escape lands wrong purely from where the line
+wrapped. The same care applies to a `<!--` in prose: unclosed, it runs to the next `-->`,
+which in a design document is usually a sequence-diagram arrow far below.
+
+`validate trajectory` reports it for the files its readers touch — both queue files, the
+current file, and every carve — as a coverage note naming the file and the opener's line
+(R302): a group never closed takes the rest of its file with it, and every shape-based check
+is blind to what it swallowed. Measured 2026-09-05 on this repository's done file: 17 entries
+read where 58 existed, nothing said. **For `design/` and `specs/` the rule is still one you
+remember** — the design-document readers do not report an unclosed run yet (gap `O22`); on
+`old-sdom` they did, after one unclosed run hid 78 of 115 gap entries for a day.
+
+### Prose reaches the tool through a file — and the tool enforces it where it can
+
+**Every trajectory verb whose payload is prose takes a `--…-file` form**: `add-item
+--title-file`, `--status-file` and `--next-action-file`; `start --context-file`; `finish
+--body-file` and `--discharged-file`. Use them. A backtick inside a double-quoted shell
+argument is **command substitution**, and when it fires the text is simply *gone* from what
+the tool receives, with nothing reporting it. The `update` verbs that take prose — `add-gap`,
+`retire` — still take it as an argument here (gap `O23`); write the text to a file and
+`"$(cat file)"` it until they do.
 
 ## Cross-cutting Concerns
 
@@ -427,14 +457,44 @@ regression three sessions from now, when a future agent refactors the code that
 made it pass. This is a **default action of the Implementation phase** — not a
 Design-phase afterthought, and not something to defer to a Gaps-phase `O` entry.
 
-**Then break it on purpose and record what you broke.** A regression test written
-after its bug is fixed passes on its first run, which tells you the property holds
-today and nothing about whether the test can detect its absence. Re-introduce the
-defect, confirm red, restore, and diff to prove the restore was clean — then write it
-into the `test-*.md` as `**Fire alarm:**` / `**Inject:**` / `**Pulled:**` (see Test
-Case Format). Recording it is not bookkeeping: the proof is void once the code it
-targeted is rewritten, and the injection written down is what makes re-running it
+**Then design the injection and write it down — but do not run it yet.** A regression
+test written after its bug is fixed passes on its first run, which tells you the
+property holds today and nothing about whether the test can detect its absence. So
+name the defect to re-introduce, the site to introduce it at, and what red should
+look like, and write them into the `test-*.md` as `**Fire alarm:**` / `**Inject:**` /
+`**Code:**` (see Test Case Format). That is the part needing the code fresh in mind.
+Recording it is not bookkeeping: the injection written down is what makes running it
 minutes of work rather than a re-derivation nobody undertakes.
+
+**Pull it once, and pull it after the Simplification Phase** — or at the end of this
+phase when there is no simplification pass to run. **A proof earned against code that
+is about to be rewritten is a rehearsal, not a proof.** *Measured 2026-08-21:* a pass
+pulled sixteen alarms at the end of Implementation, the simplifier then restructured
+most of the functions they named, and all sixteen had to be pulled again — **32
+inject-run-restore-record cycles for sixteen proofs**, with the first sixteen records
+void within the hour. Pulling is the dominant cost of a pass, and half of it was
+buying a record that could not survive the next phase. *Nothing was lost by waiting,
+and that was measured too:* the one thing the early pull caught — a case asserting an
+exit code where it should have been reading a refusal — the later pull caught
+identically, because it is the same injection either way.
+
+**Which properties most need one: the ones that are invisible when violated.** A wrong
+number is loud and any test catches it. A wrong *order* is silent — the work still
+happens, the output still arrives, and the failure is intermittent and looks exactly
+like working. The same goes for coalescing (the extra passes merely cost time),
+allocation counts (the program is merely slower), "exactly one of these runs at a
+time" (usually true anyway under light load), and any refusal or guard that the happy
+path never exercises. For that whole class a test can assert the property, pass
+forever, and be checking nothing at all — so spend your injections there rather than
+on whatever is easiest to break.
+
+**An injection that breaks the build teaches nothing, because the test never ran.** A
+compile error is not a red test; it is the absence of a test result, and it reads the
+same in a terminal as a failure. If the injection will not build, it has not reached
+the property — rewrite it until the suite runs and the *assertion* is what objects.
+The same applies to an injection that rings on plumbing (a missing file, a nil
+dereference) rather than on the assertion you meant: record that as what it is instead
+of counting it as a proof.
 
 - **The cheap cases have no excuse.** Pure, deterministic logic — state
   machines, parsers, ownership/routing decisions, config defaults — tests with a
@@ -457,22 +517,27 @@ Perform the **in-session simplification pass** (see Cursor integration): refine 
 
 **CRITICAL: Preserve all traceability comments.** The `// CRC:`, `// Seq:`, and requirement references (`R123`) in code comments are load-bearing — they connect code to the design artifacts that justify its existence. Removing or reformatting them breaks the traceability chain that `minispec validate` checks. Simplification means cleaner *logic*, not fewer comments.
 
-**This phase voids fire-alarm proofs, and re-pulling them is part of it.** A refactor is
-*precisely* when a property moves: it is licensed to change structure while preserving
-behaviour, and "preserving behaviour" is adjudicated by the very tests whose adequacy the
-alarm was proving. A simplification pass will happily restructure the function **and**
-tighten its test in one go, which is exactly the pair that voids the proof — and nothing
-about it turns anything red. The suite stays green, the injection becomes a memory, and the
-alarm you proved was wired is now wired to a different building.
+**This phase is where the fire alarms get pulled, and that is why the pull waits for it.**
+A refactor is *precisely* when a property moves: it is licensed to change structure while
+preserving behaviour, and "preserving behaviour" is adjudicated by the very tests whose
+adequacy the alarm was proving. A simplification pass will happily restructure the function
+**and** tighten its test in one go, which is exactly the pair that voids a proof — and
+nothing about it turns anything red. The suite stays green, the injection becomes a memory,
+and an alarm proved wired before the pass is now wired to a different building. A proof taken
+*after* the pass is the only one that describes the code that ships.
 
-So when the pass returns, run `minispec query alarms --unverified`, and for every alarm
-whose `**Inject:**` names a symbol this pass touched, pull it again and update `**Pulled:**`.
-**Bumping the date without re-running the injection is the one thing that must never
-happen** — it converts a record into a claim, which is the whole failure the field exists to
-prevent. Do not treat this as a follow-up: the phase is not finished until the alarms it
-disturbed have rung again. Measured in this project 2026-08-17, a single simplification pass
-restructured five functions and voided six alarms; all six still rang, and nothing in the
-green suite would have said so had they not.
+So when the pass returns, work the whole injection list the Implementation Phase wrote down:
+for each alarm, re-introduce the defect at its `**Inject:**` site, confirm red, restore, diff
+to prove the restore was clean, and write the `**Pulled:**` line. **Writing that date without
+running the injection is the one thing that must never happen** — it converts a record into a
+claim, which is the whole failure the field exists to prevent. The phase is not finished until
+every alarm it covers has rung.
+
+*Alarms that were already recorded before this pass need the same treatment, and the tool says
+which:* run `minispec query alarms --unverified` and pull every one it names.
+Measured in this project 2026-08-17, a single simplification pass restructured five functions
+and voided six alarms; all six still rang, and nothing in the green suite would have said so
+had they not.
 
 **Re-pulling the recorded alarms is necessary and not sufficient — inject *past* the list as
 well as through it.** The list says which properties someone thought to guard; a pass that
@@ -744,6 +809,13 @@ file** and **the done file** throughout, so a path never needs qualifying;
 - **Never let the current file become a log.** Finished work goes to the done
   file. This is the rule most often broken, because leaving the last item's
   context in place costs nothing at the moment you do it.
+- **Standing context is not a log, and clearing it is the opposite mistake.** A log
+  records *what happened*, which the done file owns; standing context records *what
+  is still true* — answers already obtained from the user, pointers to work outside
+  this repository, the state of things — and nothing else holds it, since the pending
+  file is per-item, the done file is history, and a carve is per-problem. It lives in
+  its own `##` sections beside the active item's, which is why the active item has a
+  heading of its own for a tool to address. `.claude/skills/mini-spec/trajectory-format.md` has the shape.
 
 ### When a queue operation goes wrong: `pending revert`
 
@@ -861,6 +933,32 @@ Promotion also forces an editorial pass separating the decision from the private
 reasoning behind it, and writing for a stranger is the cheapest clarity check
 available.
 
+**Read the whole carve before working one of its parts.** A carve keeps a part's information
+in several places and only some of them are keyed by the part number — the status line and the
+elaboration, both reachable by grepping `Item N`. A scoping decision in `## Decisions`, or a
+design paragraph elsewhere, is keyed by nothing, and grep finds only the phrasings you can
+guess. Measured on three occasions in one project: a decision that superseded its own part's
+elaboration **the day both were written** was missed for hours and the work was scoped wrong;
+an item accumulated five separate pieces before anyone totalled them out loud; and a design
+fork was put to the maintainer whose both halves were already answered in carve text nobody
+had read. Budget the read as part of the item — it is not preparation for the work, it is the
+first step of it.
+
+**A carve answers what is *scheduled*, never what is *possible*, and reading it for the second
+question is how this project lost an item.** A part marked `OPEN` means the work is unscheduled;
+it does not mean the capability is absent. Measured 2026-08-26: a session read `OPEN` as *the
+capability does not exist* and built a fold marker — spec, requirement, design, code, four alarms,
+two gaps — for something the binary had carried for five days. **Ask the tool what exists**
+(`minispec --help`, `minispec query carves`; `query sdom` is on the reclaim list) and the document what is planned; a document cannot answer the first
+question and will look as though it did.
+
+*Read the sibling carves too where a part names one, and the reason is the same one that makes
+a carve worth having:* parts move between carves, and a decision often lands in the document
+that lost the part rather than the one that gained it. Where a carve keeps each decision with
+the part it governs, a partial read becomes safe; until then this is the mitigation, and it is
+cheaper than the alternative by a wide margin — a carve is one document, and re-deriving a
+decision you already made is not.
+
 **Three disciplines.** The first two tend to happen by instinct. The third does
 not, and it is the one that matters. `.claude/skills/mini-spec/trajectory-format.md` has the shapes; what
 follows is why each one is worth the trouble.
@@ -964,7 +1062,11 @@ its subject is rewritten and nothing in a green suite will say so.
   *consults*. "Return early when `Lookup` already knows the path" edits the caller —
   `Lookup` is context, and recording it there points every future check at the wrong
   function.
-- **`**Pulled:**`** — the date it was actually run and what happened. **Absence is
+- **`**Pulled:**`** — the date it was actually run and what happened. **The census reads the
+  *leading* date**, so a re-pull moves that date; appending *"re-pulled today"* further along
+  the line records the history for a human and leaves the alarm stale for the tool. Measured
+  2026-08-18: three alarms re-pulled, all three rang, and the census stayed red until the
+  leading dates moved. **Absence is
   meaningful and must not be filled in by guessing:** an alarm with no `Pulled` is a
   *prescription* (here is the injection to run) rather than a *record* (I ran it, it
   rang). Those read identically in prose and are entirely different claims — the same
@@ -1019,6 +1121,66 @@ about it** — the rule one section down applies to worktrees too. `git worktree
 old `alarm.go` present, the new `brief.go` absent, and zero occurrences of the function three
 of the alarms name. The probe cost one command; five confused reports would have cost five
 spawns and the round trip to work out why they disagreed with each other.
+
+**Make the worktree yourself, at HEAD, and check where the delegates actually are.** A
+worktree is a checkout of *some* commit, and which one is the harness's decision rather than
+yours. Measured 2026-08-20 on this layer's first real run: nine pullers spawned from a tree at
+`32d194a` all sat at `cac3baf` — `origin/main`, 103 commits behind — because the harness cut
+from the remote tracking branch, and every site the briefs named had been written in those
+commits. `git worktree add --detach <dir> HEAD` by hand, the path in the prompt, no isolation
+flag; then `git worktree list` after spawning says where they are. Pushing is not the answer:
+a worktree shares the object database, so the commit is already reachable with no network.
+
+**And the sibling the module needs.** `tool/go.mod` replaces `simple-dom` with a *relative*
+path, resolved from the worktree. A worktree outside `~/work` fails its baseline with
+*replacement directory does not exist* until a `mini-spec-tool` sibling sits beside it —
+measured 2026-09-06, six pullers stopped at the gate; one cloned the sibling for itself, which
+worked and was a copy at a head nobody had checked. Link it before spawning.
+
+**What the run proves about the protocol, which is the other half.** Four pullers reached the
+stop condition and four stopped: no injection, empty `git diff`, clean tree, and one worked out
+`cac3baf` and named it. A puller that had guessed instead would have returned a well-formed
+five-part report about a codebase that no longer exists — and *that* report is
+indistinguishable from a good one. The stop condition is not defensive politeness; it is the
+thing standing between a delegated loop and confident fiction.
+
+**One environment hazard, measured the same run.** A Go workspace file *above* the repository
+(`/home/deck/work/go.work` listing `./mini-spec/tool`) routes `go test` inside a worktree at the
+**main checkout**, not the worktree. Three pullers hit it and worked around it with `GOWORK=off`;
+one reported a green baseline for a file its own worktree does not contain. Go refused loudly
+here rather than silently testing the wrong tree, but a delegate whose commands can reach the
+live checkout is a delegate whose isolation is nominal.
+
+**A second environment hazard, measured 2026-08-23, and this one fails silently.** Go's test
+cache keys on source and build inputs and does **not** track files a test reads at run time. So
+an alarm whose injection edits a *corpus file* rather than a Go symbol produces `ok … (cached)`
+on the injected tree — the pre-injection result, reused. Measured on `test-Carve.md#12`, which
+injects into `carves/reference-discipline.md` while its test reads `carves/*.md` through
+`os.ReadFile`: the delegate applied the injection, ran the suite, and got a green that meant
+*the test did not run*. **Run every pull with `-count=1`**, in the command the brief carries
+rather than trusting anyone to remember it. The delegate found this by reading the word
+*cached*, not because anything objected — then re-established its baseline and re-ran the five
+alarms it had already finished, which is the right instinct: a batch whose command was wrong is
+a batch of unproven records. Banked as `O113` on `old-sdom`; the brief here carries no command, so the rule is yours.
+
+**Sweep the worktrees when the batch is done, and count it as part of the run.** A puller edits
+files on purpose, so its worktree is never *unchanged* and never auto-cleans; they accumulate at
+roughly 13M each and nothing reports them. Measured 2026-08-23: fifteen worktrees holding
+**185M**, and **31** orphan `worktree-agent-*` branches — more branches than trees, because
+earlier sweeps removed the trees and left the refs behind. The sequence, and the two checks that
+make it safe to run without reading every tree by hand:
+
+    git worktree list --porcelain                 # every tree clean before you start
+    git worktree remove <path>                    # no --force: refuses if one is dirty
+    git worktree prune
+    git merge-base --is-ancestor <branch> main    # nothing unique in the branch
+    git branch -d worktree-agent-...              # -d, not -D: refuses if that was wrong
+
+**The refusals are the design.** `remove` without `--force` and `branch -d` rather than `-D`
+mean the tool stops you when your inventory was wrong, instead of the discipline having to be
+right every time. That run reclaimed 184M and refused nothing. *The tool-side report that would
+make this a verb rather than a habit is* [trajectory-tool.md](../../../carves/trajectory-tool.md)
+*Item 14, still open — this paragraph is what stands in until it lands.*
 
 **The contract is the whole design, and it is one sentence: evidence, never a verdict.** What
 comes back is the command, its output before the injection, the diff applied, the output

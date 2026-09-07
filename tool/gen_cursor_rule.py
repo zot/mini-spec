@@ -121,7 +121,15 @@ body = sub(
     'TaskCreate: "Simplification Phase: [feature name]"\n'
     'TaskCreate: "Gaps Phase: [feature name]"\n'
     "```\n\n"
-    "Do NOT proceed until tasks exist. This is required for user visibility into progress.\n",
+    "Do NOT proceed until tasks exist. This is required for user visibility into progress.\n"
+    "\n"
+    "**If this harness has no task tool at all** \u2014 no `TaskCreate`, no `TodoWrite`, nothing\n"
+    "under any other name \u2014 the requirement does not lapse, it relocates: list the phases in\n"
+    "your response before starting, and name each one as you enter and finish it. What is\n"
+    "mandatory here is that the user can see which phase you are in. The task list is *how*,\n"
+    "not *what*, and a mandate with no defined outcome in the world the reader is standing in\n"
+    "gets ignored whole \u2014 along with the version check and the migration check either side of\n"
+    "it, which are real.\n",
     "## MANDATORY: todos before work\n\n"
     "**BEFORE reading any files or doing any work**, create todos for applicable phases, for example:\n\n"
     "- Spec Phase: [feature name]\n"
@@ -130,7 +138,9 @@ body = sub(
     "- Implementation Phase: [feature name]\n"
     "- Simplification Phase: [feature name]\n"
     "- Gaps Phase: [feature name]\n\n"
-    "Do NOT proceed until these todos exist (user visibility).\n",
+    "Do NOT proceed until these todos exist (user visibility).\n"
+    "\n"
+    "**If this mode has no todo list**, the requirement does not lapse, it relocates: list the phases in your response before starting, and name each one as you enter and finish it. What is mandatory here is that the user can see which phase you are in. The todo list is *how*, not *what*, and a mandate with no defined outcome in the world the reader is standing in gets ignored whole \u2014 along with the version check and the migration check either side of it, which are real.\n",
 )
 
 body = sub(
@@ -143,11 +153,15 @@ body = sub(
     'TaskCreate: "Update design docs"\n'
     "```\n\n"
     "**Mark phases complete** with TaskUpdate as you finish them.\n"
-    "**Use Quality Checklist items** as tasks before finalizing.\n",
+    "**Use Quality Checklist items** as tasks before finalizing.\n"
+    "\n"
+    "**With no task tool**, the same breakdown and the same completions go in your responses.\n",
     "## Task tracking\n\n"
     "**During implementation**, break down into per-file todos (e.g. implement `view.ts`, update design docs).\n\n"
     "**Mark phases complete** in the todo list as you finish them.\n"
-    "**Use Quality Checklist items** as todos before finalizing.\n",
+    "**Use Quality Checklist items** as todos before finalizing.\n"
+    "\n"
+    "**With no todo list**, the same breakdown and the same completions go in your responses.\n",
 )
 
 body = sub(

@@ -19,7 +19,7 @@ the only readers**, as a module dependency, with thin path-taking adapters in th
 - [ ] **Item 5 — the alarm-field verbs: `pulled`, `inject`, `number-alarms`.** **OPEN (not queued.)** Needs Item 1.
 - [x] ~~**Item 6 — the alarm site as a parsed extent, not a git pattern.**~~ **LANDED (`3931bcc`, 2026-09-06 — `#72`.)** Needs Item 1.
 - [ ] **Item 7 — `update add-req` and the `query gaps` selectors.** **OPEN (not queued.)** Needs Item 1.
-- [ ] **Item 8 — the skill re-derived as each verb returns.** **OPEN (not queued.)**
+- [ ] **Item 8 — the skill re-derived as each verb returns.** **OPEN (#73.)**
 - [x] ~~**Item 9 — the readers' backtick and key-fragment landings, absorbed.**~~ **LANDED (`9716bca`, 2026-09-06 — `#71`.)** Needs Items 3 and 4.
 
 ## Decisions
@@ -118,6 +118,37 @@ is left, one squashed commit:
   Both requests had already been answered `completed` the same afternoon
   (`requests/RESP-both-backtick-halves-landed.md`, `RESP-sdomification-key-fragment.md`);
   the evening's inbox sweep missed them, and the duplicates it prompted were removed.
+
+## Item 8
+
+*Landed 2026-09-06 as `#73`.* Measured first: against `old-sdom` the three files were 503 lines
+short, but the diff is not one-directional — this tree carries later text of its own (one commit
+per item, `revert`/`replay`, the worktree anchor, no hash in a `Pulled:` line, the fragment key,
+`REVERTED`), and much of what `old-sdom` had is process that depends on no verb. So the rule
+applied was: **restore what depends on nothing or on a reader that is here; rewrite what
+changed; leave out what waits.**
+
+Restored as written: the no-task-tool relocation; injection design in Implementation and the
+pull *after* Simplification (the 2026-08-21 measurement, 32 cycles for sixteen proofs); which
+properties most need an alarm; a build-breaking injection is not a ring; standing context in
+the current file and the `## Active` region (their `Current` reader has `Standing()`, R296
+checks the heading); the sited-decisions rule and `@undecided`; the tool/agent contract table
+(key row updated to the fragment); the part-line rules the reader enforces — em dash, the
+`Item` word, checkbox interior, verbs in capitals (`part-line.md`, checked); read the whole
+carve; the leading `Pulled:` date; the puller's step 0, build-failure and verbosity rules;
+the delegation hazards — harness worktree at `origin/main`, `GOWORK`, the test cache, the
+worktree sweep — plus one measured today, the relative `replace` needing a sibling.
+
+Rewritten: the backtick rule now says where the tool reports it (`validate trajectory`, R302)
+and where it does not (`design/`, `specs/` — gap `O22`); the prose-through-a-file rule names
+the flags this tree has and banks the two verbs without them (`O23`); "ask the tool what
+exists" no longer names `query sdom`.
+
+Left out, each waiting on its verb: batched briefs and `--batch`, the brief's commit line
+(R369), `query alarms --alarm`, `query sdom`, `update pulled` / `inject` / `number-alarms`
+and `add-req` in the verb list. They return with `requests/three-readers.md` and the parts
+behind it. The Cursor generator got its two task-tool edit pairs back with the paragraphs
+they anchor on, which is what `make validate` checks.
 
 ## The requests exchange
 
