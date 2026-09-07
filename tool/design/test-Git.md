@@ -85,9 +85,7 @@ freshness feature exists to prevent, inside its own implementation
 **Fire alarm:** restore the `len(hash) != 40` gate and confirm the `sha256` case goes
 red reporting no change for a function just committed
 **Inject:** internal/project/git.go:LastChanged
-**Pulled:** 2026-09-04 — rang again after the site changed: `sha256: LastChanged
-reported no change for a function that was just committed`; restore byte-clean by copy.
-First pulled 2026-08-13, same signature
+**Pulled:** 2026-09-06 — rang again after `LastChanged` moved to the computed extent (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand): `sha256: LastChanged reported no change for a function that was just committed`; restore byte-clean. Previously 2026-09-04 and 2026-08-13, same signature
 **Refs:** crc-Git.md — R180
 
 ## Test: a new function is told from a gone one
@@ -100,9 +98,7 @@ a symbol in neither
 **Fire alarm:** treat every `-L` failure as a rotted anchor — the pre-fix shape — and
 confirm the new function reports `ErrUnresolvedSite`
 **Inject:** internal/project/git.go:LastChanged
-**Pulled:** 2026-09-04 — rang again after the site changed: `a newly written
-function = git cannot resolve that symbol in that file, want ErrNoHistory`; restore
-byte-clean by copy. First pulled 2026-08-13, same signature
+**Pulled:** 2026-09-06 — rang again after `LastChanged` moved to the computed extent (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand): the `-L` failure is now the parse finding nothing, so the injection dropped the on-disk `siteExtent` check: `a newly written function = git cannot resolve that symbol in that file, want ErrNoHistory`; restore byte-clean. Previously 2026-09-04 and 2026-08-13, same signature
 **Refs:** crc-Git.md — R182, R184
 
 ## Test: a method anchor resolves to its declaration

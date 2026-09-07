@@ -128,7 +128,7 @@ Four states, and the distinction between the middle two is the point:
 |---|---|
 | `verified` | has `**Pulled:**`, and no injection site has changed since |
 | `stale` | has `**Pulled:**`, but a site has changed since — the proof is void |
-| `unrecorded` | has `**Inject:**` and no `**Pulled:**` — a prescription, not a record |
+| `unrecorded` | has `**Inject:**` and no `**Pulled:**` — a prescription, not a record; its sites still resolve, and one that does not reads `unresolvable` |
 | `unanchored` | has no `**Inject:**` — describes its site in prose only, so nothing can check it |
 
 `unrecorded` is **not** a claim that the injection was never run. It is a claim that

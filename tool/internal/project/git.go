@@ -39,6 +39,9 @@ type GitFacts interface {
 	Ignored(paths []string) (map[string]bool, error)
 	Tracked(path string) (bool, error)
 	LastChanged(file, symbol string) (time.Time, error)
+	// SiteResolves answers only whether a site names exactly one declaration in the
+	// file as committed — the cheap half of LastChanged, without the history walk. R309
+	SiteResolves(file, symbol string) error
 }
 
 // CRC: crc-Git.md | Seq: seq-bootstrap.md#1.7 | R166, R167
@@ -180,27 +183,9 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 	if tracked, terr := g.Tracked(file); terr != nil || !tracked {
 		return time.Time{}, ErrNoHistory
 	}
-	head, ok := g.headFile(file)
-	if !ok {
-		return time.Time{}, ErrNoHistory
-	}
-	start, end, n := siteExtent(head, symbol)
-	switch {
-	case n > 1:
-		// R307 — counted before the extent is trusted, because the extent cannot report
-		// this: the anchor has been watching an arbitrary one of them since it was
-		// written, and every answer about it has been confident and unfounded.
-		return time.Time{}, &AmbiguousSiteError{Symbol: symbol, N: n}
-	case n == 0:
-		// A symbol absent from HEAD's file and present on disk is one written since the
-		// last commit — *no history yet* rather than a rotted anchor, which is the
-		// distinction this check would otherwise get backwards on every new function.
-		if src, rerr := os.ReadFile(g.abs(file)); rerr == nil {
-			if _, _, live := siteExtent(string(src), symbol); live > 0 {
-				return time.Time{}, ErrNoHistory
-			}
-		}
-		return time.Time{}, ErrUnresolvedSite
+	start, end, err := g.siteRange(file, symbol)
+	if err != nil {
+		return time.Time{}, err
 	}
 	out, err := g.run("log", "-L", fmt.Sprintf("%d,%d:%s", start, end, file), "--format=%H|%ad", "--date=short")
 	if err != nil {
@@ -223,6 +208,51 @@ func (g *Git) LastChanged(file, symbol string) (time.Time, error) {
 		return when, nil
 	}
 	return time.Time{}, nil
+}
+
+// CRC: crc-Git.md | Seq: seq-alarm-freshness.md#1.3 | R309
+// SiteResolves reports whether a site names exactly one declaration in the file as
+// committed, with the same four failures LastChanged keeps apart and none of its cost:
+// no history walk, so a census can ask it of every prescription without the expensive
+// path growing past the verified population.
+func (g *Git) SiteResolves(file, symbol string) error {
+	if !g.IsRepo() {
+		return ErrNoGit
+	}
+	if tracked, terr := g.Tracked(file); terr != nil || !tracked {
+		return ErrNoHistory
+	}
+	_, _, err := g.siteRange(file, symbol)
+	return err
+}
+
+// Seq: seq-alarm-freshness.md#1.5.1, seq-alarm-freshness.md#1.5.2, seq-alarm-freshness.md#1.5.3 | R307, R308
+// siteRange is the site's line range in HEAD's copy of the file, or the failure that
+// stands in for it.
+func (g *Git) siteRange(file, symbol string) (start, end int, err error) {
+	head, ok := g.headFile(file)
+	if !ok {
+		return 0, 0, ErrNoHistory
+	}
+	start, end, n := siteExtent(head, symbol)
+	switch {
+	case n > 1:
+		// R307 — counted before the extent is trusted, because the extent cannot report
+		// this: the anchor has been watching an arbitrary one of them since it was
+		// written, and every answer about it has been confident and unfounded.
+		return 0, 0, &AmbiguousSiteError{Symbol: symbol, N: n}
+	case n == 0:
+		// A symbol absent from HEAD's file and present on disk is one written since the
+		// last commit — *no history yet* rather than a rotted anchor, which is the
+		// distinction this check would otherwise get backwards on every new function.
+		if src, rerr := os.ReadFile(g.abs(file)); rerr == nil {
+			if _, _, live := siteExtent(string(src), symbol); live > 0 {
+				return 0, 0, ErrNoHistory
+			}
+		}
+		return 0, 0, ErrUnresolvedSite
+	}
+	return start, end, nil
 }
 
 // R308

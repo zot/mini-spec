@@ -112,7 +112,13 @@ that has since been rewritten is void, and nothing about a green suite says so.
   next change on any later day.
 - An `**Inject:**` naming a symbol git cannot find is reported as **unresolvable**,
   not silently skipped. That is the anchor rotting, which is the failure the field
-  exists to prevent.
+  exists to prevent. **A prescription is checked too**: an alarm with an `**Inject:**`
+  and no `**Pulled:**` is the shape *most* likely to have rotted, because nobody has run
+  it, and until 2026-09-06 it was the only shape never looked at. Its sites are resolved
+  at the cheap half of the cost — the extent, no history walk — before it reads
+  `unrecorded`; a rotted one reads `unresolvable`. Measured on old-sdom's delegation rig:
+  the one hard failure among nine pullers was a brief naming a symbol that did not exist,
+  which the puller wrote for itself rather than refusing.
 - **The reader computes the site's line range; git is asked only when those lines
   changed.** `git log -L :pattern:file` asks git to *find* the symbol as well as bound
   it, and git bounds a declaration at the line before the next one — so its range

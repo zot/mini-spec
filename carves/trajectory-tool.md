@@ -196,21 +196,19 @@ still open?" is answerable from the first screen, and a completed part carries n
 priority — so leaving them interleaved spent the first screen on finished work. A split
 parent moves with its sub-items, since they are one entry.
 
+*Brought up to this tree on 2026-09-06.* This branch restarted from `abd78fd` (Item 13's commit)
+on 2026-09-04, so six parts that landed on `old-sdom` between 08-16 and 08-18 have their done
+entries in the shared ledger but their code only on that branch. Four of them were re-landed here
+over simple-dom by [sdom-reclaim.md](sdom-reclaim.md) and are marked with both commits; the
+worktree anchor came across with the backup port; `add-req` did not, and is open again. The
+`carve-stencils` carve that Item 10 and half of Item 7 moved to on `old-sdom` is not in this
+tree either, so both read as they did on 2026-08-16.
+
 **Open, in dogfood order:**
 
-- [ ] **Item 13 — read the adopted done-entry shape, and migrate this repo's ledger.** **OPEN (#12.)**
-- **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
-  carry the state.
-  - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
-  - [ ] **8.2 — `minispec query carves`.** **OPEN (not queued.)** Needs
-    [reference-discipline.md](reference-discipline.md) Item 1.1 too: reading status blocks
-    across carves is the same read as Item 3's, and a fenced example must not count.
-- [ ] **Item 3 — `validate trajectory`.** **OPEN (not queued.)** Needs
-  [reference-discipline.md](reference-discipline.md) Item 1.1, the shared markdown-aware
-  extractor. Also carries the tool/agent contract section for `trajectory-format.md`.
-- [ ] **Item 5 — the backup slot: revert and replay.** **OPEN (not queued.)**
-- [ ] **Item 6 — the bidirectional item↔part link.** **OPEN (not queued.)** Needs Item 5.
-- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)**
+- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)** Landed
+  on `old-sdom` as `d367eee` (2026-08-18 — `#32`) and not in this tree; returns as
+  [sdom-reclaim.md](sdom-reclaim.md) Item 7.
 - [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
   checkbox: the sub-items carry the state.
@@ -218,9 +216,30 @@ parent moves with its sub-items, since they are one entry.
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
 - [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
+- [ ] **Item 16 — the completion verb says which of its writes is tracked.** **OPEN (#31.)**
+  Small, and it closes a hole the format opens by construction.
+- [ ] **Item 14 — the worktree cleanup report.** **OPEN (not queued.)** Last on purpose:
+  belt and suspenders for an emergency Bill does not expect to reach for (2026-08-17). Its
+  one real dependency ships early regardless — the worktree anchor is written at each
+  transition, and a report built before any anchor exists has no baseline to diff against.
 
 **Closed:**
 
+- [x] ~~**Item 6 — the bidirectional item↔part link.**~~ **LANDED (`d34cbdf`, 2026-08-18 — `#17`.)** **NARROWED (Bill, 2026-08-17.)**
+  Re-landed here by sdom-reclaim Item 3 (`eaf9604`, 2026-09-05): `add-item` writes both sides.
+- [x] ~~**Item 15 — the worktree anchor.**~~ **LANDED (`4b9c311`, 2026-08-17 — `#19`.)** Split
+  out of Item 6 the day it was built. `Snapshot` and `refs/minispec/snapshot` are in this tree
+  (R236–R238); closed `O23`, retired R261/R262, deleted `SnapshotLimits` on `old-sdom`.
+- [x] ~~**Item 5 — the backup slot: revert and replay.**~~ **LANDED (`42b119d`, 2026-08-17 — `#16`.)**
+  Re-landed here by sdom-reclaim Item 2 (`7dd50a0`, 2026-09-04).
+- [x] ~~**Item 3 — `validate trajectory`.**~~ **LANDED (`7953a87`, 2026-08-16 — `#15`.)**
+  Re-landed here by sdom-reclaim Item 4 (`7e6e293`, 2026-09-05).
+- **Item 8 — shrink the skill.** **SPLIT (Bill, 2026-08-14.)** No checkbox: the sub-items
+  carry the state, and both now carry it.
+  - [x] ~~**8.1 — move the mechanics out of `SKILL.md`.**~~ **LANDED (`9dfe5f8`, 2026-08-14 — `#9`.)**
+  - [x] ~~**8.2 — `minispec query carves`.**~~ **LANDED (`42d771e`, 2026-08-16 — `#13`.)**
+    Re-landed here by sdom-reclaim Item 1 (`2a050a2`, 2026-09-04).
+- [x] ~~**Item 13 — read the adopted done-entry shape, and migrate this repo's ledger.**~~ **LANDED (`abd78fd`, 2026-08-16 — `#12`.)** This branch's starting commit.
 - [x] ~~**Item 2 — `query next-id`.**~~ **LANDED (`c86c4b8`, 2026-08-16 — `#10`.)**
 - **Item 1 — the bootstrap: root, config, and `init`.** **SPLIT (Bill, 2026-08-07.)** No
   checkbox: the sub-items carry the state, and a parent box would be a second copy of it.
@@ -1164,6 +1183,157 @@ Still constrained by the asymmetry in the survey below: with trajectory files pr
 in every project, the public half of the link is *never* a markdown link — a carve
 carries a bare key and the queue side holds the recorded pointer. The riskiest part,
 and the one hand-maintenance structurally cannot supply.
+
+**Item 15** (Bill, 2026-08-17) — the worktree anchor. **Split out of Item 6**; its decisions are
+sited here and the specification is [backup.md](../tool/specs/backup.md)
+with R266–R273. Only the shape of the work belongs here.
+
+**DECIDED (Bill, 2026-08-17): the anchor holds untracked *contents*, and lives at
+`refs/minispec/snapshot` rather than in the stash.** *This supersedes the "capture the
+untracked list" decision taken earlier the same day* — it replaces that one rather than
+extending it. A decision written and superseded inside an hour is exactly what
+supersede-in-place is for, and exempting it because it is fresh is how the rule stops
+being a rule.
+
+**Contents rather than names, because a list cannot give a file back.** A captured list can
+report that something is new; only the contents can return an untracked new carve or a fresh
+source file, which is precisely what someone wants after a catastrophe. It also *removes*
+machinery rather than adding it: with the anchor holding untracked files, all three
+categories fall out of one tree-vs-tree diff and the side-car list disappears.
+
+*Measured 2026-08-17, because two of these are traps rather than preferences:*
+
+- **`git stash create -u` accepts `-u` and silently ignores it.** Exit 0, a plausible sha,
+  two parents, untracked file absent from the tree. A check asking only "did it error?"
+  reports it working. First instance recorded here of a *flag* leading the witness, where
+  every earlier one was a filter or a query.
+- **A temp index gets the boundary right for free.** `GIT_INDEX_FILE=<tmp> git add -A .`
+  then `write-tree` includes untracked and excludes **ignored** — so the trajectory files
+  stay out *by construction*, and the slot/anchor division of labour is preserved by the
+  mechanism rather than by care. The real index and working tree are untouched throughout.
+- **`git stash store` refuses a plain commit** ("not a stash-like commit"), so living in the
+  stash would have meant faking the merge shape with a synthetic index parent.
+
+**And the stash is the wrong home whatever its shape — which reverses my own argument of an
+hour earlier.** I had argued for `git stash list` because a human types that in an emergency.
+Two measurements overturned it: **`git stash pop` reached for by habit applies our
+whole-worktree snapshot over the user's tree**, and **`git stash clear` destroys the anchor
+at any position in the stack.** So Bill's question — could it be stored at the *bottom*? —
+turns out to have no safe answer even where it has a technical one, and it has neither:
+`stash store` carries no position flag, the only lever is hand-writing
+`.git/logs/refs/stash`, and an anchor refreshed at every transition is never old enough to
+sink.
+
+`refs/minispec/snapshot` is unpoppable, survives `stash clear` and an aggressive `gc` with
+the reflogs expired — anything under `refs/` is a gc root, verified rather than assumed —
+and makes the overwrite a single atomic `update-ref` instead of find-by-message-then-drop.
+It loses visibility in `git stash list`, and the crank handle covers that better than the
+stash list did: it prints the recovery command instead of requiring the reader to know the
+idiom.
+
+**The base commit needs no field of our own.** The anchor commit's **first parent is HEAD at
+capture time**, so `<anchor>^1` recovers it — and a parent cannot drift out of step with the
+tree it describes, where a hash we wrote down could. Two distinct repairs fall out of one
+anchor: `git checkout <anchor> -- <path>` restores the file as at the transition,
+uncommitted work included, and `<anchor>^1` restores it as at the last commit.
+
+1. **`Git.Snapshot` is rebuilt rather than merely called.** Temp-index tree
+   (`GIT_INDEX_FILE=<tmp> git add -A .`, then `write-tree`), committed with HEAD as first
+   parent, written to `refs/minispec/snapshot` by `update-ref`.
+2. **It gains its callers — plural.** The call goes in `Slot.swap`, the one operation every
+   path shares, ahead of `perform` — and ahead of `releaseAttempt`'s marker write on the
+   `Record` path, which is the one place a marker is written before the swap.
+3. **`seq-backup.md#3.5` moves ahead of 3.3**, since 3.4 writes into a tracked carve and as
+   drawn the anchor swallows the tool's own write.
+4. **R261 and R262 retire only after the code lands** (→ R266 and R273), with the inline
+   comments repointed in the same pass. Retiring first would leave a retired `Rn` as the
+   only thing the code fulfils.
+
+*And one obligation the item creates for itself:* `test-Git.md`'s alarm on
+`TestSnapshotDoesNotMoveAnythingOutOfTheWorkingTree` was pulled 2026-08-17 against the
+**stash** implementation. Rewriting `Snapshot` voids that proof on the day it was taken, and
+the injection changes with it — the destructive form is no longer "use the push verb" but
+"stage into the real index instead of a temp one". Re-pull, do not re-date.
+
+**Item 14** (Bill, 2026-08-17) — the worktree cleanup report. After a transition, crank out
+what has moved in the tracked tree since the anchor, so the agent can help the user clean
+up. **The tool reports; the agent proposes; the user decides** — nothing here alters the
+working tree, which is the *one transition, recorded two ways* decision in `## Decisions`
+stated as a scope.
+
+**Three categories, from a single tree-vs-tree diff** — which is the shape the anchor
+decision above bought. Build a tree of the working tree as it stands now, by the same temp-
+index method the anchor was built with, and diff the two:
+
+| status | meaning |
+|---|---|
+| `M` | changed since the transition |
+| `A` | new since the transition — tracked or not |
+| `D` | deleted since the transition, **and recoverable**, because the anchor holds the contents |
+
+*Verified 2026-08-17 on a tree carrying all three at once*, the `D` being a deleted
+**untracked** file — the case the earlier name-list sketch could report and could not return.
+No side-car list, and no second source to keep in step with the first.
+
+**Why it schedules after `#17` rather than with it, and it is a dependency rather than a
+preference.** `#17` writes the anchor at every transition. A report built first would have
+nothing to diff against until the next transition, and **would read as working** for exactly
+one run — the failure mode this carve keeps meeting, where the absence of evidence renders
+as a clean result.
+
+**Two repairs from one anchor, and they are different answers rather than one answer twice.**
+The anchor commit's first parent is HEAD at capture time, so both are addressable without
+any bookkeeping of ours:
+
+```
+git checkout refs/minispec/snapshot -- <path>     # as at the transition, uncommitted work included
+git checkout refs/minispec/snapshot^1 -- <path>   # as at the last commit
+```
+
+*One caveat the report must state rather than imply.* The diff shows everything that moved
+since the transition, **including work the user did that has nothing to do with the item**.
+That is correct and is the point — the question is *what has moved since the queue last
+transitioned*, never *what did this item do* — but an agent reading the list as the latter
+will offer to revert unrelated work. Naming the question the report answers is its own
+instance of the companion rule below: say what you could not ingest.
+
+*And the crank handle carries the discoverability the private ref gives up.* Nothing about
+`refs/minispec/snapshot` shows up in `git stash list`, so this report is the only place it
+surfaces at all — which is the better trade rather than a cost absorbed, since it hands over
+the command instead of requiring the reader to know the idiom. A report naming the files and
+not the ref would leave a reader knowing exactly what broke and not how to reach it.
+
+**Item 16** (2026-08-18) — `pending finish` already cranks out every file it wrote. What it does
+not say is that **one of them is tracked and the other three are not**, so the agent is left
+holding an uncommitted edit to a public document with nothing marking it as different from the
+three gitignored writes beside it.
+
+*Why it is structural rather than an oversight.* A `LANDED` record carries the commit hash, so
+it **cannot be written until that commit exists** — which puts the source edit one commit behind
+the work it records, always, in every project. The format calls the source *"the copy a future
+reader trusts, and the one nobody thinks to check"* and puts it first for exactly that reason;
+this is the moment it is most likely to be skipped, because the work is done, the commit is
+made, and all that remains is a checkbox in a file nobody is looking at.
+
+*Measured 2026-08-18, and the reason it went unnoticed for four items.* `#18` was the **first**
+carve part this project has discharged through the verb rather than by hand. `#27`, `#29` and
+`#30` all had spec or skill sources with no part to check, so the source-first step had never
+actually run here — the hole was reachable the whole time and nothing walked into it.
+
+**The repair is narrow: the crank handle already names the file, so it only has to say what
+kind of file it is.** `checked  carves/carve-stencils.md#1` and
+`written  carves/carve-stencils.md, CURRENT.md, PENDING.md, DONE.md` are both already printed;
+what is missing is the one fact that distinguishes them, and `track` plus `check-ignore` already
+answer it on every run.
+
+*Bounded by a standing decision, stated here so the wrong repair is foreclosed:* **the tool must
+not stage or commit it.** *"mini-spec does not manipulate the git repository"* (Bill,
+2026-08-04) — no staging, no commits, no resets. This reports; the agent relays; the human
+commits. Same shape as every other refusal in this carve rather than a new mechanism.
+
+*Placed beside Item 14 because they are the same shape* — both tell the operator what the tool
+left behind in a tree it will not touch — and ahead of it because this one is a line of output
+rather than a diff engine.
 
 **Item 13** (Bill, 2026-08-16) — make the parser read the done-entry shape the format now
 mandates, then migrate this repository's ledger onto it. Small, and ordered first because

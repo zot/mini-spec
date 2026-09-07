@@ -62,6 +62,11 @@ func (f *fakeGit) LastChanged(file, symbol string) (time.Time, error) {
 	return f.changed[site], nil
 }
 
+func (f *fakeGit) SiteResolves(file, symbol string) error {
+	_, err := f.LastChanged(file, symbol)
+	return err
+}
+
 func gitWith(ignored ...string) *fakeGit {
 	f := &fakeGit{repo: true, ignored: map[string]bool{}, tracked: map[string]bool{}}
 	for _, p := range ignored {

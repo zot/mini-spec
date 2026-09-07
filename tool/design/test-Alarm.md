@@ -26,7 +26,7 @@ reporting the site changed `2026-08-05`
 first version — and confirm the same-day case goes red while the later one stays green.
 The two differ only in the boundary, which is the whole property
 **Inject:** internal/alarm/alarm.go:assessOne
-**Pulled:** 2026-08-13 — rang: same-day reported `stale`, restore byte-clean
+**Pulled:** 2026-09-06 — rang again after `assessOne` gained the ambiguous-site case (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand); pulled again by hand the same day after the simplification pass restructured `assessOne` for `#37`, same signature): `same-day = "stale", want verified — an inclusive boundary fires on every fresh alarm`; restore byte-clean. First pulled 2026-08-13, same signature
 **Refs:** crc-Alarm.md — R181
 
 ## Test: a site git cannot resolve is reported, not skipped
@@ -37,8 +37,18 @@ there would be the tool declining to report its own mechanism failing
 **Fire alarm:** treat the lookup error as "unchanged" and confirm the alarm reports
 `verified` instead — the exact silent-pass this field exists to prevent
 **Inject:** internal/alarm/alarm.go:assessOne
-**Pulled:** 2026-08-13 — rang: reported `verified` where the anchor had rotted, which is the exact silent pass this field exists to prevent; restore byte-clean
+**Pulled:** 2026-09-06 — rang again after `assessOne` gained the ambiguous-site case (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand); pulled again by hand the same day after the simplification pass restructured `assessOne` for `#37`, same signature): the puller's injection dropped the generic-error record and rang the masking test instead, so the case was re-run by hand with the `ErrUnresolvedSite` arm made a `continue`: `state = "verified", want unresolvable`; restore byte-clean both times. First pulled 2026-08-13
 **Refs:** crc-Alarm.md — R182
+
+## Test: a prescription's rotted anchor is unresolvable
+**Purpose:** validates R309 — an anchored alarm with no `**Pulled:**` has its sites resolved before it reads `unrecorded`; a site naming nothing reads `unresolvable`, an intact one stays `unrecorded`, and with no git it stays `unrecorded` because nothing could be checked
+**Input:** three prescriptions on `a.go:Foo` against a fake that reports the site unfindable, a fake that resolves it, and a fake with no repository
+**Expected:** `unresolvable` naming the site; `unrecorded`; `unrecorded`
+**Fire alarm:** restore the short-circuit — return `unrecorded` before resolving any site — and confirm the rotted case goes red
+**Inject:** internal/alarm/alarm.go:assessOne
+**Pulled:** 2026-09-06 — rang: `state = "unrecorded" site = ""; want unresolvable at a.go:Foo`; restore byte-clean by copy, and again the same day after the simplification pass rewrote the check as a switch, same signature
+**Refs:** crc-Alarm.md, crc-Git.md — R309
+**Code:** internal/alarm/alarm_test.go
 
 ## Test: no git yields `unchecked`, never `verified`
 **Purpose:** validates R187 and R184 — a check that could not look must not return a
@@ -47,7 +57,7 @@ clean result
 **Expected:** `unchecked`; `unrecorded` and `unanchored` still resolve, needing no git
 **Fire alarm:** return `verified` when git is absent and confirm this goes red
 **Inject:** internal/alarm/alarm.go:assessOne
-**Pulled:** 2026-08-13 — rang: reported `verified` with no repository, restore byte-clean
+**Pulled:** 2026-09-06 — rang again after `assessOne` gained the ambiguous-site case (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand); pulled again by hand the same day after the simplification pass restructured `assessOne` for `#37`, same signature): `with no git = "verified", want unchecked`; restore byte-clean. First pulled 2026-08-13
 **Refs:** crc-Alarm.md — R184, R187
 
 ## Test: the census counts every alarm exactly once
@@ -80,7 +90,7 @@ stale; and the same first site alone
 **Fire alarm:** return `Unchecked` on the first erroring site — the pre-fix
 short-circuit — and confirm the pair reports `unchecked` instead of `stale`
 **Inject:** internal/alarm/alarm.go:assessOne
-**Pulled:** 2026-08-13 — rang, restore byte-clean
+**Pulled:** 2026-09-06 — rang again after `assessOne` gained the ambiguous-site case (delegated `alarm-puller` in a worktree at `3931bcc`, evidence read by hand); pulled again by hand the same day after the simplification pass restructured `assessOne` for `#37`, same signature): `state = "unchecked", want stale — an unanswerable first site hid a definite finding`; restore byte-clean. First pulled 2026-08-13
 **Refs:** crc-Alarm.md — R179
 
 ## Test: `--unverified` narrows the list and leaves the census whole

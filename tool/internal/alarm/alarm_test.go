@@ -35,6 +35,11 @@ func (s *stubGit) LastChanged(file, sym string) (time.Time, error) {
 	return s.changed[site], nil
 }
 
+func (s *stubGit) SiteResolves(file, sym string) error {
+	_, err := s.LastChanged(file, sym)
+	return err
+}
+
 func day(s string) time.Time {
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {
@@ -208,5 +213,23 @@ func TestAnUncheckableSiteDoesNotMaskAStaleOne(t *testing.T) {
 	only := alarmWith([]parser.AlarmSite{{File: "new.go", Symbol: "Fresh"}}, "2026-08-05")
 	if got := Assess([]parser.Alarm{only}, git)[0]; got.State != Unchecked {
 		t.Errorf("lone unanswerable site = %q, want unchecked", got.State)
+	}
+}
+
+// R309 — a prescription's anchor is checked before it reads as unrecorded: the site that
+// nobody has run is the one most likely to have rotted, and until now the only one never
+// looked at. Without git it stays unrecorded, which is what it was.
+func TestAPrescriptionsRottedAnchorIsUnresolvable(t *testing.T) {
+	git := &stubGit{repo: true, unresolved: map[string]bool{"a.go:Foo": true}}
+	got := Assess([]parser.Alarm{alarmWith(siteA, "")}, git)[0]
+	if got.State != Unresolvable || got.Site != "a.go:Foo" {
+		t.Errorf("state = %q site = %q; want unresolvable at a.go:Foo — a prescription pointing at nothing read as an ordinary prescription", got.State, got.Site)
+	}
+	intact := &stubGit{repo: true, changed: map[string]time.Time{"a.go:Foo": day("2026-08-01")}}
+	if got := Assess([]parser.Alarm{alarmWith(siteA, "")}, intact)[0]; got.State != Unrecorded {
+		t.Errorf("intact prescription = %q, want unrecorded", got.State)
+	}
+	if got := Assess([]parser.Alarm{alarmWith(siteA, "")}, &stubGit{repo: false})[0]; got.State != Unrecorded {
+		t.Errorf("prescription with no git = %q, want unrecorded — nothing could be checked", got.State)
 	}
 }

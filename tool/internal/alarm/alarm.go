@@ -73,8 +73,22 @@ func assessOne(a parser.Alarm, g project.GitFacts) Assessment {
 	if len(a.Sites) == 0 {
 		return Assessment{Alarm: a, State: Unanchored}
 	}
-	// step 1.3 — anchored but never recorded as run.
+	// step 1.3 — anchored but never recorded as run. The anchor is still checked, at
+	// the cheap half of the cost: a prescription is the shape most likely to have rotted,
+	// because nobody has run it, and it was the only shape never looked at (R309). A site
+	// that cannot be checked here — no git, no history yet — leaves the reading unrecorded,
+	// which is what it was.
 	if !a.HasPulled() {
+		if g.IsRepo() {
+			for _, site := range a.Sites {
+				switch err := g.SiteResolves(site.File, site.Symbol); {
+				case errors.Is(err, project.ErrUnresolvedSite):
+					return Assessment{Alarm: a, State: Unresolvable, Site: site.String()}
+				case errors.Is(err, project.ErrAmbiguousSite):
+					return Assessment{Alarm: a, State: Unresolvable, Site: site.String() + " (" + err.Error() + ")"}
+				}
+			}
+		}
 		return Assessment{Alarm: a, State: Unrecorded}
 	}
 	// step 1.4 — could not look.

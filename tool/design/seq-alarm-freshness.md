@@ -1,6 +1,6 @@
 # Sequence: Fire alarm freshness — assessing a recorded proof
 
-**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187, R199, R200, R202, R203, R204, R303, R305, R307, R308
+**Requirements:** R178, R179, R180, R181, R182, R183, R184, R185, R187, R199, R200, R202, R203, R204, R303, R305, R307, R308, R309
 
 Three diagrams: assessing one alarm, the two surfaces that consume the assessment, and
 minting the brief a delegated re-pull is spawned with.
@@ -11,7 +11,7 @@ minting the brief a delegated re-pull is spawned with.
 1. Assess an alarm against git
 1.1. Parse the test document's alarm blocks: Inject sites, Pulled date, prose
 1.2. No Inject sites — unanchored; stop, since nothing can be checked
-1.3. No Pulled date — unrecorded; stop, and say only that no verification is recorded
+1.3. No Pulled date — resolve each site first, at the cheap half of the cost; a site naming nothing or two things is unresolvable; otherwise unrecorded, and say only that no verification is recorded
 1.4. Ask Git whether this is a working tree; if not, unchecked; stop
 1.5. For each site, ask Git when that function last changed
 1.5.1. Read the file as committed at HEAD, once per file
@@ -23,9 +23,12 @@ minting the brief a delegated re-pull is spawned with.
 1.8. Otherwise verified
 ```
 
-**Step 1.2 and 1.3 need no git at all**, which is what keeps the cost proportional to
-the *verified* population rather than to every alarm. A project adopting the convention
-has many unrecorded alarms and few pulled ones, so the expensive path is the small one.
+**Step 1.2 needs no git at all, and step 1.3 needs only the cheap half (R309).** The
+history walk stays proportional to the *verified* population: a project adopting the
+convention has many unrecorded alarms and few pulled ones. But a prescription's anchor is
+resolved — one parse of HEAD's file, cached per file — because the site nobody has run is
+the one most likely to have rotted, and until 2026-09-06 it was the only shape never
+looked at. Without git, or with no history yet, the reading stays `unrecorded`.
 
 **Step 1.5 asks about the function, not the file (R180).** The file-level question
 marks every alarm in a busy file stale and so discriminates nothing. Measured before
