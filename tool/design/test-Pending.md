@@ -470,3 +470,14 @@ state a notice permitted, so the injection restores the design that was supersed
 inventing a broken one. Red as `a gap-sourced item completed with no decision about its gap`
 **Inject:** internal/pending/pending.go:Finish
 **Pulled:** 2026-09-05 — rang, `a gap-sourced item completed with no decision about its gap`
+
+## Test: the written line says which write is tracked
+**Purpose:** validates R329 — a completion's four writes are named with their kind, so the carve flip reads as the one tracked, uncommitted file beside three ignored ones
+**Input:** a real repository tracking `carves/x.md` and ignoring the three trajectory files; `finish 4 --commit abc1234`
+**Expected:** `carves/x.md (tracked, uncommitted)`, `CURRENT.md (ignored)`, `PENDING.md (ignored)`, `DONE.md (ignored)` on the written line
+**Refs:** crc-CLI.md — R329
+**Code:** internal/cli/cli_pending_test.go
+**Alarm:** 33
+**Fire alarm:** print the names bare — return `strings.Join(files, ", ")` before asking git — and confirm all four words go missing while the completion still reports success
+**Inject:** internal/cli/pending.go:describeWrites
+**Pulled:** 2026-09-12 — rang: `the written line does not say "carves/x.md (tracked, uncommitted)"` and the three ignored ones; restore byte-clean by copy, and again after the simplification pass hoisted the git calls, same signature

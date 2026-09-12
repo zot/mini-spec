@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324, R329
 
 Command-line interface handling.
 
@@ -10,6 +10,9 @@ Command-line interface handling.
 - version: build-time version string
 
 ## Does
+- describeWrites(repoRoot, files): the queue verbs' `written` line with each file's kind from
+  git — tracked and uncommitted, ignored, untracked — so the carve flip is marked as the write
+  that still needs a commit; bare names with no repository (R329)
 - Parse(args): parse command and flags
 - Run(): dispatch to appropriate handler (or show version if --version)
 - CheckVersion(): find skill README.md under the **repository root** first, then the user's home directory, in .claude/skills/mini-spec/; extract Version: line, compare against tool version. Exit 0 if match, 1 if mismatch or not found. (R117)

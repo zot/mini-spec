@@ -410,6 +410,7 @@
 - **R281:** `--no-resolve` leaves the gap open and the completion **records that it was a decision** (`left open … by decision`), because a gap left open deliberately and one left open by oversight are identical in `design.md`
 - **R282:** Every change the three verbs make is **cranked out in full** — the number minted, the position taken, the parts checked, the gap resolved or left open, every file written — markdown on stdout by default and `--json` for the machine-readable form
 - **R283:** `pending revert` and `pending replay` drive the slot's two operations and report the state before and after, the files restored, the backup directory, and the worktree anchor with the commands that read it; a refusal is the slot's message and a non-zero exit. `pending` resolves the repository root and never a design root, since the trajectory layer sits above every design root
+- **R329:** Every queue verb's `written` line says what kind of file each write landed in — `tracked, uncommitted` for a file git tracks, `ignored` for one it ignores, `untracked` otherwise, and nothing where there is no repository — so the one tracked public document among a completion's four writes (the carve flip) is marked as the write that still needs a commit, beside the three gitignored ones; the tool reports and never stages or commits
 
 ## Feature: Trajectory Validation
 **Source:** specs/validate.md

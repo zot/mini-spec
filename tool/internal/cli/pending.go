@@ -163,7 +163,7 @@ func (c *CLI) runAddItem(repoRoot string, args []string) int {
 		fmt.Printf("  part     %s#%s, marked **OPEN (#%d.)**\n", created.Part.Doc, created.Part.Key, created.ID)
 	}
 	fmt.Printf("  placed   position %d of %d\n", created.Position, created.Entries)
-	fmt.Printf("  written  %s\n", strings.Join(created.Files, ", "))
+	fmt.Printf("  written  %s\n", describeWrites(repoRoot, created.Files))
 	if created.ReusedID {
 		// R234. The one person who could have carried this number into a chat or a commit
 		// message is the one this reaches.
@@ -291,7 +291,7 @@ func (c *CLI) runStart(repoRoot string, args []string) int {
 		return 0
 	}
 	fmt.Printf("Started #%d: %s\n", started.ID, started.Title)
-	fmt.Printf("  written  %s\n", strings.Join(started.Files, ", "))
+	fmt.Printf("  written  %s\n", describeWrites(repoRoot, started.Files))
 	if text == "" {
 		fmt.Println("\n  The active block carries its identity line only. Add the item's context there,")
 		fmt.Println("  or hand it to the verb next time: --context-file <path> places it for you.")
@@ -366,7 +366,7 @@ func (c *CLI) runFinish(repoRoot string, args []string) int {
 		c.output(done)
 		return 0
 	}
-	reportFinished(done, text, *resolve || *noResolve)
+	reportFinished(repoRoot, done, text, *resolve || *noResolve)
 	return 0
 }
 
@@ -393,7 +393,7 @@ func gapResolver(resolve func(string) error, designMd, repoRoot string, id int) 
 // reportFinished renders a completion. **Its own function so a test can reach it**: the
 // notices below are decisions about what the caller is told, and a decision nothing can assert
 // on is one that drifts silently.
-func reportFinished(done pending.Finished, body string, askedResolve bool) {
+func reportFinished(repoRoot string, done pending.Finished, body string, askedResolve bool) {
 	fmt.Printf("Completed #%d\n", done.ID)
 	for _, p := range done.Parts {
 		fmt.Printf("  checked  %s#%s\n", p.Doc, p.Key)
@@ -401,7 +401,7 @@ func reportFinished(done pending.Finished, body string, askedResolve bool) {
 	if done.GapResolved {
 		fmt.Printf("  resolved gap %s in %s\n", done.Gap.Key, done.Gap.Doc)
 	}
-	fmt.Printf("  written  %s\n", strings.Join(done.Files, ", "))
+	fmt.Printf("  written  %s\n", describeWrites(repoRoot, done.Files))
 	// R280 — a resolve flag on an item that names no gap resolved nothing and said nothing:
 	// a flag that silently does nothing is this project's signature defect wearing the shape
 	// of success.
@@ -471,4 +471,35 @@ func stateWord(s backup.State) string {
 		return "pre-change"
 	}
 	return "post-change"
+}
+
+// CRC: crc-CLI.md | R329
+// describeWrites names each written file with what kind of file it is: the one tracked public
+// document among a completion's four writes — the carve flip — is the write that still needs a
+// commit, and until 2026-09-12 nothing in the report told it apart from the three gitignored
+// files beside it. Measured 2026-08-18: `#18` was the first part discharged through the verb,
+// and its flip sat uncommitted with nothing marking it. The tool reports and never stages
+// (Bill, 2026-08-04); with no repository the names print bare.
+func describeWrites(repoRoot string, files []string) string {
+	g := project.NewGit(repoRoot)
+	if !g.IsRepo() {
+		return strings.Join(files, ", ")
+	}
+	// Each probe returns its zero value beside any error — a nil map from Ignored, false from
+	// Tracked — and a nil map reads false, so a probe that fails already lands on the default
+	// word below. Dropping the errors here is not ignoring them; it is saying where they go.
+	ignored, _ := g.Ignored(files)
+	out := make([]string, len(files))
+	for i, f := range files {
+		tracked, _ := g.Tracked(f)
+		switch {
+		case tracked:
+			out[i] = f + " (tracked, uncommitted)"
+		case ignored[f]:
+			out[i] = f + " (ignored)"
+		default:
+			out[i] = f + " (untracked)"
+		}
+	}
+	return strings.Join(out, ", ")
 }

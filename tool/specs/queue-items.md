@@ -148,6 +148,21 @@ a gap-sourced one records `` Gap `<doc>#<gap>` `` in the same shape, so the ledg
 the pending file held. Without it the pointer survives only in whatever free text `--discharged`
 was given, which is a record by luck.
 
+### The written line says what kind of file each write is
+
+Every queue verb ends by naming what it wrote, and since 2026-09-12 each name carries a word:
+`carves/x.md (tracked, uncommitted)`, `CURRENT.md (ignored)`. A completion writes four files and
+exactly one of them is a tracked public document — the carve flip — so it is the write that
+still needs a commit, and until now nothing in the report told it apart from the three gitignored
+files beside it. *Why it is structural rather than an oversight:* a `LANDED` record carries the
+commit hash, so it cannot be written until that commit exists, which puts the source edit one
+commit behind the work it records, always, in every project — the moment it is most likely to be
+skipped, because the work is done and all that remains is a checkbox in a file nobody is looking
+at. Measured 2026-08-18 on `#18`, the first part discharged through the verb. The words come from
+git — `tracked`, `ignored`, otherwise `untracked` — and print bare where there is no repository.
+**The tool never stages or commits it** (Bill, 2026-08-04): this reports, the agent relays, the
+human commits.
+
 ### The tool never leaves a line half-written
 
 **The status sentence is required and the `Next:` line is not**, and the line between them is

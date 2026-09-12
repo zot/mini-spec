@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -238,7 +239,7 @@ func TestAGapLeftOpenIsRecordedAsADecision(t *testing.T) {
 		Gap:    parser.PartRef{Doc: "tool/design/design.md", Key: "O136", Kind: minispecsdom.SourceGap},
 		HasGap: true,
 	}
-	out := captureStdout(t, func() { reportFinished(done, "a body", false) })
+	out := captureStdout(t, func() { reportFinished("", done, "a body", false) })
 
 	for _, want := range []string{"left open", "O136", "--no-resolve"} {
 		if !strings.Contains(out, want) {
@@ -261,7 +262,7 @@ func TestAResolvedGapIsReportedAndTheNoticeStaysQuiet(t *testing.T) {
 		HasGap:      true,
 		GapResolved: true,
 	}
-	out := captureStdout(t, func() { reportFinished(done, "a body", false) })
+	out := captureStdout(t, func() { reportFinished("", done, "a body", false) })
 
 	if !strings.Contains(out, "resolved gap O136") {
 		t.Errorf("a resolved gap is not reported:\n%s", out)
@@ -277,7 +278,7 @@ func TestAResolvedGapIsReportedAndTheNoticeStaysQuiet(t *testing.T) {
 func TestResolveOnAPartSourcedItemSaysItDidNothing(t *testing.T) {
 	done := pending.Finished{ID: 9, Files: []string{"PENDING.md"},
 		Parts: []parser.PartRef{{Doc: "carves/x.md", Key: "3"}}}
-	out := captureStdout(t, func() { reportFinished(done, "a body", true) })
+	out := captureStdout(t, func() { reportFinished("", done, "a body", true) })
 
 	if !strings.Contains(out, "resolve flag did nothing") {
 		t.Errorf("a flag that did nothing said nothing:\n%s", out)
@@ -333,5 +334,51 @@ func TestResolveAndNoResolveAreRefusedTogether(t *testing.T) {
 	// code is 1 either way and only the refusal text tells the two apart.
 	if !strings.Contains(out, "--resolve") || !strings.Contains(out, "--no-resolve") {
 		t.Errorf("the refusal does not name both flags: %s", out)
+	}
+}
+
+// R329 — the written line says which file is the tracked public document and which are
+// ignored, so the carve flip a completion leaves behind is marked as the write that still
+// needs a commit. A real repository, because the words come from git.
+func TestWrittenLineSaysWhichWriteIsTracked(t *testing.T) {
+	dir := t.TempDir()
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Skipf("git unavailable: %v: %s", err, out)
+		}
+	}
+	for _, d := range []string{"carves", ".minispec"} {
+		if err := os.MkdirAll(filepath.Join(dir, d), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write := func(rel, body string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, rel), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(".gitignore", "PENDING.md\nCURRENT.md\nDONE.md\n.minispec/\n")
+	write("PENDING.md", "# Pending\n\n---\n\n## 4. **a part to queue** (mini-spec). Status.\n   Source: [carves/x.md](carves/x.md), part `#7`.\n")
+	write("DONE.md", "# Done\n\n---\n")
+	write("CURRENT.md", "# Current\n\n## Active\n\n`#4` — a part to queue.\n")
+	write("carves/x.md", "# Carve: x\n\n## Status\n\n- [ ] **Item 7 — a part to queue.** **OPEN (#4.)**\n")
+	run("init", "-q")
+	run("add", ".gitignore", "carves/x.md")
+	run("commit", "-qm", "init")
+
+	out := captureStdout(t, func() {
+		if code := (&CLI{}).runFinish(dir, []string{"4", "--commit", "abc1234"}); code != 0 {
+			t.Fatalf("runFinish exited %d", code)
+		}
+	})
+	for _, want := range []string{"carves/x.md (tracked, uncommitted)", "CURRENT.md (ignored)", "PENDING.md (ignored)", "DONE.md (ignored)"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the written line does not say %q:\n%s", want, out)
+		}
 	}
 }
