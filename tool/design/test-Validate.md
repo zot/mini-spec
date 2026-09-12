@@ -93,13 +93,14 @@ Pulled again after the simplification pass restructured the function — still r
 
 ## Test: the readers disagree over a swallowed tail
 **Purpose:** validates R327 and R328 — in each of the three documents, a group never closed loses the tail to the reader and the line scan finds it; the finding leads the report; the unread lines are counted; a gap-shaped bullet outside the Gaps section is not scanned
-**Input:** a design.md whose O2 opens a span it never closes with O3 after it and an O9 in another section; a requirements.md whose retired R2 opens a span with R3 after it; a test design whose first entry opens a span with a second entry after it
+**Input:** a design.md whose O2 opens a span it never closes, with an O3 inside a fenced example and an O9 in another section; a requirements.md whose retired R2 opens a span, with an R3 inside a fence; a test design whose first entry opens a span, with a second `## Test:` inside a fence. *Until the dependency's 2026-09-12 base the unclosed spans swallowed the tails; now the reader demotes the opener and reads on, so the fenced examples are what the two readings disagree over*
 **Expected:** three findings naming O3, R3 and `2 test entries by line, 1 by the document reader`; no mention of O9; three unread counts; `issues:` leading with `the two readers disagree:`; a clean result still prints the note before `phase: validate OK`
 **Refs:** crc-Validate.md — R327, R328
 **Code:** internal/validate/agreement_test.go
+**Alarm:** 2
 **Fire alarm:** make `onlyIn` return nothing — the second opinion agrees with everything — and confirm all three findings vanish while the note stays
 **Inject:** internal/validate/validate.go:onlyIn
-**Pulled:** 2026-09-07 — rang: `missing finding "design.md: the line scan read gap O3 …"` and the other two; restore byte-clean by copy, and again after the simplification pass restructured `readerAgreement`, same signature
+**Pulled:** 2026-09-12 — rang again, the commit having landed five days after the pull, and once more the same day after the fixture moved to fenced samples on the dependency's `b9f4c70`; same injection and signature; restore byte-clean by copy. Previously 2026-09-07 — rang: `missing finding "design.md: the line scan read gap O3 …"` and the other two; restore byte-clean by copy, and again after the simplification pass restructured `readerAgreement`, same signature
 
 ## Test: the readers agree over healthy documents
 **Purpose:** validates R327 — agreement is silence: a nested sub-bullet under a gap, a retired requirement, a sub-section, two plain test entries produce no finding and no unread line
@@ -107,6 +108,7 @@ Pulled again after the simplification pass restructured the function — still r
 **Expected:** no findings, no unread
 **Refs:** crc-Validate.md — R327
 **Code:** internal/validate/agreement_test.go
+**Alarm:** 3
 **Fire alarm:** widen the gap line scan to any bullet — drop the `X<n>:` key from `gapLineRe` — and confirm the sub-bullet reads as a gap the reader did not return
 **Inject:** internal/validate/validate.go:readerAgreement
-**Pulled:** 2026-09-07 — rang: `healthy documents: findings [design.md: the line scan read gap sub …]`; restore byte-clean by copy, and again after the simplification pass restructured `readerAgreement`, same signature
+**Pulled:** 2026-09-12 — rang again, the commit having landed five days after the pull, and once more the same day after the fixture moved to fenced samples on the dependency's `b9f4c70`; same injection and signature; restore byte-clean by copy. Previously 2026-09-07 — rang: `healthy documents: findings [design.md: the line scan read gap sub …]`; restore byte-clean by copy, and again after the simplification pass restructured `readerAgreement`, same signature

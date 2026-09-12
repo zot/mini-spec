@@ -19,13 +19,16 @@ func designDir(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// R327, R328 — a swallowed tail is found by the scan that did not swallow it, in every one
-// of the three documents, and the readers' unread lines are counted beside the findings.
+// R327, R328 — the two readings differ where one of them is blind: a fenced example is body
+// to the reader and an entry to the naive line scan, in every one of the three documents,
+// and the readers' unread lines — here an opener never closed, demoted to text by the
+// dependency since 2026-09-12 — are counted beside the findings. Until that base landed the
+// fixture was an unclosed span swallowing the tail, which the reader now recovers from.
 func TestReadersDisagreeOverASwallowedTail(t *testing.T) {
 	findings, unread := readerAgreement(designDir(t, map[string]string{
-		"design.md":       "# D\n\n## Gaps\n\n- [ ] O1: fine\n- [ ] O2: opens a `span that never closes\n- [ ] O3: gone with it\n\n## Other\n\n- [ ] O9: not in the section\n",
-		"requirements.md": "# R\n\n## Feature: A\n**Source:** specs/a.md\n\n- **R1:** one\n- **~~R2:~~** (Retired T1 — no replacement) two `\n- **R3:** three\n",
-		"test-Fixture.md": "# T\n\n## Test: a\n**Purpose:** `never closed\n\n## Test: b\n**Fire alarm:** x\n",
+		"design.md":       "# D\n\n## Gaps\n\n- [ ] O1: fine\n- [ ] O2: quotes a `span that never closes\n\n```\n- [ ] O3: a fenced example\n```\n\n## Other\n\n- [ ] O9: not in the section\n",
+		"requirements.md": "# R\n\n## Feature: A\n**Source:** specs/a.md\n\n- **R1:** one\n- **~~R2:~~** (Retired T1 — no replacement) two `\n\n```\n- **R3:** a fenced example\n```\n",
+		"test-Fixture.md": "# T\n\n## Test: a\n**Purpose:** `never closed\n\n```\n## Test: b\n```\n",
 	}))
 	joined := strings.Join(findings, "\n")
 	for _, want := range []string{

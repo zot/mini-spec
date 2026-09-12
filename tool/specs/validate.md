@@ -105,6 +105,10 @@ Run all validations and report issues.
   2800 requirements** — R1323 onward gone behind a ``` quoted in prose at line 2157 — and five
   test designs short by up to thirteen entries each, behind lone `*` and `**` in prose. Every
   one was reported by the reader as a group never closed; none was visible from the counts.
+  *Five days later, against their `b9f4c70`:* an opener never closed is demoted to text and the
+  tail read, so the three repositories agree everywhere; the demoted openers still list as
+  unread, which is the right reading, and a fenced example is now what the two readings
+  disagree over — body to the reader, an entry to the naive scan.
 - **What the readers could not read is printed as a coverage note**, naming each file and its
   count, whether or not anything else fired — never an issue in itself, because a reader takes
   silence about coverage as a claim of completeness.

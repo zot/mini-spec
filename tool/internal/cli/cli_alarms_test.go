@@ -215,10 +215,11 @@ func capture(t *testing.T, stream **os.File, fn func()) string {
 	return string(b)
 }
 
-// R316. What the reader could not read is printed beneath the count, never dropped: a
-// group never closed takes every later entry with it, and a census silent about that
-// reports clean over alarms it never saw. Measured 2026-09-07 on this repository, when a
-// stray backslash before a backtick hid four alarms and a numbering run for a day.
+// R316. What the reader could not read is printed beneath the count, never dropped.
+// Measured 2026-09-07 on this repository, when a stray backslash before a backtick hid
+// four alarms and a numbering run for a day; since the dependency's 2026-09-12 base an
+// opener never closed is demoted to text and the later entries are read, but the opener
+// is still listed, and the census still says so.
 func TestCensusPrintsWhatTheReaderCouldNotRead(t *testing.T) {
 	alarmProject(t)
 	f, err := os.OpenFile(filepath.Join("design", "test-Fixture.md"), os.O_APPEND|os.O_WRONLY, 0o644)
@@ -230,9 +231,6 @@ func TestCensusPrintsWhatTheReaderCouldNotRead(t *testing.T) {
 	}
 	f.Close()
 	out := runAlarms(t)
-	if strings.Contains(out, "the swallowed one") {
-		t.Fatalf("the fixture did not swallow the last entry:\n%s", out)
-	}
 	if !strings.Contains(out, "note: 1 line(s) not read") || !strings.Contains(out, "never closed") {
 		t.Errorf("the census did not say what the reader could not read:\n%s", out)
 	}
