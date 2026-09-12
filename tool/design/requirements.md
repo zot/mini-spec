@@ -61,6 +61,8 @@
 - **R29:** Validates code files have traceability comments
 - **R30:** Validation output shows what was found (not just pass/fail)
 - **R31:** Exit code 0 if no issues, 1 if issues found
+- **R327:** **The two readers of every design document the dependency owns must agree, and this check is the second opinion**: for the Gaps section, requirements.md and every test design, an independent line scan — a regex over lines, bounded for the gaps section by its heading and the next level-2 heading, built on nothing the reader is built on — is compared with what the reader returned, IDs for gaps and requirements and entry counts for test designs, and every difference is a finding listed first, because every check below it reads through the document reader alone. A reader that lost a file's tail to one unclosed span agrees with itself forever; only a scan that shares none of its blind spots can say how much of the file it actually saw
+- **R328:** `validate` prints what the design-document readers could not read — an entry-like line outside the shape, a group never closed — as a **coverage note** naming each file and its count, whether or not anything else fired, because a reader takes silence about coverage as a claim of completeness; it is never an issue in itself
 
 ## Feature: Configuration
 **Source:** specs/config.md

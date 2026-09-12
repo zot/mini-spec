@@ -14,6 +14,7 @@ import (
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
+	"github.com/zot/simple-dom/minispecsdom"
 )
 
 // ValidationResult contains issues bucketed by category. R84
@@ -40,6 +41,14 @@ type ValidationResult struct {
 	// VoidedAlarms are recorded fault injections whose proof has expired, or whose
 	// injection site no longer resolves. R179, R182, R183
 	VoidedAlarms []string
+	// ReaderDisagreement is the second opinion over the design documents the dependency's
+	// readers own — the gaps section, requirements.md, every test design: an independent
+	// line scan against what the reader returned, per file. A reader that lost a file's
+	// tail to one unclosed span reports nothing wrong; the line scan says how much of the
+	// file it actually saw. R327
+	ReaderDisagreement []string
+	// Unread is what those readers could not read, per file — coverage, not an issue. R328
+	Unread map[string]int
 }
 
 // Validate runs all structural validations
@@ -206,6 +215,7 @@ func (v *Validate) Run() (*ValidationResult, error) {
 	v.validateSeqNumbering(result)
 
 	v.checkAlarmFreshness(result)
+	v.checkReaderAgreement(result)
 	dedupAndSortAll(result)
 	return result, nil
 }
@@ -503,17 +513,26 @@ func (r *ValidationResult) HasIssues() bool {
 		len(r.CheckboxedPermanent) > 0 ||
 		len(r.DuplicateGapIDs) > 0 ||
 		len(r.OrphanCRCNoReqField) > 0 ||
-		len(r.VoidedAlarms) > 0
+		len(r.VoidedAlarms) > 0 ||
+		len(r.ReaderDisagreement) > 0
 }
 
 // FormatText returns the issues-only text report. R84, R88
 func (r *ValidationResult) FormatText() string {
 	if !r.HasIssues() {
-		return "phase: validate OK\n"
+		return r.unreadNote() + "phase: validate OK\n"
 	}
 
 	var sb strings.Builder
 	sb.WriteString("issues:\n")
+	// R327 — listed first, because every finding below it reads through the document
+	// reader alone.
+	if len(r.ReaderDisagreement) > 0 {
+		sb.WriteString("  the two readers disagree:\n")
+		for _, d := range r.ReaderDisagreement {
+			fmt.Fprintf(&sb, "    %s\n", d)
+		}
+	}
 
 	if s := FormatRanges(r.UncoveredReqs); s != "" {
 		fmt.Fprintf(&sb, "  uncovered requirements: %s\n", s)
@@ -583,6 +602,7 @@ func (r *ValidationResult) FormatText() string {
 
 	sb.WriteString(r.sourceFixInstructions())
 
+	sb.WriteString(r.unreadNote())
 	sb.WriteString("\nphase: validate FAILED\n")
 	return sb.String()
 }
@@ -692,4 +712,227 @@ func (v *Validate) checkAlarmFreshness(result *ValidationResult) {
 				a.Alarm.Doc, a.Alarm.Test, a.Site))
 		}
 	}
+}
+
+// R328
+// unreadNote is the coverage statement: what the design-document readers could not read,
+// printed whether or not anything else fired, because a reader takes silence about coverage
+// as a claim of completeness.
+func (r *ValidationResult) unreadNote() string {
+	if len(r.Unread) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(r.Unread))
+	total := 0
+	for name, n := range r.Unread {
+		names = append(names, name)
+		total += n
+	}
+	sort.Strings(names)
+	parts := make([]string, len(names))
+	for i, name := range names {
+		parts[i] = fmt.Sprintf("%s (%d)", name, r.Unread[name])
+	}
+	return fmt.Sprintf("note: %d line(s) were not read — %s. An entry-like line outside the shape,\n"+
+		"      or a group never closed, which takes the rest of its file with it; every check\n"+
+		"      above is blind to what they hold.\n", total, strings.Join(parts, ", "))
+}
+
+var (
+	gapLineRe  = regexp.MustCompile(`^\s*- (?:\[[ x]\] )?([SRDCIOAT]\d+):`)
+	reqLineRe  = regexp.MustCompile(`^- \*\*(?:~~)?(R\d+):`)
+	gapsHeadRe = regexp.MustCompile(`^## Gaps\s*$`)
+)
+
+// CRC: crc-Validate.md | R327, R328
+// checkReaderAgreement is the second opinion over the design documents the dependency's
+// readers own. The line scan is deliberately naive — a regex over lines, bounded for the
+// gaps section by its heading and the next level-2 heading — so it cannot share the
+// reader's blind spot: a reader that lost a file's tail to one unclosed span agrees with
+// itself forever, and only a scan built on nothing it built on can say how much of the
+// file it actually saw. Measured 2026-09-07 on this repository's test-Update.md: six
+// alarm entries by line, two by the reader, one unread line reported.
+func (v *Validate) checkReaderAgreement(result *ValidationResult) {
+	findings, unread := readerAgreement(v.Project.DesignDir)
+	result.ReaderDisagreement = append(result.ReaderDisagreement, findings...)
+	if len(unread) == 0 {
+		return
+	}
+	if result.Unread == nil {
+		result.Unread = map[string]int{}
+	}
+	for name, n := range unread {
+		result.Unread[name] = n
+	}
+}
+
+// readerAgreement runs the three comparisons over a design directory and returns the
+// findings and the per-file unread counts. Separate from the Validate so a test can run
+// it over a directory with no project.
+func readerAgreement(designDir string) (findings []string, unread map[string]int) {
+	unread = map[string]int{}
+	note := func(name string, n int) {
+		if n > 0 {
+			unread[name] = n
+		}
+	}
+	designPath := filepath.Join(designDir, "design.md")
+	if src, err := os.ReadFile(designPath); err == nil {
+		if gaps, left, gerr := parser.ParseGapsReport(designPath); gerr == nil {
+			byReader := map[string]bool{}
+			for _, g := range gaps {
+				byReader[g.ID] = true
+			}
+			byLine := scanIDs(gapsSection(string(src)), gapLineRe)
+			findings = append(findings, disagreements("design.md", "gap", byLine, byReader)...)
+			note("design.md", len(left))
+		}
+	}
+	reqPath := filepath.Join(designDir, "requirements.md")
+	if src, err := os.ReadFile(reqPath); err == nil {
+		if reqs, left, rerr := parser.ParseRequirementsReport(reqPath); rerr == nil {
+			byReader := map[string]bool{}
+			for _, r := range reqs {
+				byReader[r.ID] = true
+			}
+			byLine := scanIDs(strings.Split(string(src), "\n"), reqLineRe)
+			findings = append(findings, disagreements("requirements.md", "requirement", byLine, byReader)...)
+			note("requirements.md", len(left))
+		}
+	}
+	// Test designs compare entry counts rather than titles: a title is display, and the
+	// reader's may differ from the heading's text.
+	docs, _ := filepath.Glob(filepath.Join(designDir, "test-*.md"))
+	for _, doc := range docs {
+		src, err := os.ReadFile(doc)
+		if err != nil {
+			continue
+		}
+		byLine := 0
+		for _, line := range strings.Split(string(src), "\n") {
+			if strings.HasPrefix(line, "## Test:") {
+				byLine++
+			}
+		}
+		td := minispecsdom.ParseTestDoc(string(src))
+		name := filepath.Base(doc)
+		if byReader := len(td.Tests()); byReader != byLine {
+			findings = append(findings, fmt.Sprintf("%s: %d test entries by line, %d by the document reader", name, byLine, byReader))
+		}
+		note(name, len(td.Unread()))
+	}
+	return findings, unread
+}
+
+// gapsSection returns the lines of the design document's `## Gaps` section, the heading
+// exclusive to the next level-2 heading: the line scan's bound.
+func gapsSection(src string) []string {
+	var lines []string
+	in := false
+	for _, line := range strings.Split(src, "\n") {
+		switch {
+		case gapsHeadRe.MatchString(line):
+			in = true
+		case strings.HasPrefix(line, "## "):
+			in = false
+		case in:
+			lines = append(lines, line)
+		}
+	}
+	return lines
+}
+
+// scanIDs collects the IDs the pattern captures, one line at a time — the naive reading
+// the document reader is held against.
+func scanIDs(lines []string, pattern *regexp.Regexp) map[string]bool {
+	ids := map[string]bool{}
+	for _, line := range lines {
+		if m := pattern.FindStringSubmatch(line); m != nil {
+			ids[m[1]] = true
+		}
+	}
+	return ids
+}
+
+// disagreements names the IDs one reading has and the other does not, both ways, sorted,
+// consecutive numbers collapsed to ranges: a reader that lost a file's tail names hundreds.
+func disagreements(file, kind string, byLine, byReader map[string]bool) []string {
+	var out []string
+	if only := onlyIn(byLine, byReader); len(only) > 0 {
+		out = append(out, fmt.Sprintf("%s: the line scan read %s %s that the document reader returned no entry for", file, kind, idRanges(only)))
+	}
+	if only := onlyIn(byReader, byLine); len(only) > 0 {
+		out = append(out, fmt.Sprintf("%s: the document reader returned %s %s that the line scan did not read", file, kind, idRanges(only)))
+	}
+	return out
+}
+
+// idRanges collapses sorted IDs of one letter-prefix shape into `O3-O7` runs per prefix.
+func idRanges(ids []string) string {
+	byPrefix := map[string][]int{}
+	var order []string
+	for _, id := range ids {
+		prefix, n, numbered := splitID(id)
+		if !numbered {
+			byPrefix[id] = nil
+			order = append(order, id)
+			continue
+		}
+		if _, seen := byPrefix[prefix]; !seen {
+			order = append(order, prefix)
+		}
+		byPrefix[prefix] = append(byPrefix[prefix], n)
+	}
+	var parts []string
+	for _, prefix := range order {
+		nums := byPrefix[prefix]
+		if nums == nil {
+			parts = append(parts, prefix)
+			continue
+		}
+		sort.Ints(nums)
+		start, prev := nums[0], nums[0]
+		flush := func() {
+			if start == prev {
+				parts = append(parts, fmt.Sprintf("%s%d", prefix, start))
+			} else {
+				parts = append(parts, fmt.Sprintf("%s%d-%s%d", prefix, start, prefix, prev))
+			}
+		}
+		for _, n := range nums[1:] {
+			if n == prev+1 {
+				prev = n
+				continue
+			}
+			flush()
+			start, prev = n, n
+		}
+		flush()
+	}
+	return strings.Join(parts, ", ")
+}
+
+// splitID divides an ID like `O37` into its letter prefix and its number. An ID that does
+// not end in one is not numbered, and stands alone as its own prefix.
+func splitID(id string) (prefix string, n int, numbered bool) {
+	i := 0
+	for i < len(id) && (id[i] < '0' || id[i] > '9') {
+		i++
+	}
+	n, err := strconv.Atoi(id[i:])
+	if err != nil {
+		return id, 0, false
+	}
+	return id[:i], n, true
+}
+
+func onlyIn(a, b map[string]bool) []string {
+	var out []string
+	for k := range a {
+		if !b[k] {
+			out = append(out, k)
+		}
+	}
+	sort.Strings(out)
+	return out
 }

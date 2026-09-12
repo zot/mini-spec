@@ -88,6 +88,27 @@ Run all validations and report issues.
 - Unnumbered sequence files are silently skipped — numbering is opt-in per file.
 - Numbering gaps and duplicates are reported per sequence file.
 
+### Reader Agreement
+- **The two readers of every design document the dependency owns must agree, and this
+  check is the second opinion.** For the Gaps section, `requirements.md` and every test
+  design, an independent line scan — a regex over lines, built on nothing the reader is
+  built on, bounded for the gaps section by its heading and the next level-2 heading — is
+  compared with what the reader returned: IDs for gaps and requirements, entry counts for
+  test designs (a title is display, and the reader's may differ from the heading's). Every
+  difference is a finding, listed first, because every check below reads through the
+  document reader alone. A reader that lost a file's tail to one unclosed span agrees with
+  itself forever; only a scan that shares none of its blind spots can say how much of the
+  file it actually saw.
+- *Measured the day it was written, 2026-09-07, on three repositories.* Here: agreement,
+  after a stray backslash-backtick had hidden four of six alarms that morning. mini-spec-tool:
+  two test designs short by three and two entries. ark: **`requirements.md` read 1419 of some
+  2800 requirements** — R1323 onward gone behind a ``` quoted in prose at line 2157 — and five
+  test designs short by up to thirteen entries each, behind lone `*` and `**` in prose. Every
+  one was reported by the reader as a group never closed; none was visible from the counts.
+- **What the readers could not read is printed as a coverage note**, naming each file and its
+  count, whether or not anything else fired — never an issue in itself, because a reader takes
+  silence about coverage as a claim of completeness.
+
 ### Fire Alarm Freshness
 
 A `test-*.md` may record a fault injection that proved one of its tests — `**Fire

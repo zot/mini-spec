@@ -1,5 +1,5 @@
 # Validate
-**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101, R179, R183, R184, R188
+**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101, R179, R183, R184, R188, R327, R328
 
 Runs structural validations and reports findings.
 
@@ -24,6 +24,10 @@ Runs structural validations and reports findings.
 - ValidateCRCSequences(): check files in CRC Sequences sections exist
 - ValidateSeqAnchors(): for each code file's Seq refs with a Fragment, parse the referenced sequence file and verify the fragment resolves to a known dotted ID
 - ValidateSeqNumbering(): for each numbered sequence file, check per-K tree contiguity (children at every level start at 1 with no gaps), K-sequence contiguity (Ks are 1..N), and intra-file ID uniqueness; unnumbered files are skipped
+- checkReaderAgreement(): the second opinion over the gaps section, requirements.md and every
+  test design — an independent line scan against the reader's entries, IDs for the first two
+  and entry counts for the third, findings listed first, consecutive IDs collapsed to ranges;
+  the readers' unread lines counted per file as a coverage note (R327, R328)
 - FormatText(): emit issues-only output with Rn ranges, deduplicated; on success a single `phase: validate OK` line
 
 ## Collaborators
