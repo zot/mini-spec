@@ -298,3 +298,19 @@ The second population exists because `init` is the sole creator *now* but was no
 always: a configuration predating the command was necessarily written by hand. That
 makes the population finite and knowable rather than open-ended — but it includes this
 tool's own reference projects, which is where the case was found.
+
+## `minispec init carve <name>`
+
+Scaffolds `carves/<name>.md` in the shape the format mandates: the title line, a paragraph
+placeholder for the problem, a `## Status` block holding one open unqueued part, a
+`## Decisions` section, and the part's elaboration stub keyed `**Item 1**`. It creates `carves/`
+when absent, refuses an existing file — a scaffold never overwrites a carve — and refuses a name
+that is a path or carries an extension. The write is reported with its git kind, and the report
+names the `add-item` that queues the first part (R334).
+
+*Why a scaffold rather than a paragraph in the skill.* Ark's six carves were retrofitted by
+hand in one afternoon; three had independently invented a status notation and three had none,
+because there was nothing to copy from except prose, and prose gets paraphrased. This is the
+only creation verb: the trajectory files are created by being refused
+([queue-items.md](queue-items.md), *Creation*), since a write path leads to them and none
+leads to a carve that does not exist yet.

@@ -1,5 +1,5 @@
 # Pending
-**Requirements:** R241, R242, R243, R244, R246, R247, R248, R252, R253, R256, R257, R262, R263, R264, R265, R267, R268, R269, R271, R272, R273, R274, R275, R276, R277, R278, R279, R280, R281, R245, R249, R250, R258, R259, R282, R330
+**Requirements:** R241, R242, R243, R244, R246, R247, R248, R252, R253, R256, R257, R262, R263, R264, R265, R267, R268, R269, R271, R272, R273, R274, R275, R276, R277, R278, R279, R280, R281, R245, R249, R250, R258, R259, R282, R330, R332, R333, R334
 
 The three verbs over the trajectory files — `pending add-item` and `pending finish`, which
 write **both sides of the item↔part link**, and `pending start`, which opens the item. Package
@@ -26,6 +26,12 @@ readers, the part line to [Carve](crc-Carve.md)'s.
   the syntax
 
 ## Does
+- missingTrajectory(repoRoot): the typed refusal every queue verb makes first when any of
+  the three files is absent, naming them (R332)
+- CreateTrajectory(repoRoot): write each missing trajectory file with its lifecycle preamble,
+  never an existing one; returns what it wrote (R333)
+- CreateCarve(repoRoot, name): scaffold `carves/<name>.md` with one open part, refusing an
+  existing file or a path-like name (R334)
 - releasable(repoRoot, part): whether a part's queue ID belongs to the attempt the slot holds
   as reverted — a `REVERTED` marker while the slot state is reverted — the one case the
   one-item-per-part check lets through, because the release runs inside the coming mutation

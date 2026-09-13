@@ -64,7 +64,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] test-Alarm.md → `internal/alarm/alarm_test.go`, `internal/alarm/brief_test.go`, `internal/query/alarms_test.go`, `internal/cli/cli_alarms_test.go`
 - [x] test-Carve.md → `internal/parser/carve_test.go`, `internal/cli/cli_carves_test.go`
 - [x] test-Backup.md → `internal/backup/backup_test.go`, `internal/project/git_test.go`, `internal/parser/trajectory_test.go`
-- [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`
+- [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`, `internal/pending/create_test.go`
 - [x] test-TrajectoryValidate.md → `internal/validate/trajectory_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 

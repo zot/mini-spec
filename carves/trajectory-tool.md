@@ -215,8 +215,8 @@ tree either, so both read as they did on 2026-08-16.
   checkbox: the sub-items carry the state.
   - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
-- [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
-- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (#77.)**
+- [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (#78.)**
+- [x] ~~**Item 11 — conform minted-value output to markdown-by-default.**~~ **LANDED (`d8f4a4f`, 2026-09-13 — `#77`.)**
 - [x] ~~**Item 16 — the completion verb says which of its writes is tracked.**~~ **LANDED (`1da22f9`, 2026-09-12 — `#31`.)**
   Small, and it closes a hole the format opens by construction.
 - [ ] **Item 14 — the worktree cleanup report.** **OPEN (not queued.)** Last on purpose:

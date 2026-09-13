@@ -137,6 +137,9 @@ func findEntry(repoRoot string, id int) (parser.QueueEntry, error) {
 // worked. It runs inside the slot like the other two and has the strongest claim of the three
 // to be there: it writes before any record of the work exists anywhere else.
 func Start(repoRoot string, id int, context string) (Started, error) {
+	if err := missingTrajectory(repoRoot); err != nil { // R332
+		return Started{}, err
+	}
 	out := Started{ID: id}
 	entry, err := findEntry(repoRoot, id)
 	if err != nil {
@@ -162,6 +165,11 @@ func Start(repoRoot string, id int, context string) (Started, error) {
 // the whole truth: a number is in a document the moment it exists.
 func AddItem(repoRoot, gapsPath, from string, text parser.Entry, place parser.Place) (Created, error) {
 	var out Created
+	// R332 — the layer must be there before anything is minted; the refusal is typed so the
+	// caller can say how to create it rather than relay a raw open error.
+	if err := missingTrajectory(repoRoot); err != nil {
+		return out, err
+	}
 	// Seq: seq-queue-item.md#1.12 | R271, R272, R273
 	// A gap ID or a part pointer, decided by shape and needing no flag: a letter and digits
 	// carries no `/`, no `#` and no `.md`, so the two cannot collide.
@@ -363,6 +371,9 @@ type FinishOpts struct {
 // copy a future reader trusts, and the one nobody thinks to check — and because the queue
 // files are the ones the slot can put back.
 func Finish(repoRoot string, id int, commit string, opt FinishOpts) (Finished, error) {
+	if err := missingTrajectory(repoRoot); err != nil { // R332
+		return Finished{}, err
+	}
 	out := Finished{ID: id}
 	entry, err := findEntry(repoRoot, id)
 	if err != nil {

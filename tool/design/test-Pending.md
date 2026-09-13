@@ -216,7 +216,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 16
 **Fire alarm:** default the status to the empty string. Red reads *"the heading stopped after the skill and the verb reported success"* — the original defect restored as a default, which is how a required field quietly becomes optional
 **Inject:** internal/cli/pending.go:runAddItem
-**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, and the red text is the point: the refusal never names `--status`, because the verb got as far as the carve and failed there instead
+**Pulled:** 2026-09-13 — rang again after the simplification pass for `#78` folded the queue verbs' error reporting — same injection, a new signature: with the guard gone the verb ran on into the missing-layer refusal `The trajectory layer is not here: PENDING.md, CURRENT.md, DONE.md missing`, since the fixture has no queue files; restore byte-clean by copy. Previously 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, and the red text is the point: the refusal never names `--status`, because the verb got as far as the carve and failed there instead
 
 ## Test: a body-file slot is read byte for byte
 **Purpose:** the file forms exist so prose carrying backticks reaches the document intact (R254)
@@ -453,7 +453,7 @@ through to the `if *resolve` branch, so a caller who wrote both — which can on
 unsure — gets the **destructive** half silently. `update`'s own verbs refuse every paired slot
 for this reason. Red as `contradictory flags were accepted`
 **Inject:** internal/cli/pending.go:runFinish
-**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
+**Pulled:** 2026-09-13 — rang again after the simplification pass for `#78` folded the queue verbs' error reporting — same injection, a new signature: with the guard gone the verb ran on into the missing-layer refusal `The trajectory layer is not here: PENDING.md, CURRENT.md, DONE.md missing`, since the fixture has no queue files; restore byte-clean by copy. Previously 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
 
 ## Test: a gap-sourced completion with no decision is refused before anything is written
 **Purpose:** what a caller must not be able to do is pass silently through the decision, and only
@@ -492,3 +492,25 @@ inventing a broken one. Red as `a gap-sourced item completed with no decision ab
 **Fire alarm:** drop the `releasable` conjunct from the collision check — the pre-fix shape — and confirm the re-add is refused with `already carries queue ID`
 **Inject:** internal/pending/pending.go:AddItem
 **Pulled:** 2026-09-13 — rang: `re-adding the part the revert released was refused: carves/x.md part 7 already carries queue ID #4; a part records exactly one item`; restore byte-clean by copy
+
+## Test: a missing layer is refused by name and created whole
+**Purpose:** validates R332 and R333 — a queue verb with no layer refuses by type naming the missing files; creation writes only the missing ones, with their preambles and rules and the current file's Active region; a second creation writes nothing; the verb then proceeds
+**Input:** a project with a carve and a DONE.md but no PENDING.md or CURRENT.md
+**Expected:** add-item and start refuse naming `PENDING.md, CURRENT.md`; creation writes those two and leaves DONE.md's text; a second creation writes nothing; add-item succeeds
+**Refs:** crc-Pending.md — R332, R333
+**Code:** internal/pending/create_test.go
+**Alarm:** 35
+**Fire alarm:** make `missingTrajectory` return nil — the pre-fix shape, where the verb reaches the raw open error — and confirm the refusal assertion goes red
+**Inject:** internal/pending/create.go:missingTrajectory
+**Pulled:** 2026-09-13 — rang: `add-item with no layer = open …/PENDING.md: no such file or directory; want a refusal naming PENDING.md and CURRENT.md`; restore byte-clean by copy
+
+## Test: init carve scaffolds a readable carve
+**Purpose:** validates R334 — the scaffold reads through the carve reader as one open conforming part; an existing file and a path-like name are refused
+**Input:** `CreateCarve(root, "review-console")`, then again, then `""`, `a/b`, `x.md`, `two words`
+**Expected:** `carves/review-console.md` with one open part, no stateless line, no deviation; the four refusals
+**Refs:** crc-Pending.md — R334
+**Code:** internal/pending/create_test.go
+**Alarm:** 36
+**Fire alarm:** write the block under `## Progress` instead of `## Status` and confirm the reader finds no status block
+**Inject:** internal/pending/create.go:CreateCarve
+**Pulled:** 2026-09-13 — rang: `the scaffold does not read as one open conforming part: status=false open=0`; restore byte-clean by copy

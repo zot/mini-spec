@@ -531,6 +531,25 @@ what makes a mis-typed part pointer a `pending revert` instead of a repair.
 tests, which is *specified, implemented, tested, uncalled* — a state indistinguishable from
 finished in every view the tool has.
 
+## Creation: refused, then `--create`
+
+A fresh project has no trajectory layer, and the tool's verbs never create a file — so the
+first `add-item` there used to fail with a raw `open …/PENDING.md: no such file or directory`
+(measured 2026-09-13) and no way forward that the output named. Now every queue verb run where
+any of the three files is missing **refuses before anything is minted and names the missing
+files**, and the CLI cranks out the create instruction: the same `add-item` again with
+`--create`, and what git will do with the files under the project's `track` — the `.gitignore`
+question folded in, since `init --track-*` already answered it (R332).
+
+**`--create` is the scaffold, reached by being refused rather than by knowing a verb exists.**
+It writes each *missing* file with the lifecycle preamble `trajectory-format.md` mandates —
+the pending file's ordering and ID rule above its rule, the current file with its `## Active`
+placeholder, the done file — reports them like any other write, and proceeds with the item. A
+file that exists is never touched: creation is the one write that must refuse rather than
+overwrite, since the file it would replace is the whole record; a second `--create` writes
+nothing (R333). A carve that does not exist yet is `minispec init carve <name>`
+([initialization.md](initialization.md)), since no write path leads to one.
+
 ## Everything is cranked out
 
 Every change is printed in full: the number minted, the files written, the parts checked, the

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/zot/minispec/internal/pending"
 	"github.com/zot/minispec/internal/project"
 )
 
@@ -100,6 +101,12 @@ var trackFlags = map[string]project.TrackValue{
 // an agent to run it, so the only paths here are a direct user request or the
 // no-configuration refusal — whose whole purpose is obtaining that assent.
 func (c *CLI) runInit(args []string) int {
+	// CRC: crc-CLI.md | R334
+	// `init carve <name>` is the one creation verb, since no write path leads to a carve
+	// that does not exist yet; the trajectory files are created by being refused.
+	if len(args) >= 1 && args[0] == "carve" {
+		return c.runInitCarve(args[1:])
+	}
 	var track project.TrackValue
 	var repair bool
 	var chosen []string
@@ -250,4 +257,27 @@ func noRootMessage(err error) string {
 		"succeed — that would plant a repository root wherever the command happened to\n" +
 		"be run. If the user meant to work in a project, run the command from inside it.\n")
 	return b.String()
+}
+
+// CRC: crc-CLI.md | R334
+// runInitCarve scaffolds a carve and reports the write with its git kind.
+func (c *CLI) runInitCarve(args []string) int {
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "Usage: minispec init carve <name>")
+		return 1
+	}
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	rel, err := pending.CreateCarve(repoRoot, args[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	fmt.Printf("Created carve %s\n", rel)
+	fmt.Printf("  written  %s\n", describeWrites(repoRoot, []string{rel}))
+	fmt.Printf("  next     fill in the paragraph, the first part's title and its elaboration; queue it with `minispec pending add-item --from %s#1`\n", rel)
+	return 0
 }

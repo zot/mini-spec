@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -83,6 +84,7 @@ func (c *CLI) runAddItem(repoRoot string, args []string) int {
 	titleFile := fs.String("title-file", "", "the title, read from a file byte for byte")
 	nextAction := fs.String("next-action", "", "the entry's `Next:` line")
 	nextActionFile := fs.String("next-action-file", "", "that next action, read from a file byte for byte")
+	create := fs.Bool("create", false, "write the missing trajectory files with their preambles first")
 	fs.Bool("next", false, "place it next to be worked")
 	fs.Bool("last", false, "place it at the end of the queue (the default)")
 	nth := fs.Int("nth", 0, "place it at position N")
@@ -145,9 +147,21 @@ func (c *CLI) runAddItem(repoRoot string, args []string) int {
 	if p, perr := c.getProject(); perr == nil {
 		gapsPath = p.DesignMdPath()
 	}
+	// R333 — the scaffold, reached by being refused: the missing files are written with the
+	// preambles the format mandates, and reported like any other write, before the item.
+	if *create {
+		made, cerr := pending.CreateTrajectory(repoRoot)
+		if cerr != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", cerr)
+			return 1
+		}
+		if len(made) > 0 {
+			fmt.Printf("  created  %s\n", describeWrites(repoRoot, made))
+		}
+	}
 	created, err := pending.AddItem(repoRoot, gapsPath, *from, entry, place)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		reportQueueError(repoRoot, err) // R332
 		return 1
 	}
 	if c.JSON {
@@ -283,7 +297,7 @@ func (c *CLI) runStart(repoRoot string, args []string) int {
 	}
 	started, err := pending.Start(repoRoot, id, text)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		reportQueueError(repoRoot, err) // R332
 		return 1
 	}
 	if c.JSON {
@@ -359,7 +373,7 @@ func (c *CLI) runFinish(repoRoot string, args []string) int {
 	}
 	done, err := pending.Finish(repoRoot, id, *commit, opts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		reportQueueError(repoRoot, err) // R332
 		return 1
 	}
 	if c.JSON {
@@ -502,4 +516,38 @@ func describeWrites(repoRoot string, files []string) string {
 		}
 	}
 	return strings.Join(out, ", ")
+}
+
+// CRC: crc-CLI.md | R332
+// missingTrajectoryMessage is the crank handle for a queue verb refused because the layer
+// is not there: which files, what creates them, and what git will do with them — the
+// `.gitignore` question folded in, since `init --track-*` already answered it.
+func missingTrajectoryMessage(repoRoot string, e *pending.MissingTrajectoryError) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "The trajectory layer is not here: %s missing beneath %s.\n\n", strings.Join(e.Files, ", "), repoRoot)
+	b.WriteString("Create it with the lifecycle preambles the format mandates by running the\n")
+	b.WriteString("add-item again with --create:\n\n")
+	b.WriteString("    minispec pending add-item <title> --from <doc>#<part> --status <text> --create\n\n")
+	track, err := project.LoadTrack(filepath.Join(repoRoot, project.ConfigDirName, project.RepoConfigName))
+	switch {
+	case err != nil:
+		b.WriteString("Whether the queue is private or ships with the repository is `track` in\n.minispec/config.yaml, which could not be read; `minispec init --track-<value>` sets it.\n")
+	case track == project.TrackPrivateTrajectory:
+		b.WriteString("track is private-trajectory: init already wrote the .gitignore lines, so the three\nfiles will be ignored — private to this checkout.\n")
+	default:
+		fmt.Fprintf(&b, "track is %s: the three files will be tracked and ship with the repository.\n", track)
+	}
+	b.WriteString("\nNothing was written. A carve that does not exist yet is `minispec init carve <name>`.\n")
+	return b.String()
+}
+
+// reportQueueError prints the crank handle when err is the missing-layer refusal, and the
+// error itself otherwise.
+func reportQueueError(repoRoot string, err error) {
+	var m *pending.MissingTrajectoryError
+	if errors.As(err, &m) {
+		fmt.Fprint(os.Stderr, missingTrajectoryMessage(repoRoot, m))
+		return
+	}
+	fmt.Fprintf(os.Stderr, "%v\n", err)
 }
