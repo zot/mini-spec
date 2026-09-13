@@ -53,6 +53,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
 - [ ] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`, `internal/update/addreq_test.go`
 - [ ] test-Query.md → `internal/query/gaps_test.go`
+- [ ] test-CLI.md → `internal/cli/cli_minted_test.go`
 - [ ] test-Validate.md → `internal/validate/validate_test.go`
 - [x] test-RepoRoot.md → `internal/project/reporoot_test.go`
 - [ ] test-Config.md → `internal/project/config_test.go`

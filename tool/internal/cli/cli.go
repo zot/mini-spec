@@ -694,13 +694,23 @@ func (c *CLI) runUpdate(args []string) int {
 			return 1
 		}
 		reason := strings.Join(args[3:], " ")
-		// CRC: crc-Update.md, crc-CLI.md | Seq: seq-update.md | R80, R103
+		// CRC: crc-Update.md, crc-CLI.md | Seq: seq-update.md | R80, R103, R331
 		tn, sources, err := u.Retire(args[1], args[2], reason)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			return 1
 		}
-		fmt.Println(tn)
+		// R331 — a minted value is a report, not a return value: a sentence on stdout like
+		// every other update verb, --json for a caller that reads it back.
+		if c.JSON {
+			c.output(map[string]any{"retired": args[1], "retired_by": tn, "replacement": args[2], "sources": sources})
+		} else if !c.Quiet {
+			clause := "no replacement"
+			if args[2] != "-" && args[2] != "" {
+				clause = "see " + args[2]
+			}
+			fmt.Printf("Retired %s as %s (%s)\n", args[1], tn, clause)
+		}
 		if !c.Quiet {
 			fmt.Fprint(os.Stderr, retireReminder(args[1], sources))
 		}
@@ -746,7 +756,12 @@ func (c *CLI) runUpdate(args []string) int {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			return 1
 		}
-		fmt.Println(newPath)
+		// R331
+		if c.JSON {
+			c.output(map[string]any{"migration": args[1], "path": newPath})
+		} else if !c.Quiet {
+			fmt.Printf("Completed migration %s: %s\n", args[1], newPath)
+		}
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown update subcommand: %s\n", subcmd)
@@ -1528,10 +1543,15 @@ func (c *CLI) runAddReq(u *update.Update, args []string) int {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
 	}
-	if len(ids) == 1 {
-		fmt.Println(ids[0])
-	} else {
-		fmt.Printf("%s-%s\n", ids[0], ids[len(ids)-1])
+	// R331
+	minted := ids[0]
+	if len(ids) > 1 {
+		minted = ids[0] + "-" + ids[len(ids)-1]
+	}
+	if c.JSON {
+		c.output(map[string]any{"section": *section, "ids": ids, "range": minted})
+	} else if !c.Quiet {
+		fmt.Printf("Added %s to %q\n", minted, *section)
 	}
 	return 0
 }

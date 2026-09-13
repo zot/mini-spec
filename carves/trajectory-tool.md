@@ -206,16 +206,17 @@ tree either, so both read as they did on 2026-08-16.
 
 **Open, in dogfood order:**
 
-- [ ] **Item 12 — `update add-req`, the requirement-minting verb.** **OPEN (not queued.)** Landed
-  on `old-sdom` as `d367eee` (2026-08-18 — `#32`) and not in this tree; returns as
-  [sdom-reclaim.md](done/sdom-reclaim.md) Item 7.
-- [ ] **Item 10 — status is a checkbox, not a prose stamp.** **OPEN (not queued.)**
+- [x] ~~**Item 12 — `update add-req`, the requirement-minting verb.**~~ **LANDED (`a543897`, 2026-09-07 — `#75`.)**
+  Landed on `old-sdom` as `d367eee` (2026-08-18 — `#32`) and not in this tree; returned as
+  [sdom-reclaim.md](done/sdom-reclaim.md) Item 7, over the dependency's requirements reader.
+- [x] ~~**Item 10 — status is a checkbox, not a prose stamp.**~~ **MIGRATED (2026-09-13 — `trajectory-format.md`, *The interior is `[ ]` or `[x]`* and the stateless rule; R216, R217.)**
+  This carve's own Open questions took checkboxes on 2026-08-13; retrofitting ark's carves is ark's.
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
   checkbox: the sub-items carry the state.
   - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
-- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
+- [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (#77.)**
 - [x] ~~**Item 16 — the completion verb says which of its writes is tracked.**~~ **LANDED (`1da22f9`, 2026-09-12 — `#31`.)**
   Small, and it closes a hole the format opens by construction.
 - [ ] **Item 14 — the worktree cleanup report.** **OPEN (not queued.)** Last on purpose:

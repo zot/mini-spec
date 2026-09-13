@@ -66,8 +66,13 @@ minispec update approve-gap D3
 
 Retire a requirement: rewrite the `Rold` line in `requirements.md` with the
 strikethrough/Retired marker and append a new `Tn` gap to `design.md`,
-atomically. The assigned `Tn` is printed to **stdout** — the machine-readable
-result a caller captures.
+atomically. The assigned `Tn` is reported on **stdout** as a sentence — `Retired R12 as
+T7 (see R40)` — like every other `update` verb's report, suppressed by `--quiet`, and
+carried by `--json` for a caller that reads it back. *Until 2026-09-13 stdout carried the
+bare `Tn` as a return value (old R103); a minted value is a report, not a return value,
+and `--json` is the channel for a caller that needs it.* `migration-complete` and
+`add-req` report the same way: `Completed migration <name>: <path>`, `Added R5-R6 to
+"<section>"` (R331).
 
 After retiring, the command prints a **supersede-at-source reminder** to
 **stderr** (suppressed by `--quiet`). Striking out `Rold` does not remove the
@@ -84,7 +89,7 @@ file. The reminder is advisory — it never blocks the retirement.
 Example:
 ```
 minispec update retire R12 R40 "ec-rekey: keys moved to chunkID"
-# stdout: T7
+# stdout: Retired R12 as T7 (see R40)
 # stderr: ⚠ supersede at the source: R12 is retired, but directives describing
 #           its old behavior remain and can cause a future revert.
 #           • originating spec prose: specs/storage.md  (R12's **Source:**)
