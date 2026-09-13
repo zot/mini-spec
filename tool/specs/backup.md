@@ -195,6 +195,13 @@ legitimate, and this says what a legitimate one can never target. Either alone l
 other's failure reachable, and the pair is what makes "finished work is never reopened" a
 property rather than a consequence of state bookkeeping.
 
+**The release runs before the mutation's own marker, and the collision check knows it.** The
+common path is `add-item`, `revert`, then `add-item` on the *same* part; until 2026-09-13 the
+one-item-per-part check read the `REVERTED (#N.)` marker as a live queue ID and refused, while
+an `add-item` on a sibling released the part and the re-add then worked. The check now exempts a
+`REVERTED` marker while the slot is in the reverted state — and only then, since outside it the
+release has already run and a `REVERTED` marker is stale hand state (R330).
+
 *It costs nothing legitimate, and that is checkable rather than asserted.* On the path a
 release exists for — `add-item`, then `revert`, then a new mutation — the part is `[ ]`
 throughout, because completion never ran. And `finish` followed by `revert` marks nothing at

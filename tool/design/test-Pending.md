@@ -216,7 +216,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 16
 **Fire alarm:** default the status to the empty string. Red reads *"the heading stopped after the skill and the verb reported success"* — the original defect restored as a default, which is how a required field quietly becomes optional
 **Inject:** internal/cli/pending.go:runAddItem
-**Pulled:** 2026-09-05 — rang, and the red text is the point: the refusal never names `--status`, because the verb got as far as the carve and failed there instead
+**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, and the red text is the point: the refusal never names `--status`, because the verb got as far as the carve and failed there instead
 
 ## Test: a body-file slot is read byte for byte
 **Purpose:** the file forms exist so prose carrying backticks reaches the document intact (R254)
@@ -390,7 +390,7 @@ which would report a decision as an oversight
 record of *why* the gap is open is gone — `design.md` cannot tell a decision from an oversight,
 so this line is the only place it was ever written down. Red as `the record is missing "left open"`
 **Inject:** internal/cli/pending.go:reportFinished
-**Pulled:** 2026-09-05 — rang on all three strings, `the record is missing "left open"`
+**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang on all three strings, `the record is missing "left open"`
 
 ## Test: a resolved gap is reported and the notice stays quiet
 **Purpose:** a report that both resolves a gap and warns it is open contradicts itself (R277)
@@ -411,7 +411,7 @@ completion succeeds, the flag resolved nothing, and the report is indistinguisha
 where it worked — the same silence R279's refusal prevents, arriving on the side that has no
 refusal to lean on. Red as `a flag that did nothing said nothing`
 **Inject:** internal/cli/pending.go:reportFinished
-**Pulled:** 2026-09-05 — rang, `a flag that did nothing said nothing`
+**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `a flag that did nothing said nothing`
 
 ## Test: --resolve refuses a gap in another design root
 **Purpose:** the gap resolved must be the one the **entry** named, in the document it named it
@@ -453,7 +453,7 @@ through to the `if *resolve` branch, so a caller who wrote both — which can on
 unsure — gets the **destructive** half silently. `update`'s own verbs refuse every paired slot
 for this reason. Red as `contradictory flags were accepted`
 **Inject:** internal/cli/pending.go:runFinish
-**Pulled:** 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
+**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
 
 ## Test: a gap-sourced completion with no decision is refused before anything is written
 **Purpose:** what a caller must not be able to do is pass silently through the decision, and only
@@ -481,3 +481,14 @@ inventing a broken one. Red as `a gap-sourced item completed with no decision ab
 **Fire alarm:** print the names bare — return `strings.Join(files, ", ")` before asking git — and confirm all four words go missing while the completion still reports success
 **Inject:** internal/cli/pending.go:describeWrites
 **Pulled:** 2026-09-12 — rang: `the written line does not say "carves/x.md (tracked, uncommitted)"` and the three ignored ones; restore byte-clean by copy, and again after the simplification pass hoisted the git calls, same signature
+
+## Test: a reverted part can be queued again
+**Purpose:** validates R330 — the very part a revert released is the common re-add and must not be refused; a part carrying a live item still is
+**Input:** `add-item` on part 7, `Revert`, `add-item` on part 7 again; then `add-item` on part 1, which carries `OPEN (#3.)`
+**Expected:** the second add succeeds and the part reads `OPEN (#N.)` with no `REVERTED` left; the add on part 1 is refused
+**Refs:** crc-Pending.md, crc-Backup.md — R330, R243
+**Code:** internal/pending/pending_test.go
+**Alarm:** 34
+**Fire alarm:** drop the `releasable` conjunct from the collision check — the pre-fix shape — and confirm the re-add is refused with `already carries queue ID`
+**Inject:** internal/pending/pending.go:AddItem
+**Pulled:** 2026-09-13 — rang: `re-adding the part the revert released was refused: carves/x.md part 7 already carries queue ID #4; a part records exactly one item`; restore byte-clean by copy

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -952,3 +953,34 @@ func TestANearMissGapIDReportsItsOwnRefusal(t *testing.T) {
 		t.Errorf("a malformed part pointer no longer gets the part refusal: %v", err)
 	}
 }
+
+// R330 — the very part a revert released can be queued again. Until 2026-09-13 the
+// one-item-per-part check ran before the release and refused it, while a mutation on a
+// sibling released it and the re-add then worked (mini-spec-tool, 2026-09-06).
+func TestARevertedPartCanBeQueuedAgain(t *testing.T) {
+	root := fixture(t)
+	first, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := backup.New(root).Revert(); err != nil {
+		t.Fatal(err)
+	}
+	if c := read(t, root, "carves/x.md"); !strings.Contains(c, "**REVERTED (#"+itoa(first.ID)+".)**") {
+		t.Fatalf("the revert did not mark the part:\n%s", c)
+	}
+	again, err := addItem(root, "carves/x.md#7", "a part to queue, again", "mini-spec")
+	if err != nil {
+		t.Fatalf("re-adding the part the revert released was refused: %v", err)
+	}
+	c := read(t, root, "carves/x.md")
+	if !strings.Contains(c, "**OPEN (#"+itoa(again.ID)+".)**") || strings.Contains(c, "REVERTED") {
+		t.Errorf("the part does not carry the new item alone:\n%s", c)
+	}
+	// The live item's part is still refused: the exemption is for the reverted state only.
+	if _, err := addItem(root, "carves/x.md#1", "already queued", "mini-spec"); err == nil {
+		t.Error("a part carrying a live item was queued twice")
+	}
+}
+
+func itoa(n int) string { return strconv.Itoa(n) }

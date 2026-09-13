@@ -195,11 +195,17 @@ func AddItem(repoRoot, gapsPath, from string, text parser.Entry, place parser.Pl
 			continue
 		}
 		found = true
-		// Seq: seq-queue-item.md#1.4 | R243
+		// Seq: seq-queue-item.md#1.4 | R243, R330
 		// A part records exactly one item. Re-queuing it silently would leave the older
 		// pointer resolving to work it never described, and both entries would be
 		// individually well-formed, so nothing downstream could detect it.
-		if id := p.QueueID(); id != 0 {
+		//
+		// **Unless the ID is a reverted attempt's.** While the slot holds a reverted attempt
+		// the part still reads `REVERTED (#N.)`, and the release that returns it to open and
+		// unqueued runs inside the *next* mutation — this one — ahead of the new marker. So
+		// the very part just rolled back, the common case, was refused while a sibling's
+		// mutation would have released it. Measured by mini-spec-tool 2026-09-06.
+		if id := p.QueueID(); id != 0 && !releasable(repoRoot, p) {
 			return out, fmt.Errorf("%s part %s already carries queue ID #%d; a part records exactly one item", part.Doc, part.Key, id)
 		}
 	}
@@ -207,6 +213,19 @@ func AddItem(repoRoot, gapsPath, from string, text parser.Entry, place parser.Pl
 		return out, fmt.Errorf("no part keyed %s in %s", part.Key, part.Doc)
 	}
 	return mintAndPlace(repoRoot, part, text, place)
+}
+
+// R330
+// releasable reports whether a part's queue ID belongs to the attempt the slot holds as
+// reverted — the one state in which the next mutation releases the part before it marks it.
+// A slot that cannot be read is not the reverted state, so the refusal stands; understating
+// what may be re-queued costs one sibling mutation, overstating it queues a live part twice.
+func releasable(repoRoot string, p parser.Part) bool {
+	if !slices.Contains(p.Verbs(), "REVERTED") {
+		return false
+	}
+	state, present, err := backup.New(repoRoot).State()
+	return err == nil && present && state == backup.Reverted
 }
 
 // mintAndPlace mints the ID, places the entry, and writes the source side when there is one.

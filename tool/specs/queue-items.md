@@ -60,7 +60,12 @@ point at a file a cloner does not have.
 
 **It refuses rather than guessing.** An unresolvable `<doc>#<part>` — no such document, no
 such key, a key that the document does not key under the one mandated form — is a refusal
-naming what it looked for and where. A part that already carries a queue ID is a refusal too:
+naming what it looked for and where. A part that already carries a queue ID is a refusal too
+— unless that ID is the reverted attempt's: while the slot holds a reverted attempt the part
+still reads `REVERTED (#N.)`, and the release that returns it to open and unqueued runs inside
+the next mutation, ahead of the new marker, so re-queueing the very part just rolled back is
+the common case and proceeds (R330; measured by mini-spec-tool 2026-09-06, when it was refused
+while a sibling's mutation released it). Otherwise it is the refusal it was:
 a part records exactly **one** item, and re-queuing it silently would make the older pointer
 resolve to work it never described.
 

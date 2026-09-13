@@ -216,7 +216,7 @@ tree either, so both read as they did on 2026-08-16.
   - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
 - [ ] **Item 7 — creation: the refusal path, and `init carve`.** **OPEN (not queued.)**
 - [ ] **Item 11 — conform minted-value output to markdown-by-default.** **OPEN (not queued.)**
-- [ ] **Item 16 — the completion verb says which of its writes is tracked.** **OPEN (#31.)**
+- [x] ~~**Item 16 — the completion verb says which of its writes is tracked.**~~ **LANDED (`1da22f9`, 2026-09-12 — `#31`.)**
   Small, and it closes a hole the format opens by construction.
 - [ ] **Item 14 — the worktree cleanup report.** **OPEN (not queued.)** Last on purpose:
   belt and suspenders for an emergency Bill does not expect to reach for (2026-08-17). Its
