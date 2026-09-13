@@ -63,7 +63,7 @@ are what the cases below spend their injections on.
 **Alarm:** 3
 **Fire alarm:** drop the already-queued check. Goes red with a second entry pointing at the same part — the state that leaves the *older* pointer resolving to work it never described, which nothing downstream can detect because both entries are individually well-formed
 **Inject:** internal/pending/pending.go:AddItem
-**Pulled:** 2026-09-05 — rang, `expected a refusal` on the already-queued subtest
+**Pulled:** 2026-09-13 — rang again after `#76` added the reverted-attempt exemption to the check: `expected a refusal`, and the new re-add test went red beside it, so the two discriminate; restore byte-clean by copy. Previously 2026-09-05 — rang, `expected a refusal` on the already-queued subtest
 
 ## Test: completion writes the source first
 **Purpose:** the carve is the copy a future reader trusts, and the one nobody thinks to check (R244)
