@@ -10,8 +10,7 @@
 **Alarm:** 1
 **Fire alarm:** let a heading of level 3 or deeper neither close the open section nor become the current one, so a feature's content runs to the next `##`. Red: `R5` belongs to the feature rather than the notes, and `Add` to the feature lands after the notes. (A first injection that only skipped the close stayed green: the deep heading still became the current section, so every entry beneath it was still its own — the property has two guards and the injection must remove both.)
 **Inject:** internal/minispecsdom/requirements.go:Requirements.scan
-**Pulled:** 2026-09-07 — rang, by hand, on the two-guard injection: `R5 does not belong to the sub-heading` and the `Add` placement assertion; the one-guard injection stayed green first; restore byte-clean
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `sections = Requirements|Feature: node protocol|Feature: fences|Feature: empty`, the Notes section gone, then the test's own index panicked on the missing section; restore clean. *Earlier —* 2026-09-07 — rang, by hand, on the two-guard injection: `R5 does not belong to the sub-heading` and the `Add` placement assertion; the one-guard injection stayed green first; restore byte-clean
 ## Test: deviations and a second Source
 **Purpose:** R438, R439, R440, R441
 **Input:** a section with two `Source:` lines, a struck entry with no clause, a repeated `R1`, and a bare bullet
@@ -21,8 +20,7 @@
 **Alarm:** 2
 **Fire alarm:** accept a struck head without a clause as a plain retirement. Red: `R2` carries no deviation and the write over it succeeds.
 **Inject:** internal/minispecsdom/requirements.go:Requirements.newRequirement
-**Pulled:** 2026-09-07 — rang, by hand: two deviations where three were expected, and the write over `R2` was refused as `already retired` instead of as a deviation; restore byte-clean
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `R2` carried no deviation, three deviations where five were expected, and the write over it went through to `already retired`; restore clean. *Earlier —* 2026-09-07 — rang, by hand: two deviations where three were expected, and the write over `R2` was refused as `already retired` instead of as a deviation; restore byte-clean
 ## Test: Add lands at the end of the section's own content
 **Purpose:** R442, R444
 **Input:** `Add` to the feature with a sub-heading; to an empty section; to the section whose content spans a fence; a taken ID, a bad ID, an unknown title, a repeated title
@@ -32,8 +30,7 @@
 **Alarm:** 3
 **Fire alarm:** insert at the end of the section's own span rather than after its last non-blank line. Red: the new line lands after the blank, directly before `### Notes`.
 **Inject:** internal/minispecsdom/requirements.go:Requirements.Add
-**Pulled:** 2026-09-07 — rang, by hand: the placement assertions for the feature and the fence section both failed; restore byte-clean
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `R8` landed after the blank line, directly before `### Notes`, and the fence section likewise; restore clean. *Earlier —* 2026-09-07 — rang, by hand: the placement assertions for the feature and the fence section both failed; restore byte-clean
 ## Test: Retire strikes the head and adds the clause
 **Purpose:** R443, R444
 **Input:** `Retire("R1", "T3", "see R7")`; the same again; a bad clause; a bad Tn; an absent ID; `Retire("R2", "T4", "no replacement")`
@@ -43,4 +40,4 @@
 **Alarm:** 4
 **Fire alarm:** write the clause after the head text rather than before it. Red: the retire assertion fails and the read-back does not see the clause.
 **Inject:** internal/minispecsdom/requirements.go:Requirements.Retire
-**Pulled:** 2026-09-07 — rang, by hand: `Requirements.Retire on "R1" did not read back` — the clause after the text is not the retired form; restore byte-clean
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang through the guard: `Requirements.Retire on "R1" did not read back`, the clause after the head text; restore clean. *Earlier —* 2026-09-07 — rang, by hand: `Requirements.Retire on "R1" did not read back` — the clause after the text is not the retired form; restore byte-clean

@@ -10,8 +10,7 @@
 **Alarm:** 1
 **Fire alarm:** read every `#N` in the entry rather than only the slot. Red: the second entry gains ID 4 and `MaxID` still reads 8 — so the test asserts the IDs, not only the max. A second injection, in `regionEnd`: let any list item end a region, not only one at column 0. Red: entry 0 loses its indented bullet — added 2026-09-03 after a past-the-list probe found the column-0 condition unguarded.
 **Inject:** internal/minispecsdom/done.go:DoneEntry.derive, internal/minispecsdom/done.go:Done.regionEnd
-**Pulled:** 2026-09-03 — rang: `ids [8 1] [3 4] []` — the body's `#4` and even `#1` from a part pointer counted — and the prepend test's max moved too. The `regionEnd` injection was pulled by hand the same day: `the body's indented bullet ended entry 0's region`.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); both injections rang: `ids [8 1] [3 4] []` with `MaxID` still 8, and `Prepend` counted 4 entries; `the body's indented bullet ended entry 0's region`; restore clean each time. *Earlier —* 2026-09-03 — rang: `ids [8 1] [3 4] []` — the body's `#4` and even `#1` from a part pointer counted — and the prepend test's max moved too. The `regionEnd` injection was pulled by hand the same day: `the body's indented bullet ended entry 0's region`.
 ## Test: Prepend lands after the rule
 **Purpose:** R383
 **Input:** `Prepend` on the fixture; `Prepend` on a ledger with a rule and no entries
@@ -21,8 +20,7 @@
 **Alarm:** 2
 **Fire alarm:** insert at the end instead of before the first entry. Red: the new entry is last.
 **Inject:** internal/minispecsdom/done.go:Done.Prepend
-**Pulled:** 2026-09-05 — re-pulled by a delegated puller after Item 10 added the read-back to the site; rang: the read-back caught it — `Done.Prepend … did not read back`, the old first entry still first — only that test. Previously 2026-09-03 — rang: the new entry rendered last, after the entry-like bullet, only that test.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang through the guard before the test's own assertion: `Done.Prepend … did not read back`, the first entry read back being the old `#8` one; restore clean. *Earlier —* 2026-09-05 — re-pulled by a delegated puller after Item 10 added the read-back to the site; rang: the read-back caught it — `Done.Prepend … did not read back`, the old first entry still first — only that test. Previously 2026-09-03 — rang: the new entry rendered last, after the entry-like bullet, only that test.
 ## Test: entries and entry-like bullets carry their line
 **Purpose:** R395, R396
 **Input:** the fixture (folded into "the fixture's entries read back")
@@ -32,8 +30,7 @@
 **Alarm:** 4
 **Fire alarm:** record every line as 0 in `scan`. Red: the line assertions and the unread comparison both fail.
 **Inject:** internal/minispecsdom/done.go:Done.scan
-**Pulled:** 2026-09-05 — re-pulled by a delegated puller after the reader gained the unclosed report; rang: `Unread [{Line:0 Text:- not an entry, but entry-like}]` and `lines 0 0 0`, only the fixture read-back. Previously 2026-09-04 — rang: `Unread [{Line:0 Text:- not an entry, but entry-like}]` and `lines 0 0 0`; only that test. Same non-building first attempt as the pending alarm. Re-pulled the same day after the simplification pass hoisted `off`: the unread line alone was injected and rang on the unread assertion.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `lines 0 0 0` and the unread item at line 0; restore clean. *Earlier —* 2026-09-05 — re-pulled by a delegated puller after the reader gained the unclosed report; rang: `Unread [{Line:0 Text:- not an entry, but entry-like}]` and `lines 0 0 0`, only the fixture read-back. Previously 2026-09-04 — rang: `Unread [{Line:0 Text:- not an entry, but entry-like}]` and `lines 0 0 0`; only that test. Same non-building first attempt as the pending alarm. Re-pulled the same day after the simplification pass hoisted `off`: the unread line alone was injected and rang on the unread assertion.
 ## Test: a group open at end of input is unread
 **Purpose:** R402, R445 — the failure `Unread` exists to prevent, arriving one layer below it; since the base demotes, the tail reads too
 **Input:** a done file whose entry is followed by a fence that never closes and then a second entry
@@ -43,14 +40,14 @@
 **Fire alarm:** make `unbalanced` return nil. Red: this test and its three siblings in the pending, carve and current designs — one helper, four readers. A second: drop the demoted loop alone. Red: the same five, since every one now reads a demoted opener.
 **Inject:** internal/minispecsdom/unread.go:unbalanced
 **Alarm:** 5
-**Pulled:** 2026-09-12 — re-pulled by delegate after the checkpoint commit; both injections rang the same five tests, `unread []`. Previously 2026-09-07 — both injections rang in the same five tests: this, its pending, carve and current siblings, and the carve's closes-nothing test. Previously 2026-09-05 — rang in exactly the four sibling tests; re-pulled the same day after the simplifier dropped the helper's `doc` parameter, rang in the same four. **Past the list, same day:** disabling the line sort that first followed this helper rang nothing, and on inspection could not — nothing structured follows a group still open at the end, so the unclosed lines are last in file order by construction. The sort was removed; the requirements say *after*, not *sorted*.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); both injections rang in all five reader tests: `unread []` in carve, current, done and pending, and the carve closer test beside them; restore clean each time. *Earlier —* 2026-09-12 — re-pulled by delegate after the checkpoint commit; both injections rang the same five tests, `unread []`. Previously 2026-09-07 — both injections rang in the same five tests: this, its pending, carve and current siblings, and the carve's closes-nothing test. Previously 2026-09-05 — rang in exactly the four sibling tests; re-pulled the same day after the simplifier dropped the helper's `doc` parameter, rang in the same four. **Past the list, same day:** disabling the line sort that first followed this helper rang nothing, and on inspection could not — nothing structured follows a group still open at the end, so the unclosed lines are last in file order by construction. The sort was removed; the requirements say *after*, not *sorted*.
 ## Test: Prepend reads back
 **Purpose:** R414 — through the guard, by the existing prepend test
 **Input:** the prepend test's writes
 **Expected:** silent
 **Refs:** crc-Done.md
 **Code:** internal/minispecsdom/done_test.go
+**Alarm:** 6
 **Fire alarm:** write `header + "x"` as the header line. Red: `Done.Prepend … did not read back`.
 **Inject:** internal/minispecsdom/done.go:Done.Prepend
-**Pulled:** 2026-09-05 — pulled again after the simplifier restructured the guards, rang again; first: rang.
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `Done.Prepend … did not read back`, the header with its trailing `x`; restore clean. *Earlier —* 2026-09-05 — pulled again after the simplifier restructured the guards, rang again; first: rang.

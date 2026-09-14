@@ -10,8 +10,7 @@
 **Alarm:** 1
 **Fire alarm:** classify every bold run as a marker, never a head. Red: every key is empty and the titles are nil.
 **Inject:** internal/minispecsdom/partline.go:PartLine.Parse
-**Pulled:** 2026-09-04 — re-pulled at `ddcf09f` by delegation: rang, `keys ",,,,"` as prescribed, and the strike test crashed on its nil head as before, aborting the package run; restore clean. Previously 2026-09-03 — rang: `keys ",,,,"` — the assertion; the strike test then crashed on its own nil map entry, which is that test's shape under this injection and not a production path (a headless line is guarded, and now asserted).
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `keys ",,,,"`, with every carve test failing on `no part with that key` and the strike test on a nil head; restore clean. *Earlier —* 2026-09-04 — re-pulled at `ddcf09f` by delegation: rang, `keys ",,,,"` as prescribed, and the strike test crashed on its nil head as before, aborting the package run; restore clean. Previously 2026-09-03 — rang: `keys ",,,,"` — the assertion; the strike test then crashed on its own nil map entry, which is that test's shape under this injection and not a production path (a headless line is guarded, and now asserted).
 ## Test: strike is derived and the edit is hidden
 **Purpose:** R354
 **Input:** `Item 1` (struck) and `2.2` (not) from the fixture; `Strike(true)` on `2.2`, `Strike(false)` on `Item 1`
@@ -21,8 +20,7 @@
 **Alarm:** 2
 **Fire alarm:** make `Strike(true)` wrap the whole line rather than the head's bold run. Red: the render puts `~~` before the marker span's closing bytes rather than after the head.
 **Inject:** internal/minispecsdom/partline.go:PartLine.Strike
-**Pulled:** 2026-09-03 — rang: `IsStruck did not follow Strike` — the whole-line wrap leaves the head's opener with `- ` before it, so the derivation reads false; caught one assertion earlier than the render check predicted.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang, on the named test run alone (`-run TestStrikeIsDerivedAndHidden`): `IsStruck did not follow Strike`; over the whole package the carve suite's read-back panic (`got no such part`) ends the run before this test is reached, so the signature differs from the one prescribed; restore clean. *Earlier —* 2026-09-03 — rang: `IsStruck did not follow Strike` — the whole-line wrap leaves the head's opener with `- ` before it, so the derivation reads false; caught one assertion earlier than the render check predicted.
 ## Test: deviations name the target
 **Purpose:** R350, R355, R410 — an unkeyed line parses and reports
 **Input:** `- [ ] **Part A — old scheme.** **OPEN (#8.)**`, `- [X] **Item 3 - hyphen.**`, `- [ ] **Item 5 — ok.** **open (soon.)**`, `- a plain bullet`, and `- [ ] **Item 6 — r.** **REVERTED (Bill)**`
@@ -32,8 +30,7 @@
 **Alarm:** 3
 **Fire alarm:** return false from `Parse` when the head does not key. Red: the first line is missing from the result and its checkbox is not counted.
 **Inject:** internal/minispecsdom/partline.go:PartLine.Parse
-**Pulled:** 2026-09-04 — re-pulled at `ddcf09f` by delegation: rang, `1 lines, want 4`, only that test; restore clean. Previously 2026-09-03 — rang: `1 lines, want 3` — only the keyed line survived.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `2 lines, want 5`, the unkeyed lines missing from the result; restore clean. *Earlier —* 2026-09-04 — re-pulled at `ddcf09f` by delegation: rang, `1 lines, want 4`, only that test; restore clean. Previously 2026-09-03 — rang: `1 lines, want 3` — only the keyed line survived.
 ## Test: a marker write is canonical and guarded
 **Purpose:** R357
 **Input:** `2.2`'s marker: `Set("landed", "` + "`abc`" + `, 2026-09-03 — ` + "`#8`" + `.")`; then `Set("BAD)", "x")`
@@ -43,8 +40,7 @@
 **Alarm:** 4
 **Fire alarm:** drop the re-parse in `Set`. Red: the second write is accepted and the marker's verb reads `BAD)`.
 **Inject:** internal/minispecsdom/partline.go:MarkerSpan.Set
-**Pulled:** 2026-09-03 — rang: `a verb with a parenthesis was accepted` and `a refused write changed the document`, only that test.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `a verb with a parenthesis was accepted` and `a refused write changed the document`; restore clean. *Earlier —* 2026-09-03 — rang: `a verb with a parenthesis was accepted` and `a refused write changed the document`, only that test.
 ## Test: flexible on input, rigid on output
 **Purpose:** R397, R398
 **Input:** `OPEN (…)` with `#3.`, `#3`, `not queued.`, `not queued`, `Not  queued.`, `NOT QUEUED`; then `**OPEN, not queued.**` and `**OPEN (soon)**`; then `Set("OPEN", "#4.")` over `**open (Not queued)**`
@@ -54,14 +50,14 @@
 **Alarm:** 5
 **Fire alarm:** restore the exact match — `a != "not queued."` in place of `notQueuedRe`. Red: `not queued`, `Not  queued.` and `NOT QUEUED` report `OPEN attribution`. A second injection: drop the `commaSchemeRe` check from `Parse`. Red: the comma form reports nothing — the silent case.
 **Inject:** internal/minispecsdom/partline.go:MarkerSpan.deviations, internal/minispecsdom/partline.go:PartLine.Parse
-**Pulled:** 2026-09-05 — re-pulled by a delegated puller after Item 7 rewrote the site; rang: both injections — the exact match reported `OPEN attribution` on all three spellings, and without the comma-scheme check the comma form reported nothing — only that test each. Previously 2026-09-04 — both rang: the exact match reported `OPEN attribution` on `not queued`, `Not  queued.` and `NOT QUEUED` (the two stop-ful forms stayed clean, as the old rule allowed); the dropped scheme check reported `[]` on the comma form; only that test each time. Both re-pulled the same day after the simplification pass reordered the operands and inlined `firstText`: rang again.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); both injections rang: `not queued`, `Not  queued.` and `NOT QUEUED` reported `OPEN attribution`; the comma form reported `[]`, the silent case; restore clean each time. *Earlier —* 2026-09-05 — re-pulled by a delegated puller after Item 7 rewrote the site; rang: both injections — the exact match reported `OPEN attribution` on all three spellings, and without the comma-scheme check the comma form reported nothing — only that test each. Previously 2026-09-04 — both rang: the exact match reported `OPEN attribution` on `not queued`, `Not  queued.` and `NOT QUEUED` (the two stop-ful forms stayed clean, as the old rule allowed); the dropped scheme check reported `[]` on the comma form; only that test each time. Both re-pulled the same day after the simplification pass reordered the operands and inlined `firstText`: rang again.
 ## Test: the key is the fragment
 **Purpose:** R417 — one key form
 **Input:** the fixture's keyed lines
 **Expected:** keys `1`, `2.1`, `2.2`, `4`, and the stateless line's `2`; `Part("4")` resolves and `Part("Item 4")` does not
 **Refs:** crc-PartLine.md, crc-CarveSdom.md
 **Code:** internal/minispecsdom/carve_test.go
+**Alarm:** 6
 **Fire alarm:** return the bound text whole. Red: every key expectation in the carve and part-line tests reads `Item N`.
 **Inject:** internal/minispecsdom/partline.go:PartLine.Key
-**Pulled:** 2026-09-05 — rang in 9 tests across the carve and part-line files.
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `keys "Item 1,Item 2,2.1,2.2,Item 4"` and every carve-test key expectation reading `Item N`; restore clean. *Earlier —* 2026-09-05 — rang in 9 tests across the carve and part-line files.

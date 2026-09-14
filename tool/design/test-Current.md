@@ -10,8 +10,7 @@
 **Alarm:** 1
 **Fire alarm:** end the region at any heading (drop the level test and the variable). Red: `Active` stops before the `###` sub-heading.
 **Inject:** internal/minispecsdom/current.go:Current.regionEnd
-**Pulled:** 2026-09-03 — rang: `Active` cut short of the `###` sub-heading. The delegate's injection left the heading variable unused and did not build; re-pulled by hand with it dropped.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `Active` stopped before the `###` sub-heading, and the write test failed with it; restore clean. *Earlier —* 2026-09-03 — rang: `Active` cut short of the `###` sub-heading. The delegate's injection left the heading variable unused and did not build; re-pulled by hand with it dropped.
 ## Test: a write reaches the region and nothing else
 **Purpose:** R388, R389, R390 — the 2026-08-18 incident, as a property
 **Input:** `SetActive` on the occupied fixture; then `Reset`; then `SetActive("new item")`
@@ -21,8 +20,7 @@
 **Alarm:** 2
 **Fire alarm:** bound the region at the end of the file instead of the next `##`. Red: `Reset` deletes the standing sections — the incident, reproduced.
 **Inject:** internal/minispecsdom/current.go:Current.regionEnd
-**Pulled:** 2026-09-03 — rang, and it is the incident: `after Reset` shows both standing sections gone; `Active` also read to the end of the file.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `Reset` deleted the standing sections, the incident reproduced, with the regions and unread tests failing beside it; restore clean. *Earlier —* 2026-09-03 — rang, and it is the incident: `after Reset` shows both standing sections gone; `Active` also read to the end of the file.
 ## Test: exactly one Active
 **Purpose:** R385, R406
 **Input:** a document with no `## Active`; one with two; one whose only `## Active` is inside a fence
@@ -32,8 +30,7 @@
 **Alarm:** 3
 **Fire alarm:** take the first `Active` heading and ignore a second. Red: the two-heading document parses. For R406: return a fresh `errors.New` with the same message in place of `ErrManyActive`. Red: `errors.Is` fails on the two-heading document while the message is unchanged — which is the whole point of a sentinel.
 **Inject:** internal/minispecsdom/current.go:Current.parse
-**Pulled:** 2026-09-05 — the R406 injection rang: `want minispecsdom: more than one …` on the two-heading document, only that case. Same day, earlier: re-pulled by a delegated puller after `parse` gained the unclosed report; rang: the two-heading document `parsed`, only `TestExactlyOneActive`. Previously 2026-09-03 — rang: the two-heading document parsed, only that test. Site is `parse`, the helper.
-
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); both injections rang: the two-heading document parsed; the fresh `errors.New` failed `errors.Is` with the message unchanged; restore clean each time. *Earlier —* 2026-09-05 — the R406 injection rang: `want minispecsdom: more than one …` on the two-heading document, only that case. Same day, earlier: re-pulled by a delegated puller after `parse` gained the unclosed report; rang: the two-heading document `parsed`, only `TestExactlyOneActive`. Previously 2026-09-03 — rang: the two-heading document parsed, only that test. Site is `parse`, the helper.
 ## Test: a group open at end of input is unread
 **Purpose:** R405
 **Input:** a current file whose standing section ends in a code span that never closes
@@ -47,6 +44,7 @@
 **Expected:** silent
 **Refs:** crc-Current.md
 **Code:** internal/minispecsdom/current_test.go
+**Alarm:** 4
 **Fire alarm:** have `write` append a stray line to the body. Red: `Current.SetActive … did not read back`.
 **Inject:** internal/minispecsdom/current.go:Current.write
-**Pulled:** 2026-09-05 — pulled again after the simplifier restructured the guards, rang again; first: rang.
+**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang through the guard: `Current.Reset on "Active" did not read back` carrying the stray line, `Reset` being the first write the test makes; restore clean. *Earlier —* 2026-09-05 — pulled again after the simplifier restructured the guards, rang again; first: rang.
