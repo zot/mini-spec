@@ -365,6 +365,8 @@
 - **R238:** The anchor's **first parent is the commit that was checked out**, so what it was taken from is recoverable from the anchor itself; a repository with no commits gets an anchor with no parent
 - **R239:** A tree with no git is not a failure of the slot: the anchor is skipped and the trajectory files are still restored
 - **R240:** Pending entries are read through `minispecsdom.Pending` as `QueueEntry{ID, Title, SourceDoc, SourceKey, Kind, Line}`; the slot reads them on both sides of the swap and needs nothing else from the pending file
+- **R335:** `minispec pending changes` reports what has moved in the working tree since the anchor the last transition wrote: a tree of the tree as it stands is built by the anchor's own scratch-index method and diffed against the anchor's tree, and every path is listed as `M` changed, `A` new — tracked or not — or `D` deleted and recoverable, three categories from one tree-vs-tree diff with no side-car list; it reads and builds objects and alters nothing, and with no anchor it refuses rather than reporting a clean tree it never compared
+- **R336:** The report names the question it answers — everything that moved since the queue last transitioned, the user's unrelated work included, never what the last item did — and carries the two repair commands, `git checkout refs/minispec/snapshot -- <path>` for the tree as at the transition and `…^1 -- <path>` for the commit beneath it, because the private ref surfaces nowhere else; the tool reports, the agent proposes, the user decides
 
 ## Feature: Queue Items
 **Source:** specs/queue-items.md

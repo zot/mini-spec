@@ -183,3 +183,14 @@ in place of equality — and confirm `Lookup` goes green with `LookupPath`'s dat
 **Pulled:** 2026-09-06 — rang: `Multi: got 9-11 count 1, want 9-16 count 1`; restore byte-clean by copy, and again the same day after the simplification pass restructured `siteExtent` and `groupEnd`, same signature
 **Refs:** crc-Git.md — R303, R304, R305
 **Code:** internal/project/git_test.go
+
+## Test: the changes report carries all three categories and alters nothing
+**Purpose:** validates R335 — one tree-vs-tree diff yields M, A and D, the D a deleted untracked file the anchor still holds; with no anchor the query refuses; the working tree and index are untouched by the report
+**Input:** a repository with a committed file and an untracked one; the anchor taken; then the tracked file changed, a new file written, the untracked one deleted
+**Expected:** `ErrNoSnapshot` before the anchor; afterwards exactly `tracked.go M`, `fresh.md A`, `gone.txt D`; the deleted file still absent and `git status` unchanged after the call
+**Refs:** crc-Git.md — R335
+**Code:** internal/project/git_test.go
+**Alarm:** 9
+**Fire alarm:** diff the anchor's tree against `HEAD^{tree}` instead of the fresh scratch tree — the report then describes the last commit rather than the working tree, and the untracked `A` and the deleted `D` both vanish
+**Inject:** internal/project/git.go:ChangesSinceSnapshot
+**Pulled:** 2026-09-14 — rang: `fresh.md: got "", want "A"` and `tracked.go: got "", want "M"`, the report holding only `gone.txt D` — against HEAD's tree the untracked file and the uncommitted edit both vanish and only the deletion survives; restore byte-clean by copy, and again the same day after the simplification pass named the anchor's tree and reused the line splitter, same signature

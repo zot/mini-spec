@@ -49,6 +49,7 @@
 | `pending finish <N> --commit <hash> [--body <text>\|--body-file <path>] [--discharged <text>\|--discharged-file <path>] (--resolve\|--no-resolve)` | [queue-items.md](queue-items.md) | Check off each discharged part in its carve — box, strikethrough, appended `LANDED` record — then reset `## Active`, then move the entry to the done file with its header (`#N / <discharged>`) and the body when given. A gap-sourced item must say `--resolve` or `--no-resolve`. The `written` line names each file's git kind — tracked and uncommitted, ignored, untracked — so the carve flip reads as the write that still needs a commit. |
 | `pending revert` | [backup.md](backup.md) | Undo the most recent trajectory change, and mark the part `**REVERTED (#N.)**`. |
 | `pending replay` | [backup.md](backup.md) | Redo what revert undid, returning the part to `**OPEN (#N.)**`. |
+| `pending changes` | [backup.md](backup.md) | What has moved in the working tree since the anchor the last transition wrote — `M` changed, `A` new, `D` deleted and recoverable — from one tree-vs-tree diff; names its question and the two repair commands; alters nothing; refuses with no anchor. |
 
 ## `update` subcommands
 

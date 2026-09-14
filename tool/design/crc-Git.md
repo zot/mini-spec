@@ -1,5 +1,5 @@
 # Git
-**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309, R315
+**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309, R315, R335
 
 Answers questions about the version-controlled working tree by invoking the `git`
 command line. Every question it answers is a **computed property** — there is
@@ -39,6 +39,9 @@ repository: a fake `Git` states the world the check is being run against.
 - headFile(file): the file as committed at HEAD, `git show HEAD:./file`, cached per file
   for one invocation; the range is computed over these bytes and never the working
   tree's, because `-L <start>,<end>` resolves against HEAD (R308)
+- ChangesSinceSnapshot(): what has moved since the anchor — a tree of the working tree now,
+  built the anchor's way, diffed against the anchor's tree into M, A and D; reads and builds
+  objects, alters nothing; `ErrNoSnapshot` with no anchor (R335)
 - Snapshot(): the **worktree anchor** — a tree written from a scratch index (`GIT_INDEX_FILE`),
   committed with HEAD as first parent when there is one, and pointed at by `refs/minispec/snapshot`
   in one `update-ref`. Untracked contents in, ignored paths out, the real index and working tree

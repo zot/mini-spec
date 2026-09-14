@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324, R329, R331, R332, R334
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324, R329, R331, R332, R334, R335, R336
 
 Command-line interface handling.
 
@@ -10,6 +10,8 @@ Command-line interface handling.
 - version: build-time version string
 
 ## Does
+- `pending changes`: the cleanup report over the anchor — names the question it answers,
+  lists each moved path with its category, hands over the two repair commands (R335, R336)
 - the missing-layer crank handle: on a queue verb's typed refusal, print which files are
   missing, the `add-item --create` that creates them, and what `track` means for them (R332);
   `init carve <name>` reports the scaffold's write and the add-item that queues it (R334)

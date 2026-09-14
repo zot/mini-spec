@@ -396,6 +396,51 @@ func (g *Git) Snapshot() error {
 	return nil
 }
 
+// CRC: crc-Git.md | Seq: seq-backup.md#4 | R335, R336
+// Change is one path that has moved since the anchor: M changed, A new — tracked or not —
+// D deleted, and recoverable, because the anchor holds the contents.
+type Change struct {
+	Status string `json:"status"` // "M", "A" or "D"
+	Path   string `json:"path"`
+}
+
+// ErrNoSnapshot reports that no transition has anchored the tree yet, so there is nothing to
+// diff against; a report built on nothing would read as clean for exactly one run.
+var ErrNoSnapshot = errors.New("no worktree anchor: nothing has transitioned since this repository was initialised")
+
+// CRC: crc-Git.md | Seq: seq-backup.md#4 | R335
+// ChangesSinceSnapshot reports what has moved in the working tree since the anchor: a tree of
+// the tree as it stands now, built by the same scratch-index method the anchor was, diffed
+// against the anchor's tree. Three categories from one tree-vs-tree diff, no side-car list and
+// no second source to keep in step; renames are reported as their two halves so the
+// categories stay three. It reads and builds objects and alters nothing.
+func (g *Git) ChangesSinceSnapshot() ([]Change, error) {
+	if !g.IsRepo() {
+		return nil, ErrNoGit
+	}
+	anchorTree := SnapshotRef + "^{tree}"
+	if _, err := g.run("rev-parse", "--verify", "--quiet", anchorTree); err != nil {
+		return nil, ErrNoSnapshot
+	}
+	now, err := g.scratchTree()
+	if err != nil {
+		return nil, err
+	}
+	out, err := g.run("diff-tree", "-r", "--no-renames", "--name-status", anchorTree, now)
+	if err != nil {
+		return nil, fmt.Errorf("%w: git diff-tree: %v", ErrGitFailed, err)
+	}
+	var changes []Change
+	for _, line := range splitLines(out) {
+		status, path, ok := strings.Cut(line, "\t")
+		if !ok {
+			continue
+		}
+		changes = append(changes, Change{Status: status[:1], Path: path})
+	}
+	return changes, nil
+}
+
 // R237
 // scratchTree writes a tree object for the whole working tree, using an index of its own.
 //

@@ -281,6 +281,30 @@ only place it surfaces. That is discharged by the output section below naming th
 commands outright — better than the listing was, since a reader needs the command and not
 the idiom.
 
+### `minispec pending changes` — what has moved since the anchor
+
+The report the anchor was built for. A tree of the working tree as it stands is built by
+the anchor's own scratch-index method and diffed against the anchor's tree, so three
+categories fall out of one comparison with no side-car list and no second source to keep in
+step: `M` changed since the transition, `A` new — tracked or not — and `D` deleted, **and
+recoverable**, because the anchor holds the contents. Verified 2026-08-17 on a tree carrying
+all three at once, the `D` being a deleted *untracked* file, the case a name list could report
+and not return; landed 2026-09-14 (R335).
+
+**It names the question it answers, and that is not cosmetic.** The list is everything that
+moved since the queue last transitioned, **including work the user did that has nothing to do
+with the item**. That is correct and is the point — the question is *what has moved since the
+queue last transitioned*, never *what did this item do* — but an agent reading the list as
+the latter will offer to revert unrelated work. So the report says which question it answers
+before the first path (R336).
+
+**The crank handle carries the ref's discoverability.** `refs/minispec/snapshot` appears in no
+stash listing, so this report is the only place it surfaces; it hands over the two repair
+commands rather than the ref: `git checkout refs/minispec/snapshot -- <path>` for the tree as
+at the transition, uncommitted work included, and `…^1 -- <path>` for the last commit. **The
+tool never alters the working tree**: it reports, the agent proposes, the user decides. With
+no anchor it refuses, since a report built on nothing would read as clean for exactly one run.
+
 **The commit it was taken from needs no record of ours.** The anchor's first parent is the
 commit that was checked out when it was written, so that is recoverable from the anchor
 itself. A field the tool wrote could drift out of step with the tree it describes; a parent

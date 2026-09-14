@@ -219,7 +219,7 @@ tree either, so both read as they did on 2026-08-16.
 - [x] ~~**Item 11 — conform minted-value output to markdown-by-default.**~~ **LANDED (`d8f4a4f`, 2026-09-13 — `#77`.)**
 - [x] ~~**Item 16 — the completion verb says which of its writes is tracked.**~~ **LANDED (`1da22f9`, 2026-09-12 — `#31`.)**
   Small, and it closes a hole the format opens by construction.
-- [ ] **Item 14 — the worktree cleanup report.** **OPEN (not queued.)** Last on purpose:
+- [ ] **Item 14 — the worktree cleanup report.** **OPEN (#79.)** Last on purpose:
   belt and suspenders for an emergency Bill does not expect to reach for (2026-08-17). Its
   one real dependency ships early regardless — the worktree anchor is written at each
   transition, and a report built before any anchor exists has no baseline to diff against.

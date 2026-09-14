@@ -23,7 +23,7 @@ import (
 // design root: the trajectory layer sits above every design root, the same reason `query
 // carves` takes that path.
 func (c *CLI) runPending(args []string) int {
-	const usage = "Usage: minispec pending <add-item|start|finish|revert|replay>"
+	const usage = "Usage: minispec pending <add-item|start|finish|revert|replay|changes>"
 	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, usage)
 		return 1
@@ -45,6 +45,9 @@ func (c *CLI) runPending(args []string) int {
 		return c.runStart(repoRoot, args[1:])
 	case "finish":
 		return c.runFinish(repoRoot, args[1:])
+	case "changes":
+		// CRC: crc-CLI.md | Seq: seq-backup.md#4 | R335, R336
+		return c.runChanges(repoRoot)
 	case "revert":
 		op = slot.Revert
 	case "replay":
@@ -550,4 +553,46 @@ func reportQueueError(repoRoot string, err error) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, "%v\n", err)
+}
+
+// CRC: crc-CLI.md | Seq: seq-backup.md#4 | R335, R336
+// runChanges cranks out what has moved in the working tree since the anchor. The report
+// names the question it answers — everything that moved since the queue last transitioned,
+// the user's unrelated work included, never what this item did — because an agent reading
+// the list as the latter will offer to revert work that has nothing to do with the item. It
+// carries the two repair commands, since the private ref surfaces nowhere else, and the
+// tool alters nothing: it reports, the agent proposes, the user decides.
+func (c *CLI) runChanges(repoRoot string) int {
+	g := project.NewGit(repoRoot)
+	changes, err := g.ChangesSinceSnapshot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(map[string]any{"anchor": project.SnapshotRef, "changes": changes})
+		return 0
+	}
+	fmt.Printf("what has moved in the working tree since the last queue transition — the anchor at %s.\n", project.SnapshotRef)
+	fmt.Println("This is everything that moved since then, unrelated work included; it is not what the last item did.")
+	if len(changes) == 0 {
+		fmt.Println("  nothing has moved.")
+		return 0
+	}
+	for _, ch := range changes {
+		note := ""
+		switch ch.Status {
+		case "A":
+			note = "  new since the transition"
+		case "D":
+			note = "  deleted since the transition; the anchor holds it"
+		case "M":
+			note = "  changed since the transition"
+		}
+		fmt.Printf("  %s  %s%s\n", ch.Status, ch.Path, note)
+	}
+	fmt.Printf("\nrestore a path as it stood at the transition:  git checkout %[1]s -- <path>\n"+
+		"restore it as of the commit beneath the anchor: git checkout %[1]s^1 -- <path>\n"+
+		"nothing in your working tree was altered by this report.\n", project.SnapshotRef)
+	return 0
 }

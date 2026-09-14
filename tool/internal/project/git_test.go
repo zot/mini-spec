@@ -620,3 +620,51 @@ func day(n int) []string {
 	stamp := fmt.Sprintf("2026-01-%02dT12:00:00", n)
 	return []string{"GIT_AUTHOR_DATE=" + stamp, "GIT_COMMITTER_DATE=" + stamp}
 }
+
+// R335 — three categories from one tree-vs-tree diff, verified on a tree carrying all three
+// at once, the D being a deleted untracked file: the case a name list could report and not
+// return. Nothing in the working tree is altered by the report.
+func TestChangesSinceSnapshotReportsAllThreeCategories(t *testing.T) {
+	dir := newRepo(t)
+	write(t, dir, "tracked.go", "package p\n")
+	write(t, dir, "gone.txt", "untracked and about to be deleted\n")
+	run := dated(t, dir)
+	run(day(1), "add", "tracked.go")
+	run(day(1), "commit", "-qm", "base")
+	g := NewGit(dir)
+	if _, err := g.ChangesSinceSnapshot(); !errors.Is(err, ErrNoSnapshot) {
+		t.Fatalf("with no anchor: %v; want ErrNoSnapshot — a report on nothing reads as clean", err)
+	}
+	if err := g.Snapshot(); err != nil {
+		t.Fatal(err)
+	}
+	write(t, dir, "tracked.go", "package p\n\nvar changed = true\n")
+	write(t, dir, "fresh.md", "new since the transition\n")
+	if err := os.Remove(filepath.Join(dir, "gone.txt")); err != nil {
+		t.Fatal(err)
+	}
+	changes, err := g.ChangesSinceSnapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, c := range changes {
+		got[c.Path] = c.Status
+	}
+	want := map[string]string{"tracked.go": "M", "fresh.md": "A", "gone.txt": "D"}
+	for path, status := range want {
+		if got[path] != status {
+			t.Errorf("%s: got %q, want %q (all: %v)", path, got[path], status, changes)
+		}
+	}
+	if len(changes) != 3 {
+		t.Errorf("got %d changes, want 3: %v", len(changes), changes)
+	}
+	// The report is reading only: the tree is as it was before the call.
+	if _, err := os.Stat(filepath.Join(dir, "gone.txt")); !errors.Is(err, os.ErrNotExist) {
+		t.Error("the report restored a deleted file — it must alter nothing")
+	}
+	if out, _ := exec.Command("git", "-C", dir, "status", "--porcelain").Output(); !strings.Contains(string(out), " M tracked.go") || !strings.Contains(string(out), "?? fresh.md") {
+		t.Errorf("the report touched the index or the tree:\n%s", out)
+	}
+}
