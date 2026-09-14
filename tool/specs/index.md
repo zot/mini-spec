@@ -28,7 +28,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 
 ### Document model — the readers and writers over the markdown the tool owns
 
-Ported from `mini-spec-tool` on 2026-09-14 ([carve](../../carves/minispecsdom-move.md)); built
+Ported from `mini-spec-tool` on 2026-09-14 ([carve](../../carves/done/minispecsdom-move.md)); built
 over `github.com/zot/simple-dom`, which stays a module dependency.
 
 | spec | covers |
