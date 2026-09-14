@@ -17,8 +17,8 @@ in" clause of the 2026-09-04 restart decision for `minispecsdom` only; `sdom` an
 
 - [x] ~~**Item 1 — the package.**~~ **LANDED (`9c6c796`, 2026-09-14 — `#80`.)**
 - [x] ~~**Item 2 — the design comes with it, renumbered.**~~ **LANDED (`9c6c796`, 2026-09-14 — `#80`.)**
-- [ ] **Item 3 — gaps, requests, and the far side.** **OPEN (not queued.)**
-- [ ] **Item 4 — the alarms are re-pulled where their sites moved.** **OPEN (not queued.)**
+- [ ] **Item 3 — gaps, requests, and the far side.** **OPEN (#82.)**
+- [x] ~~**Item 4 — the alarms are re-pulled where their sites moved.**~~ **LANDED (`1c8395f`, 2026-09-14 — `#81`.)**
 
 ## Decisions
 

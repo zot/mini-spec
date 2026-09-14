@@ -80,7 +80,7 @@
 ## Feature: Extended Validation
 **Source:** specs/validate.md
 
-- **R40:** Validates all design files (crc-*, seq-*, ui-*, test-*, manifest-*) in design/ are listed in Artifacts
+- **R40:** Validates all design files (`crc-*`, `seq-*`, `ui-*`, `test-*`, `manifest-*`) in design/ are listed in Artifacts
 - **R41:** Validates Source fields in requirements.md reference existing spec files
 - **R42:** Validates CRC/Seq refs in code traceability comments reference existing design files
 - **R43:** Validates files listed in CRC Sequences sections exist
@@ -154,7 +154,7 @@
 - **R76:** Validate reports A-typed and T-typed gap lines that carry a checkbox marker as a "permanent gaps with checkbox" issue so AIs clean them up
 - **R77:** Requirements parser accepts the strikethrough retired form `- **~~Rn:~~** (Retired Tk — see Rxxx) <text>` (or `... no replacement) <text>`) and exposes it via a `Retired` flag on the parsed Requirement
 - **R78:** Retired requirements are excluded from coverage uncovered and implementation-coverage uncovered lists; their Rn IDs remain valid for cross-reference resolution
-- **R79:** `query migrations` lists in-flight migration spec files (specs/migrations/*.md, non-recursive); empty output and exit 0 when none exist
+- **R79:** `query migrations` lists in-flight migration spec files (`specs/migrations/*.md`, non-recursive); empty output and exit 0 when none exist
 - **R102:** `query unindexed-specs` lists per-feature specs (`specs/*.md`, non-recursive, excluding index.md) not referenced in the root index specs/index.md, matched by exact `.md` token; lists every spec when index.md is absent; empty output and exit 0 when all specs are indexed
 - **R80:** `update retire R<old> <R<new>|-> "<reason>"` rewrites the R<old> line in requirements.md with the strikethrough/Retired marker AND appends a new Tn entry to the Gaps section of design.md, atomically; outputs the assigned Tn
 - **R81:** `update migration-complete <name>` moves specs/migrations/<name>.md to specs/migrations/complete/<NNN>-<name>.md where NNN is the next zero-padded three-digit number, and outputs the new path
@@ -532,8 +532,8 @@
   what was not read.
 - **R397:** An `OPEN` attribution reads `#N` or `not queued` in any case, with any inner spacing and
   an optional full stop; anything else is the `OPEN attribution` deviation.
-- **R398:** A bold run after the head whose interior opens with a verb and a comma — the superseded
-  `OPEN, not queued` form — is not a marker and is reported as the `marker scheme` deviation.
+- **R398:** A bold run after the head whose interior opens with a verb and a comma — the
+  superseded `OPEN, not queued` form — is not a marker and is reported as the `marker scheme` deviation.
 - **R391:** `SetMarker` and `Land` decide refusal before any marking, so a refused write leaves the
   line byte-identical.
 - **R392:** A write over a line carrying deviations is refused with a `DeviationError` naming the
@@ -568,8 +568,8 @@
 - **R376:** `Unread` lists level-2 headings that are not entries; `MaxID` is the largest entry id.
 - **R399:** A `Source:` line names a part or a gap, told apart by the word and by shape; `Entry.Kind`
   says which was read and `SourceKey` carries the key for either, the part key without its `#`.
-- **R400:** A gap source names exactly one gap ID; a range, a list or a `#` there reads as
-  `SourceNone`, and a `Source:` line that read as neither form is listed by `Unread` with its line.
+- **R400:** A gap source names exactly one gap ID; a range, a list or a `#` there reads
+  as `SourceNone`, and a `Source:` line that read as neither form is listed by `Unread` with its line.
 - **R401:** `EntryText.Text()` writes the part or gap form by `Kind`; `Place` refuses a gap key that is
   not one gap ID with `ErrBadGapSource`.
 - **R377:** After each write the document is re-read from its bytes and the entries re-derived, since
@@ -596,8 +596,8 @@
 ## Feature: done schema
 **Source:** specs/done-schema.md
 
-- **R378:** `Done` embeds the markdown base and owns the done file's DOM; `ParseDone` makes one and
-  `Render` re-emits it.
+- **R378:** `Done` embeds the markdown base and owns the done file's DOM; `ParseDone` makes one
+  and `Render` re-emits it.
 - **~~R379:~~** (Retired T4 — see R396) An entry begins at a column-0 list item whose text opens with bold; a column-0 list item
   that does not is entry-like and counted by `Unread`.
 - **R380:** A region runs to the next entry-like bullet at column 0 or a heading of level 2 or
@@ -628,8 +628,8 @@
   refuses a document with no `## Active` heading or more than one, matched on `Heading` nodes.
 - **R386:** The active region runs from the heading to the next heading of level 2 or higher, or
   the end of the file.
-- **R387:** `Active` is the region's body trimmed, `""` when it holds only the placeholder
-  `_No active item._`; `Occupied` is the region holding anything else; `Standing` lists the other
+- **R387:** `Active` is the region's body trimmed, `""` when it holds only the
+  placeholder `_No active item._`; `Occupied` is the region holding anything else; `Standing` lists the other
   level-2 headings.
 - **R388:** `SetActive` and `Reset` replace the region's body as one synthetic text and address no
   node outside the region, so every byte outside it is unchanged by construction.
@@ -652,13 +652,13 @@
   fenced heading is no heading to the base, so it neither opens an entry nor ends one.
 - **R420:** A field is `**Name:**` at the head of a line inside the entry and outside any code
   group. Five names are read — `Fire alarm`, `Inject`, `Pulled`, `Code`, `Alarm`; any other name at
-  a line head is body but still ends the field above it. The two prose fields, `Fire alarm` and
-  `Pulled`, fold across continuation lines to the next field line or the end of the entry; the
+  a line head is body but still ends the field above it. The two prose fields, `Fire alarm`
+  and `Pulled`, fold across continuation lines to the next field line or the end of the entry; the
   three list fields, `Inject`, `Code` and `Alarm`, are one line each, and a line following one is body.
 - **R421:** A line the base's context places inside a code group is body on the read side and
   unreachable on the write side: a fenced `**Alarm:** 1` names nothing.
-- **R422:** `Fire alarm` is prose and its presence is `HasAlarm`; `Inject` splits on commas into
-  `file:symbol` sites, trimmed; `Pulled` is a leading `YYYY-MM-DD` date and everything after it as
+- **R422:** `Fire alarm` is prose and its presence is `HasAlarm`; `Inject` splits on commas
+  into `file:symbol` sites, trimmed; `Pulled` is a leading `YYYY-MM-DD` date and everything after it as
   the body, and a `**Pulled:**` line with no leading date is a deviation; no commit is read after the
   date; `Code` is a comma-separated list as written; `Alarm` is an integer, and a non-integer is a
   deviation; an `**Alarm:**` on an entry with no `**Fire alarm:**` is a deviation.
@@ -669,20 +669,20 @@
   or closer that closes nothing.
 - **R425:** Every write addresses an entry by alarm number — `Alarm(n)` returns it or nil, and a
   write to an absent number is `ErrNoAlarm` — edits inside that entry's region only, decides its
-  refusal before any byte moves, and after the re-read reads its own write back or panics with a
-  `ReadBackError`.
+  refusal before any byte moves, and after the re-read reads its own write back or panics with
+  a `ReadBackError`.
 - **R426:** `SetPulled(n, date, body)` writes `**Pulled:** <date> — <body>`; over an existing line
   the old content is folded after the body as ` *Earlier —* <old>` so the leading date moves and the
   history is kept; with none, the line is inserted after the `**Inject:**` field's last line, or
   after the `**Fire alarm:**` field's last line when there is no `**Inject:**`.
-- **R427:** `SetInject(n, sites, void)` rewrites the `**Inject:**` line with the sites joined by
-  `, `; no line is `ErrNoInject` and no sites is `ErrEmptyInject`. With `void` set, an existing
-  `**Pulled:**` line is demoted in the same write to *`Pulled at `<old sites>` — <old content> — and
-  the site has since moved, so this is history rather than a record.`*; with `void` unset it stands.
+- **R427:** `SetInject(n, sites, void)` rewrites the `**Inject:**` line with the sites joined
+  by `, `; no line is `ErrNoInject` and no sites is `ErrEmptyInject`. With `void` set, an
+  existing `**Pulled:**` line is demoted in the same write to *Pulled at `<old sites>` — <old content> — and
+  the site has since moved, so this is history rather than a record.*; with `void` unset it stands.
 - **R428:** `NumberAlarms` inserts `**Alarm:** <n>` directly above the `**Fire alarm:**` line of
   every alarm entry lacking one, numbering from one above the highest number in the document;
-  append-only, idempotent, no number for an entry with no `**Fire alarm:**`, refused whole with a
-  `DeviationError` when an unnumbered alarm entry carries deviations, and it returns the numbers
+  append-only, idempotent, no number for an entry with no `**Fire alarm:**`, refused whole with
+  a `DeviationError` when an unnumbered alarm entry carries deviations, and it returns the numbers
   assigned in document order.
 - **R446:** The title is every byte after `Test:` to the end of the heading's line, read from the
   source, so a code span or emphasis in the heading is part of the title as its own bytes.
@@ -693,27 +693,27 @@
 - **R429:** `ParseGaps` parses with the markdown base; the section is the region from the level-2
   heading `Gaps` to the next heading of level 2 or higher or the end of the file; `HasGaps` is false
   without one, and a fenced heading opens nothing.
-- **R430:** A gap is a bullet inside the region, at any depth, whose head is a type letter from
-  `S R D C I O A T`, a number and a colon, with or without a checkbox; depth is the bullet's leading
+- **R430:** A gap is a bullet inside the region, at any depth, whose head is a type letter
+  from `S R D C I O A T`, a number and a colon, with or without a checkbox; depth is the bullet's leading
   whitespace and `Parent` the nearest preceding gap with a smaller depth; a column-0 bullet of any
   other shape is listed in `Unread`; a line inside a code group is body.
 - **R431:** A gap's text is its head text with following lines folded on single spaces to the next
-  bullet, a blank line, or the region's end; an indented un-keyed bullet beneath it is one of its
-  `Sub` lines, folded the same way.
+  bullet, a blank line, or the region's end; an indented un-keyed bullet beneath it is one of
+  its `Sub` lines, folded the same way.
 - **R432:** A permanent gap (`A`, `T`) with a checkbox, a tracked gap without one, and an ID the
-  section already carries are each a deviation on that entry, listed in `Unread` with the rule;
-  `Gap(id)` returns the first entry with that ID; every write to a deviant entry refuses with a
-  `DeviationError`; every gap reports its 1-based line at parse time, and `Unread` is ordered by line
+  section already carries are each a deviation on that entry, listed in `Unread` with the
+  rule; `Gap(id)` returns the first entry with that ID; every write to a deviant entry refuses with
+  a `DeviationError`; every gap reports its 1-based line at parse time, and `Unread` is ordered by line
   and carries every group open at end of input or closer that closes nothing.
 - **R433:** `Add(id, text)` appends one line — `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
   for a permanent one — directly after the last gap's span or after the heading's line when the
-  section is empty; an ID not of the shape `X<n>` is `ErrBadGapID`, one already present is
-  `ErrGapExists`, no section is `ErrNoSection`; the text is written unwrapped.
+  section is empty; an ID not of the shape `X<n>` is `ErrBadGapID`, one already present
+  is `ErrGapExists`, no section is `ErrNoSection`; the text is written unwrapped.
 - **R434:** `Resolve(id)` turns the head line's `[ ]` into `[x]` and touches nothing else; a permanent
   gap is `ErrPermanent` and a checked one `ErrResolved`.
 - **R435:** `Approve(id, newID)` rewrites the head line as `- <newID>: <head text>` at the entry's
-  depth with no checkbox and leaves every line beneath it as written; `newID` must be an unused
-  `A<n>` (`ErrBadGapID`, `ErrGapExists`) and a permanent target is `ErrPermanent`.
+  depth with no checkbox and leaves every line beneath it as written; `newID` must be an
+  unused `A<n>` (`ErrBadGapID`, `ErrGapExists`) and a permanent target is `ErrPermanent`.
 - **R436:** Every write edits inside the region only, decides its refusal before any byte moves, and
   after the re-read reads its own write back or panics with a `ReadBackError`.
 
@@ -724,8 +724,8 @@
   with its own content running to the next heading of any level or the end of the file, its `Parent`
   the nearest preceding section with a smaller level; a fenced heading opens nothing; `Section(title)`
   returns every section with that exact title.
-- **R438:** A requirement is a column-0 bullet inside a section whose head is `**Rn:**` or the retired
-  `**~~Rn:~~**`; its text folds following lines on single spaces to the next bullet, blank line,
+- **R438:** A requirement is a column-0 bullet inside a section whose head is `**Rn:**` or the
+  retired `**~~Rn:~~**`; its text folds following lines on single spaces to the next bullet, blank line,
   heading or section end; a column-0 bullet of any other shape is listed in `Unread`; a line inside a
   code group is body.
 - **R439:** A retired entry's clause `(Retired Tn — see Rm)` or `(Retired Tn — no replacement)` is read
@@ -741,8 +741,8 @@
   last non-blank line of own content, before any blank lines and before its first sub-heading; an ID
   not of the shape `R<n>` is `ErrBadReqID`, one present is `ErrReqExists`, a title no section carries
   is `ErrNoSection`, one several carry is `ErrManySections`.
-- **R443:** `Retire(id, tn, clause)` rewrites a live entry's head line as
-  `- **~~<id>:~~** (Retired <tn> — <clause>) <head text>` and leaves every continuation line as
+- **R443:** `Retire(id, tn, clause)` rewrites a live entry's head line
+  as `- **~~<id>:~~** (Retired <tn> — <clause>) <head text>` and leaves every continuation line as
   written; `clause` is `see R<m>` or `no replacement` and `tn` is `T<n>`, else `ErrBadClause`; an
   absent ID is `ErrNoRequirement` and a retired one `ErrRetired`.
 - **R444:** Every write edits inside one section's own content only, decides its refusal before any
