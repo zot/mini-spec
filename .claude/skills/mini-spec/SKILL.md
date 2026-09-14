@@ -1183,9 +1183,11 @@ make it safe to run without reading every tree by hand:
 
 **The refusals are the design.** `remove` without `--force` and `branch -d` rather than `-D`
 mean the tool stops you when your inventory was wrong, instead of the discipline having to be
-right every time. That run reclaimed 184M and refused nothing. *The tool-side report that would
-make this a verb rather than a habit is* [trajectory-tool.md](../../../carves/trajectory-tool.md)
-*Item 14, still open — this paragraph is what stands in until it lands.*
+right every time. That run reclaimed 184M and refused nothing. *And the tool now says what moved:*
+`minispec pending changes` reports every path changed, added or deleted since the last queue
+transition, with the two commands that restore each — landed 2026-09-14 as
+[trajectory-tool.md](../../../carves/done/trajectory-tool.md) Item 14 — so the inventory above
+starts from a report rather than from memory.
 
 **The contract is the whole design, and it is one sentence: evidence, never a verdict.** What
 comes back is the command, its output before the injection, the diff applied, the output

@@ -214,12 +214,19 @@ tree either, so both read as they did on 2026-08-16.
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
   checkbox: the sub-items carry the state.
   - [x] ~~**9.1 — write `trajectory-format.md`.**~~ **LANDED (`64b9fd6`, 2026-08-14 — `#8`.)**
-  - [ ] **9.2 — the generated section, and the check that keeps it honest.** **OPEN (not queued.)**
+  - [x] ~~**9.2 — the generated section, and the check that keeps it honest.**~~ **SUPERSEDED (Bill, 2026-09-14.)**
+    Decided 2026-08-14 when the tool's own reader implemented the shapes, so a copy of the
+    format document in the tool's spec, checked by `make validate`, was what made a cite able
+    to fail. Since the 2026-09-04 restart the shapes are implemented by mini-spec-tool's
+    readers, whose specs state them, and this tool's specs cite the format document the way
+    `file-formats.md` already does; what keeps the shapes honest is `validate` reading real
+    files through those readers and the second opinion disagreeing when they diverge (R300,
+    R327). A generated copy would guard two texts against each other, and neither is what runs.
 - [x] ~~**Item 7 — creation: the refusal path, and `init carve`.**~~ **LANDED (`d3cfe3e`, 2026-09-13 — `#78`.)**
 - [x] ~~**Item 11 — conform minted-value output to markdown-by-default.**~~ **LANDED (`d8f4a4f`, 2026-09-13 — `#77`.)**
 - [x] ~~**Item 16 — the completion verb says which of its writes is tracked.**~~ **LANDED (`1da22f9`, 2026-09-12 — `#31`.)**
   Small, and it closes a hole the format opens by construction.
-- [ ] **Item 14 — the worktree cleanup report.** **OPEN (#79.)** Last on purpose:
+- [x] ~~**Item 14 — the worktree cleanup report.**~~ **LANDED (`d5e25ef`, 2026-09-14 — `#79`.)** Last on purpose:
   belt and suspenders for an emergency Bill does not expect to reach for (2026-08-17). Its
   one real dependency ships early regardless — the worktree anchor is written at each
   transition, and a report built before any anchor exists has no baseline to diff against.

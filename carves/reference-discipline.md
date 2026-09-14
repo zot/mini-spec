@@ -5,7 +5,7 @@ working note hands a cloner a dangling link: it resolves to nothing, and nothing
 warned that it was ever going to. This carve is the rule for which documents may
 cite which, and the check that enforces it.
 
-**Provenance.** Split out of [trajectory-tool.md](trajectory-tool.md) on
+**Provenance.** Split out of [trajectory-tool.md](done/trajectory-tool.md) on
 2026-08-04 (Bill's call). It arrived there because trajectory documents are where
 the problem was noticed, but the rule is a validator over markdown links in any
 project document and is useful on `design/` and `specs/` today. Nothing about it
@@ -14,7 +14,7 @@ is trajectory-specific.
 ## Status
 
 - **Item 1 — the checker.** **SPLIT (Bill, 2026-08-16.)** No checkbox: the sub-items carry
-  the state. **Blocks [trajectory-tool.md](trajectory-tool.md) Item 3 and 8.2**, whose
+  the state. **Blocks [trajectory-tool.md](done/trajectory-tool.md) Item 3 and 8.2**, whose
   markdown reading is shared rather than reimplemented — a fenced example is not data,
   whether it holds a link or a status entry — so this part's priority is no longer set by
   this carve alone.
@@ -177,7 +177,7 @@ containing file, and tracked / untracked-but-not-ignored / ignored / missing cla
 
 **Item 2** — the document-class model: which classes exist in this project, which
 are public, and what each may cite. Coupled to Item 1 of
-[trajectory-tool.md](trajectory-tool.md), which decides how a project declares its
+[trajectory-tool.md](done/trajectory-tool.md), which decides how a project declares its
 siting; the class of a document is a fact about where it lives.
 
 **Ark made the case that this cannot be inferred.** Its queue files are fossil-only
