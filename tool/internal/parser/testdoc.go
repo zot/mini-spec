@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // CRC: crc-Parser.md | R178

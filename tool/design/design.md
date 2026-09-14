@@ -32,6 +32,16 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Trajectory.md → `internal/parser/trajectory.go`
 - [x] crc-Pending.md → `internal/pending/pending.go`
 - [x] crc-TrajectoryValidate.md → `internal/validate/trajectory.go`
+- [x] crc-Current.md → `internal/minispecsdom/current.go`
+- [x] crc-Done.md → `internal/minispecsdom/done.go`, `internal/minispecsdom/unread.go`
+- [x] crc-PendingSdom.md → `internal/minispecsdom/pending.go`
+- [x] crc-CarveSdom.md → `internal/minispecsdom/carve.go`
+- [x] crc-PartLine.md → `internal/minispecsdom/partline.go`
+- [x] crc-MarkerSpan.md → `internal/minispecsdom/partline.go`
+- [x] crc-TraceabilityComment.md → `internal/minispecsdom/comment.go`
+- [x] crc-TestDoc.md → `internal/minispecsdom/testdoc.go`, `internal/minispecsdom/mdbase.go`
+- [x] crc-Gaps.md → `internal/minispecsdom/gaps.go`
+- [x] crc-Requirements.md → `internal/minispecsdom/requirements.go`
 
 ### Sequences
 - [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
@@ -48,6 +58,15 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
+- [x] seq-current.md → `internal/minispecsdom/current.go`
+- [x] seq-done.md → `internal/minispecsdom/done.go`
+- [x] seq-pending.md → `internal/minispecsdom/pending.go`
+- [x] seq-carve.md → `internal/minispecsdom/carve.go`
+- [x] seq-partline.md → `internal/minispecsdom/partline.go`
+- [x] seq-anchor.md → `internal/minispecsdom/comment.go`
+- [x] seq-testdoc.md → `internal/minispecsdom/testdoc.go`
+- [x] seq-gaps.md → `internal/minispecsdom/gaps.go`
+- [x] seq-requirements.md → `internal/minispecsdom/requirements.go`
 
 ### Test Designs
 - [ ] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
@@ -67,6 +86,15 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`, `internal/pending/create_test.go`
 - [x] test-TrajectoryValidate.md → `internal/validate/trajectory_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
+- [x] test-Current.md → `internal/minispecsdom/current_test.go`
+- [x] test-Done.md → `internal/minispecsdom/done_test.go`
+- [x] test-PendingSdom.md → `internal/minispecsdom/pending_test.go`
+- [x] test-CarveSdom.md → `internal/minispecsdom/carve_test.go`
+- [x] test-PartLine.md → `internal/minispecsdom/partline_test.go`
+- [x] test-TraceabilityComment.md → `internal/minispecsdom/comment_test.go`
+- [x] test-TestDoc.md → `internal/minispecsdom/testdoc_test.go`
+- [x] test-Gaps.md → `internal/minispecsdom/gaps_test.go`
+- [x] test-Requirements.md → `internal/minispecsdom/requirements_test.go`
 
 ## Documentation
 
@@ -107,3 +135,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O22: `validate` does not report an unclosed backtick run, fence or `<!--` in `design/` or `specs/` documents. `validate trajectory` reports it for the queue files, the current file and every carve (R302); the design-document readers here are the pre-sdom line readers and say nothing. On `old-sdom` R443 reported both, wired 2026-08-22 after one unclosed run hid 78 of 115 gap entries for a day. Returns with the readers `requests/three-readers.md` asks for
 - [ ] O23: `update add-gap` and `update retire` take their prose as a shell argument; the trajectory verbs take `--…-file` forms because a backtick in a double-quoted argument is command substitution and the text vanishes silently. `old-sdom` gave every prose-taking verb a file form (`add-gap --body-file`, `retire --reason-file`); these two are the ones this tree still lacks
 - [x] O24: `pending add-item` on a part marked `REVERTED` refuses ("part N already carries queue ID #M; a part records exactly one item") before the backup slot's release of the reverted attempt runs, so re-adding the very part that was reverted — the common case — is refused, while a mutation on a sibling part releases it and the re-add then succeeds. Measured by mini-spec-tool 2026-09-06 (`requests/reverted-part-readd-collision.md`). Repair: run the release before the collision check, or exempt a `REVERTED` marker naming the slot's own reverted item
+- T4: R379 retired by R396 (2026-09-04 sdomification Item 4: Unread carries lines)
+- T5: R373 retired by R407 (2026-09-05 sdomification Item 6: Place lands where the entries end)
+- T6: R375 retired by R408 (2026-09-05 sdomification Item 6: Remove closes the tail; Place then Remove is the identity)
+- T7: R367 retired by R409 (2026-09-05 sdomification Item 7: REVERTED is a transient; a marker inserts before trailing prose)

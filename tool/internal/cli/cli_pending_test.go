@@ -12,7 +12,7 @@ import (
 
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/pending"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // discard swallows a flagset's usage output, which is noise in a unit test.

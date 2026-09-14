@@ -134,7 +134,7 @@ the queue verbs already use, so `--open O22-O28` and `O22-O28 --open` are the sa
 filter honoured by one rendering and dropped by the other is the same silent-ignore failure one
 level in.
 
-**The section is read through the dependency's gaps reader** (R326): a gap is a keyed bullet
+**The section is read through `minispecsdom`'s gaps reader** (R326): a gap is a keyed bullet
 at any depth with its text folded across continuation lines, nested ones included; a fenced
 example is body; a permanent gap with a checkbox, a tracked one without, or a repeated ID is a
 deviation the reader names and every write refuses. The pre-sdom line reader of this section
@@ -174,7 +174,7 @@ alarm with `#n`; one with no number is listed by title with its repair named
 (`update number-alarms`), never silently numbered by position. Every alarm in this repository
 has carried a number since 2026-09-07.
 
-**The test designs are read through the dependency's test-document reader** — an entry is a
+**The test designs are read through `minispecsdom`'s test-document reader** — an entry is a
 `## Test:` heading's region, a field is `**Name:**` at a line head outside any code group, the
 prose fields fold, a fenced example is body, and a doubled field is a deviation the reader
 names. What is judged here rather than there: a site with no file or symbol is dropped, and a
@@ -338,10 +338,10 @@ parts are open and how many have landed, and — with `--open` — the open part
 It replaces `grep -rn '^- \[ \]' carves/*.md`, the machine view the trajectory format
 documents and the instrument this project used to count its own work.
 
-**The reader is `github.com/zot/simple-dom`'s `minispecsdom.Carve`, and this tool adds only
-what a file system and a terminal need.** What a part line is, how it is keyed, which
-interiors a checkbox may carry, what an `OPEN` attribution must read — those rules are the
-reader's, stated in its `part-line.md` and `carve-schema.md` specs, and every deviation it
+**The reader is `internal/minispecsdom.Carve`, and the query adds only what a file system
+and a terminal need.** What a part line is, how it is keyed, which interiors a checkbox may
+carry, what an `OPEN` attribution must read — those rules are the reader's, stated in
+[part-line.md](part-line.md) and [carve-schema.md](carve-schema.md), and every deviation it
 reports names the rule and the shape the line must take. This tool never re-derives a rule;
 it surfaces the reader's `Deviations()` and refuses on them where it writes.
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Fixtures carry real shapes wherever one exists; the failures these guard were measured

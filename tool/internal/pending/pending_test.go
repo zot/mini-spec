@@ -11,7 +11,7 @@ import (
 
 	"github.com/zot/minispec/internal/backup"
 	"github.com/zot/minispec/internal/parser"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 const carveSrc = `# Carve: x

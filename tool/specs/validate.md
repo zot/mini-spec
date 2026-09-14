@@ -89,7 +89,7 @@ Run all validations and report issues.
 - Numbering gaps and duplicates are reported per sequence file.
 
 ### Reader Agreement
-- **The two readers of every design document the dependency owns must agree, and this
+- **The two readers of every design document `minispecsdom` owns must agree, and this
   check is the second opinion.** For the Gaps section, `requirements.md` and every test
   design, an independent line scan — a regex over lines, built on nothing the reader is
   built on, bounded for the gaps section by its heading and the next level-2 heading — is
@@ -150,7 +150,7 @@ that has since been rewritten is void, and nothing about a green suite says so.
   carried the successor's doc comment and the trailing blank line, the last declaration
   in a file read stale on every append, and a bare name's first match could be a use
   or a comment (measured 2026-09-04, the stopgap's gaps `O10` and `O11`). The range now
-  comes from the dependency's Go declarations over the file **as committed at HEAD**,
+  comes from `minispecsdom`'s Go declarations over the file **as committed at HEAD**,
   since `-L <start>,<end>` resolves against HEAD: **the declaring line through the line
   on which every bracket group opened inside it has closed**, a grouped `const` member
   at its own line, and **no comment in the range** — not the successor's, and not the
@@ -209,8 +209,8 @@ Both directions, because each catches what the other cannot.
   part the carve never recorded, which is how a carve comes to under-report its own work.
 
 **Ingest by position, never by pattern.** What the tool reads as a citation comes from a
-fixed position — a part line inside the status block, and the marker on it, as the
-dependency's carve reader hands it over — and never from a pattern swept over prose. This is stated because the alternative was tried and
+fixed position — a part line inside the status block, and the marker on it, as `minispecsdom`'s
+ carve reader hands it over — and never from a pattern swept over prose. This is stated because the alternative was tried and
 failed: an extractor sweeping `**VERB (…)**` across a whole status block read a prose
 sentence quoting another project's shape, inside backticks, as a live citation and reported
 a dangling `#121` in a repository that never had one. That was the fifth ad-hoc instrument
@@ -265,13 +265,13 @@ someone who had read the record of the other four.
   issue, named with its file, line and the reader's reason. A checkbox-less line with no
   deviation — a `SPLIT` or `MOVED` parent — is the format's own shape and is not one. A carve that loses a part line loses it from
   `query carves` and from every check above at once, all of them then agreeing on a smaller
-  number, so it cannot be a note. *On this branch the finding is the dependency's own
+  number, so it cannot be a note. *On this branch the finding is `minispecsdom`'s own
   `Stateless()` list*; the August tree also asked a **second, independent** flat-scan question
   of every status block, and that cross-check is not carried yet — see gap `O18`, whose home is
   queue item `#55`.
 
-- **The two readers of the queue files must agree.** `next-id item`'s line scan and the
-  dependency's document readers read the same two files; every item ID one saw and the other
+- **The two readers of the queue files must agree.** `next-id item`'s line scan and `minispecsdom`'s
+   document readers read the same two files; every item ID one saw and the other
   did not is a finding, listed first, because every finding below it reads through the
   document reader alone. *Found the day the check was ported, on this repository:* the line
   scan read 58 IDs from the done file, the document reader returned 17 entries and reported

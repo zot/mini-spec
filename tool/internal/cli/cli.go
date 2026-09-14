@@ -20,7 +20,7 @@ import (
 	"github.com/zot/minispec/internal/query"
 	"github.com/zot/minispec/internal/update"
 	"github.com/zot/minispec/internal/validate"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Version is set at build time via -ldflags

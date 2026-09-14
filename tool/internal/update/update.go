@@ -13,7 +13,7 @@ import (
 
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Update provides atomic modification operations on design files

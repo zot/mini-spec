@@ -48,7 +48,7 @@
 - **R315:** `update inject <doc>#<n> <file:symbol>...` rewrites an alarm's `**Inject:**` line and **voids its `**Pulled:**` when the sites resolve to different code** — the old sites in HEAD, where a renamed symbol still exists, and the new sites on disk — never by comparing the field's text: a rename, a re-formatting or a disambiguation to the declaration already watched keeps the record, a move demotes it to a history sentence naming the old sites. A site resolving to nothing counts as different; rewriting the sites to what they already say changes nothing; an empty site list is refused
 - **R324:** `minispec update add-req --section <heading> --req <text>...` (or `--req-file <path>...`, never mixed, since the interleaved order is what assigns the numbers) mints the next free `Rn` for each text — counting retired numbers — and appends `- **Rn:** <text>` to the addressed section **in one invocation**, so no command hands out a number without recording it; a batch is appended in the order given and reported as a range. The section is addressed by its heading's literal text at whatever level it lives, with or without a leading `Feature: `; entries land at the end of the section's **own** content, before its first sub-heading; an unknown heading is refused (the tool owns IDs, not prose) and so is a title several headings carry
 - **R325:** `update add-req` **refuses a body that opens with its own `**Rn:**` marker** and names the reason, rather than stripping it: the verb mints both the identifier and the label, so a caller writing one is duplicating rather than choosing, and stripping would have to guess whether the written number matches the one about to be assigned
-- **R326:** `design.md`'s Gaps section and `requirements.md` are read **through the dependency's gaps and requirements readers** — a gap is a keyed bullet at any depth with its text folded, a requirement is a keyed column-0 bullet in a section at any level whose `**Source:**` is inherited from the nearest ancestor that has one, a fenced example is body, and a deviation is listed and refused — and `add-gap`, `resolve-gap`, `approve-gap`, `retire` and `add-req` write through those readers' node-addressed writes, which decide every refusal before a byte moves and read themselves back; minting stays this tool's
+- **R326:** `design.md`'s Gaps section and `requirements.md` are read **through `minispecsdom`'s gaps and requirements readers** — a gap is a keyed bullet at any depth with its text folded, a requirement is a keyed column-0 bullet in a section at any level whose `**Source:**` is inherited from the nearest ancestor that has one, a fenced example is body, and a deviation is listed and refused — and `add-gap`, `resolve-gap`, `approve-gap`, `retire` and `add-req` write through those readers' node-addressed writes, which decide every refusal before a byte moves and read themselves back; minting stays this tool's
 - **R331:** An `update` verb that **mints** a value — `retire`'s `Tn`, `migration-complete`'s path, `add-req`'s `Rn` or range — reports it the way every other `update` verb reports: a prose sentence naming the value on stdout, suppressed by `--quiet`, with `--json` carrying the value for a caller that reads it back; a minted value is a report, not a return value, and `--quiet` hides it like any other sentence because `--json` is the channel for a caller that needs it
 
 ## Feature: Validate
@@ -62,7 +62,7 @@
 - **R29:** Validates code files have traceability comments
 - **R30:** Validation output shows what was found (not just pass/fail)
 - **R31:** Exit code 0 if no issues, 1 if issues found
-- **R327:** **The two readers of every design document the dependency owns must agree, and this check is the second opinion**: for the Gaps section, requirements.md and every test design, an independent line scan — a regex over lines, bounded for the gaps section by its heading and the next level-2 heading, built on nothing the reader is built on — is compared with what the reader returned, IDs for gaps and requirements and entry counts for test designs, and every difference is a finding listed first, because every check below it reads through the document reader alone. A reader that lost a file's tail to one unclosed span agrees with itself forever; only a scan that shares none of its blind spots can say how much of the file it actually saw
+- **R327:** **The two readers of every design document `minispecsdom` owns must agree, and this check is the second opinion**: for the Gaps section, requirements.md and every test design, an independent line scan — a regex over lines, bounded for the gaps section by its heading and the next level-2 heading, built on nothing the reader is built on — is compared with what the reader returned, IDs for gaps and requirements and entry counts for test designs, and every difference is a finding listed first, because every check below it reads through the document reader alone. A reader that lost a file's tail to one unclosed span agrees with itself forever; only a scan that shares none of its blind spots can say how much of the file it actually saw
 - **R328:** `validate` prints what the design-document readers could not read — an entry-like line outside the shape, a group never closed — as a **coverage note** naming each file and its count, whether or not anything else fired, because a reader takes silence about coverage as a claim of completeness; it is never an issue in itself
 
 ## Feature: Configuration
@@ -297,7 +297,7 @@
 - **R310:** An alarm is **named `<document>#<n>`**, where `n` comes from an `**Alarm:**` field on its test entry; numbers are local to the file, as sequence-step anchors are, so the path disambiguates and no cross-document uniqueness is implied
 - **R311:** An alarm's number is an **identifier, never a position**: assigned once, stored in the document, never reused or renumbered. A new alarm takes the maximum ever assigned in its file plus one, so a gap in a file's sequence is expected rather than closed
 - **R312:** An alarm carrying no `**Alarm:**` field is **unnumbered, and the census says so** with its repair (`update number-alarms`), listing it by title, never numbering it by position
-- **R316:** A test design is read **through the dependency's test-document reader**: an entry is a `## Test:` heading's region, a field is `**Name:**` at a line head outside any code group, the two prose fields fold across wrapped lines, a fenced example is body, and a doubled field is a deviation the reader names and every write refuses; this tool's adapter keeps only the judgments that are its own — a site with no file or symbol is dropped, a `**Pulled:**` whose date does not parse records nothing — and the census prints what the reader could not read as a coverage note beneath its count, never dropping it, since a group never closed takes every later entry with it
+- **R316:** A test design is read **through `minispecsdom`'s test-document reader**: an entry is a `## Test:` heading's region, a field is `**Name:**` at a line head outside any code group, the two prose fields fold across wrapped lines, a fenced example is body, and a doubled field is a deviation the reader names and every write refuses; this tool's adapter keeps only the judgments that are its own — a site with no file or symbol is dropped, a `**Pulled:**` whose date does not parse records nothing — and the census prints what the reader could not read as a coverage note beneath its count, never dropping it, since a group never closed takes every later entry with it
 - **R308:** The range is computed from the file **as committed at HEAD**, read once per file per invocation, because `-L <start>,<end>` resolves against HEAD and an uncommitted edit higher in the file moves every later declaration; a symbol absent from HEAD's file and present on disk is *no history yet*, not a rotted anchor. Only Go sources have an extent today; a site in any other file is unresolvable (gap O21)
 - **R185:** `minispec query alarms` lists every recorded alarm with its state — `verified`, `stale`, `unrecorded`, `unanchored` — and closes with a census of the four counts
 - **R186:** `unrecorded` states that the repository does not record a verification, never that the injection was not run — the documents cannot answer the second question
@@ -371,21 +371,21 @@
 ## Feature: Queue Items
 **Source:** specs/queue-items.md
 
-- **R241:** `minispec pending add-item --from <doc>#<part> "<title>"` **mints the item ID and writes both sides of the link in one invocation** — the queue entry carrying the part pointer, and the part line's `**OPEN (#N.)**` marker written by the dependency's marker rule (R219). Assignment and the write that records it are one act, which is what keeps R190's `max()` the whole truth: a number is in a document the moment it exists. A command that reserved a number for the agent to write later would be a second copy of the numbering state by construction
+- **R241:** `minispec pending add-item --from <doc>#<part> "<title>"` **mints the item ID and writes both sides of the link in one invocation** — the queue entry carrying the part pointer, and the part line's `**OPEN (#N.)**` marker written by `minispecsdom`'s marker rule (R219). Assignment and the write that records it are one act, which is what keeps R190's `max()` the whole truth: a number is in a document the moment it exists. A command that reserved a number for the agent to write later would be a second copy of the numbering state by construction
 - **R242:** The link is **asymmetric, and structurally so**: the carve carries a **bare key** and the queue side holds the recorded pointer `<doc>#<part>`. The public→private direction is never a markdown link, because trajectory files are private in every project and a carve cannot point at a file a cloner does not have
 - **R243:** `add-item` **refuses rather than guessing**, naming what it looked for and where: an unresolvable `<doc>#<part>` — no such document, no such key, a document with no status block, a key the reader lists as non-conforming — and a part that **already carries a queue ID**, since a part records exactly one item. Nothing is written on the way out. The reuse announcement on a returned number is R234's and is satisfied here
 - **R244:** `minispec pending finish <N> --commit <hash>` performs the completion **in the mandated order: the source first**, then the current file, then the queue entry. Each discharged part is checked off in its carve; the current file's `## Active` section is reset to its placeholder; the entry moves from the pending file to the done file. Source first because the carve is the copy a future reader trusts, and the one nobody thinks to check
-- **R245:** **Checking off a part is all three markings at once** — checkbox `[x]`, title struck through, and a `` **LANDED (`<hash>`, <date> — `#N`.)** `` record appended — performed by the dependency's `Land` through `SetPartLanded` (R220). A landed part's queue ID lives in that record and nowhere else
+- **R245:** **Checking off a part is all three markings at once** — checkbox `[x]`, title struck through, and a `` **LANDED (`<hash>`, <date> — `#N`.)** `` record appended — performed by `minispecsdom`'s `Land` through `SetPartLanded` (R220). A landed part's queue ID lives in that record and nowhere else
 - **R246:** Completion checks **the parts the item recorded and nothing else**. A parent part is never checked directly — it completes when its subparts do, derived rather than stored. An item may discharge parts in several documents and each is checked: a part records one item, an entry records a list of parts
 - **R247:** `finish` composes the done entry's **header** — date, identifiers, title, commit and part pointer — and **never its body**; a body it is handed (R262) is placed, not authored. *Enough to reconstruct the change without re-reading the code* is a judgment about a future reader, and the tool owns IDs, not prose
 - **R248:** All three verbs run **inside the backup slot** (R221–R240), one `Slot.Record` per invocation, so one level of undo covers the whole invocation rather than any single file and a mis-typed part pointer is a `pending revert` rather than a repair
-- **R249:** `finish` clears the current file's **`## Active` section and nothing else**. The section is the dependency's `Current` region — a heading node ending at the next heading of level 2 or higher — so the active item's context may use `###` and below freely, and standing context in the file's other `##` sections is outside the verb's reach **by construction**: the write removes the region's nodes and inserts one, and has no way to name anything else
+- **R249:** `finish` clears the current file's **`## Active` section and nothing else**. The section is `minispecsdom`'s `Current` region — a heading node ending at the next heading of level 2 or higher — so the active item's context may use `###` and below freely, and standing context in the file's other `##` sections is outside the verb's reach **by construction**: the write removes the region's nodes and inserts one, and has no way to name anything else
 - **R250:** **Two refusals, each naming the repair**, both the reader's (`ParseCurrent`) and surfaced by every verb that touches the current file: no `## Active` heading — the file is legacy or damaged; more than one — the region to clear is ambiguous and is refused rather than picked. Absence is reported as an error, never as silence
 - **R251:** A part pointer requires **both** halves. An entry whose `Source:` names a document but no part key, or names a gap, records **no part**, and completion has nothing to mark in a carve — the ordinary case, since most queue items point at a spec or a plain document. `QueueEntry.Parts()` and `Gap()` read the same `Kind` the slot's release path reads (R240)
-- **R252:** `add-item` writes the **whole** queue entry in the shape `trajectory-format.md` mandates, through the dependency's `EntryText` — the `##` heading carrying the number, the title, the skill and the one-line status; the `Source:` line with the part pointer or gap ID; and the `Next:` line when one is given
+- **R252:** `add-item` writes the **whole** queue entry in the shape `trajectory-format.md` mandates, through `minispecsdom`'s `EntryText` — the `##` heading carrying the number, the title, the skill and the one-line status; the `Source:` line with the part pointer or gap ID; and the `Next:` line when one is given
 - **R253:** The **status sentence is required and the `Next:` line is not**: the status lives inside the heading the tool mints while `Next:` is a whole line of its own. A tool may decline to write a line; it may not write two thirds of one
 - **R254:** Each of `add-item`'s three prose slots has a **file form** read byte for byte — the title positionally or `--title-file`, `--status`/`--status-file`, `--next-action`/`--next-action-file` — and giving one slot **both** ways is refused rather than resolved by precedence, because a backtick inside a shell argument is command substitution that vanishes without a word. Only the trailing newline a heredoc adds comes off
-- **R255:** The item title is **plain text and the verb supplies the emphasis**: a title wrapped end to end in a single `**…**` run is refused, naming the repair, while emphasis *inside* a title is untouched. Whether the reader reads an interior run back whole is the dependency's — see gap `O13`
+- **R255:** The item title is **plain text and the verb supplies the emphasis**: a title wrapped end to end in a single `**…**` run is refused, naming the repair, while emphasis *inside* a title is untouched. Whether the reader reads an interior run back whole is `minispecsdom`'s — see gap `O13`
 - **R256:** `add-item` **places** the entry at the position the caller states: `--next`, `--nth N`, `--after N`, or `--last` — the default, spelled out. The flags are mutually exclusive and giving two is refused. Which position an item deserves stays the caller's judgment; moving the block there is mechanics
 - **R257:** `--next` means **next to be worked**, not position 1: with nothing in progress the entry goes to the top, with a step in progress immediately after the item being worked — position 2, because the pending file's own rule is that the top item is active. "In progress" is the current file's `## Active` holding something other than its placeholder (`Current.Occupied`)
 - **R258:** `--nth 1` is **refused while a step is in progress**, since position 1 is the active item's slot, and the message names both repairs: `--next` if *next* was meant, or park the active item first if the caller means to preempt it
@@ -400,12 +400,12 @@
 - **R267:** `start` addresses the region through the **same reader and write path** `finish` uses to clear it, and runs inside the backup slot like the other two: it is the only verb that writes before any other record of the work exists, so a loss under it is the loss of the sole copy
 - **R268:** `finish` accepts `--discharged <text>` or `--discharged-file <path>` and writes the done header's identifier slot as `#N / <text>`, joined with the ` / ` the format mandates. The tool writes the `#N` because it owns IDs; it never infers a requirement range from `requirements.md`, because a generated identifier list reads exactly like an authored one. An absent flag leaves the slot as `#N`
 - **R269:** A `--discharged` value containing a **colon** is refused, naming why: the reader takes the slot as the run between the date's em dash and the colon that opens the title, so a colon inside it silently ends the slot early. A verb that owns a format refuses the input that would make its own reader wrong
-- **R270:** The entry is removed as **the heading node that opens it and the nodes beneath it**, split at the `---` rule when the boundary falls inside a text run, and the done entry is placed before the ledger's first entry or after its preamble — both the dependency's (`Pending.Remove`, `Done.Prepend`), so a `## N.` or a `---` quoted inside a fence can neither bound a removal nor receive a record. `add-item` then `finish` leaves the pending file **byte-identical**
+- **R270:** The entry is removed as **the heading node that opens it and the nodes beneath it**, split at the `---` rule when the boundary falls inside a text run, and the done entry is placed before the ledger's first entry or after its preamble — both `minispecsdom`'s (`Pending.Remove`, `Done.Prepend`), so a `## N.` or a `---` quoted inside a fence can neither bound a removal nor receive a record. `add-item` then `finish` leaves the pending file **byte-identical**
 - **R271:** `pending add-item --from` accepts a **gap ID** as well as a part pointer, distinguished by shape and needing no flag: a gap ID is a capital letter and digits with no `/`, no `#` and no `.md`
 - **R272:** A `--from` naming a **range or a list** of gaps (`O5-O6`, `O5,O6`) is refused naming the rule that an entry carries one pointer, rather than reported as a syntax error; a gap-shaped token that is not one gap ID gets that refusal and never the part pointer's
 - **R273:** A gap source **requires a design root**, since gap IDs are scoped to a `design.md` and a repository may hold several roots. When none resolves, the verb refuses naming what it needed and where it looked; an ID the design root holds no gap for is refused too. A part pointer is unaffected: it names its own document
 - **R274:** `add-item` writes **nothing on the gap side**. A part gets its `**OPEN (#N.)**` marker because the carve is public; a gap has no such marker and gains none. The consequence is stated: there is no gap analogue of the carve→queue cross-check
-- **R275:** A gap-sourced entry's `Source:` line reads `` Source: [<doc>](<doc>), gap `<ID>`. `` — the dependency's gap form (`EntryText{Kind: SourceGap}`), the document as a markdown link and the gap ID backticked without a `#`
+- **R275:** A gap-sourced entry's `Source:` line reads `` Source: [<doc>](<doc>), gap `<ID>`. `` — `minispecsdom`'s gap form (`EntryText{Kind: SourceGap}`), the document as a markdown link and the gap ID backticked without a `#`
 - **R276:** An entry names **one gap**, held in the same scalar pointer a part fills; further gaps an item addresses are named in its prose
 - **R277:** `pending finish --resolve` resolves the gap a gap-sourced item names, in the design root **the entry named** — a resolver bound to a different design root refuses, naming the gap and both roots. Resolving is never automatic: an item may address a gap only partly, and a gap wrongly marked resolved is work that silently never happens
 - **R278:** A gap-sourced completion records `` Gap `<doc>#<gap>` `` in the done entry header, in the shape a part-sourced one records `` Part `<doc>#<key>` ``, so the ledger keeps the link the pending file held
@@ -425,9 +425,9 @@
 - **R284:** `minispec validate trajectory` reports the consistency of the trajectory layer — the queue files at the repository root and the carves that point at them. Read-only, like every other validation
 - **R285:** It is a **separate subcommand and not part of bare `validate`**, and it resolves the **repository root** rather than a design root: `validate` is design-scoped and runs per design root, while one repository holds one queue and may hold several design roots — this one holds `tool/` and `example/`. Folding it in would report the same drift once per root. The gate belongs to the Makefile, which runs both
 - **R286:** A repository running **no trajectory layer passes**: neither queue file and no carve directory is nothing that could be inconsistent, so it says so and exits 0 — a different report from *could not check*, never collapsed into it (R194 draws the same line for `next-id item`)
-- **R287:** **Carve → queue:** every `#N` a carve's status block cites resolves to an entry in the pending file or the done file, both read through the dependency's readers. A citation to an item that never existed, or whose number was reused, is a pointer into nothing
+- **R287:** **Carve → queue:** every `#N` a carve's status block cites resolves to an entry in the pending file or the done file, both read through `minispecsdom`'s readers. A citation to an item that never existed, or whose number was reused, is a pointer into nothing
 - **R288:** **Queue → carve:** every pending entry whose `Source:` names a carve part appears in that carve's status block under the key it claims — the direction R287 cannot see. A gap-sourced entry names no part and is not checked here
-- **R289:** Citations are ingested **by position** — a part line inside the status block and the marker on it, as the dependency's carve reader hands them over (`Part.QueueID`) — never from a pattern swept over prose. An extractor sweeping `**VERB (…)**` across a status block once read a backticked prose example as a live citation and reported a dangling `#121` in a repository that never had one
+- **R289:** Citations are ingested **by position** — a part line inside the status block and the marker on it, as `minispecsdom`'s carve reader hands them over (`Part.QueueID`) — never from a pattern swept over prose. An extractor sweeping `**VERB (…)**` across a status block once read a backticked prose example as a live citation and reported a dangling `#121` in a repository that never had one
 - **R290:** An item ID held by **both** the pending and the done file is reported. **Repetition within the done file is not a collision**: an item that lands in stages is legitimately recorded across several entries, and from the number alone that is indistinguishable from a reuse — the first draft reported three correct staged records in ark as reused, which is the shape of check that gets muted
 - **R291:** **Orphans** are reported in both forms: a carve part marked landed against a queue ID with no done entry, and a done entry naming a part that no carve records
 - **R292:** A done entry whose header carries **no identifier slot** is reported as *unmigrated* rather than skipped, from the reader's `HasSlot` — a header with no slot and an entry that legitimately discharged no ID both yield no IDs, so the shape and not the count is what distinguishes them
@@ -435,8 +435,315 @@
 - **R294:** **Checkbox agreement:** a status line states its state three ways — checkbox, strikethrough, marker — and they must agree, the checkbox authoritative. `OPEN`, `REVERTED` and `DEFERRED` are open-class verbs; `LANDED`, `MIGRATED`, `DISCHARGED` and `SENT` are done-class; a verb outside both is unclassified and silent, since asserting a disagreement about an undefined word would be the tool inventing intent. A sentry over a corpus normalised by hand
 - **R295:** Item numbers appearing in **no readable entry** are reported: an ID is assigned at creation, so every number from 1 to the maximum assigned should be accounted for, the maximum read from both files (R190). When R297 also fires the report names the unread count beside the gaps, because it very likely explains them. An unrecognized entry holding the *highest* ID leaves no gap, so only R297 can see it
 - **R296:** `CURRENT.md` carries **exactly one `## Active`**, reported before the reference-level findings; both the missing heading and a duplicated one are findings, through the same reader and repair text the write path uses (R250). A missing current file is not this finding
-- **R297:** **Entry-like lines the readers did not recognize** are reported as *coverage*, per file, from the dependency's `Unread()` on both queue files — printed whether or not anything else fired, and never an issue in themselves. Every shape-based check is blind by construction to a line outside the shape
+- **R297:** **Entry-like lines the readers did not recognize** are reported as *coverage*, per file, from `minispecsdom`'s `Unread()` on both queue files — printed whether or not anything else fired, and never an issue in themselves. Every shape-based check is blind by construction to a line outside the shape
 - **R302:** The unread coverage note counts per file across **every document a reader touched** — the two queue files, the current file, and each carve — so a bracket group never closed in any of them is named at that file, at its opener's line
 - **R298:** A **status-block line the reader could not read as a part and lists as deviating** (`Stateless()` with deviations) is an issue, named with file, line and reason, and listed first because every other check reads through the parse it reports on; a checkbox-less `SPLIT` or `MOVED` parent carries no deviation and is not one. The August tree's independent flat-scan cross-check of the status block is not carried — see gap `O18`
 - **R299:** `validate trajectory` writes markdown to stdout, honours the global `--json` flag with one key convention, and exits 0 when consistent and 1 when it finds issues
-- **R300:** **The two readers of the queue files must agree, and this check is the second opinion.** `ScanTrajectory` reads item IDs line by line; the dependency's document readers return entries. Every ID one saw and the other did not is a finding, listed first, per file. Measured 2026-09-05 on this repository: the line scan read 58 IDs from the done file and the document reader returned 17 entries with nothing unread — one unclosed backtick in an entry body absorbed the remaining 41 entries — and every check downstream reported four landed parts as orphans. A check that reads through one parser cannot see what that parser swallowed
+- **R300:** **The two readers of the queue files must agree, and this check is the second opinion.** `ScanTrajectory` reads item IDs line by line; `minispecsdom`'s document readers return entries. Every ID one saw and the other did not is a finding, listed first, per file. Measured 2026-09-05 on this repository: the line scan read 58 IDs from the done file and the document reader returned 17 entries with nothing unread — one unclosed backtick in an entry body absorbed the remaining 41 entries — and every check downstream reported four landed parts as orphans. A check that reads through one parser cannot see what that parser swallowed
+
+## Feature: traceability comment
+**Source:** specs/traceability-comment.md
+
+- **R337:** `TraceabilityComment` is one node kind for every language, tiling the whole comment
+  from opener through closer.
+- **R338:** The interior is fields separated by `|` — `CRC:`, `Seq:`, `Test:` each with a plain
+  list, and a keyword-less requirement list — at most one of each, in any order, followed by an
+  optional description after a separator.
+- **R339:** A `:` is a field-key colon only immediately after `CRC`, `Seq` or `Test`; anywhere else
+  it is the description separator.
+- **R340:** A `Seq` item may carry `#step`, and the typed view splits path from step.
+- **R341:** Whitespace, keywords, `|` and the separator are computed glue; an unedited comment
+  renders back byte-exact; the separator is preserved when unedited and written as `--` on a fresh
+  write; the description is bound and writable.
+- **R342:** Recognition is a parse that consumes the whole interior; a comment that leads with a
+  field but leaves bytes uncovered is not a traceability comment.
+- **R343:** `Parse(cmt *Opener, ctx *BracketContext) bool` fills the node off to the side, touching
+  no document, and returns false when the interior is not a single text node or is not consumed.
+- **R344:** On success the children are the original `*Opener`, the interior's glue and fields, and
+  the original `*Closer` — reused, not recreated.
+- **R345:** The interior is parsed by a segment walk with one stencil per `|`-segment, and the
+  results splice flat into the node.
+- **R346:** `Comments(d, ctx)` is the second pass: every opener whose group kind equals the
+  language's `Comment.Kind` is a candidate, each success replaces its run from opener to closer
+  inside its own mutation window, and nothing else is touched.
+- **R347:** `New(lang, Fields)` assembles the canonical interior — CRC, Seq, Test, refs, `--`
+  description — and runs the same interior walk at a synthetic location inside synthetic markers,
+  so no child list is hand-built and the node has no origin.
+- **R348:** The node exposes typed accessors `CRC`, `Seq`, `Test`, `Refs` and `Description`, nil
+  when the field is absent.
+
+## Feature: part line
+**Source:** specs/part-line.md
+
+- **R349:** `PartLine` is one node over a list item line, from the `- ` marker to the byte before
+  the newline, reusing the `ListItem`, `Checkbox` and every bracket marker the base emitted.
+- **R350:** Every list item line parses; `Parse` returns false only when the item is not in the
+  document, and belonging to a status block is the carve schema's business.
+- **R351:** The head is the first bold run after the checkbox; the line is keyed when its interior
+  begins `Item N — ` or `N.M — ` — the word required without a dot and forbidden with one, the em
+  dash and nothing else — and the key is a bound `Text`, the separator glue, the title the rest of
+  that text.
+- **R352:** A later bold run whose interior reads `VERB (attribution)`, the verb in capitals as one
+  or more words joined by spaces or hyphens, is a `MarkerSpan`; anything else is interspersed text.
+- **R353:** `Checkbox()` is the base's own `Checkbox` node, nil when the line has none.
+- **R354:** `IsStruck()` derives from whether the head sits inside a `~~` group; `Strike(bool)`
+  inserts or removes the `~~` pair around the head's bold run among the node's own children — the
+  flat array is untouched, so no mutation window is involved; no consumer touches a `~~` node.
+- **R355:** Deviations are reported, each naming its rule and target shape — unkeyed head,
+  non-em-dash separator, non-conforming checkbox interior, verb not in capitals, an `OPEN`
+  attribution off its shape (R397), the comma-form marker (R398) — and the line still parses.
+- **R356:** `MarkerSpan` tiles `**` through `**` reusing both; its verb is a bound `Text`; its
+  attribution and queue ID are derived by rendering the nodes between the parentheses.
+- **R357:** `MarkerSpan.Set` rewrites the interior canonically as one text under the guarded write:
+  the render re-parsed as a marker must yield the same verb and attribution, or the write is
+  refused and the literal unchanged.
+- **R358:** `Splice` replaces the line's run with the node inside a mutation window; `PartLines`
+  parses and splices every list item in document order.
+- **R359:** `PartLine` and `MarkerSpan` each declare their own `Equals`, comparing children.
+- **R360:** Bound texts and glue are re-cut from the interior texts; no bytes are lost or
+  normalised on read, and an unedited line renders back byte-exact.
+- **R410:** A `REVERTED` attribution that is not `#N` is the `REVERTED attribution` deviation.
+- **R417:** `Key()` returns the fragment — `4` for a part, `2.2` for a subpart — the one key form,
+  which `Part`, `SetMarker`, `Land` and the pending `Source:` line all use; `Item ` is the head's
+  display word, not part of the key.
+
+## Feature: carve schema
+**Source:** specs/carve-schema.md
+
+- **R361:** `Carve` embeds the markdown base and owns a carve file's DOM; `ParseCarve` is the
+  only way one is made and `Render` re-emits it.
+- **R362:** The status block is the region from the level-2 heading `Status` to the next heading
+  of level 2 or higher or the end of file; `HasStatus` is false when there is none.
+- **R363:** Only list items inside the status region become part lines; other lists in the body
+  are left as the base parsed them, and a fenced sample is invisible by construction.
+- **R364:** A status line with a checkbox is a `Part`; one without is `Stateless`, recorded and
+  never given a state.
+- **R365:** `Depth` is the bullet's leading whitespace, and `Parent` is the nearest preceding
+  part with a smaller depth, or nil.
+- **R366:** `Part(key)` finds a part by its key; a write to a key no part carries is an error.
+- **~~R367:~~** (Retired T7 — see R409) `SetMarker` replaces the first transient marker — verb `OPEN` — removes any other
+  transient, and appends a marker when the line carries none; it selects by what it replaces.
+- **R368:** `Land` checks the box, strikes the head, and sets `LANDED (attribution)` through the
+  marker rule, in one act.
+- **R369:** Every part carries its line's deviations.
+- **R395:** `Part`, `Entry` and `DoneEntry` report `Line()`: the 1-based line of the part line,
+  heading or bullet as the document stood at parse time.
+- **R396:** `Pending.Unread` and `Done.Unread` return `[]Unread`, each with the line and text of
+  what was not read.
+- **R397:** An `OPEN` attribution reads `#N` or `not queued` in any case, with any inner spacing and
+  an optional full stop; anything else is the `OPEN attribution` deviation.
+- **R398:** A bold run after the head whose interior opens with a verb and a comma — the superseded
+  `OPEN, not queued` form — is not a marker and is reported as the `marker scheme` deviation.
+- **R391:** `SetMarker` and `Land` decide refusal before any marking, so a refused write leaves the
+  line byte-identical.
+- **R392:** A write over a line carrying deviations is refused with a `DeviationError` naming the
+  key and every deviation's rule and target.
+- **R393:** `SetMarker` refuses `OPEN` over a part whose checkbox is checked, with `ErrReopen`.
+- **R394:** `Land` over a part whose checkbox is checked is refused with `ErrLanded`, not made
+  idempotent.
+- **R404:** `Carve.Unread` lists every group open at end of input at its opener's line, with the
+  text *`<marker>` never closed*.
+- **R409:** `SetMarker` replaces the first transient marker — verb `OPEN` or `REVERTED` — removes any
+  other transient, and when the line carries none inserts the marker after the head and any markers
+  and before the trailing prose; it selects by what it replaces.
+- **R415:** After the write, a fresh parse of the render finds the marker on the keyed part — for `Land`
+  its checked, struck box too — or the write panics with a `ReadBackError`.
+
+## Feature: pending schema
+**Source:** specs/pending-schema.md
+
+- **R370:** `Pending` embeds the markdown base and owns the pending file's DOM; `ParsePending`
+  makes one and `Render` re-emits it.
+- **R371:** An entry is a level-2 heading whose text opens `N.`, and its region runs to the next
+  heading of level 2 or higher or a `---` line outside a fence; a fenced heading cannot end it.
+- **R372:** An entry is a view over its run of flat nodes, its values derived from the rendered
+  bytes at the format's positions — number, title, skill, status, Source document and part key,
+  Next — and nothing in the run is re-cut.
+- **~~R373:~~** (Retired T5 — see R407) `Place(e, pos)` inserts the canonical entry text as one synthetic node before the entry
+  at `pos`, or at the end when `pos` is one past the last; a position outside that range is
+  refused, not clamped.
+- **R374:** `After(id)` resolves the position following a live entry and refuses an unknown id.
+- **~~R375:~~** (Retired T6 — see R408) `Remove(id)` drops the entry's run inside one mutation window, splitting a shared tail
+  text at the region's end.
+- **R376:** `Unread` lists level-2 headings that are not entries; `MaxID` is the largest entry id.
+- **R399:** A `Source:` line names a part or a gap, told apart by the word and by shape; `Entry.Kind`
+  says which was read and `SourceKey` carries the key for either, the part key without its `#`.
+- **R400:** A gap source names exactly one gap ID; a range, a list or a `#` there reads as
+  `SourceNone`, and a `Source:` line that read as neither form is listed by `Unread` with its line.
+- **R401:** `EntryText.Text()` writes the part or gap form by `Kind`; `Place` refuses a gap key that is
+  not one gap ID with `ErrBadGapSource`.
+- **R377:** After each write the document is re-read from its bytes and the entries re-derived, since
+  a placed entry is one synthetic text until it is parsed.
+- **R403:** `Pending.Unread` lists every group open at end of input at its opener's line, with the
+  text *`<marker>` never closed*, after the unread headings — file order, for the same
+  reason as the done schema's.
+- **R407:** `Place(e, pos)` inserts the canonical entry text as one synthetic node before the entry
+  at `pos`; at one past the last it lands where the entries end — before the rule that closes the
+  region when one follows, else at end of file with the separator adjusted so the file ends in one
+  newline, and with no entries at all after the header's rule; a position outside `1 … len+1` is
+  refused, not clamped.
+- **R408:** `Remove(id)` drops the entry's run inside one mutation window, splitting a shared tail
+  text at the region's end, and when the entry was the last thing in the file drops the blank line
+  its placement opened, so that `Place` then `Remove` is byte-identical.
+- **R412:** An entry's title is the interior of the heading's first emphasis run, read to its own
+  close, with the ID taken from the bytes before it and the skill and status from the bytes after.
+- **R413:** After the re-read, `Place` finds the entry at its position with every field and `Remove` no
+  longer finds it, or the write panics with a `ReadBackError` naming reader, write, key, want and got.
+- **R447:** A `---` counts as the rule only when it is a whole document line outside a code group;
+  a code span's interior reading `---` and a `---` line inside a fence are body text, and the header
+  rule is found before a placement's mutation window opens.
+
+## Feature: done schema
+**Source:** specs/done-schema.md
+
+- **R378:** `Done` embeds the markdown base and owns the done file's DOM; `ParseDone` makes one and
+  `Render` re-emits it.
+- **~~R379:~~** (Retired T4 — see R396) An entry begins at a column-0 list item whose text opens with bold; a column-0 list item
+  that does not is entry-like and counted by `Unread`.
+- **R380:** A region runs to the next entry-like bullet at column 0 or a heading of level 2 or
+  higher; a fenced quotation can neither begin nor end one.
+- **R381:** The identifier slot is the run between the header's em dash and the colon opening the
+  title; every `#N` in it is a discharged queue ID, and a `#N` anywhere else is prose.
+- **R382:** The part pointer is a backquoted `doc#key`, taken from the header first and the body
+  second; the date, title and first backquoted commit are derived from the header.
+- **R383:** `Prepend(header, body)` inserts the entry as one synthetic text just after the
+  preamble's rule — before the first entry, or at the end when there is none — and the document is
+  re-read after the write.
+- **R384:** `MaxID` is the largest queue ID in any identifier slot; values are derived from the run's
+  rendered bytes and never stored.
+- **R402:** `Done.Unread` lists every group open at end of input at its opener's line, with the
+  text *`<marker>` never closed*, after the entry-like lines — file order, since nothing
+  structured can follow a group still open at the end.
+- **R411:** Every reader's `Unread` also lists each closer the context reports paired with nothing,
+  at its line, with the text *`<marker>` closes nothing*, in line order with the rest.
+- **R445:** Every reader's `Unread` also lists each opener the context reports demoted, at the line
+  of its marker, with the text *`<marker>` never closed, read as text*, in line order with the rest.
+- **R414:** After the re-read, `Prepend` finds the new first entry with its header line, or panics
+  with a `ReadBackError`.
+
+## Feature: current schema
+**Source:** specs/current-schema.md
+
+- **R385:** `Current` embeds the markdown base and owns the current file's DOM; `ParseCurrent`
+  refuses a document with no `## Active` heading or more than one, matched on `Heading` nodes.
+- **R386:** The active region runs from the heading to the next heading of level 2 or higher, or
+  the end of the file.
+- **R387:** `Active` is the region's body trimmed, `""` when it holds only the placeholder
+  `_No active item._`; `Occupied` is the region holding anything else; `Standing` lists the other
+  level-2 headings.
+- **R388:** `SetActive` and `Reset` replace the region's body as one synthetic text and address no
+  node outside the region, so every byte outside it is unchanged by construction.
+- **R389:** `SetActive` refuses when the region is occupied.
+- **R390:** The document is re-read after each write.
+- **R405:** `Current.Unread` lists every group open at end of input at its opener's line, with the
+  text *`<marker>` never closed*.
+- **R406:** `ParseCurrent`'s two refusals are the sentinels `ErrNoActive` and `ErrManyActive`, told
+  apart with `errors.Is`.
+- **R416:** After the re-read, `SetActive` reads its body back and `Reset` the placeholder, or the write
+  panics with a `ReadBackError`.
+
+## Feature: test-design schema
+**Source:** specs/testdoc-schema.md
+
+- **R418:** `ParseTestDoc` parses with the markdown base; an entry is a level-2 heading whose text
+  begins `Test:` together with its region, which runs to the next heading of level 2 or higher or
+  the end of the file; the title is the text after `Test:`. `Tests` lists entries in order.
+- **R419:** A level-2 heading that is not a test is listed in `Unread` rather than guessed at; a
+  fenced heading is no heading to the base, so it neither opens an entry nor ends one.
+- **R420:** A field is `**Name:**` at the head of a line inside the entry and outside any code
+  group. Five names are read — `Fire alarm`, `Inject`, `Pulled`, `Code`, `Alarm`; any other name at
+  a line head is body but still ends the field above it. The two prose fields, `Fire alarm` and
+  `Pulled`, fold across continuation lines to the next field line or the end of the entry; the
+  three list fields, `Inject`, `Code` and `Alarm`, are one line each, and a line following one is body.
+- **R421:** A line the base's context places inside a code group is body on the read side and
+  unreachable on the write side: a fenced `**Alarm:** 1` names nothing.
+- **R422:** `Fire alarm` is prose and its presence is `HasAlarm`; `Inject` splits on commas into
+  `file:symbol` sites, trimmed; `Pulled` is a leading `YYYY-MM-DD` date and everything after it as
+  the body, and a `**Pulled:**` line with no leading date is a deviation; no commit is read after the
+  date; `Code` is a comma-separated list as written; `Alarm` is an integer, and a non-integer is a
+  deviation; an `**Alarm:**` on an entry with no `**Fire alarm:**` is a deviation.
+- **R423:** A field written twice in one entry is a deviation naming the field: the first occurrence
+  is read, and every write to that entry refuses with a `DeviationError`.
+- **R424:** Every entry reports its 1-based line at parse time; `Unread` is ordered by line and
+  lists the non-test headings, each entry carrying a deviation, and every group open at end of input
+  or closer that closes nothing.
+- **R425:** Every write addresses an entry by alarm number — `Alarm(n)` returns it or nil, and a
+  write to an absent number is `ErrNoAlarm` — edits inside that entry's region only, decides its
+  refusal before any byte moves, and after the re-read reads its own write back or panics with a
+  `ReadBackError`.
+- **R426:** `SetPulled(n, date, body)` writes `**Pulled:** <date> — <body>`; over an existing line
+  the old content is folded after the body as ` *Earlier —* <old>` so the leading date moves and the
+  history is kept; with none, the line is inserted after the `**Inject:**` field's last line, or
+  after the `**Fire alarm:**` field's last line when there is no `**Inject:**`.
+- **R427:** `SetInject(n, sites, void)` rewrites the `**Inject:**` line with the sites joined by
+  `, `; no line is `ErrNoInject` and no sites is `ErrEmptyInject`. With `void` set, an existing
+  `**Pulled:**` line is demoted in the same write to *`Pulled at `<old sites>` — <old content> — and
+  the site has since moved, so this is history rather than a record.`*; with `void` unset it stands.
+- **R428:** `NumberAlarms` inserts `**Alarm:** <n>` directly above the `**Fire alarm:**` line of
+  every alarm entry lacking one, numbering from one above the highest number in the document;
+  append-only, idempotent, no number for an entry with no `**Fire alarm:**`, refused whole with a
+  `DeviationError` when an unnumbered alarm entry carries deviations, and it returns the numbers
+  assigned in document order.
+- **R446:** The title is every byte after `Test:` to the end of the heading's line, read from the
+  source, so a code span or emphasis in the heading is part of the title as its own bytes.
+
+## Feature: gaps schema
+**Source:** specs/gaps-schema.md
+
+- **R429:** `ParseGaps` parses with the markdown base; the section is the region from the level-2
+  heading `Gaps` to the next heading of level 2 or higher or the end of the file; `HasGaps` is false
+  without one, and a fenced heading opens nothing.
+- **R430:** A gap is a bullet inside the region, at any depth, whose head is a type letter from
+  `S R D C I O A T`, a number and a colon, with or without a checkbox; depth is the bullet's leading
+  whitespace and `Parent` the nearest preceding gap with a smaller depth; a column-0 bullet of any
+  other shape is listed in `Unread`; a line inside a code group is body.
+- **R431:** A gap's text is its head text with following lines folded on single spaces to the next
+  bullet, a blank line, or the region's end; an indented un-keyed bullet beneath it is one of its
+  `Sub` lines, folded the same way.
+- **R432:** A permanent gap (`A`, `T`) with a checkbox, a tracked gap without one, and an ID the
+  section already carries are each a deviation on that entry, listed in `Unread` with the rule;
+  `Gap(id)` returns the first entry with that ID; every write to a deviant entry refuses with a
+  `DeviationError`; every gap reports its 1-based line at parse time, and `Unread` is ordered by line
+  and carries every group open at end of input or closer that closes nothing.
+- **R433:** `Add(id, text)` appends one line — `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
+  for a permanent one — directly after the last gap's span or after the heading's line when the
+  section is empty; an ID not of the shape `X<n>` is `ErrBadGapID`, one already present is
+  `ErrGapExists`, no section is `ErrNoSection`; the text is written unwrapped.
+- **R434:** `Resolve(id)` turns the head line's `[ ]` into `[x]` and touches nothing else; a permanent
+  gap is `ErrPermanent` and a checked one `ErrResolved`.
+- **R435:** `Approve(id, newID)` rewrites the head line as `- <newID>: <head text>` at the entry's
+  depth with no checkbox and leaves every line beneath it as written; `newID` must be an unused
+  `A<n>` (`ErrBadGapID`, `ErrGapExists`) and a permanent target is `ErrPermanent`.
+- **R436:** Every write edits inside the region only, decides its refusal before any byte moves, and
+  after the re-read reads its own write back or panics with a `ReadBackError`.
+
+## Feature: requirements schema
+**Source:** specs/requirements-schema.md
+
+- **R437:** `ParseRequirements` parses with the markdown base; a section is a heading at any level
+  with its own content running to the next heading of any level or the end of the file, its `Parent`
+  the nearest preceding section with a smaller level; a fenced heading opens nothing; `Section(title)`
+  returns every section with that exact title.
+- **R438:** A requirement is a column-0 bullet inside a section whose head is `**Rn:**` or the retired
+  `**~~Rn:~~**`; its text folds following lines on single spaces to the next bullet, blank line,
+  heading or section end; a column-0 bullet of any other shape is listed in `Unread`; a line inside a
+  code group is body.
+- **R439:** A retired entry's clause `(Retired Tn — see Rm)` or `(Retired Tn — no replacement)` is read
+  into `RetiredBy` and `Replacement` and removed from `Text`; a struck head with no clause is a
+  deviation.
+- **R440:** `**Source:**` at column 0 inside a section is the section's source, the first when there
+  are several, with later ones listed in `Unread`.
+- **R441:** A repeated ID is a deviation on the later entry and `Requirement(id)` returns the first;
+  a deviant entry is listed in `Unread` with its rule and refuses every write with a `DeviationError`;
+  every section and entry reports its 1-based line at parse time; `Unread` is ordered by line and
+  carries every group open at end of input or closer that closes nothing.
+- **R442:** `Add(title, id, text)` appends `- **<id>:** <text>` on one line after the named section's
+  last non-blank line of own content, before any blank lines and before its first sub-heading; an ID
+  not of the shape `R<n>` is `ErrBadReqID`, one present is `ErrReqExists`, a title no section carries
+  is `ErrNoSection`, one several carry is `ErrManySections`.
+- **R443:** `Retire(id, tn, clause)` rewrites a live entry's head line as
+  `- **~~<id>:~~** (Retired <tn> — <clause>) <head text>` and leaves every continuation line as
+  written; `clause` is `see R<m>` or `no replacement` and `tn` is `T<n>`, else `ErrBadClause`; an
+  absent ID is `ErrNoRequirement` and a retired one `ErrRetired`.
+- **R444:** Every write edits inside one section's own content only, decides its refusal before any
+  byte moves, and after the re-read reads its own write back or panics with a `ReadBackError`.

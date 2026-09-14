@@ -2,7 +2,7 @@
 package parser
 
 import (
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 	"os"
 	"path/filepath"
 	"slices"

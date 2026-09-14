@@ -117,11 +117,12 @@ left to read. So the narrower rule is what keeps the format, R274's own caution,
 referential checks all true at once: **never remove, never overwrite; append only what the
 tool composed from facts it was given.**
 
-**Since 2026-09-04 the part line is read and written by `github.com/zot/simple-dom`'s
-`minispecsdom`**, so the two sections below describe rules that reader owns — its
-`part-line.md` and `carve-schema.md` are normative — and this tool reaches them through the
-path-taking adapters in `parser` (`SetMarker(path, key, verb, attribution)`, `PartIsLanded`).
-They stay here as the decisions they record; the mechanism is the dependency's.
+**Since 2026-09-04 the part line is read and written by `internal/minispecsdom`** (ported from
+`github.com/zot/simple-dom` on 2026-09-14), so the two sections below describe rules that
+reader owns — [part-line.md](part-line.md) and [carve-schema.md](carve-schema.md) are
+normative — and the verbs reach them through the path-taking adapters in `parser`
+(`SetMarker(path, key, verb, attribution)`, `PartIsLanded`). They stay here as the decisions
+they record; the mechanism is the reader's.
 
 ### Flexible on input, rigid on output
 

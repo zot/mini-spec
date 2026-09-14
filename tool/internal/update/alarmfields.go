@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/zot/minispec/internal/parser"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Ranger resolves an injection site to a line range, in history and on disk. It is what

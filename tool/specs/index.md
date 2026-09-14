@@ -24,7 +24,24 @@ pointers — the named spec stays canonical, this file mirrors it.
 | [validate.md](validate.md) | full validation and its check classes |
 | [phase.md](phase.md) | per-phase validation gates |
 | [backup.md](backup.md) | the backup slot beneath the queue verbs — one level of undo and redo over the trajectory files, the stamp, drift refusal, release, and the worktree anchor |
-| [queue-items.md](queue-items.md) | the `pending` verbs — `add-item`, `start`, `finish` — that write the trajectory files and both sides of the item↔part link, over the dependency's readers |
+| [queue-items.md](queue-items.md) | the `pending` verbs — `add-item`, `start`, `finish` — that write the trajectory files and both sides of the item↔part link, over `minispecsdom`'s readers |
+
+### Document model — the readers and writers over the markdown the tool owns
+
+Ported from `mini-spec-tool` on 2026-09-14 ([carve](../../carves/minispecsdom-move.md)); built
+over `github.com/zot/simple-dom`, which stays a module dependency.
+
+| spec | covers |
+|---|---|
+| [traceability-comment.md](traceability-comment.md) | the `// CRC: … | Seq: … | Rn` comment as a declaration: its segments, keywords, and canonical write |
+| [part-line.md](part-line.md) | a carve's part line: head, markers, trailing text, the strike, and the marker rule |
+| [carve-schema.md](carve-schema.md) | the carve document: status block, parts, decisions, `Land`, `Open`, `SetMarker` |
+| [pending-schema.md](pending-schema.md) | the pending file: entries, `Place`, `Remove`, the source slot |
+| [done-schema.md](done-schema.md) | the done file: entries and their identifier slot |
+| [current-schema.md](current-schema.md) | the current file: the `## Active` section and standing context |
+| [testdoc-schema.md](testdoc-schema.md) | a `test-*.md`: test entries and the fire-alarm fields |
+| [gaps-schema.md](gaps-schema.md) | `design.md`'s gaps list: add, resolve, approve |
+| [requirements-schema.md](requirements-schema.md) | `requirements.md`: feature sections, entries, retire |
 
 ### Migrations
 

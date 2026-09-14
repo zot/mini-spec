@@ -14,7 +14,7 @@ import (
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // ValidationResult contains issues bucketed by category. R84

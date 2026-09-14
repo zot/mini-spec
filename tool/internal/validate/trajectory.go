@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/zot/minispec/internal/parser"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // The two queue files, each check asking for one or the other by name. trajectory-format.md

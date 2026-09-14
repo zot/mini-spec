@@ -30,7 +30,7 @@
 | `query uncovered` | [queries.md](queries.md) | List requirements with no design file references. |
 | `query orphan-designs` | [queries.md](queries.md) | List CRC cards missing or with empty Requirements field. |
 | `query artifacts` | [queries.md](queries.md) | List all artifacts from design.md with checkbox states. |
-| `query gaps [RANGE...] [--open] [--closed]` | [queries.md](queries.md) | Gap items from `design.md`'s Gaps section, read through the dependency's gaps reader; RANGE selects by ID in the inline-ref grammar (`O22`, `O22-O28`, `O22,O25`), one type per range, nothing matched refused, partly unassigned fine; `--open`/`--closed` select by checkbox and never claim a permanent gap; both flags mean every checkbox; a valid empty selection says so. |
+| `query gaps [RANGE...] [--open] [--closed]` | [queries.md](queries.md) | Gap items from `design.md`'s Gaps section, read through `minispecsdom`'s gaps reader; RANGE selects by ID in the inline-ref grammar (`O22`, `O22-O28`, `O22,O25`), one type per range, nothing matched refused, partly unassigned fine; `--open`/`--closed` select by checkbox and never claim a permanent gap; both flags mean every checkbox; a valid empty selection says so. |
 | `query traceability [file]` | [queries.md](queries.md) | Check traceability comments in one code file. |
 | `query traceability --all` | [queries.md](queries.md) | Scan all artifact code files and report traceability status. |
 | `query migrations` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | List in-flight migration specs under `specs/migrations/` (non-recursive). |

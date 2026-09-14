@@ -6,9 +6,10 @@ file; and `minispec pending finish`, which moves the entry to the done file, cle
 file, and checks off the parts the item discharged. `add-item` and `finish` write **both sides of
 the item↔part link** in one act.
 
-*On this branch the readers are the dependency's* — `minispecsdom.Pending`, `Current` and `Done`
-from `github.com/zot/simple-dom` — and the tool holds thin path-taking adapters over them in its
-`parser` package, as the carve reader already does ([queries.md](queries.md), carve status view).
+*The readers are `internal/minispecsdom`'s* — `Pending`, `Current` and `Done`, ported from
+`github.com/zot/simple-dom` on 2026-09-14 — and the tool holds thin path-taking adapters over
+them in its `parser` package, as the carve reader already does ([queries.md](queries.md), carve
+status view).
 Every guarantee below that is about *how a region is found* — an entry as a heading node, the
 `## Active` section as a heading region, the ledger's rule found in a text run — is the reader's
 and is consumed here rather than restated.
@@ -207,10 +208,10 @@ the refusal fires only when a single `**…**` run spans the entire argument.
 **And the reader must read it back whole.** An entry's title is the heading's first emphasis
 run, closed at that run's own end rather than at the first `**` following it, with code spans
 suppressed and openers told from closers by **CommonMark's flanking rule** — so every title this
-verb accepts survives a round trip through `PendingEntries`. *On this branch the reader is the
-dependency's, and its title read is the lazy form the history below found wanting; measured
+verb accepts survives a round trip through `PendingEntries`. *On this branch the reader is `minispecsdom`'s
+, and its title read is the lazy form the history below found wanting; measured
 2026-09-05, none of the 11 live entries carries emphasis inside its title, so nothing misreads
-today. Recorded as a gap and raised with the dependency rather than patched around here.*
+today. Recorded as a gap and raised with `mini-spec-tool`, which held the reader then, rather than patched around here.*
 *The two halves are one rule and stood apart for six days.* The write half blesses `**OPEN**`
 inside a title, above, while the read half was `^##\s+\d+\.\s*\*\*(.+?)\*\*` — a **lazy**
 group over a raw line — which closes on that very interior run. Measured 2026-08-24 against the
@@ -437,8 +438,8 @@ may use `###` and below inside it as freely as it likes. Everything else in the 
 standing context in its own `##` sections, the preamble above the rule — is outside the
 verb's reach **by construction**, because the verb has no way to name it.
 
-**The edit is a removal of the nodes inside that region and one insert**, through the
-dependency's `Current` reader — never line arithmetic and never an offset splice. That is what
+**The edit is a removal of the nodes inside that region and one insert**, through `minispecsdom`'s
+ `Current` reader — never line arithmetic and never an offset splice. That is what
 makes the previous sentence structural rather than a promise: a raw byte range straddling node
 boundaries corrupts structure silently, which is the failure the reader exists to prevent, and a
 verb that can only remove nodes it enumerated cannot reach a node it did not.

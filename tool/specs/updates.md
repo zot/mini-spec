@@ -179,7 +179,7 @@ first requirements minted through the verb, ten lines added and nothing else tou
 ## The gap verbs and `retire` write through the readers
 
 `add-gap`, `resolve-gap`, `approve-gap` and `retire` edit `design.md`'s Gaps section and
-`requirements.md` through the dependency's gaps and requirements readers (R326): the reader
+`requirements.md` through `minispecsdom`'s gaps and requirements readers (R326): the reader
 decides every refusal — a permanent gap resolved, a gap resolved twice, a requirement retired
 twice, an unknown or ambiguous section — before a byte moves, and reads its own write back.
 What stays this tool's is minting: the next `On`, `An`, `Tn` or `Rn` is computed here from what

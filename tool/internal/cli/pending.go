@@ -15,7 +15,7 @@ import (
 	"github.com/zot/minispec/internal/pending"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/update"
-	"github.com/zot/simple-dom/minispecsdom"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // CRC: crc-CLI.md | Seq: seq-queue-item.md#1.1 | R283
