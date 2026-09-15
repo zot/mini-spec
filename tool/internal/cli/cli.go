@@ -582,6 +582,13 @@ func (c *CLI) runUpdate(args []string) int {
 		return 1
 	}
 
+	// CRC: crc-CLI.md | Seq: seq-links.md#3.1 | R463
+	// Carves are repository-scoped, so the move repair answers before any design root is
+	// resolved, like `query carves` and `query links`.
+	if args[0] == "repair-links" {
+		return c.runRepairLinks(args[1:])
+	}
+
 	p, err := c.getProject()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -1043,6 +1050,58 @@ func (c *CLI) runPulled(u *update.Update, args []string) int {
 	}
 	fmt.Printf("Pulled %s, %s\n", rest[0], now.Format("2006-01-02"))
 	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-links.md#3.6 | R463, R467, R468
+// runRepairLinks: `update repair-links [file...]`. Named files are relative to the working
+// directory; the repair resolves relative paths against the repository root. Exit 1 when any
+// considered link was left, so the run itself says whether the documents are clean.
+func (c *CLI) runRepairLinks(args []string) int {
+	fs := flag.NewFlagSet("repair-links", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	files, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	for i, f := range files {
+		if !filepath.IsAbs(f) {
+			files[i], _ = filepath.Abs(f)
+		}
+	}
+	report, err := update.RepairLinks(repoRoot, files)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(report)
+	} else {
+		printRepair(os.Stdout, report)
+	}
+	if report.Unrepaired() {
+		return 1
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-links.md#3.6 | R467
+// printRepair renders every link considered and the closing count.
+func printRepair(w io.Writer, r *update.RepairReport) {
+	for _, c := range r.Considered {
+		if c.Outcome == update.Rewritten {
+			fmt.Fprintf(w, "%s:%d  %s → %s  rewritten\n", c.File, c.Line, c.Old, c.New)
+		} else {
+			fmt.Fprintf(w, "%s:%d  %s  left: %s\n", c.File, c.Line, c.Old, c.Outcome)
+		}
+	}
+	fmt.Fprintln(w, r.Summary())
 }
 
 // CRC: crc-CLI.md | Seq: seq-update.md | R315

@@ -44,6 +44,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Requirements.md → `internal/minispecsdom/requirements.go`
 - [x] crc-Markdown.md → `internal/minispecsdom/mdbase.go`
 - [x] crc-Links.md → `internal/query/links.go`
+- [x] crc-LinkRepair.md → `internal/update/links.go`
 
 ### Sequences
 - [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
@@ -60,7 +61,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
-- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`
+- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`, `internal/update/links.go`
 - [x] seq-current.md → `internal/minispecsdom/current.go`
 - [x] seq-done.md → `internal/minispecsdom/done.go`
 - [x] seq-pending.md → `internal/minispecsdom/pending.go`
@@ -91,6 +92,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 - [x] test-Markdown.md → `internal/minispecsdom/mdbase_test.go`
 - [x] test-Links.md → `internal/query/links_test.go`, `internal/cli/cli_links_test.go`
+- [x] test-LinkRepair.md → `internal/update/links_test.go`, `internal/cli/cli_repair_test.go`
 - [x] test-Current.md → `internal/minispecsdom/current_test.go`
 - [x] test-Done.md → `internal/minispecsdom/done_test.go`
 - [x] test-PendingSdom.md → `internal/minispecsdom/pending_test.go`

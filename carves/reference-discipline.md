@@ -28,9 +28,9 @@ is trajectory-specific.
     Needs a link reader first: the DOM does not model links.
 - [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
-- [ ] **Item 4 — repair links broken by a carve's move, both directions.** **OPEN (not queued.)**
+- [ ] **Item 4 — repair links broken by a carve's move, both directions.** **OPEN (#84.)**
   Added 2026-09-15 after `query links`' first run found 32 of them (gap `O27`).
-- [ ] **Item 5 — a move verb that rewrites links as it moves.** **OPEN (not queued.)** Prevention
+- [ ] **Item 5 — a move verb that rewrites links as it moves.** **OPEN (#85.)** Prevention
   for the class Item 4 repairs; needs Item 4's rewrite.
 
 ## Decisions

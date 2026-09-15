@@ -68,6 +68,17 @@ func (r *LinkReport) Errors() bool {
 // go unchecked, and the tool says so rather than passing silently. R460
 var ErrNoGitTree = errors.New("not a git working tree, so links cannot be classified")
 
+// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R455, R463
+// LiveCarves is the live-carve population, shared with the move repair.
+func LiveCarves(root string) ([]string, error) { return defaultPopulation(root) }
+
+// CRC: crc-Links.md | Seq: seq-links.md#2.3.1 | R456, R464
+// ClassifyLink is classify for the move repair: the class a link has before git is asked,
+// "" with its repository-relative path when it exists inside the tree.
+func ClassifyLink(root, file string, l minispecsdom.Link) (LinkClass, string) {
+	return classify(root, file, l)
+}
+
 // CRC: crc-Links.md | Seq: seq-links.md#2.1 | R455
 // defaultPopulation is the live carves — every `*.md` directly in carves/ and .carves/,
 // never carves/done/ — as `query carves` reads them.

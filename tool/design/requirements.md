@@ -757,6 +757,7 @@
 - **R452:** `Render` reproduces the source byte for byte, and the property is tested over the real corpus — every markdown document at the repository root, under `carves/` recursively, under `tool/specs/` and `tool/design/`, and under a sibling `ark` checkout when present — with the test reporting the count it read.
 - **R453:** `Unread` lists every bracket group open at end of input or closer that closes nothing, ordered by line.
 - **R454:** The reader resolves no destination and knows neither the file system nor git; classification is the query's.
+- **R462:** `SetDest(i, dest)` replaces link `i`'s destination bytes — between `(` and `)`, title included — with `dest` and nothing else; an index no link carries is `ErrNoLink`; the reader reads the link back at the same index with the new destination or panics with `ReadBackError`.
 
 
 ## Feature: Reference Links View
@@ -768,4 +769,14 @@
 - **R459:** A directory target resolves when it exists and is `tracked` when git holds any file under it.
 - **R460:** Classification uses the `git` command line only — `ls-files --error-unmatch` and `check-ignore`, batched per citing file — and outside a git working tree the query refuses to classify and says so rather than passing silently.
 - **R461:** The exit status is 1 when any link is an error, and `--json` is honoured anywhere among the arguments.
+
+
+## Feature: Link Repair
+**Source:** specs/updates.md
+- **R463:** `update repair-links [file...]` reads the named documents, or with none every live carve and every `*.md` directly under `carves/done/` (and `.carves/`, `.carves/done/`); it resolves at the repository root, needs no design root, and consults no git.
+- **R464:** A link is rewritten only when it is `missing` now and exactly one of the four sibling relocations resolves on disk: the citing file re-based from `carves/` to `carves/done/` or back, or the target moved into or out of `done/`; every other class is untouched.
+- **R465:** A missing link that no relocation resolves, or that more than one resolves, is reported and left unchanged, each with its reason.
+- **R466:** The new destination is the relocated target relative to the citing file's directory, slash-separated, with the fragment kept as written and `<…>` wrapping kept only if it was there; the rewrite goes through `Markdown.SetDest` so every other byte of the document stays.
+- **R467:** The report lists every link considered per file — rewritten with old and new destination, or left with its reason — and closes with the counts of rewritten, unresolvable and ambiguous, zeros included; a run that repaired nothing writes no file and says so.
+- **R468:** The exit status is 1 when any considered link was left unrepaired, and a second run over repaired documents finds nothing to do and changes no byte.
 

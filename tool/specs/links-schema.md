@@ -13,6 +13,7 @@ func (m *Markdown) Doc() *sdom.Doc
 func (m *Markdown) Render() (string, error)
 func (m *Markdown) Links() []Link             // every link, in document order
 func (m *Markdown) Unread() []Unread          // groups never closed or closing nothing
+func (m *Markdown) SetDest(i int, dest string) error   // rewrite link i's destination bytes alone
 
 type Link struct {
     Raw      string   // the link as written, `[` (or `!`) through `)`
@@ -55,6 +56,17 @@ for the reader's caller to check or ignore.
 `Unread` lists every bracket group open at end of input or closer that closes nothing, as
 every reader does, because a fence never closed swallows every link after it and nothing
 else would say so.
+
+## What it writes
+
+**`SetDest(i, dest)`** replaces the destination bytes of link `i` — the bytes between `(` and
+`)`, the title included — with `dest`, and nothing else: the text, the parentheses and every
+byte around the link stay where they were. It is the reader's one write and exists for the
+move repair ([updates.md](updates.md), `update repair-links`). An index out of range is
+`ErrNoLink`. After the write the reader re-reads its render and reads the link back at the
+same index with the new destination, or panics with `ReadBackError`, as every reader does.
+Byte offsets of the parse are what `Links()` reports, so several links may be rewritten in
+one document as long as each is written once.
 
 ## What it does not do
 

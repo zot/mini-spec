@@ -11,7 +11,7 @@ about.
 `TRAJECTORY-TOOL-20260804.md`, which holds the raw diagnosis and the drafts that
 were settled against. Everything from it that a stranger needs is restated here;
 the note is not linked because `.scratch/` is gitignored in this repo, which is
-the case the [reference rule](reference-discipline.md) exists to prevent.
+the case the [reference rule](../reference-discipline.md) exists to prevent.
 
 **Annotations.** `@undecided:` marks a proposal we are not yet sure is a decision —
 the state between unmarked thinking and `DECIDED`, and named for the state rather
@@ -26,7 +26,7 @@ this paragraph — it is a mention: ark skips it, and so can a reader's grep, by
 dropping any hit whose next character is a backtick. One character does the work a
 markdown parser would otherwise have to do. It does not retire that parser: a *link*
 inside a code span carries no such marker, which is still Item 1 of
-[reference-discipline.md](reference-discipline.md).
+[reference-discipline.md](../reference-discipline.md).
 
 ## Status
 
@@ -154,7 +154,7 @@ concern (Bill): `trajectory-format.md` states the target, and bringing a carve u
 is an agent's job.
 
 **DECIDED (Bill, 2026-08-16): one shared markdown-aware extractor, not one per parser.**
-[reference-discipline.md](reference-discipline.md) Item 1 already owns *"it must parse
+[reference-discipline.md](../reference-discipline.md) Item 1 already owns *"it must parse
 markdown, not grep it"*, and it earned that from the identical failure — a throwaway
 checker run on **this carve** on 2026-08-04 flagged a `[text](path)` inside a code span as
 a missing file. Trajectory Item 3 needs the same skill for status entries: a fenced
@@ -199,7 +199,7 @@ parent moves with its sub-items, since they are one entry.
 *Brought up to this tree on 2026-09-06.* This branch restarted from `abd78fd` (Item 13's commit)
 on 2026-09-04, so six parts that landed on `old-sdom` between 08-16 and 08-18 have their done
 entries in the shared ledger but their code only on that branch. Four of them were re-landed here
-over simple-dom by [sdom-reclaim.md](done/sdom-reclaim.md) and are marked with both commits; the
+over simple-dom by [sdom-reclaim.md](sdom-reclaim.md) and are marked with both commits; the
 worktree anchor came across with the backup port; `add-req` did not, and is open again. The
 `carve-stencils` carve that Item 10 and half of Item 7 moved to on `old-sdom` is not in this
 tree either, so both read as they did on 2026-08-16.
@@ -208,7 +208,7 @@ tree either, so both read as they did on 2026-08-16.
 
 - [x] ~~**Item 12 — `update add-req`, the requirement-minting verb.**~~ **LANDED (`a543897`, 2026-09-07 — `#75`.)**
   Landed on `old-sdom` as `d367eee` (2026-08-18 — `#32`) and not in this tree; returned as
-  [sdom-reclaim.md](done/sdom-reclaim.md) Item 7, over the dependency's requirements reader.
+  [sdom-reclaim.md](sdom-reclaim.md) Item 7, over the dependency's requirements reader.
 - [x] ~~**Item 10 — status is a checkbox, not a prose stamp.**~~ **MIGRATED (2026-09-13 — `trajectory-format.md`, *The interior is `[ ]` or `[x]`* and the stateless rule; R216, R217.)**
   This carve's own Open questions took checkboxes on 2026-08-13; retrofitting ark's carves is ark's.
 - **Item 9 — `trajectory-format.md`: the normative format reference.** **SPLIT (Bill, 2026-08-14.)** No
@@ -254,7 +254,7 @@ tree either, so both read as they did on 2026-08-16.
   - [x] ~~**1.1 — repository-root detection.**~~ **LANDED (`8197c6c`, 2026-08-07 — `#1`.)**
   - [x] ~~**1.2 — `.minispec/` and the config move.**~~ **LANDED (`fe0cd11`, 2026-08-07 — `#3`.)**
   - [x] ~~**1.3 — `init`, `track`, and `--repair`.**~~ **LANDED (`0711319`, 2026-08-11 — `#4`.)**
-- **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
+- **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](../reference-discipline.md).)** No checkbox: nothing here left to close.
 
 ## Why
 
@@ -313,7 +313,7 @@ the migration is the wrong container.
 ### Reference discipline — moved
 
 The rule that governs which documents may cite which, and its four decisions, now
-live in [reference-discipline.md](reference-discipline.md). Stated once, there, so
+live in [reference-discipline.md](../reference-discipline.md). Stated once, there, so
 there is no second copy to drift.
 
 It still binds *these* documents: this carve is public, so it may cite only
@@ -466,7 +466,7 @@ trajectory config surface is empty, so its first job is being the lock.
 **MIGRATED 2026-08-07 (`fe0cd11`).** The config structure decided here — both scopes, the
 inheritance, the flat top-level error, and the merge rules that fell out of
 implementing it — is now specified in the **Config Scopes** section of
-[tool/specs/config.md](../tool/specs/config.md) and numbered R118–R130. **That spec is
+[tool/specs/config.md](../../tool/specs/config.md) and numbered R118–R130. **That spec is
 the authority; what follows is the reasoning that produced it.** Where the two ever
 disagree, the spec wins and this section is stale.
 
@@ -569,7 +569,7 @@ and adds `.minispec/backup` to the top-level `.gitignore`.**
 
 **MIGRATED 2026-08-11 (`0711319`, extended by `5ea35f1`).** Everything decided in this
 section is now specified in
-[tool/specs/initialization.md](../tool/specs/initialization.md) and numbered R131–R177.
+[tool/specs/initialization.md](../../tool/specs/initialization.md) and numbered R131–R177.
 **That spec is the authority; what follows is the reasoning that produced it**, kept
 because a spec states behavior rather than why it was chosen, and the three-tier
 argument in particular is worth more than the rule it produced. Where the two disagree,
@@ -751,7 +751,7 @@ actor left who can act. Back up the config first, and skip the backup when it is
 byte-identical to the one already there.
 
 *That documentation is an obligation this decision creates.*
-[`.claude/skills/mini-spec/config-reference.md`](../.claude/skills/mini-spec/config-reference.md)
+[`.claude/skills/mini-spec/config-reference.md`](../../.claude/skills/mini-spec/config-reference.md)
 documents `.minispec.yaml` — the design-root config — and says nothing about
 `.minispec/config.yaml`, `track`, or inheritance. The crank handle would point at a
 section that does not exist, so writing it is part of the work rather than a follow-up.
@@ -867,13 +867,13 @@ under the number is everything the decisions built instead, and it splits three 
 - ~~**repository-root detection (#1)**~~ — **LANDED (`8197c6c`, 2026-08-07.)** The
   upward marker search, the two roots the word "project" was hiding, and the `$HOME`
   exclusion. Decisions migrated to
-  [tool/specs/repository-root.md](../tool/specs/repository-root.md) as R107–R117,
+  [tool/specs/repository-root.md](../../tool/specs/repository-root.md) as R107–R117,
   with `crc-RepoRoot.md`, `seq-reporoot.md` and `test-RepoRoot.md`; the sections
   below keep the reasoning and the measurements, not the specification.
 - **`.minispec/` and the config move (#3)** — the directory, `config.yaml`, the
   inheritance model, and the flat top-level-`.minispec.yaml` error. Needs #1, since all
   of it is sited at a root the tool must first be able to find. Decisions migrated to
-  the **Config Scopes** section of [tool/specs/config.md](../tool/specs/config.md) as
+  the **Config Scopes** section of [tool/specs/config.md](../../tool/specs/config.md) as
   R118–R130. *The lock target moved out of this sub-item:* a requirement saying "one
   lock per repository" is untestable while nothing locks, so it belongs with whatever
   implements locking rather than banking an immediate implementation gap here.
@@ -914,13 +914,13 @@ carries a generated section and never restates them by hand.**
 
 *The mechanical fact that reshapes this, found before deciding.* A `**Source:**` value
 must be a relative path resolving inside `specs/` — no leading slash, no `..`
-([tool/specs/validate.md](../tool/specs/validate.md), Spec Source Validation) — so a skill
+([tool/specs/validate.md](../../tool/specs/validate.md), Spec Source Validation) — so a skill
 file **can never be a requirement's Source**. The moment the tool parses trajectory
 content, a `tool/specs/trajectory.md` must exist regardless. So the question was never
 which file wins; it was whether that spec restates the shapes or cites them.
 
 The authority half is already recorded and only needs honouring:
-[tool/specs/file-formats.md](../tool/specs/file-formats.md) says the trajectory files'
+[tool/specs/file-formats.md](../../tool/specs/file-formats.md) says the trajectory files'
 "content is owned by the skill, not the tool," and that file already models
 cite-don't-restate for `design.md` — `config.md` owns the format, `validate.md` owns the
 structural rules. The format is tool-agnostic besides: the skill says trajectory tracking
@@ -987,7 +987,7 @@ use. Harmless here — it was reworded out of this paragraph rather than left as
 positive in the reference instance — but it is a second witness for the same limitation
 the annotation decision already names: the marker handles the common case, and a code span
 still needs the markdown-aware extraction that is Item 1 of
-[reference-discipline.md](reference-discipline.md).
+[reference-discipline.md](../reference-discipline.md).
 
 ### The split
 
@@ -1035,7 +1035,7 @@ decisions below.
 
 **One drift hazard to settle up front — settled 2026-08-14, see the decisions below.**
 The tool's own specs describe these same formats, and
-[tool/specs/file-formats.md](../tool/specs/file-formats.md) exists as the summary spec for
+[tool/specs/file-formats.md](../../tool/specs/file-formats.md) exists as the summary spec for
 exactly that. Two hand-maintained normative copies of one format is the failure this whole
 carve is about. The fork recorded here — `trajectory-format.md` authoritative with the tool spec
 linking, or the tool spec authoritative with `trajectory-format.md` generated from it — was answered
@@ -1088,7 +1088,7 @@ complain.
 **Two things fold in here** (Bill, 2026-08-16):
 
 - **The shared markdown-aware extractor**, from
-  [reference-discipline.md](reference-discipline.md) Item 1.1, which is therefore a
+  [reference-discipline.md](../reference-discipline.md) Item 1.1, which is therefore a
   prerequisite. Without it a fenced `## Status` example is indistinguishable from a status
   block: measured 2026-08-16, a grep widened past `carves/` counts 32 open items where 12
   exist, four of the phantoms coming from `trajectory-format.md`'s own example. The same
@@ -1105,7 +1105,7 @@ lines inside the status block — never from a pattern swept over free text. Tha
 makes an agent's prose safe by construction rather than by inspection: the `#8` entry in
 this project's own ledger cites `#7` in its body, and the parser cannot see it.
 
-**Item 4** — moved to [reference-discipline.md](reference-discipline.md). The number
+**Item 4** — moved to [reference-discipline.md](../reference-discipline.md). The number
 stays retired here so nothing renumbers and no later part reuses it.
 
 **Item 10** (Bill, 2026-08-13) — every list this format tracks progress on uses
@@ -1163,7 +1163,7 @@ the smallest. Move it if that reads wrong.*
 
 **Item 5** — the backup slot. Tool-wide, not trajectory-specific: every `update`
 subcommand currently writes in place via bare `os.WriteFile`
-([tool/internal/update/update.go](../tool/internal/update/update.go)) with no backup
+([tool/internal/update/update.go](../../tool/internal/update/update.go)) with no backup
 anywhere, so this retrofits onto eight existing verbs and is worth landing on its
 own. Prerequisite for Item 6 — and **question 5's answer (2026-08-13: the tool does
 edit trajectory files) is why**: the files it will be writing are mostly prose, so a bad
@@ -1193,7 +1193,7 @@ carries a bare key and the queue side holds the recorded pointer. The riskiest p
 and the one hand-maintenance structurally cannot supply.
 
 **Item 15** (Bill, 2026-08-17) — the worktree anchor. **Split out of Item 6**; its decisions are
-sited here and the specification is [backup.md](../tool/specs/backup.md)
+sited here and the specification is [backup.md](../../tool/specs/backup.md)
 with R266–R273. Only the shape of the work belongs here.
 
 **DECIDED (Bill, 2026-08-17): the anchor holds untracked *contents*, and lives at
@@ -1362,7 +1362,7 @@ through the door R190 did not cover.
 
 **The order is the work:**
 
-1. **Change `parseDoneIDs`** ([tool/internal/parser/trajectory.go](../tool/internal/parser/trajectory.go))
+1. **Change `parseDoneIDs`** ([tool/internal/parser/trajectory.go](../../tool/internal/parser/trajectory.go))
    to read `- **DATE — #N / …:` — identifiers leading, bare, `/`-separated, with the slot
    optionally holding a gap ID or a requirement range instead. **Edit R190's text**, which
    describes the shape it reads; this is a requirement change, not just an implementation.
@@ -1433,7 +1433,7 @@ format rather than merely tolerate them. If `init` can produce a project's
 conventions correctly, the validators can read them.
 
 **Item 8** — shrink the skill. The trajectory and carve sections are the largest
-prose block in [SKILL.md](../.claude/skills/mini-spec/SKILL.md), and most of it is
+prose block in [SKILL.md](../../.claude/skills/mini-spec/SKILL.md), and most of it is
 mechanics. ~~Lands last by construction: the mechanics cannot leave the prose until the
 tool carries them.~~
 
@@ -1459,7 +1459,7 @@ hand-maintained places, which is the failure this carve was opened about. And it
 the stale siting prose measured on 2026-08-14 — `specs/migrations/` as the default, plus
 a parameterization list naming siting, prefix, case convention and part-keying, all four
 decided away 2026-08-04 and all four now contradicted by
-[tool/internal/project/track.go](../tool/internal/project/track.go), which hardcodes the
+[tool/internal/project/track.go](../../tool/internal/project/track.go), which hardcodes the
 three filenames at the repository root.
 
 **8.2** — `minispec query carves`, the cross-document status view: one line per carve,
@@ -1598,7 +1598,7 @@ declaring what is private, everything already reads it, and using it creates no
 second copy to disagree with the first. The consequence is larger than the saving:
 once privacy lives there, a carve linking the queue stops being a trajectory concept
 and becomes an ordinary instance of a rule already decided in
-[reference-discipline.md](reference-discipline.md) — **error on ignored**. The
+[reference-discipline.md](../reference-discipline.md) — **error on ignored**. The
 visibility question is not answered, it is dissolved.
 
 **The human makes the call, once, at creation, and the agent never does.** The tool
@@ -1650,7 +1650,7 @@ skills cannot be scoped to any one design root.
 ### Finding the repository root
 
 **MIGRATED 2026-08-07 (`8197c6c`).** Everything decided in this section is now
-specified in [tool/specs/repository-root.md](../tool/specs/repository-root.md) and
+specified in [tool/specs/repository-root.md](../../tool/specs/repository-root.md) and
 numbered R107–R117. **That spec is the authority; what follows is the reasoning that
 produced it**, kept because the measurements are the argument and a spec states
 behavior rather than why it was chosen. Where the two ever disagree, the spec wins
@@ -1729,7 +1729,7 @@ first weaker marker it met; collecting lets the strong marker win from any depth
 while the weak ones stay available if it never appears.
 
 *Only `.git`, not `.fslckout`* — consistent with the git-only decision in
-[reference-discipline.md](reference-discipline.md), and it costs nothing: a
+[reference-discipline.md](../reference-discipline.md), and it costs nothing: a
 fossil-only tree simply falls through to the next marker down the list, which is the
 right answer there rather than a gap. Ark is such a tree in principle and carries a
 `.git` anyway, so the fallback goes unexercised there.
@@ -1756,7 +1756,7 @@ exclusion exists for.
 
 `.minispec.yaml` is already the design-root marker, read at
 `<design root>/.minispec.yaml`
-([tool/internal/project/project.go](../tool/internal/project/project.go)). In a repo
+([tool/internal/project/project.go](../../tool/internal/project/project.go)). In a repo
 with two design roots each may carry its own, and the innermost wins any upward
 walk — so "first `.minispec.yaml` going up" would resolve this repository's root to
 `tool/`, precisely the wrong answer. **Presence is not a declaration**, which is why
@@ -1860,7 +1860,7 @@ derives today; and the **private carve directory as the dotted sibling** —
 ### What the siting decision rests on — measured 2026-08-04
 
 `SpecsDir()` returns `<design root>/specs` unconditionally
-([tool/internal/project/project.go](../tool/internal/project/project.go)), so **"beside
+([tool/internal/project/project.go](../../tool/internal/project/project.go)), so **"beside
 the specs directory" and "the design root" name the same directory in every
 project, by construction.** Confirmed on both surveyed projects.
 
@@ -1889,7 +1889,7 @@ The trajectory files are not the only repo-scoped artifact the tool cannot see.
 `.claude/` is repo-scoped too, and the version check looks for it in the wrong
 place.
 
-[tool/internal/cli/cli.go](../tool/internal/cli/cli.go) builds two candidates for the
+[tool/internal/cli/cli.go](../../tool/internal/cli/cli.go) builds two candidates for the
 skill README — `<cwd>/.claude/…`, then `<home>/.claude/…`. **It checks the current
 directory and then the home directory, and never walks up.** Observed directly:
 
@@ -1928,7 +1928,7 @@ confident wrong answer from the tool's own check, which is the failure class thi
 carve was opened over.
 
 **LANDED (`8197c6c`, 2026-08-07)** as part of sub-item #1. The behavior now lives in
-[tool/specs/repository-root.md](../tool/specs/repository-root.md) with R107–R117 and
+[tool/specs/repository-root.md](../../tool/specs/repository-root.md) with R107–R117 and
 `crc-RepoRoot.md`; this section keeps only the diagnosis and the measurement.
 
 *This is not a trajectory bug and does not belong to any item here.* It is recorded
@@ -2127,8 +2127,8 @@ approved gap draws.
   presentation layer over some other form.** Baby Food: the model reads the output
   directly and never parses a format. Program-parseable output is the *exception* and
   already has its mechanism — `--json` is a global flag
-  ([tool/internal/cli/cli.go](../tool/internal/cli/cli.go), documented in
-  [cli-commands.md](../tool/specs/cli-commands.md)) — so nothing new is needed; the
+  ([tool/internal/cli/cli.go](../../tool/internal/cli/cli.go), documented in
+  [cli-commands.md](../../tool/specs/cli-commands.md)) — so nothing new is needed; the
   decision just names what it is an exception to.
 
   *Existing deviations are **Item 11**, added 2026-08-13.* Two `update` verbs put a bare

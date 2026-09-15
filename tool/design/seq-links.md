@@ -1,5 +1,5 @@
-# Sequence: reading a document's links and classifying them
-**Requirements:** R448, R449, R450, R451, R453, R455, R456, R457, R459, R460
+# Sequence: reading a document's links, classifying them, and repairing a move
+**Requirements:** R448, R449, R450, R451, R453, R455, R456, R457, R459, R460, R462, R463, R464, R465, R466, R467
 
 ## 1. Reading
 
@@ -27,3 +27,21 @@
    2.4. Ask git once per file: `Ignored` over the surviving paths, then `Tracked` on each
         not ignored → `ignored`, `tracked`, else `untracked`
    2.5. Count every class; the report lists decisions, or everything under `all`
+
+## 3. Repairing
+
+3. `Repair(root, files)`
+   3.1. With no files, the population is the live carves and every `*.md` directly under
+        `carves/done/` (and the `.carves/` pair)
+   3.2. For each file: `ParseMarkdown`, then `classify` every link; only `missing` ones go on
+   3.3. Candidates for a missing link: the citing directory re-based `carves/` ⇄
+        `carves/done/`; `done/` inserted before, or removed from before, the target's name;
+        kept when something is on disk there inside the root
+        3.3.1. Zero candidates → `unresolvable`, reported, untouched
+        3.3.2. Two or more → `ambiguous`, reported, untouched
+   3.4. Exactly one: the new destination is the candidate relative to the citing directory,
+        slash-separated, fragment appended as written, `<…>` kept if the old one had it
+   3.5. `SetDest(i, new)` inside `Mutate`: `replaceSpan` over the bytes between `(` and `)`,
+        then re-read and read link `i` back with the new destination or panic `ReadBackError`
+   3.6. A file with at least one rewrite is written atomically; the report lists every link
+        considered and closes with the counts

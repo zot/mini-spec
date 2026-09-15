@@ -1,9 +1,10 @@
 # Markdown
-**Requirements:** R448, R449, R450, R451, R452, R453, R454
+**Requirements:** R448, R449, R450, R451, R452, R453, R454, R462
 
 The plain-markdown reader: the base as a document of its own, for the one question no
 schema reader asks — where does this document point? It owns the DOM of any markdown file
-and reads its inline links; it writes nothing.
+and reads its inline links. Its one write rewrites a link's destination, for the move
+repair.
 
 ## Knows
 - its `Doc`, the markdown parser and its context (the embedded base)
@@ -17,6 +18,8 @@ and reads its inline links; it writes nothing.
 - `Links`, `Doc`, `Render`; `Unread`: every group open at end of input or closing nothing
 - splits `Dest` into `Path` and `Fragment` at the first `#`; unwraps `<…>`; strips a
   trailing quoted title
+- `SetDest(i, dest)`: replaces the bytes between link `i`'s `(` and `)` inside `Mutate` and
+  reads the link back at the same index, or panics with `ReadBackError`; `ErrNoLink`
 
 ## Constraints
 - **A code group's bytes hold no link.** The test is the base's `inCode`, structural rather
@@ -30,7 +33,8 @@ and reads its inline links; it writes nothing.
 ## Collaborators
 - schema.MarkdownParser: the base
 - BracketContext: `Enclosing` for the code-group test, and the unbalanced report
-- markdownDoc: `parseBase`, `inCode`, `Render`, shared with TestDoc
+- markdownDoc: `parseBase`, `inCode`, `Render`, `replaceSpan`, shared with TestDoc
+- Doc: `Mutate`; mustReadBack, shared with the trajectory readers
 
 ## Sequences
 - seq-links.md

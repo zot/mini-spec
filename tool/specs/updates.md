@@ -261,7 +261,53 @@ proof costs one re-pull, overstating it leaves a date vouching for a function no
 verb stays usable for tidying. An empty site list is refused rather than written — an alarm
 with no site is `unanchored`, a state to record rather than a value to write.
 
-## Prose reaches the tool through a file, not a shell argument
+## minispec update repair-links [file...]
+
+Repairs the links a carve's move broke, in both directions. When `trajectory-tool.md` moved
+to `carves/done/` on 2026-09-14, every relative link in it kept pointing where it used to
+live, and every document that linked it broke the other way; `query links` read 32 `missing`
+in the moved file alone (gap `O27`). This is the repair for what has already broken; the
+move verb that prevents it is `carves/reference-discipline.md` Item 5.
+
+**With no file, the population is every live carve and every carve under `carves/done/`**
+(and `.carves/`), because both ends of a move can hold a broken link. With files, exactly
+those.
+
+**The predicate is what makes writing into a human's document safe: a link is rewritten only
+when it is `missing` now and exactly one sibling relocation resolves it.** The candidates are
+the four a move between `carves/` and `carves/done/` can produce:
+
+| direction | the link was written when | candidate |
+|---|---|---|
+| outgoing | the citing file lived in `carves/` and now lives in `carves/done/` | resolve the path from `carves/` instead |
+| outgoing | the citing file lived in `carves/done/` and now lives in `carves/` | resolve it from `carves/done/` instead |
+| incoming | the target lived in `carves/` and now lives in `carves/done/` | insert `done/` before the target's name |
+| incoming | the target lived in `carves/done/` and now lives in `carves/` | remove `done/` before the target's name |
+
+A candidate resolves when a file or directory is at the relocated path inside the repository.
+**Exactly one must resolve.** None, and the link is not the move's doing — it is reported and
+left alone; more than one, and the tool cannot tell which the author meant — reported as
+ambiguous and left alone. Every other class (`tracked`, `outside`, `external`, `local`,
+`untracked`, `ignored`) is untouched: the verb repairs one defect, a move, and does not
+retarget links for any other reason. The fragment is kept as written.
+
+**The rewrite is a byte-range splice through the `Markdown` reader** ([links-schema.md](links-schema.md)),
+replacing the destination bytes alone: the text, the fragment, the title and everything
+around the link stay byte for byte, and the reader reads its own write back. The new
+destination is the relocated target relative to the citing file's directory, slash-separated,
+`<…>`-wrapped only if the old one was.
+
+**It reports every link it considered, per file: rewritten (old → new), left because no
+relocation resolves, left because two do, and the counts**, zeros included. A run over
+documents with no broken links writes nothing and says so; a second run finds nothing to
+repair, which is what makes it safe to run after any move rather than something to schedule.
+Exit status is 1 when any link was left unrepaired, so the run itself says whether the
+documents are clean.
+
+**Resolves at the repository root and needs no design root**, like `query links` and
+`query carves`: carves are repository-scoped. Git is not consulted — a relocation either
+exists on disk or it does not, and the class after the repair is `query links`' to report.
+
 
 `pulled` takes `--body-file`, as every trajectory verb does. A backtick inside a double-quoted
 shell argument is **command substitution**, and when it fires the text is simply **gone** from

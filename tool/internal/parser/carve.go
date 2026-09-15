@@ -379,6 +379,11 @@ func editFile(path string, render func(src string) (string, error)) (err error) 
 	if err != nil {
 		return err
 	}
+	// R468 — an unchanged render is not written: a no-op run leaves the file's bytes and its
+	// mtime alone, which is what makes a verb safe to re-run rather than something to schedule.
+	if out == string(src) {
+		return nil
+	}
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err

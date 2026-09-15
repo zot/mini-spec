@@ -174,3 +174,25 @@ func TestTheRenderIsByteExactOverTheCorpus(t *testing.T) {
 	}
 	t.Logf("corpus: %d links, %d unread lines", links, unread)
 }
+
+// R462 — SetDest rewrites the destination bytes alone, reads back, and refuses a bad index.
+func TestSetDestRewritesTheDestinationBytesAlone(t *testing.T) {
+	m := ParseMarkdown(linksFixture)
+	if err := m.SetDest(0, "../x/a.md"); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetDest(1, "<i m.png>"); err != nil {
+		t.Fatal(err)
+	}
+	links := m.Links()
+	if links[0].Raw != "[one](../x/a.md)" || links[1].Raw != "![pic](<i m.png>)" || links[1].Dest != "i m.png" {
+		t.Errorf("links after the writes: %+v", links)
+	}
+	want := strings.Replace(strings.Replace(linksFixture, "[one](a.md)", "[one](../x/a.md)", 1), "![pic](img.png)", "![pic](<i m.png>)", 1)
+	if out, _ := m.Render(); out != want {
+		t.Errorf("render is not the fixture with two substitutions:\n%s", out)
+	}
+	if err := m.SetDest(9, "x"); err != ErrNoLink {
+		t.Errorf("want ErrNoLink, got %v", err)
+	}
+}

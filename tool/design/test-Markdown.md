@@ -44,3 +44,14 @@
 **Fire alarm:** retain the source in `parseBase` and make `Render` hand it back rather than the nodes. Red: not the round trip — it stays green, which is the R216 lesson from the first landing; the alarm is the companion check that after a `Split` at a link offset and a `Remove` of the right half, the render shrinks by that node's length.
 **Inject:** internal/minispecsdom/mdbase.go:markdownDoc.parseBase, internal/minispecsdom/mdbase.go:markdownDoc.Render
 **Pulled:** 2026-09-15 — rang, by hand, sited on `parseBase` retaining the source and `Render` handing it back: the plain round trip stayed green over all 955 documents, as R216 predicted, and the removal check went red on every document holding a link — `render does not follow the nodes after a removal at offset 80976 (264551 bytes, want 264482)` on ark's done file among them; restore checksummed clean
+
+## Test: SetDest rewrites the destination bytes alone
+**Purpose:** R462
+**Input:** the links fixture; `SetDest(0, "../x/a.md")`, then `SetDest(1, "<i m.png>")`; `SetDest(9, …)`
+**Expected:** the first link reads `[one](../x/a.md)` and the second `![pic](<i m.png>)` with dest `i m.png`; the render equals the fixture with exactly those two substitutions and nothing else; `ErrNoLink`
+**Refs:** crc-Markdown.md, seq-links.md#3.5
+**Code:** internal/minispecsdom/mdbase_test.go
+**Alarm:** 5
+**Fire alarm:** replace from the `[` rather than from after the `(`, so the text goes with the destination. Red: the read-back panics with a `ReadBackError` — link 0 no longer reads back with the destination written — and the test binary dies on it; a file write through `EditFile` turns the same panic into a refusal.
+**Inject:** internal/minispecsdom/mdbase.go:Markdown.SetDest
+**Pulled:** 2026-09-15 — rang, by hand after the simplification pass, with the span starting at the `[`: the test binary died on the `ReadBackError` panic from `SetDest` — the link no longer read back with the destination written; restore checksummed clean

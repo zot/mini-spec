@@ -1,7 +1,9 @@
 package minispecsdom
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/zot/simple-dom/sdom"
@@ -165,6 +167,7 @@ type Link struct {
 	Image    bool   // opened by `!`
 	line     int
 	offset   int
+	destSpan [2]int // the bytes between `(` and `)`, at parse time
 }
 
 // Line is the link's 1-based line at parse time.
@@ -231,6 +234,7 @@ func (m *Markdown) scanLinks() {
 		}
 		end := j + 2 + k
 		link := splitDest(src[j+1 : j+1+k])
+		link.destSpan = [2]int{j + 1, j + 1 + k}
 		link.Raw = src[start:end]
 		link.Text = src[i+1 : j-1]
 		link.Image = image
@@ -259,4 +263,37 @@ func splitDest(raw string) Link {
 		l.Path, l.Fragment = d[:i], d[i+1:]
 	}
 	return l
+}
+
+// ErrNoLink is SetDest on an index no link carries.
+var ErrNoLink = errors.New("minispecsdom: no link at that index")
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#3.5 | R462
+//
+// SetDest replaces the destination bytes of link i — everything between its `(` and `)`,
+// title included — with dest, and nothing else. The reader's one write, for the move
+// repair: the text, the parentheses and every byte around the link stay where they were.
+// After the write the render is re-read and link i is read back with dest as its raw
+// destination, or the reader panics with a ReadBackError.
+func (m *Markdown) SetDest(i int, dest string) error {
+	if i < 0 || i >= len(m.links) {
+		return ErrNoLink
+	}
+	span := m.links[i].destSpan
+	if err := m.doc.Mutate(func() error { return m.replaceSpan(span[0], span[1], dest) }); err != nil {
+		return err
+	}
+	out, err := m.Render()
+	if err != nil {
+		return err
+	}
+	fresh := ParseMarkdown(out)
+	got := ""
+	if i < len(fresh.links) {
+		l := fresh.links[i]
+		got = out[l.destSpan[0]:l.destSpan[1]]
+	}
+	mustReadBack("Markdown", "SetDest", strconv.Itoa(i), got == dest, dest, got)
+	*m = *fresh
+	return nil
 }
