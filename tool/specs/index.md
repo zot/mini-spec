@@ -25,6 +25,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 | [phase.md](phase.md) | per-phase validation gates |
 | [backup.md](backup.md) | the backup slot beneath the queue verbs — one level of undo and redo over the trajectory files, the stamp, drift refusal, release, and the worktree anchor |
 | [queue-items.md](queue-items.md) | the `pending` verbs — `add-item`, `start`, `finish` — that write the trajectory files and both sides of the item↔part link, over `minispecsdom`'s readers |
+| [queries.md](queries.md) `query links` | link resolution and git classification: tracked, untracked, ignored, missing, outside, external, local; the error/warning split |
 
 ### Document model — the readers and writers over the markdown the tool owns
 
@@ -42,6 +43,7 @@ over `github.com/zot/simple-dom`, which stays a module dependency.
 | [testdoc-schema.md](testdoc-schema.md) | a `test-*.md`: test entries and the fire-alarm fields |
 | [gaps-schema.md](gaps-schema.md) | `design.md`'s gaps list: add, resolve, approve |
 | [requirements-schema.md](requirements-schema.md) | `requirements.md`: feature sections, entries, retire |
+| [links-schema.md](links-schema.md) | any markdown document's links — the inline form, outside code groups, with line and offset; the round trip over the real corpus |
 
 ### Migrations
 

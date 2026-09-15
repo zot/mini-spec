@@ -331,6 +331,54 @@ be wrong for two classes out of three.
 
 Output is markdown on stdout; `--json` gives the machine-readable form.
 
+## minispec query links [file...]
+
+Every markdown link in the named documents, resolved and classified against git: the
+checker `carves/reference-discipline.md` was opened for. A public document that cites a
+private working note hands a cloner a dangling link, and nothing warns that it was ever going
+to.
+
+**The reader is `internal/minispecsdom.Markdown`** ([links-schema.md](links-schema.md)); the
+query adds resolution and git. A link inside a code group is an example and is never listed,
+which is the whole reason the check waited for a DOM.
+
+**With no file, the population is the live carves** — every `*.md` directly in
+`<repo root>/carves/` and `.carves/`, as `query carves` reads them, since those are the public
+documents the rule was written for. With files, exactly those. Which documents are public and
+what each may cite is the document-class model, still open; until it lands the caller names
+the population.
+
+**Resolution is relative to the citing file's directory**, with the fragment removed first.
+Each link is classified as exactly one of:
+
+| class | meaning | severity |
+|---|---|---|
+| `tracked` | resolves to a path git's index holds | — |
+| `untracked` | resolves, not ignored, not in the index | warning: usually just early — written this session, not yet committed |
+| `ignored` | resolves, and `git check-ignore` matches it | error: can never resolve for a cloner |
+| `missing` | nothing at the resolved path | error |
+| `outside` | resolves above the repository root, or is an absolute path | error: a cloner has no such path |
+| `external` | has a URL scheme | not checked; listed under `--all` |
+| `local` | fragment only, into its own document | not checked; listed under `--all` |
+
+The error-and-warning split is the 2026-08-04 decision: **error on ignored, warn on
+untracked-but-not-ignored**. The first is certainly wrong; the second is the ordinary state of
+a file written five minutes ago.
+
+**The report names the citing file, its line, the link as written, and the class**, one line
+per link that carries a decision; `--all` lists every link. **The closing count states every
+class, zeros included**, so a clean run is evidence the check ran, not silence. A directory
+target counts as resolving when it exists; it is `tracked` when git holds anything under it.
+
+**Git only, through the command line** (Bill, 2026-08-04). Outside a git working tree the
+query reports that it cannot classify rather than passing silently — a fossil-only project's
+references go unchecked, and the tool says so. The verbs are `git ls-files --error-unmatch`
+and `git check-ignore`, batched once per citing file.
+
+**Exit status is 1 when any link is an error**, so the query can stand in for the `validate`
+wiring (`carves/reference-discipline.md` Item 3) until that lands. Resolves at the repository
+root; needs no design root. Markdown to stdout; `--json` honoured anywhere among the arguments.
+
 ## minispec query carves
 
 The cross-document status view over every live carve: one line each, with how many of its

@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/zot/minispec/internal/alarm"
+	"github.com/zot/minispec/internal/minispecsdom"
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/phase"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/query"
 	"github.com/zot/minispec/internal/update"
 	"github.com/zot/minispec/internal/validate"
-	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Version is set at build time via -ldflags
@@ -304,6 +304,9 @@ func (c *CLI) runQuery(args []string) int {
 	// the queue and the carves alike.
 	if args[0] == "carves" {
 		return c.queryCarves(args[1:])
+	}
+	if args[0] == "links" {
+		return c.queryLinks(args[1:])
 	}
 
 	p, err := c.getProject()
@@ -1322,6 +1325,68 @@ func (c *CLI) queryCarves(args []string) int {
 		printCarves(os.Stdout, &scan, *open)
 	}
 	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-links.md#2.5 | R455, R458, R461
+// queryLinks answers before any design root is resolved, like carves: the population is
+// repository-scoped. Exit 1 when any link is an error, so the query can stand in for the
+// validate wiring until it lands.
+func (c *CLI) queryLinks(args []string) int {
+	fs := flag.NewFlagSet("links", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	all := fs.Bool("all", false, "list every link, not only those carrying a decision")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	files, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	// A named file is relative to the working directory; CheckLinks resolves a relative
+	// path against the repository root, so make it absolute first.
+	for i, f := range files {
+		if !filepath.IsAbs(f) {
+			files[i], _ = filepath.Abs(f)
+		}
+	}
+	report, err := query.CheckLinks(repoRoot, files)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(report)
+	} else {
+		printLinks(os.Stdout, report, *all)
+	}
+	if report.Errors() {
+		return 1
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-links.md#2.5 | R458
+// printLinks renders one line per link carrying a decision — every link under all — and
+// the closing count.
+func printLinks(w io.Writer, r *query.LinkReport, all bool) {
+	for _, l := range r.Links {
+		if !all && !l.Class.Decided() {
+			continue
+		}
+		mark := ""
+		switch {
+		case l.Class.IsError():
+			mark = "  error"
+		case l.Class.IsWarning():
+			mark = "  warning"
+		}
+		fmt.Fprintf(w, "%s:%d  %s  %s%s\n", l.File, l.Line, l.Link, l.Class, mark)
+	}
+	fmt.Fprintln(w, r.Summary())
 }
 
 // CRC: crc-CLI.md | Seq: seq-carve-status.md#1.4 | R207, R211, R212, R216, R217, R218

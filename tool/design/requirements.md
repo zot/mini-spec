@@ -747,3 +747,25 @@
   absent ID is `ErrNoRequirement` and a retired one `ErrRetired`.
 - **R444:** Every write edits inside one section's own content only, decides its refusal before any
   byte moves, and after the re-read reads its own write back or panics with a `ReadBackError`.
+
+## Feature: links schema
+**Source:** specs/links-schema.md
+- **R448:** The links reader parses any markdown document with the markdown base; `Links()` returns every inline link, `[text](dest)` and `![alt](dest)`, in document order, each with its text, destination as written, path, fragment, image flag, 1-based line and byte offset at parse time.
+- **R449:** A link whose opening bracket sits inside a code group — a fenced block or a code span — is an example, not a reference, and is never listed.
+- **R450:** Only the inline form is read: reference-style links, autolinks and bare URLs are not links, and an unclosed `[` or `(` is text.
+- **R451:** A destination wrapped in `<…>` is unwrapped and a trailing quoted title is stripped; `Path` and `Fragment` split at the first `#`, and a fragment-only link has an empty `Path`.
+- **R452:** `Render` reproduces the source byte for byte, and the property is tested over the real corpus — every markdown document at the repository root, under `carves/` recursively, under `tool/specs/` and `tool/design/`, and under a sibling `ark` checkout when present — with the test reporting the count it read.
+- **R453:** `Unread` lists every bracket group open at end of input or closer that closes nothing, ordered by line.
+- **R454:** The reader resolves no destination and knows neither the file system nor git; classification is the query's.
+
+
+## Feature: Reference Links View
+**Source:** specs/queries.md
+- **R455:** `query links [file...]` reads the named documents, or with none every `*.md` directly in `<repo root>/carves/` and `.carves/` (never `carves/done/`); it resolves at the repository root and needs no design root.
+- **R456:** Each link is resolved relative to its citing file's directory with the fragment removed, and classified as exactly one of `tracked`, `untracked`, `ignored`, `missing`, `outside` (above the repository root or absolute), `external` (a URL scheme) or `local` (fragment only).
+- **R457:** `ignored`, `missing` and `outside` are errors; `untracked` is a warning; `tracked`, `external` and `local` carry no decision.
+- **R458:** The report prints one line per link carrying a decision — citing file, line, the link as written, and its class — `--all` prints every link, and the closing count states every class, zeros included.
+- **R459:** A directory target resolves when it exists and is `tracked` when git holds any file under it.
+- **R460:** Classification uses the `git` command line only — `ls-files --error-unmatch` and `check-ignore`, batched per citing file — and outside a git working tree the query refuses to classify and says so rather than passing silently.
+- **R461:** The exit status is 1 when any link is an error, and `--json` is honoured anywhere among the arguments.
+

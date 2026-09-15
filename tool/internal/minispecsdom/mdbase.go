@@ -2,6 +2,7 @@ package minispecsdom
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/zot/simple-dom/sdom"
 	"github.com/zot/simple-dom/sdom/schema"
@@ -139,4 +140,123 @@ func (m *markdownDoc) boundary(off int) (sdom.Node, error) {
 	}
 	_, right, err := m.doc.Split(n, off-n.Location().Offset())
 	return right, err
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#1 | R448, R454
+//
+// Markdown is the base as a document of its own: any markdown file, read for the one thing
+// no schema reader asks — where it points. It writes nothing and resolves nothing; the file
+// system and git are the classifier's.
+type Markdown struct {
+	markdownDoc
+	src   string
+	links []Link
+}
+
+// CRC: crc-Markdown.md | R448, R451
+//
+// Link is one inline link, `[text](dest)` or `![alt](dest)`, as the document was parsed.
+type Link struct {
+	Raw      string // the link as written, `[` (or `!`) through `)`
+	Text     string // the bytes between the brackets
+	Dest     string // the destination, `<…>` unwrapped and any title stripped
+	Path     string // Dest before the first `#`; "" for a fragment-only link
+	Fragment string // the bytes after the first `#`; "" when none
+	Image    bool   // opened by `!`
+	line     int
+	offset   int
+}
+
+// Line is the link's 1-based line at parse time.
+func (l Link) Line() int { return l.line }
+
+// Offset is the byte offset of the opening `[`, or of the `!` before it.
+func (l Link) Offset() int { return l.offset }
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#1.1 | R448
+// ParseMarkdown parses src with the base and reads its links.
+func ParseMarkdown(src string) *Markdown {
+	m := &Markdown{src: src}
+	m.parseBase(src)
+	m.scanLinks()
+	return m
+}
+
+// Links is every link, in document order.
+func (m *Markdown) Links() []Link { return m.links }
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#1.4 | R453
+// Unread is every bracket group open at end of input or closer that closes nothing.
+func (m *Markdown) Unread() []Unread {
+	u := unbalanced(m.ctx)
+	byLine(u)
+	return u
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#1.2 | R449, R450
+//
+// scanLinks walks the source for the inline form. It scans the source rather than each
+// Text node because link text may hold emphasis, whose markers are nodes of their own; what
+// the base contributes is `inCode`, the structural test a regex cannot make. A `[` inside a
+// code group is skipped; so is one whose brackets do not balance, one not followed directly
+// by `(`, and one whose destination has no `)` on its line — each is text. Nested brackets
+// balance one level, so `[a [b] c](x)` reads whole while a checkbox's `[ ]` beside a link
+// is passed over and the link after it found.
+func (m *Markdown) scanLinks() {
+	src := m.src
+	for i := 0; i < len(src); i++ {
+		if src[i] != '[' || m.inCode(i) {
+			continue
+		}
+		depth, j := 1, i+1
+		for ; j < len(src) && depth > 0; j++ {
+			switch src[j] {
+			case '[':
+				depth++
+			case ']':
+				depth--
+			}
+		}
+		if depth != 0 || j >= len(src) || src[j] != '(' {
+			continue
+		}
+		k := strings.IndexAny(src[j+1:], ")\n")
+		if k < 0 || src[j+1+k] != ')' {
+			continue
+		}
+		start := i
+		image := i > 0 && src[i-1] == '!'
+		if image {
+			start--
+		}
+		end := j + 2 + k
+		link := splitDest(src[j+1 : j+1+k])
+		link.Raw = src[start:end]
+		link.Text = src[i+1 : j-1]
+		link.Image = image
+		link.offset = start
+		link.line = m.doc.Line(start)
+		m.links = append(m.links, link)
+		i = end - 1
+	}
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#1.2.3 | R451
+// splitDest reads a raw destination: `<…>` unwrapped, a trailing quoted title stripped,
+// and path and fragment split at the FIRST `#`.
+func splitDest(raw string) Link {
+	d := strings.TrimSpace(raw)
+	if n := len(d); n > 1 && (d[n-1] == '"' || d[n-1] == '\'') {
+		if sp := strings.LastIndexAny(d[:n-1], " \t"); sp >= 0 {
+			d = strings.TrimSpace(d[:sp])
+		}
+	}
+	if len(d) >= 2 && d[0] == '<' && d[len(d)-1] == '>' {
+		d = d[1 : len(d)-1]
+	}
+	l := Link{Dest: d, Path: d}
+	if i := strings.IndexByte(d, '#'); i >= 0 {
+		l.Path, l.Fragment = d[:i], d[i+1:]
+	}
+	return l
 }

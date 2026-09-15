@@ -42,6 +42,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-TestDoc.md → `internal/minispecsdom/testdoc.go`, `internal/minispecsdom/mdbase.go`
 - [x] crc-Gaps.md → `internal/minispecsdom/gaps.go`
 - [x] crc-Requirements.md → `internal/minispecsdom/requirements.go`
+- [x] crc-Markdown.md → `internal/minispecsdom/mdbase.go`
+- [x] crc-Links.md → `internal/query/links.go`
 
 ### Sequences
 - [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
@@ -58,6 +60,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
+- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`
 - [x] seq-current.md → `internal/minispecsdom/current.go`
 - [x] seq-done.md → `internal/minispecsdom/done.go`
 - [x] seq-pending.md → `internal/minispecsdom/pending.go`
@@ -86,6 +89,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`, `internal/pending/create_test.go`
 - [x] test-TrajectoryValidate.md → `internal/validate/trajectory_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
+- [x] test-Markdown.md → `internal/minispecsdom/mdbase_test.go`
+- [x] test-Links.md → `internal/query/links_test.go`, `internal/cli/cli_links_test.go`
 - [x] test-Current.md → `internal/minispecsdom/current_test.go`
 - [x] test-Done.md → `internal/minispecsdom/done_test.go`
 - [x] test-PendingSdom.md → `internal/minispecsdom/pending_test.go`
@@ -141,3 +146,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - T7: R367 retired by R409 (2026-09-05 sdomification Item 7: REVERTED is a transient; a marker inserts before trailing prose)
 - [ ] O25: `minispecsdom.Pending.Place` accepts entry text that opens a bracket group never closed (a lone asterisk in a status), so the entry itself reads back and the check passes while every later entry falls inside the unclosed run and is not read. A write path should refuse text whose placement grows `Unread`, since the file it produces is one its own reader cannot fully read. Ported 2026-09-14 from mini-spec-tool O28, measured there 2026-09-06 on its queue
 - [ ] O26: `minispecsdom.Gaps.Add` appends its line to a file with no final newline without supplying one, so the new gap glues onto the last gap's line and the read-back finds nothing; the write should end the previous line before appending, as `Requirements.Add` and the trajectory writers do. Ported 2026-09-14 from mini-spec-tool O30, measured there 2026-09-07 at `ceafd0c`, where every `add-gap` was refused until a newline was added by hand
+- [ ] O27: Every relative link in a carve breaks when the carve moves to `carves/done/`, and nothing rewrites them: `query links carves/done/*.md` reads 32 `missing` in `carves/done/trajectory-tool.md` alone, every one written relative to `carves/` (measured 2026-09-15, the verb's first run). The skill says to rewrite the links as part of the move; the move is a hand `git mv` today, so the rule has no forcing function. Repair is two-sided: rewrite the 32 in the document, and either give the tool a move verb that rewrites `../` and `done/` links, or wire `query links` into `validate` (reference-discipline Item 3) so a broken move is reported on the next run rather than found by a cloner
