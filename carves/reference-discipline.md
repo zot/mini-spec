@@ -14,12 +14,18 @@ is trajectory-specific.
 ## Status
 
 - **Item 1 — the checker.** **SPLIT (Bill, 2026-08-16.)** No checkbox: the sub-items carry
-  the state. **Blocks [trajectory-tool.md](done/trajectory-tool.md) Item 3 and 8.2**, whose
+  the state. It blocked [trajectory-tool.md](done/trajectory-tool.md) Item 3 and 8.2, whose
   markdown reading is shared rather than reimplemented — a fenced example is not data,
-  whether it holds a link or a status entry — so this part's priority is no longer set by
-  this carve alone.
-  - [ ] **1.1 — the simple DOM: a position-preserving markdown parse.** **OPEN (#11.)**
-  - [ ] **1.2 — extraction, resolution, git status, on top of it.** **OPEN (not queued.)**
+  whether it holds a link or a status entry; both re-landed over the shared reading on
+  2026-09-04 and 2026-09-05, so nothing waits on this carve any more.
+  - [x] ~~**1.1 — the simple DOM: a position-preserving markdown parse.**~~ **LANDED (`2a050a2`, 2026-09-04 — `#67`.)**
+    Landed twice: first as `#11` (`70abbfe`, 2026-08-16, `internal/mdom`), abandoned with
+    `old-sdom` at the 2026-09-04 restart; then as `github.com/zot/simple-dom`'s `sdom` with
+    `schema.LangMarkdown`, a module dependency, and the `minispecsdom` readers over it, moved
+    into `tool/internal/minispecsdom` on 2026-09-14 (`#80`). See *What landed, and what did
+    not* below — two things this part promised are still owed to 1.2.
+  - [ ] **1.2 — extraction, resolution, git status, on top of it.** **OPEN (#83.)**
+    Needs a link reader first: the DOM does not model links.
 - [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
 
@@ -171,14 +177,40 @@ containing one, naming the file — where a coverage test stays green while the 
 silently disappears. Pull it deliberately anyway; it is just louder by construction than
 most guards.
 
+### What landed, and what did not (2026-09-15)
+
+The DOM in this tree is simple-dom's `sdom` under `schema.LangMarkdown`, and it holds the
+08-16 decisions point by point: headings, list items, checkboxes, fences and code spans are
+the modelled nodes and everything else is opaque `Text`; `Doc.Render` rebuilds from the nodes
+rather than handing back its source, which was the R216 lesson of the first landing; and the
+fence and the code span are one scan-restricted group — a run of backticks closing only on a
+run of the same length, the parity fix of 2026-09-05 — so fence-awareness is the lexicon, as
+this carve asked. `TestByteRoundTripPerLanguageOverTheCorpus` runs every shipped language over
+mini-spec-tool's own sources, specs, design and carves, byte for byte. Edit equivalence lives
+in the readers' write tests rather than as the commuting diagram prescribed above.
+
+**Two things 1.1 promised are not there, and they are 1.2's first steps.**
+
+1. **Links are not a node.** `schema/markdown.go` says so by design: `[` opens no group,
+   because a line-head marker may share no first byte with an opener (R231). So 1.2 cannot
+   read links off the DOM. The shape that fits what exists is a link reader in
+   `minispecsdom`, like the others — scan the `Text` runs outside code groups and bind their
+   locations — which is cheap exactly because the code-group test already exists, and that
+   was the whole reason for wanting a DOM under a link checker.
+2. **The round-trip corpus is theirs, not ours.** The test's globs name mini-spec-tool's
+   tree. Nothing round-trips this repository's `carves/`, `tool/specs/`, `tool/design/` or
+   ark's tree, which is the population the test discipline above names. One test on this
+   side, before 1.2 writes anything on top.
+
 **1.2** is what the original Item 1 described — link extraction, resolution relative to the
 containing file, and tracked / untracked-but-not-ignored / ignored / missing classification
-— now written against the DOM instead of against lines.
+— now written against the DOM instead of against lines, beginning with the two residues above.
 
 **Item 2** — the document-class model: which classes exist in this project, which
-are public, and what each may cite. Coupled to Item 1 of
-[trajectory-tool.md](done/trajectory-tool.md), which decides how a project declares its
-siting; the class of a document is a fact about where it lives.
+are public, and what each may cite. It was coupled to Item 1 of
+[trajectory-tool.md](done/trajectory-tool.md), which decided how a project declares its
+siting; that carve is done, so the class of a document is now a fact about where it lives
+under a layout that is settled, and open question 1 below is this carve's alone to answer.
 
 **Ark made the case that this cannot be inferred.** Its queue files are fossil-only
 and untracked in git — private by a filename-case convention (top-level uppercase =
@@ -194,6 +226,8 @@ that class. Everything else here still needs the model.
 
 **Item 3** — wire into `validate` and report. Errors and warnings distinguished per
 the decision above; the report names the citing file, the link, and why it failed.
+`validate trajectory` already parses every carve and both queue files through the readers,
+so this is one more pass over documents the tool has in hand, not a new reading.
 
 ## The hole the tool cannot close
 
