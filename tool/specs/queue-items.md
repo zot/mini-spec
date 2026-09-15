@@ -522,6 +522,41 @@ a **tracked** carve, and any verb going through `Record` inherits that. And `sta
 and its own command* — `#17`'s bound holds unchanged, since `start` touches neither side of the
 item↔part link.
 
+## `minispec pending commit-message [--amend] [--out <file>]`
+
+Composes the commit message for the items finished since the last commit, so that every
+commit names the items it lands — the obligation the item-number identifier rests on
+(`carves/item-identifiers.md`, Bill, 2026-09-15). The tool writes the message and never
+commits; the human stages and commits.
+
+**Which items are uncommitted is git's to say.** The done file is private and never in a
+commit, so the tool cannot ask git which entries it holds; it asks the other way round —
+which `#N` the messages on `HEAD`'s history name — and the uncommitted entries are the
+newest ones down to, and excluding, the first that a commit names, by a hash in its slot or
+by every identifier appearing in a message. `#N` is bounded by a non-digit, so `#40` does not
+name `#4` (open question 1, answered). **Everything older than a named entry is history,
+whatever its slot says**: measured on this repository's first run, two entries from August
+carried neither a hash the reader recognises nor a number any message names, and a rule that
+looked at each entry alone composed them into the message. A repository with no commits
+names nothing.
+
+**The message.** The subject names the items and their titles: `#85, #86: <title>; <title>`.
+The body opens with `Items #85, #86.` on its own line — the line `git log --grep` finds — and
+then, in the order the items finished, each entry's `#N — <title>` followed by the entry's
+body from the done file, which is *enough to reconstruct the change without re-reading the
+code* and so is exactly what a commit body should carry. The tool adds no sign-off; that is
+the committer's. Nothing to compose — every entry named — is a refusal, not an empty message.
+
+**`--amend` appends, never rewrites.** It reads `HEAD`'s message and returns it unchanged
+with the new items after it — `Also lands #87.` then the entries — because the previous
+message is part of the record (Bill, 2026-09-15). It refuses when `HEAD` is on any remote
+branch, since amending a shared commit rewrites history someone else holds; the follow-up
+commit is the answer there. The items an amend names are the ones no message names, exactly
+as without the flag, so an item already named by `HEAD` is never repeated.
+
+**To stdout, or to `--out <file>` byte for byte**, for `git commit -F` and
+`git commit --amend -F`. Resolves at the repository root; needs no design root.
+
 ## All three verbs go through the backup slot
 
 Every write here is a mutation of the trajectory files, so all three run inside the slot: the

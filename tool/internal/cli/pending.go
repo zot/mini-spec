@@ -23,7 +23,7 @@ import (
 // design root: the trajectory layer sits above every design root, the same reason `query
 // carves` takes that path.
 func (c *CLI) runPending(args []string) int {
-	const usage = "Usage: minispec pending <add-item|start|finish|revert|replay|changes>"
+	const usage = "Usage: minispec pending <add-item|start|finish|commit-message|revert|replay|changes>"
 	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, usage)
 		return 1
@@ -48,6 +48,10 @@ func (c *CLI) runPending(args []string) int {
 	case "changes":
 		// CRC: crc-CLI.md | Seq: seq-backup.md#4 | R335, R336
 		return c.runChanges(repoRoot)
+	case "commit-message":
+		// CRC: crc-CLI.md | Seq: seq-queue-item.md#4.6 | R484
+		// Read-only: it writes a message, not a trajectory file, so it never enters the slot.
+		return c.runCommitMessage(repoRoot, args[1:])
 	case "revert":
 		op = slot.Revert
 	case "replay":
@@ -271,7 +275,7 @@ func placeFrom(gave map[string]bool, nth, after int) (parser.Place, error) {
 	return place, nil
 }
 
-// CRC: crc-CLI.md | Seq: seq-queue-item.md#3 | R265, R282
+// CRC: crc-CLI.md | Seq: seq-queue-item.md#4 | R265, R282
 // runStart opens an item, writing the current file's `## Active` section.
 func (c *CLI) runStart(repoRoot string, args []string) int {
 	const usage = "Usage: minispec pending start <item-number> [--context <text>|--context-file <path>]"
@@ -593,5 +597,43 @@ func (c *CLI) runChanges(repoRoot string) int {
 	fmt.Printf("\nrestore a path as it stood at the transition:  git checkout %[1]s -- <path>\n"+
 		"restore it as of the commit beneath the anchor: git checkout %[1]s^1 -- <path>\n"+
 		"nothing in your working tree was altered by this report.\n", project.SnapshotRef)
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-queue-item.md#4.6 | R484
+// runCommitMessage: `pending commit-message [--amend] [--out <file>]`. To stdout, or to the
+// file byte for byte for `git commit -F`; the tool never stages or commits.
+func (c *CLI) runCommitMessage(repoRoot string, args []string) int {
+	const usage = "Usage: minispec pending commit-message [--amend] [--out <file>]"
+	fs := flag.NewFlagSet("commit-message", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	amend := fs.Bool("amend", false, "append the new items after HEAD's message")
+	out := fs.String("out", "", "write the message to this file instead of stdout")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	if len(rest) != 0 {
+		fmt.Fprintln(os.Stderr, usage)
+		return 1
+	}
+	msg, err := pending.Compose(repoRoot, *amend)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(msg)
+		return 0
+	}
+	if *out != "" {
+		if err := os.WriteFile(*out, []byte(msg.Text), 0o644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
+		fmt.Printf("wrote %s naming %d item(s)\n", *out, len(msg.Items))
+		return 0
+	}
+	fmt.Print(msg.Text)
 	return 0
 }

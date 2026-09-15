@@ -31,6 +31,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] crc-Alarm.md → `internal/alarm/alarm.go`, `internal/alarm/brief.go`
 - [x] crc-Trajectory.md → `internal/parser/trajectory.go`
 - [x] crc-Pending.md → `internal/pending/pending.go`
+- [x] crc-CommitMessage.md → `internal/pending/message.go`
 - [x] crc-TrajectoryValidate.md → `internal/validate/trajectory.go`
 - [x] crc-Current.md → `internal/minispecsdom/current.go`
 - [x] crc-Done.md → `internal/minispecsdom/done.go`, `internal/minispecsdom/unread.go`
@@ -48,7 +49,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-FinishedCarve.md → `internal/update/finish.go`
 
 ### Sequences
-- [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
+- [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`, `internal/pending/message.go`
 - [x] seq-validate-trajectory.md → `internal/validate/trajectory.go`, `internal/cli/cli.go`
 - [x] seq-init.md
 - [x] seq-parse.md
@@ -89,6 +90,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Carve.md → `internal/parser/carve_test.go`, `internal/cli/cli_carves_test.go`
 - [x] test-Backup.md → `internal/backup/backup_test.go`, `internal/project/git_test.go`, `internal/parser/trajectory_test.go`
 - [x] test-Pending.md → `internal/pending/pending_test.go`, `internal/cli/cli_pending_test.go`, `internal/pending/create_test.go`
+- [x] test-CommitMessage.md → `internal/pending/message_test.go`, `internal/cli/cli_message_test.go`
 - [x] test-TrajectoryValidate.md → `internal/validate/trajectory_test.go`
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 - [x] test-Markdown.md → `internal/minispecsdom/mdbase_test.go`

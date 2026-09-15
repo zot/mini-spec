@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -490,4 +492,50 @@ func (g *Git) run(args ...string) (string, error) {
 	cmd.Dir = g.workDir
 	out, err := cmd.Output()
 	return string(out), err
+}
+
+var itemRefRe = regexp.MustCompile(`#(\d+)(?:\D|$)`)
+
+// CRC: crc-Git.md | Seq: seq-queue-item.md#4.2 | R479
+//
+// NamedItems is every queue ID a commit message on HEAD's history names — `#N` bounded by a
+// non-digit, so `#40` does not name `#4`. The done file is private and never in a commit, so
+// the question is asked this way round. A repository with no commits names nothing.
+func (g *Git) NamedItems() (map[int]bool, error) {
+	if !g.IsRepo() {
+		return nil, ErrNoGit
+	}
+	named := map[int]bool{}
+	out, err := g.run("log", "--format=%B")
+	if err != nil {
+		return named, nil // no commits yet
+	}
+	for _, m := range itemRefRe.FindAllStringSubmatch(out, -1) {
+		n, _ := strconv.Atoi(m[1])
+		named[n] = true
+	}
+	return named, nil
+}
+
+// CRC: crc-Git.md | Seq: seq-queue-item.md#4.5 | R482
+// HeadMessage is HEAD's full commit message.
+func (g *Git) HeadMessage() (string, error) {
+	if !g.IsRepo() {
+		return "", ErrNoGit
+	}
+	return g.run("log", "-1", "--format=%B")
+}
+
+// CRC: crc-Git.md | Seq: seq-queue-item.md#4.5 | R483
+// HeadOnRemote names the remote branches that contain HEAD; none means the commit is safe
+// to amend.
+func (g *Git) HeadOnRemote() ([]string, error) {
+	if !g.IsRepo() {
+		return nil, ErrNoGit
+	}
+	out, err := g.run("branch", "-r", "--contains", "HEAD")
+	if err != nil {
+		return nil, nil // no commits yet
+	}
+	return strings.Fields(out), nil
 }

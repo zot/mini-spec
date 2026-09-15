@@ -13,7 +13,7 @@ recorded in `carves/done/sdom-reclaim.md` and the skill; they stay there as hist
 ## Status
 
 - [x] ~~**Item 1 — the format and the reader: `LANDED (<date> — #N.)`, no hash.**~~ **LANDED (2026-09-15 — `#86`.)**
-- [ ] **Item 2 — `pending finish` without `--commit`, and the commit message the tool composes.** **OPEN (#87.)** Needs Item 1.
+- [x] ~~**Item 2 — `pending finish` without `--commit`, and the commit message the tool composes.**~~ **LANDED (2026-09-15 — `#87`.)** Needs Item 1.
 - [ ] **Item 3 — the skill and the Cursor rule: one commit per batch, amend for the census.** **OPEN (#88.)** Needs Item 2.
 
 ## Decisions
