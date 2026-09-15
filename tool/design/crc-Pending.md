@@ -1,5 +1,5 @@
 # Pending
-**Requirements:** R241, R242, R243, R244, R246, R247, R248, R252, R253, R256, R257, R262, R263, R264, R265, R267, R268, R269, R271, R272, R273, R274, R275, R276, R277, R278, R279, R280, R281, R245, R249, R250, R258, R259, R282, R330, R332, R333, R334
+**Requirements:** R241, R242, R243, R244, R246, R247, R248, R252, R253, R256, R257, R262, R263, R264, R265, R267, R268, R269, R271, R272, R273, R274, R275, R276, R277, R278, R279, R280, R281, R245, R249, R250, R258, R259, R282, R330, R332, R333, R334, R476, R477, R478
 
 The three verbs over the trajectory files — `pending add-item` and `pending finish`, which
 write **both sides of the item↔part link**, and `pending start`, which opens the item. Package
@@ -86,7 +86,8 @@ readers, the part line to [Carve](crc-Carve.md)'s.
   document, an unresolvable key, a document with no status block, or a part that
   **already carries a queue ID** — a part records exactly one item, and re-queuing it
   silently would leave the older pointer resolving to work it never described
-- Finish(id, commit): the completion, **in the mandated order — source first** (R244). Each
+- Finish(id): the completion, **in the mandated order — source first** (R476), needing no
+  commit to exist. Each
   discharged part is checked off in its carve; then the current file's `## Active` section is
   reset; then the entry
   moves from the pending file to the done file. Source first because the carve is the copy a
@@ -120,7 +121,7 @@ readers, the part line to [Carve](crc-Carve.md)'s.
   discharge parts in several documents, and each is checked: a part records one item, an
   entry records a list of parts
 - **Compose the done entry's header, never its body — and place a body it is handed**
-  (R247, R262, R263). Identifiers, date, title, commit and part pointer are facts the tool
+  (R478, R262, R263). Identifiers, date, title and part pointer — no commit — are facts the tool
   was handed; *enough to reconstruct the change without re-reading the code* is a judgment
   about a future reader. The tool owns IDs, not prose — the same line the requirement-minting
   verb holds, and a tool inventing a summary would do the one part that is not mechanical,
@@ -165,8 +166,8 @@ readers, the part line to [Carve](crc-Carve.md)'s.
 The marker rule — replace the first transient, delete the remaining transients, append when
 there is none, never touch a record — is the dependency's (R219), and `Land` composes the box,
 the strike and the `LANDED` record in one act behind [Carve](crc-Carve.md)'s `SetPartLanded`
-(R220, R245). This card hands it the attribution `` `<hash>`, <date> — `#N`. `` and nothing
-else. *The case that proves the rule:* a part carrying `**NOT VERIFIED.**` **and**
+(R220, R477). This card hands it the attribution `` <date> — `#N`. `` and nothing else — no
+commit hash, since the item number is the identifier and the completion runs before the commit. *The case that proves the rule:* a part carrying `**NOT VERIFIED.**` **and**
 `**OPEN (#N.)**` completes to `**NOT VERIFIED.** **LANDED (…)**` — the assessment untouched,
 the queue state replaced — and that is the dependency's test to keep, not this one's.
 

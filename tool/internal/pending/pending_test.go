@@ -1,4 +1,4 @@
-// CRC: crc-Pending.md | R241, R242, R243, R244, R245, R246, R247, R248
+// CRC: crc-Pending.md | R241, R242, R243, R476, R477, R246, R478, R248
 package pending
 
 import (
@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zot/minispec/internal/backup"
-	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/minispecsdom"
+	"github.com/zot/minispec/internal/parser"
 )
 
 const carveSrc = `# Carve: x
@@ -192,13 +193,13 @@ func TestAnUnresolvablePartIsRefusedAndNothingIsWritten(t *testing.T) {
 	}
 }
 
-// R244, R245 — the completion, all four surfaces.
+// R476, R477 — the completion, all four surfaces, and the record carries no hash.
 func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 	root := fixture(t)
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Finish(root, 4, "abc1234", FinishOpts{})
+	got, err := Finish(root, 4, FinishOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,12 +211,12 @@ func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 	// Three markings at once, and the record superseding the transient while the
 	// **assessment** stands. A rule selecting by what it writes would have taken the
 	// NOT VERIFIED — the marking the format calls the most expensive to lose.
-	want := "- [x] ~~**Item 7 — a part to queue.**~~ **NOT VERIFIED.** **LANDED (`abc1234`,"
+	want := "- [x] ~~**Item 7 — a part to queue.**~~ **NOT VERIFIED.** **LANDED (" + time.Now().Format("2006-01-02") + " — `#4`.)**"
 	if !strings.Contains(carve, want) {
 		t.Errorf("the completed part line is wrong:\n%s", carve)
 	}
-	if !strings.Contains(carve, "— `#4`.)**") {
-		t.Error("the record carries no queue ID — the carve→queue join lives there and nowhere else")
+	if strings.Contains(carve, "`abc") || strings.Contains(carve, "LANDED (`") {
+		t.Error("the record carries a commit hash — the item number is the identifier")
 	}
 	if !strings.Contains(carve, "prose that must not move.") {
 		t.Error("the completion moved prose")
@@ -253,13 +254,13 @@ func TestCompletionWritesAllFourSurfaces(t *testing.T) {
 	}
 }
 
-// R247 — the tool writes the header and never the body.
+// R478 — the tool writes the header and never the body, and no commit.
 func TestTheDoneEntryCarriesAHeaderAndNoBody(t *testing.T) {
 	root := fixture(t)
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err != nil {
 		t.Fatal(err)
 	}
 	for _, l := range strings.Split(read(t, root, "DONE.md"), "\n") {
@@ -268,7 +269,7 @@ func TestTheDoneEntryCarriesAHeaderAndNoBody(t *testing.T) {
 		}
 		// Everything on the header line is a fact the tool was handed. A body would be a
 		// judgment about what a future reader needs, which is authoring.
-		for _, fact := range []string{"#4:", "a part to queue.", "`abc1234`", "Part `carves/x.md#7`."} {
+		for _, fact := range []string{"#4:", "a part to queue.", "Part `carves/x.md#7`."} {
 			if !strings.Contains(l, fact) {
 				t.Errorf("header is missing %q:\n%s", fact, l)
 			}
@@ -300,7 +301,7 @@ func TestAParentPartIsNeverChecked(t *testing.T) {
 	if _, err := addItem(root, "carves/x.md#8.2", "the second half", ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err != nil {
 		t.Fatal(err)
 	}
 	carve := read(t, root, "carves/x.md")
@@ -315,7 +316,7 @@ func TestAParentPartIsNeverChecked(t *testing.T) {
 	}
 }
 
-// R244 — the source first, and the failure case is what proves the order. If the carve write
+// R476 — the source first, and the failure case is what proves the order. If the carve write
 // fails, the queue must be untouched: the carve is the copy a future reader trusts.
 func TestASourceFailureLeavesTheQueueUntouched(t *testing.T) {
 	root := fixture(t)
@@ -326,7 +327,7 @@ func TestASourceFailureLeavesTheQueueUntouched(t *testing.T) {
 	if err := os.Remove(filepath.Join(root, "carves", "x.md")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err == nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err == nil {
 		t.Fatal("expected the completion to fail when its source cannot be written")
 	}
 	if after := read(t, root, "PENDING.md"); after != before {
@@ -350,7 +351,7 @@ func TestAddThenFinishLeavesTheQueueFileByteIdentical(t *testing.T) {
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err != nil {
 		t.Fatal(err)
 	}
 	if after := read(t, root, "PENDING.md"); after != before {
@@ -400,7 +401,7 @@ func TestACurrentFileWithNoActiveHeadingIsRefused(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "CURRENT.md"), []byte("# Current\n\n---\n\nno heading here.\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := Finish(root, 4, "abc1234", FinishOpts{})
+	_, err := Finish(root, 4, FinishOpts{})
 	if err == nil {
 		t.Fatal("expected a refusal — the tool cannot tell the active item from the standing context")
 	}
@@ -421,7 +422,7 @@ func TestACompletedPartIsNotReopenedByTheNextMutation(t *testing.T) {
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err != nil {
 		t.Fatal(err)
 	}
 	landed := read(t, root, "carves/x.md")
@@ -574,7 +575,7 @@ func TestFinishPlacesTheBodyBeneathTheHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := "  A first line, mentioning `a code span`.\n  A second line.\n"
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{Body: body}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{Body: body}); err != nil {
 		t.Fatal(err)
 	}
 	src, err := os.ReadFile(filepath.Join(root, "DONE.md"))
@@ -608,7 +609,7 @@ func TestFinishWithNoBodyWritesNoBody(t *testing.T) {
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{}); err != nil {
 		t.Fatal(err)
 	}
 	src, err := os.ReadFile(filepath.Join(root, "DONE.md"))
@@ -699,7 +700,7 @@ func TestTheIdentifierSlotCarriesWhatTheItemDischarged(t *testing.T) {
 	if _, err := addItem(root, "carves/x.md#7", "a part to queue", "mini-spec"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Finish(root, 4, "abc1234", FinishOpts{Discharged: "R268–R269"}); err != nil {
+	if _, err := Finish(root, 4, FinishOpts{Discharged: "R268–R269"}); err != nil {
 		t.Fatal(err)
 	}
 	done := read(t, root, "DONE.md")
@@ -716,7 +717,7 @@ func TestAColonInTheIdentifierSlotIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := read(t, root, "DONE.md")
-	_, err := Finish(root, 4, "abc1234", FinishOpts{Discharged: "R1: and more"})
+	_, err := Finish(root, 4, FinishOpts{Discharged: "R1: and more"})
 	if err == nil {
 		t.Fatal("a colon in the slot was written, and every identifier after it stops being read")
 	}
@@ -879,7 +880,7 @@ func TestFinishLeavesTheGapOpenUnlessAsked(t *testing.T) {
 		t.Fatal(err)
 	}
 	// R279 — neither flag is a refusal, **before anything is written**.
-	if _, err := Finish(root, got.ID, "abc1234", FinishOpts{Body: "x"}); err == nil {
+	if _, err := Finish(root, got.ID, FinishOpts{Body: "x"}); err == nil {
 		t.Fatal("a gap-sourced item completed with no decision about its gap")
 	} else if !strings.Contains(err.Error(), "--no-resolve") || !strings.Contains(err.Error(), "--resolve") {
 		t.Errorf("the refusal does not name both spellings: %v", err)
@@ -888,7 +889,7 @@ func TestFinishLeavesTheGapOpenUnlessAsked(t *testing.T) {
 		t.Error("the refusal still moved the entry — it must land before anything is written")
 	}
 
-	done, err := Finish(root, got.ID, "abc1234", FinishOpts{Body: "x", DeclineResolve: true})
+	done, err := Finish(root, got.ID, FinishOpts{Body: "x", DeclineResolve: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -916,7 +917,7 @@ func TestFinishResolvesTheGapWhenAsked(t *testing.T) {
 		t.Fatal(err)
 	}
 	var asked string
-	done, err := Finish(root, got.ID, "abc1234", FinishOpts{
+	done, err := Finish(root, got.ID, FinishOpts{
 		Body:       "x",
 		ResolveGap: func(g parser.PartRef) error { asked = g.Key; return nil },
 	})

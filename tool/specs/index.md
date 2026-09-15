@@ -25,6 +25,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 | [phase.md](phase.md) | per-phase validation gates |
 | [backup.md](backup.md) | the backup slot beneath the queue verbs — one level of undo and redo over the trajectory files, the stamp, drift refusal, release, and the worktree anchor |
 | [queue-items.md](queue-items.md) | the `pending` verbs — `add-item`, `start`, `finish` — that write the trajectory files and both sides of the item↔part link, over `minispecsdom`'s readers |
+| [updates.md](updates.md) `update finished-carve` | the move to `done/` that rewrites both directions from where links resolve now; the refusals — open parts, no status block, target present, read-back |
 | [updates.md](updates.md) `update repair-links` | the move repair: the four sibling relocations, exactly-one resolves, the byte-range rewrite, both directions |
 | [queries.md](queries.md) `query links` | link resolution and git classification: tracked, untracked, ignored, missing, outside, external, local; the error/warning split |
 

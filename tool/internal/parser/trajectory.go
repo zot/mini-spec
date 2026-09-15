@@ -340,7 +340,7 @@ func PlaceItem(pendingPath string, e Entry, pos int) error {
 	})
 }
 
-// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#2.3.4 | R244, R263, R270
+// CRC: crc-Trajectory.md | Seq: seq-queue-item.md#2.3.4 | R476, R263, R270
 // CompleteItem removes the entry from the pending file and prepends the done entry — header
 // and body in one write. Two files, and the pending side first, so a failure on the done side
 // leaves an ID absent from both rather than present in both.

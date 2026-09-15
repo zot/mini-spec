@@ -1,5 +1,5 @@
 # Trajectory
-**Requirements:** R190, R194, R195, R197, R240, R242, R244, R249, R250, R251, R252, R256, R257, R259, R260, R263, R265, R266, R267, R270, R287, R292, R296, R297, R302
+**Requirements:** R190, R194, R195, R197, R240, R242, R244, R249, R250, R251, R252, R256, R257, R259, R260, R263, R265, R266, R267, R270, R287, R292, R296, R297, R302, R476, R477, R478
 
 Reads and writes the trajectory files at the repository root, as thin path-taking adapters
 over the dependency's `minispecsdom.Pending`, `Current` and `Done` readers. The format is **owned by the skill**
@@ -32,7 +32,7 @@ opening them.
   precedes (R252, R260, R275)
 - CompleteItem(pendingPath, donePath, id, header, body): `Pending.Remove` then
   `Done.Prepend`, the header and body in one write; pending side first so a failure leaves an
-  ID in neither file rather than both (R244, R263, R270)
+  ID in neither file rather than both (R476, R263, R270)
 - ResetCurrent(path), SetActive(path, line, context): the `## Active` region through
   `Current.Reset` and `Current.SetActive`; the reader refuses a held region (`ErrOccupied`)
   and this card names the parking repair (R249, R265, R266, R267)

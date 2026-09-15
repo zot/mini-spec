@@ -30,7 +30,7 @@ is trajectory-specific.
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
 - [x] ~~**Item 4 — repair links broken by a carve's move, both directions.**~~ **LANDED (`22974e6`, 2026-09-15 — `#84`.)**
   Added 2026-09-15 after `query links`' first run found 32 of them (gap `O27`).
-- [ ] **Item 5 — a move verb that rewrites links as it moves.** **OPEN (#85.)** Prevention
+- [x] ~~**Item 5 — a move verb that rewrites links as it moves.**~~ **LANDED (2026-09-15 — `#85`.)** Prevention
   for the class Item 4 repairs; needs Item 4's rewrite.
 
 ## Decisions
@@ -261,11 +261,22 @@ population is every document `query links` reads, not the moved file alone.
 
 **Item 5** — a move verb that rewrites links as it moves. **DECIDED (Bill, 2026-09-15): the
 prevention is built too**, not left as a rule the skill states in prose and a hand `git mv`
-ignores. The verb moves a carve between `carves/` and `carves/done/` and rewrites both
-directions in the same act, so a moved carve never enters the state Item 4 repairs. The
-name and whether it also stages the move with git are the design's; what is decided is
-that the rewrite is Item 4's, called at move time, and that the verb refuses when a link it
-would have to rewrite fails the predicate rather than moving and leaving it broken.
+ignores. The verb moves a carve to `carves/done/` and rewrites both directions in the same act, so
+a moved carve never enters the state Item 4 repairs.
+
+**DECIDED (Bill, 2026-09-15, at the start of `#85`): the verb is `update finished-carve
+<carve>`, one direction, and it is a plain rename — nothing staged.** *Finished* names the
+event, so the verb also refuses a carve whose status block still has an open part, or has
+none; the reverse move is rare enough to stay a hand move followed by `repair-links`. The
+tool never stages, and git finds the rename at commit time.
+
+*Superseded the same day, at the decision above it:* the rewrite is not Item 4's predicate
+called after the move — that would let a link resolve to a different file that happens to
+sit at the relocated path. The verb knows the destination, so every rewrite is computed from
+where each link resolves **now**: outgoing links reach the same target from `done/`, incoming
+links from every document the tool reads reach the carve at its new path. A link that does
+not resolve today is reported and left, not the move's to fix. What is refused before any
+byte moves: a target already present, an open part, and a rewrite that fails to read back.
 
 ## The hole the tool cannot close
 

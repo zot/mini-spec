@@ -261,6 +261,42 @@ proof costs one re-pull, overstating it leaves a date vouching for a function no
 verb stays usable for tidying. An empty site list is refused rather than written — an alarm
 with no site is `unanchored`, a state to record rather than a value to write.
 
+## minispec update finished-carve \<carve\>
+
+Moves a carve from its carve directory to that directory's `done/` and rewrites every link
+the move would break, both directions, in the same act — so a finished carve never enters
+the state `repair-links` repairs. `carves/reference-discipline.md` Item 5; the name is
+Bill's (2026-09-15): *finished* is the event, and the verb refuses to perform it on a carve
+that is not.
+
+**What is refused, before any byte moves:** a path not directly in `carves/` or `.carves/`
+(a carve already under `done/` included); a carve with no status block, or whose status block
+still has an open part — named, so the refusal says what is unfinished; a file already at the
+destination; and any rewrite the reader cannot read back. A refusal leaves every file as it
+was.
+
+**The rewrite is computed from where each link resolves now, not searched for afterwards.**
+The verb knows the destination, so there is nothing to guess: an *outgoing* link in the carve
+that resolves today is rewritten to reach the same target from `done/`; an *incoming* link
+in any document the tool reads that resolves to the carve is rewritten to reach it at its new
+path. That is why this is not `repair-links` run after the move — a link that happens to
+resolve at the relocated path to a different file would be silently retargeted, which the
+repair's exactly-one rule exists to refuse and the move can avoid outright. A link in the
+carve that does not resolve today is reported and left; it is not the move's to fix.
+
+**The incoming population is every document the tool reads for links**: the live carves, the
+done carves, and the three trajectory files at the repository root, whose `Source:` lines link
+carves by root-relative path. Documents elsewhere — a spec or a design file that links a
+carve — are outside it today and are reported as such by `query links` after the fact.
+
+**Every rewrite goes through the `Markdown` reader's `SetDest`**, so the text, fragments, angle
+wrapping and every other byte stay; the carve's own rewritten content is written at its new
+path and the old file removed — a plain rename, nothing staged (Bill, 2026-09-15): the tool
+never stages, and git finds the rename at commit time.
+
+**It reports the move, each rewrite per file with old and new destination, each link left,
+and the counts**, zeros included. Resolves at the repository root; needs no design root.
+
 ## minispec update repair-links [file...]
 
 Repairs the links a carve's move broke, in both directions. When `trajectory-tool.md` moved

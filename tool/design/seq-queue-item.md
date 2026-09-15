@@ -36,7 +36,7 @@ are appended and never renumbered, because renumbering orphans every code commen
 an ID — so position is the order of execution and the number is only the anchor. `1.9`, `1.10`
 and `1.11` arrived in August 2026; `1.12` and `1.13` with the gap source.
 
-## 2. `pending finish <N> --commit <hash>`
+## 2. `pending finish <N>`
 
 **The source first**, because the carve is the copy a future reader trusts and the one nobody
 thinks to check.
@@ -47,7 +47,7 @@ thinks to check.
 2.2.1. For a **gap**-sourced entry, refuse unless the caller decided — `--resolve` or `--no-resolve`, never both, and neither is a refusal named **before the slot opens**, so an undecided caller pays a retry rather than a half-completed item   // R279, R280
 2.2. Collect the parts the entry recorded — a list, since one item may discharge parts in several documents
 2.3. Slot.Record wraps everything below, exactly as in 1.6
-2.3.1. For each recorded part, Carve performs the completion write on its line: checkbox to `[x]`, title struck through, and a `LANDED (`hash`, date — `#N`.)` record replacing the transient
+2.3.1. For each recorded part, Carve performs the completion write on its line: checkbox to `[x]`, title struck through, and a `LANDED (date — `#N`.)` record — no hash, the item number is the identifier (R477) — replacing the transient
 2.3.2. Nothing else is checked — a parent part completes when its subparts do, derived rather than stored, so no parent box is set and no sibling is consulted
 2.3.3. Reset the current file's `## Active` section — that section and nothing else
 2.3.3.1. The dependency's `Current` reader parses the file and locates the `## Active` heading node, refusing when there is none or more than one; Trajectory names the repair

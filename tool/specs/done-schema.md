@@ -23,7 +23,7 @@ type DoneEntry struct {
     IDs     []int      // every #N in the identifier slot, and nothing outside it
     HasSlot bool       // the header carried an identifier slot at all
     Title   string
-    Commit  string     // the first backquoted run after the header's bold
+    Commit  string     // the first backquoted run after the header's bold; "" since 2026-09-15, when the writer stopped recording one
     PartDoc, PartKey string  // the backquoted doc#key, from the header or the body
 }
 func (e *DoneEntry) Line() int   // 1-based, the bullet's line at parse time

@@ -11,11 +11,11 @@ import (
 	"strings"
 
 	"github.com/zot/minispec/internal/backup"
+	"github.com/zot/minispec/internal/minispecsdom"
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/pending"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/update"
-	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // CRC: crc-CLI.md | Seq: seq-queue-item.md#1.1 | R283
@@ -316,13 +316,12 @@ func (c *CLI) runStart(repoRoot string, args []string) int {
 	return 0
 }
 
-// CRC: crc-CLI.md | Seq: seq-queue-item.md#2 | R244, R247, R262, R268, R280, R282
+// CRC: crc-CLI.md | Seq: seq-queue-item.md#2 | R476, R478, R262, R268, R280, R282
 // runFinish completes an item across all four surfaces.
 func (c *CLI) runFinish(repoRoot string, args []string) int {
-	const usage = "Usage: minispec pending finish <item-number> --commit <hash> [--body <text>|--body-file <path>] [--discharged <text>|--discharged-file <path>] (--resolve|--no-resolve)"
+	const usage = "Usage: minispec pending finish <item-number> [--body <text>|--body-file <path>] [--discharged <text>|--discharged-file <path>] (--resolve|--no-resolve)"
 	fs := flag.NewFlagSet("finish", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-	commit := fs.String("commit", "", "the commit the work landed in")
 	// R277 — the gap's answer to a part's LANDED marker, and never inferred.
 	resolve := fs.Bool("resolve", false, "resolve the gap a gap-sourced item names")
 	// R279, R281 — the decision needs two spellings or it is not a decision.
@@ -348,7 +347,7 @@ func (c *CLI) runFinish(repoRoot string, args []string) int {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return 1
 	}
-	if len(pos) != 1 || *commit == "" {
+	if len(pos) != 1 {
 		fmt.Fprintln(os.Stderr, usage)
 		return 1
 	}
@@ -374,7 +373,7 @@ func (c *CLI) runFinish(repoRoot string, args []string) int {
 		// R277 — resolve the gap **the entry names**, in the document it named it in.
 		opts.ResolveGap = gapResolver(update.New(p).ResolveGap, p.DesignMdPath(), repoRoot, id)
 	}
-	done, err := pending.Finish(repoRoot, id, *commit, opts)
+	done, err := pending.Finish(repoRoot, id, opts)
 	if err != nil {
 		reportQueueError(repoRoot, err) // R332
 		return 1
@@ -406,7 +405,7 @@ func gapResolver(resolve func(string) error, designMd, repoRoot string, id int) 
 	}
 }
 
-// CRC: crc-CLI.md | R247, R264, R277, R280, R281, R282
+// CRC: crc-CLI.md | R478, R264, R277, R280, R281, R282
 // reportFinished renders a completion. **Its own function so a test can reach it**: the
 // notices below are decisions about what the caller is told, and a decision nothing can assert
 // on is one that drifts silently.
@@ -430,7 +429,7 @@ func reportFinished(repoRoot string, done pending.Finished, body string, askedRe
 	if done.HasGap && !done.GapResolved {
 		fmt.Printf("  left open gap %s, by decision (--no-resolve)\n", done.Gap.Key)
 	}
-	// R247, R264. The body is authoring and stays the caller's; **placing** it is the tool's.
+	// R478, R264. The body is authoring and stays the caller's; **placing** it is the tool's.
 	// The crank handle below runs when the caller declined the flag — the fallback, never the
 	// design.
 	if body != "" {

@@ -896,7 +896,7 @@ properties are close to inverted:
 | | Migration | Carve |
 |---|---|---|
 | End state | Defined (A→B); expires by design | None; decays as parts land |
-| Completion | Ritual: prose grep, `migration-complete`, `complete/NNN-` | A move to `done/` |
+| Completion | Ritual: prose grep, `migration-complete`, `complete/NNN-` | `update finished-carve`: a move to `done/` with its links rewritten |
 | Spawns | One coherent change, phases run once | N items, scheduled independently over months |
 | Content | How to get from A to B | Decisions, open forks, and the split |
 | Kinds of work | One | Deliberately several |
@@ -932,6 +932,12 @@ a sweep, and rewrite the links that pointed at the old path as part of the move.
 Promotion also forces an editorial pass separating the decision from the private
 reasoning behind it, and writing for a stranger is the cheapest clarity check
 available.
+
+**When a carve is finished, the move is `minispec update finished-carve <carve>`**: it
+refuses a carve with an open part, moves it to `done/`, and rewrites every link in both
+directions from where each resolves — a plain rename, nothing staged. A move made by hand
+leaves every relative link pointing where the carve used to be; `update repair-links`
+repairs that after the fact, and `query links` reports what it could not.
 
 **Read the whole carve before working one of its parts.** A carve keeps a part's information
 in several places and only some of them are keyed by the part number — the status line and the

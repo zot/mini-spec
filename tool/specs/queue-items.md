@@ -160,11 +160,11 @@ Every queue verb ends by naming what it wrote, and since 2026-09-12 each name ca
 `carves/x.md (tracked, uncommitted)`, `CURRENT.md (ignored)`. A completion writes four files and
 exactly one of them is a tracked public document — the carve flip — so it is the write that
 still needs a commit, and until now nothing in the report told it apart from the three gitignored
-files beside it. *Why it is structural rather than an oversight:* a `LANDED` record carries the
-commit hash, so it cannot be written until that commit exists, which puts the source edit one
-commit behind the work it records, always, in every project — the moment it is most likely to be
-skipped, because the work is done and all that remains is a checkbox in a file nobody is looking
-at. Measured 2026-08-18 on `#18`, the first part discharged through the verb. The words come from
+files beside it. *Until 2026-09-15 this was structural:* a `LANDED` record carried the commit hash, so it could
+not be written until that commit existed, which put the source edit one commit behind the work
+it recorded, always — measured 2026-08-18 on `#18`, and again on `#83`–`#85`, three items in six
+commits. The record now carries the item number instead, so the flip lands in its own item's
+commit and the word `uncommitted` means only that the commit has not happened yet. The words come from
 git — `tracked`, `ignored`, otherwise `untracked` — and print bare where there is no repository.
 **The tool never stages or commits it** (Bill, 2026-08-04): this reports, the agent relays, the
 human commits.
@@ -286,18 +286,21 @@ fence-safe *by construction* rather than by care, which is the whole difference 
 line-scanning writers this replaces. A fence is a node of its own, so its bytes are never part
 of a text run and a `---` quoted inside an example cannot be reached from there.
 
-## `minispec pending finish <N> --commit <hash>`
+## `minispec pending finish <N>`
 
 **One command across all four surfaces**, in the order the format mandates:
 
 1. **The source first** — each part the item discharged is checked off in its carve:
    `- [ ]` becomes `- [x]`, the title is struck through, and a
-   `` **LANDED (`<hash>`, <date> — `#N`.)** `` record is appended. Source first because that
+   `` **LANDED (<date> — `#N`.)** `` record is appended — **no commit hash** (Bill, 2026-09-15):
+   the item number is the identifier and every commit names the items it lands, so `finish`
+   runs *before* the commit and the flip lands in it. Source first because that
    is the copy a future reader trusts, and the one nobody thinks to check.
 2. **The current file's `## Active` section** is reset to its empty shape — that section
    and nothing else, see below.
 3. **The queue entry moves** from the pending file to the done file, as an entry header
-   carrying the date, the identifiers, the title, the commit and the part pointer.
+   carrying the date, the identifiers, the title and the part pointer, and no commit; the
+   ledger, being private, may gain one after the fact by hand.
 4. **The body is placed with the header**, when `--body` or `--body-file` is given. *One write,
    not two* — the body lands beneath a header the same splice produced, so there is no second
    target and nothing to anchor against. The carve's guarantee is satisfied by construction

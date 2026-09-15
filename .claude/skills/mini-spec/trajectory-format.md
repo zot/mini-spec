@@ -163,7 +163,7 @@ Completed items, most-recent first.
 
 ---
 
-- **YYYY-MM-DD — #8 / R189–R198: <title>.** (`<commit>`) Part `<doc-path>#<key>`.
+- **YYYY-MM-DD — #8 / R189–R198: <title>.** Part `<doc-path>#<key>`.
   <gaps banked, sources touched, what a future reader needs>
 ```
 
@@ -214,10 +214,10 @@ so "what is still open?" has to be answerable from the first screen.
 ```markdown
 ## Status
 
-- [x] ~~**Item 1 — record and resolve.**~~ **LANDED (`4c6e974`, 2026-08-04 — `#3`.)**
+- [x] ~~**Item 1 — record and resolve.**~~ **LANDED (2026-08-04 — `#3`.)**
 - **Item 2 — the bootstrap.** **SPLIT (Bill, 2026-08-07.)** No checkbox: the sub-items
   carry the state.
-  - [x] ~~**2.1 — root detection.**~~ **LANDED (`8197c6c`, 2026-08-07 — `#1`.)**
+  - [x] ~~**2.1 — root detection.**~~ **LANDED (2026-08-07 — `#1`.)**
   - [ ] **2.2 — the config move.** **OPEN (#8.)**
 - [ ] **Item 4 — fail fast when onboarding does not take.** **OPEN (not queued.)**
 ```
@@ -289,7 +289,7 @@ carry no ordering and do not subdivide.
 
 **`Item N` and `#N` are two keys doing two jobs, and both appear in a carve.** `Item N`
 identifies *within the document*; `#N` is the queue ID and appears in the marker —
-`**OPEN (#8.)**`, `**LANDED (`c86c4b8`, 2026-08-16 — `#10`.)**`. They are never
+`**OPEN (#8.)**`, `**LANDED (2026-08-16 — `#10`.)**`. They are never
 interchangeable, which is what makes a bare `#7` in a carve unambiguously a queue
 reference.
 
@@ -329,8 +329,8 @@ optional.
 
 ### Markers
 
-Shape: `**VERB (attribution)**`, where the attribution is a commit and date for work, or a
-name and date for a judgment.
+Shape: `**VERB (attribution)**`, where the attribution is a date and the queue ID for work, or
+a name and date for a judgment.
 
 **The vocabulary is open; the shape is what gets checked.** The checkbox carries the
 state a machine reads, so the verb never has to be parsed — which frees it to carry
@@ -351,7 +351,7 @@ marker visible to the writer instead of accumulating a second queue state beside
 
 | verb | means |
 |---|---|
-| `LANDED (commit, date)` | the work is in the repository |
+| `LANDED (date — #N)` | the work is in the repository; the commit is found by `git log --grep '#N'`, which is why every commit names the items it lands |
 | `OPEN (#N)` / `OPEN (not queued)` | not started; queued under that ID, or not yet scheduled |
 | `REVERTED (#N)` | the queue rolled back over this part's item (`pending revert`); replay returns it to `OPEN (#N)`, an abandoned attempt to `OPEN (not queued)` |
 | `SPLIT (name, date)` | issued as subparts; this line keeps no checkbox |
@@ -387,8 +387,11 @@ not.
 call from a musing, and whose it was. This is the single highest-value habit in the
 format.
 
-`LANDED (commit, date)` mirrors it deliberately — same shape, same greppability — and the
-commit is what makes the claim checkable.
+`LANDED (date — #N)` mirrors it deliberately — same shape, same greppability — and the item
+number is what makes the claim findable: `git log --grep '#N'` reaches the commit. **No commit
+hash** (Bill, 2026-09-15): a hash exists only after the commit, which forced every flip into a
+second commit, and an amend or a squash rewrites it away. Older lines carry one; they are
+read, and never written again.
 
 **A decision naming exactly one part lives with that part; a decision spanning parts, or
 governing the document as a whole, stays in `## Decisions`** — the carve's chronological

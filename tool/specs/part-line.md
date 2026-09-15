@@ -3,7 +3,7 @@
 The line a carve's status block is made of, as one node in `minispecsdom` over a
 document the markdown base parsed:
 
-    - [x] ~~**Item 1 — record and resolve.**~~ **LANDED (`4c6e974`, 2026-08-04 — `#3`.)**
+    - [x] ~~**Item 1 — record and resolve.**~~ **LANDED (2026-08-04 — `#3`.)**
 
 The tool reads five things from it and writes three, and today does both with a
 hand-rolled reader of six regexes. Here it is a `PartLine` node whose **checkbox** and

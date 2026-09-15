@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/zot/minispec/internal/backup"
-	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/minispecsdom"
+	"github.com/zot/minispec/internal/parser"
 )
 
 // The queue files, mandated at the repository root by the skill's format reference.
@@ -363,14 +363,14 @@ type FinishOpts struct {
 	DeclineResolve bool
 }
 
-// CRC: crc-Pending.md | Seq: seq-queue-item.md#2 | R244, R246, R247, R248
+// CRC: crc-Pending.md | Seq: seq-queue-item.md#2 | R476, R246, R478, R248
 // Finish completes an item **in the mandated order: the source first.**
 //
 // Each discharged part is checked off in its carve; then the current file is reset; then the
 // entry moves from the pending file to the done file. Source first because the carve is the
 // copy a future reader trusts, and the one nobody thinks to check — and because the queue
 // files are the ones the slot can put back.
-func Finish(repoRoot string, id int, commit string, opt FinishOpts) (Finished, error) {
+func Finish(repoRoot string, id int, opt FinishOpts) (Finished, error) {
 	if err := missingTrajectory(repoRoot); err != nil { // R332
 		return Finished{}, err
 	}
@@ -395,9 +395,11 @@ func Finish(repoRoot string, id int, commit string, opt FinishOpts) (Finished, e
 			"--no-resolve if it did not. There is no default, because a default would guess which of those happened.", id, out.Gap.Key)
 	}
 
-	attribution := fmt.Sprintf("`%s`, %s — `#%d`.", commit, time.Now().Format("2006-01-02"), id)
+	// R477 — the date and the queue ID, and no commit hash: the item number is the identifier,
+	// so this runs before the commit and the flip lands in it (Bill, 2026-09-15).
+	attribution := fmt.Sprintf("%s — `#%d`.", time.Now().Format("2006-01-02"), id)
 	err = backup.New(repoRoot).Record(func() error {
-		// R245, R246 — Seq: seq-queue-item.md#2.3.1
+		// R477, R246 — Seq: seq-queue-item.md#2.3.1
 		// The parts the item recorded, and nothing else. A parent completes when its
 		// subparts do — derived, never stored — so no parent box is set and no sibling is
 		// consulted.
@@ -425,21 +427,22 @@ func Finish(repoRoot string, id int, commit string, opt FinishOpts) (Finished, e
 			return err
 		}
 		out.Files = append(out.Files, currentFile)
-		// Seq: seq-queue-item.md#2.3.4 | R244, R247
+		// Seq: seq-queue-item.md#2.3.4 | R476, R478
 		out.Files = append(out.Files, pendingFile, doneFile)
 		return parser.CompleteItem(filepath.Join(repoRoot, pendingFile), filepath.Join(repoRoot, doneFile), id,
-			doneHeader(id, entry.Title, commit, opt.Discharged, out.Parts, out.Gap), opt.Body)
+			doneHeader(id, entry.Title, opt.Discharged, out.Parts, out.Gap), opt.Body)
 	})
 	return out, err
 }
 
-// R247, R268, R278
+// R478, R268, R278
 // doneHeader composes the entry **header** and never the body.
 //
-// Identifiers, date, title, commit and part pointer are facts the caller was handed. The body
+// Identifiers, date, title and part pointer are facts the caller was handed; no commit,
+// since the item number is the identifier. The body
 // — *enough to reconstruct the change without re-reading the code* — is a judgment about what
 // a future reader will need, which is authoring. The tool owns IDs, not prose.
-func doneHeader(id int, title, commit, discharged string, parts []parser.PartRef, gap parser.PartRef) string {
+func doneHeader(id int, title, discharged string, parts []parser.PartRef, gap parser.PartRef) string {
 	// R268. The `#N` is the tool's because the tool owns IDs; whatever else the item
 	// discharged is the caller's, and the two join with the ` / ` the format mandates.
 	slot := fmt.Sprintf("#%d", id)
@@ -447,7 +450,7 @@ func doneHeader(id int, title, commit, discharged string, parts []parser.PartRef
 		slot += " / " + discharged
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "- **%s — %s: %s.** (`%s`)", time.Now().Format("2006-01-02"), slot, strings.TrimSuffix(title, "."), commit)
+	fmt.Fprintf(&b, "- **%s — %s: %s.**", time.Now().Format("2006-01-02"), slot, strings.TrimSuffix(title, "."))
 	for _, p := range parts {
 		fmt.Fprintf(&b, " Part `%s#%s`.", p.Doc, p.Key)
 	}

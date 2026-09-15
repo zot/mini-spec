@@ -1,4 +1,4 @@
-// CRC: crc-CLI.md | R241, R244
+// CRC: crc-CLI.md | R241, R476
 package cli
 
 import (
@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zot/minispec/internal/minispecsdom"
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/pending"
-	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // discard swallows a flagset's usage output, which is noise in a unit test.
@@ -211,7 +211,7 @@ func TestFinishWiresTheResolvedBodyThrough(t *testing.T) {
 	write("body.md", body+"\n")
 
 	c := &CLI{}
-	if code := c.runFinish(dir, []string{"4", "--commit", "abc1234",
+	if code := c.runFinish(dir, []string{"4",
 		"--body-file", bodyPath, "--discharged", "R268–R269"}); code != 0 {
 		t.Fatalf("runFinish exited %d, want 0", code)
 	}
@@ -324,7 +324,7 @@ func TestResolveRefusesAGapInAnotherDesignRoot(t *testing.T) {
 func TestResolveAndNoResolveAreRefusedTogether(t *testing.T) {
 	var code int
 	out := capture(t, &os.Stderr, func() {
-		code = (&CLI{}).runFinish(t.TempDir(), []string{"1", "--commit", "abc1234", "--resolve", "--no-resolve"})
+		code = (&CLI{}).runFinish(t.TempDir(), []string{"1", "--resolve", "--no-resolve"})
 	})
 	if code == 0 {
 		t.Error("contradictory flags were accepted")
@@ -372,7 +372,7 @@ func TestWrittenLineSaysWhichWriteIsTracked(t *testing.T) {
 	run("commit", "-qm", "init")
 
 	out := captureStdout(t, func() {
-		if code := (&CLI{}).runFinish(dir, []string{"4", "--commit", "abc1234"}); code != 0 {
+		if code := (&CLI{}).runFinish(dir, []string{"4"}); code != 0 {
 			t.Fatalf("runFinish exited %d", code)
 		}
 	})

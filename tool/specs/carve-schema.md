@@ -84,7 +84,7 @@ path lists a deviation; a write path refuses on it. Three refusals:
   landed part is never returned to `OPEN` by a write; this is a second guard, not the caller's
   remembering.
 - **`Land` over a checked part** is refused with `ErrLanded` rather than made idempotent: a
-  second landing carrying a different commit and date would otherwise keep the first record
+  second landing carrying a different date and item would otherwise keep the first record
   silently, and a double landing is the caller's to see where it happens.
 
 Refusal is decided before any of `Land`'s three markings, so the box, the strike and the

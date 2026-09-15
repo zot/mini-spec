@@ -45,6 +45,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Markdown.md → `internal/minispecsdom/mdbase.go`
 - [x] crc-Links.md → `internal/query/links.go`
 - [x] crc-LinkRepair.md → `internal/update/links.go`
+- [x] crc-FinishedCarve.md → `internal/update/finish.go`
 
 ### Sequences
 - [x] seq-queue-item.md → `internal/pending/pending.go`, `internal/parser/trajectory.go`, `internal/cli/pending.go`
@@ -61,7 +62,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
-- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`, `internal/update/links.go`
+- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`, `internal/update/links.go`, `internal/update/finish.go`
 - [x] seq-current.md → `internal/minispecsdom/current.go`
 - [x] seq-done.md → `internal/minispecsdom/done.go`
 - [x] seq-pending.md → `internal/minispecsdom/pending.go`
@@ -93,6 +94,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Markdown.md → `internal/minispecsdom/mdbase_test.go`
 - [x] test-Links.md → `internal/query/links_test.go`, `internal/cli/cli_links_test.go`
 - [x] test-LinkRepair.md → `internal/update/links_test.go`, `internal/cli/cli_repair_test.go`
+- [x] test-FinishedCarve.md → `internal/update/finish_test.go`, `internal/cli/cli_finish_test.go`
 - [x] test-Current.md → `internal/minispecsdom/current_test.go`
 - [x] test-Done.md → `internal/minispecsdom/done_test.go`
 - [x] test-PendingSdom.md → `internal/minispecsdom/pending_test.go`
@@ -149,3 +151,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O25: `minispecsdom.Pending.Place` accepts entry text that opens a bracket group never closed (a lone asterisk in a status), so the entry itself reads back and the check passes while every later entry falls inside the unclosed run and is not read. A write path should refuse text whose placement grows `Unread`, since the file it produces is one its own reader cannot fully read. Ported 2026-09-14 from mini-spec-tool O28, measured there 2026-09-06 on its queue
 - [ ] O26: `minispecsdom.Gaps.Add` appends its line to a file with no final newline without supplying one, so the new gap glues onto the last gap's line and the read-back finds nothing; the write should end the previous line before appending, as `Requirements.Add` and the trajectory writers do. Ported 2026-09-14 from mini-spec-tool O30, measured there 2026-09-07 at `ceafd0c`, where every `add-gap` was refused until a newline was added by hand
 - [x] O27: Every relative link in a carve breaks when the carve moves to `carves/done/`, and nothing rewrites them: `query links carves/done/*.md` reads 32 `missing` in `carves/done/trajectory-tool.md` alone, every one written relative to `carves/` (measured 2026-09-15, the verb's first run). The skill says to rewrite the links as part of the move; the move is a hand `git mv` today, so the rule has no forcing function. Repair is two-sided: rewrite the 32 in the document, and either give the tool a move verb that rewrites `../` and `done/` links, or wire `query links` into `validate` (reference-discipline Item 3) so a broken move is reported on the next run rather than found by a cloner. Filed 2026-09-15 as [reference-discipline.md](../../carves/reference-discipline.md) Item 4, which carries the predicate and the two open decisions
+- [ ] O28: `update finished-carve` and `update repair-links` read links only in the live carves, the done carves and the three trajectory files, so a spec or design document that links a carve — `specs/index.md` links `carves/done/minispecsdom-move.md` today — is outside both and breaks unreported when that carve moves. The population is repository-scoped and the design roots are below it (two here), so widening it means walking every `design/` and `specs/` under the root; `query links` over those files after the fact is the workaround (2026-09-15, #85).
+- T8: R244 retired by R476 (2026-09-15 item-identifiers: the item number is the identifier, no hash)
+- T9: R245 retired by R477 (2026-09-15 item-identifiers: the item number is the identifier, no hash)
+- T10: R247 retired by R478 (2026-09-15 item-identifiers: the item number is the identifier, no hash)

@@ -1,5 +1,5 @@
-# Sequence: reading a document's links, classifying them, and repairing a move
-**Requirements:** R448, R449, R450, R451, R453, R455, R456, R457, R459, R460, R462, R463, R464, R465, R466, R467
+# Sequence: reading a document's links, classifying them, repairing a move, and finishing a carve
+**Requirements:** R448, R449, R450, R451, R453, R455, R456, R457, R459, R460, R462, R463, R464, R465, R466, R467, R469, R470, R471, R472, R473, R474
 
 ## 1. Reading
 
@@ -45,3 +45,20 @@
         then re-read and read link `i` back with the new destination or panic `ReadBackError`
    3.6. A file with at least one rewrite is written atomically; the report lists every link
         considered and closes with the counts
+
+## 4. Finishing a carve
+
+4. `FinishCarve(root, carve)`
+   4.1. Refuse unless the path is directly in `carves/` or `.carves/`; refuse when the
+        destination `<dir>/done/<name>` exists
+   4.2. Read the carve's status block; refuse on none, or on any open part, naming each
+   4.3. Outgoing plan: for each link in the carve, `ClassifyLink`; one that resolves inside
+        the tree is rewritten to reach the same target from `done/`, fragment kept; one that
+        does not is recorded as left
+   4.4. Incoming plan: for each population document (live carves, done carves, the three
+        trajectory files) and each of its links, the one whose resolved path is the carve is
+        rewritten to reach the destination from that document's directory
+   4.5. Apply every plan in memory through `SetDest` — a read-back panic refuses the whole
+        move before any file is written
+   4.6. Write the incoming documents in place, write the carve's content at the destination,
+        remove the old file; report the move, the rewrites, the links left, the counts

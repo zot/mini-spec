@@ -74,8 +74,7 @@ are what the cases below spend their injections on.
 **Alarm:** 4
 **Fire alarm:** reorder so the queue moves first. **This one passes by default and is invisible when violated** — both orders produce identical files on the happy path, and only an interruption between them tells the difference. Injecting the swap and failing the second write leaves a part still open against an item already in the done file, which is exactly the orphan R242 reports and which no green suite would have shown
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `the queue moved even though the source write failed` and `a done entry was written for a completion that did not happen`; restore byte-clean. Previously 2026-09-05 — rang on four tests — `TestASourceFailureLeavesTheQueueUntouched` and three whose second `CompleteItem` then found no entry (`no entry for #4`). Injection: a `CompleteItem` hoisted above the parts loop
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang with the queue moved first: `the queue moved even though the source write failed` and `a done entry was written for a completion that did not happen`; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `the queue moved even though the source write failed` and `a done entry was written for a completion that did not happen`; restore byte-clean. Previously 2026-09-05 — rang on four tests — `TestASourceFailureLeavesTheQueueUntouched` and three whose second `CompleteItem` then found no entry (`no entry for #4`). Injection: a `CompleteItem` hoisted above the parts loop
 ## Test: a parent part is never checked
 **Purpose:** a parent completes when its subparts do — derived, never stored (R246)
 **Input:** a carve holding a `SPLIT` parent with no checkbox and two subparts `8.1` and `8.2`; an item recording only `8.2`
@@ -85,8 +84,7 @@ are what the cases below spend their injections on.
 **Alarm:** 7
 **Fire alarm:** check the parent when all its subparts are done. Goes red on the parent line — and the argument is that a parent box would be a **second copy** of a fact the subparts already carry, so the two can disagree and nothing says which is right. A parent with no checkbox *means* something, and inventing a state for it is the tool asserting what the document declined to say
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang, through the reader rather than the assertion: the injection's `SetPartLanded` on the split parent was refused with `no part with that key`, since a checkbox-less parent is stateless to the reader and cannot be marked — the property held structurally before the test's own check ran; restore byte-clean. Previously 2026-09-05 — **did not ring, and that is the finding again.** The injection — land the parent derived from a subpart key — errors with the dependency's `ErrNoPart`: a checkbox-less `SPLIT` parent is not a part to `minispecsdom.Carve` at all (the probe lists `Item 1`, `Item 7`, `8.1`, `8.2`), so the guard is the reader's by construction and nothing on this side can reach the property
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang: landing the derived parent key failed with `minispecsdom: no part with that key` — the parent line has no checkbox and the reader will not land it, so the injection cannot even reach the parent box; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang, through the reader rather than the assertion: the injection's `SetPartLanded` on the split parent was refused with `no part with that key`, since a checkbox-less parent is stateless to the reader and cannot be marked — the property held structurally before the test's own check ran; restore byte-clean. Previously 2026-09-05 — **did not ring, and that is the finding again.** The injection — land the parent derived from a subpart key — errors with the dependency's `ErrNoPart`: a checkbox-less `SPLIT` parent is not a part to `minispecsdom.Carve` at all (the probe lists `Item 1`, `Item 7`, `8.1`, `8.2`), so the guard is the reader's by construction and nothing on this side can reach the property
 ## Test: an item discharging parts in several documents checks each
 **Purpose:** the cardinality is asymmetric on purpose — a part records one item, an entry records a list (R246)
 **Input:** an entry recording parts in two different carves
@@ -111,15 +109,25 @@ injection is *stop after the first part*, and this test is what will fail first.
 **Pulled:** 2026-09-05 — **silent first, then rang.** The August test stopped at the stamp and could not tell one Record from three; a revert is the only witness — with a Record per write the second backup already holds the entry. Test strengthened with the revert, then rang: `revert left the new entry in place — the slot covered a fragment of the invocation`. Inject re-sited to `mintAndPlace`
 
 ## Test: the done entry carries a header and no body
-**Purpose:** the tool owns IDs, not prose (R247)
-**Input:** a completion with a commit hash and a title
-**Expected:** an entry header carrying the date, the identifiers, the title, the commit and the part pointer — and **nothing after it** but the crank handle naming where the body goes
+**Purpose:** the tool owns IDs, not prose (R478)
+**Input:** a completion with a title
+**Expected:** an entry header carrying the date, the identifiers, the title and the part pointer, and no commit — and **nothing after it** but the crank handle naming where the body goes
 **Refs:** crc-Pending.md, crc-Trajectory.md, seq-queue-item.md#2.4
 **Code:** internal/pending/pending_test.go
 **Alarm:** 9
 **Fire alarm:** compose a body from the title and the part list. Goes red on the entry's shape, and the reason is not fastidiousness: a generated summary reads exactly like an authored one, so the file's stated purpose — *enough to reconstruct the change without re-reading the code* — quietly becomes a claim nobody made
 **Inject:** internal/pending/pending.go:doneHeader
-**Pulled:** 2026-09-05 — rang on three tests, `the entry carries a body the tool wrote`
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `doneHeader`; rang on eight pending tests and two CLI tests, this time through the reader's guard — `Done.Prepend … did not read back … nothing was written` — before the shape assertion ran: a header with a composed body beneath it does not read back as a header; restore clean *Earlier —* 2026-09-05 — rang on three tests, `the entry carries a body the tool wrote`
+## Test: the LANDED record carries the date and the item number, and no hash
+**Purpose:** R476, R477 — the item number is the identifier (Bill, 2026-09-15), so the completion needs no commit and the flip lands in its own item's commit
+**Input:** the fixture's `#4` completed with no commit
+**Expected:** the part line reads `**LANDED (<today> — `#4`.)**` with the assessment before it untouched; no backquoted run opens the attribution; the done header carries no parenthesised commit
+**Refs:** crc-Pending.md, seq-queue-item.md#2.3.1
+**Code:** internal/pending/pending_test.go
+**Alarm:** 37
+**Fire alarm:** write the attribution in the old shape with an empty hash — a backquoted empty run, a comma, then the date — so the join survives and only the identifier rule breaks. Red: the part line opens its attribution with a backquote.
+**Inject:** internal/pending/pending.go:Finish
+**Pulled:** 2026-09-15 — rang, by hand: with the attribution written in the old shape around an empty hash, `the record carries a commit hash — the item number is the identifier`; restore checksummed clean
 
 ## Test: flags are parsed wherever they sit among the positional arguments
 **Purpose:** an argument order the usage line advertises must not corrupt what it parses (R241, R244)
@@ -159,10 +167,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 11
 **Fire alarm:** **delete the `parser.ResetCurrent` call from `Finish`** — a *wiring* injection, and deliberately not one inside the reset itself. Every alarm on the reset's own behaviour lives in `test-Trajectory.md` and every one of them keeps ringing with the call gone, which is the `O23` shape: no number of injections inside a unit proves it is reached
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `the current file kept its context` and `the active section was not reset`, plus the no-heading refusal test; restore byte-clean. Previously 2026-09-05 — rang, `the current file kept its context — it is a resume buffer, never a log`, and the `###` survived
-
-*What this case used to be, kept because the sequence is the argument.* It read "the current file's preamble survives a completion", and its alarm was the real first-implementation defect: `finish` wrote a hardcoded template over the **whole file**, which no test could catch because the fixture's current file was a bare `# Current` line with nothing to lose. The fixture gained a preamble that morning — and the file *still* had nothing to lose in the place the loss actually happened, because everything below the rule was the active item by definition and the verb was entitled to it. **320 lines of standing context went that afternoon.** A fixture contains only what its author thought to include, twice over; it now carries standing sections after the active one, which is where a real project keeps them
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang: `the current file kept its context`, `the active section was not reset`, and the refusal test on a current file with no active heading; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `the current file kept its context` and `the active section was not reset`, plus the no-heading refusal test; restore byte-clean. Previously 2026-09-05 — rang, `the current file kept its context — it is a resume buffer, never a log`, and the `###` survived *What this case used to be, kept because the sequence is the argument.* It read "the current file's preamble survives a completion", and its alarm was the real first-implementation defect: `finish` wrote a hardcoded template over the **whole file**, which no test could catch because the fixture's current file was a bare `# Current` line with nothing to lose. The fixture gained a preamble that morning — and the file *still* had nothing to lose in the place the loss actually happened, because everything below the rule was the active item by definition and the verb was entitled to it. **320 lines of standing context went that afternoon.** A fixture contains only what its author thought to include, twice over; it now carries standing sections after the active one, which is where a real project keeps them
 ## Test: the reset's refusal reaches the caller
 **Purpose:** a refusal from the reset fails the whole completion rather than being swallowed inside it (R250)
 **Input:** a current file with no `## Active` heading, and a completion run against it
@@ -172,8 +177,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 12
 **Fire alarm:** discard the reset's error — `_ = parser.ResetCurrent(…)`. Also a wiring injection: the refusal itself is proven in `test-Trajectory.md`, and this proves it is not dropped on the floor between there and here. A swallowed refusal is the worst of both, since the completion reports success over a file it could not read
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `expected a refusal — the tool cannot tell the active item from the standing context`; restore byte-clean. Previously 2026-09-05 — rang, `expected a refusal — the tool cannot tell the active item from the standing context`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang: `expected a refusal — the tool cannot tell the active item from the standing context`; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `expected a refusal — the tool cannot tell the active item from the standing context`; restore byte-clean. Previously 2026-09-05 — rang, `expected a refusal — the tool cannot tell the active item from the standing context`
 ## Test: `--next` means next to be worked, not position 1
 **Purpose:** with nothing in progress the entry goes to the top; with a step in progress it goes immediately after the active item, which is position 2 by the pending file's own ordering rule (R257)
 **Input:** the same queue twice — once with `## Active` holding the placeholder, once with it holding an active block
@@ -271,8 +275,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 31
 **Fire alarm:** drop the ` / ` join and write only `#N` — the half-filled field this requirement exists to end. Red as `the identifier slot lost what the item discharged`
 **Inject:** internal/pending/pending.go:doneHeader
-**Pulled:** 2026-09-05 — rang, `the identifier slot was written half-filled`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `doneHeader`; rang on two tests: `the identifier slot was written half-filled` and the CLI's `the identifier slot never reached DONE.md`; restore clean *Earlier —* 2026-09-05 — rang, `the identifier slot was written half-filled`
 ## Test: a colon in the identifier slot is refused
 **Purpose:** a colon inside the slot ends it early for the reader, silently (R269)
 **Input:** `Finish` with `Discharged: "R1: a note"`
@@ -282,8 +285,7 @@ What it adds is that the pieces compose into the thing that was actually done by
 **Alarm:** 32
 **Fire alarm:** delete the colon guard in `Finish`. The header writes, the reader's slot ends at the injected colon, and every identifier after it stops being read while the header still parses. Red as `a colon in the discharged slot was accepted`
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `a colon in the slot was written, and every identifier after it stops being read`; restore byte-clean. Previously 2026-09-05 — rang, `a colon in the slot was written, and every identifier after it stops being read`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang: `a colon in the slot was written, and every identifier after it stops being read`; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `a colon in the slot was written, and every identifier after it stops being read`; restore byte-clean. Previously 2026-09-05 — rang, `a colon in the slot was written, and every identifier after it stops being read`
 ## Test: a gap is a source and nothing is written on its side
 **Purpose:** the part case writes both halves because the carve is public; a gap has no marker
 and gains none (R271, R274)
@@ -360,8 +362,7 @@ leaving the gap unresolved, `design.md` byte-identical, and the done entry carry
 survives only in whatever free text `--discharged` carried, which is a record by luck and reads
 exactly like a record. Red as `the done entry lost the gap pointer`
 **Inject:** internal/pending/pending.go:doneHeader
-**Pulled:** 2026-09-05 — rang, `the done entry lost the gap pointer`. *First attempt landed on the wrong anchor* — `&& false` on the file's first `gap.Kind == SourceGap`, which is `AddItem`'s dispatch, and the four gap tests failed as part-pointer refusals; that rings and proves nothing about the header. Re-anchored on `doneHeader`'s own clause and pulled again.
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `doneHeader`; rang: `the done entry lost the gap pointer`, the clause disabled with `if false &&` since the brief's `hasGap` names no symbol — the conditional is `gap.Kind == SourceGap`, as the 2026-09-05 record already said; restore clean *Earlier —* 2026-09-05 — rang, `the done entry lost the gap pointer`. *First attempt landed on the wrong anchor* — `&& false` on the file's first `gap.Kind == SourceGap`, which is `AddItem`'s dispatch, and the four gap tests failed as part-pointer refusals; that rings and proves nothing about the header. Re-anchored on `doneHeader`'s own clause and pulled again.
 ## Test: finish resolves the gap when asked
 **Purpose:** with the act supplied the gap is resolved, source first exactly as a part is (R277)
 **Input:** a gap-sourced item completed with a `ResolveGap` callback
@@ -375,8 +376,7 @@ nothing. The gap closes on every completion, including the partial ones `#60` pr
 **a wrongly closed gap is work that silently never happens.** Red on the sibling case as
 `the gap was resolved without --resolve`
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang on plumbing, not the assertion: with the `!= nil` test gone the sibling case, which passes no resolver, dereferences nil and panics inside `Finish` before `the gap was resolved without --resolve` can be checked. The prose's expected red is unreachable as the API stands, because a nil resolver *is* the not-asked case; a red is a red, but this one proves the guard is load-bearing for safety rather than for the property; restore byte-clean. Previously 2026-09-05 — rang, `HasGap=true GapResolved=true; want the gap reported and left open`
-
+**Pulled:** 2026-09-15 — re-pulled 2026-09-15 after `#86` changed `Finish`. *By delegation first:* the brief's injection — resolve on `hasGap` alone with the caller passing nothing — went red as a nil dereference in `Finish`, plumbing rather than the assertion, recorded as such. *Then by hand:* with `GapResolved` set whenever a gap exists, the resolver called only when given, rang on the assertion: `HasGap=true GapResolved=true; want the gap reported and left open`; restore checksummed clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang on plumbing, not the assertion: with the `!= nil` test gone the sibling case, which passes no resolver, dereferences nil and panics inside `Finish` before `the gap was resolved without --resolve` can be checked. The prose's expected red is unreachable as the API stands, because a nil resolver *is* the not-asked case; a red is a red, but this one proves the guard is load-bearing for safety rather than for the property; restore byte-clean. Previously 2026-09-05 — rang, `HasGap=true GapResolved=true; want the gap reported and left open`
 ## Test: a gap left open is recorded as a decision
 **Purpose:** a gap left open deliberately and one left open by oversight are identical in
 `design.md`, and the completion is the only place that difference is known (R281)
@@ -390,8 +390,7 @@ which would report a decision as an oversight
 record of *why* the gap is open is gone — `design.md` cannot tell a decision from an oversight,
 so this line is the only place it was ever written down. Red as `the record is missing "left open"`
 **Inject:** internal/cli/pending.go:reportFinished
-**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang on all three strings, `the record is missing "left open"`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `reportFinished`'s anchor comment changed for `#86`; rang on three assertions: `the record is missing "left open"`, `"O136"`, `"--no-resolve"`; restore clean *Earlier —* 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang on all three strings, `the record is missing "left open"`
 ## Test: a resolved gap is reported and the notice stays quiet
 **Purpose:** a report that both resolves a gap and warns it is open contradicts itself (R277)
 **Input:** a completion report with the gap resolved
@@ -411,8 +410,7 @@ completion succeeds, the flag resolved nothing, and the report is indistinguisha
 where it worked — the same silence R279's refusal prevents, arriving on the side that has no
 refusal to lean on. Red as `a flag that did nothing said nothing`
 **Inject:** internal/cli/pending.go:reportFinished
-**Pulled:** 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `a flag that did nothing said nothing`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `reportFinished`'s anchor comment changed for `#86`; rang: `a flag that did nothing said nothing`; restore clean *Earlier —* 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `a flag that did nothing said nothing`
 ## Test: --resolve refuses a gap in another design root
 **Purpose:** the gap resolved must be the one the **entry** named, in the document it named it
 in (R277)
@@ -453,8 +451,7 @@ through to the `if *resolve` branch, so a caller who wrote both — which can on
 unsure — gets the **destructive** half silently. `update`'s own verbs refuse every paired slot
 for this reason. Red as `contradictory flags were accepted`
 **Inject:** internal/cli/pending.go:runFinish
-**Pulled:** 2026-09-13 — rang again after the simplification pass for `#78` folded the queue verbs' error reporting — same injection, a new signature: with the guard gone the verb ran on into the missing-layer refusal `The trajectory layer is not here: PENDING.md, CURRENT.md, DONE.md missing`, since the fixture has no queue files; restore byte-clean by copy. Previously 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `runFinish`; rang: `the refusal does not name both flags` — with the guard gone the call fell through to the missing-trajectory refusal in the fixture with no queue, so the contradiction went unnamed; restore clean *Earlier —* 2026-09-13 — rang again after the simplification pass for `#78` folded the queue verbs' error reporting — same injection, a new signature: with the guard gone the verb ran on into the missing-layer refusal `The trajectory layer is not here: PENDING.md, CURRENT.md, DONE.md missing`, since the fixture has no queue files; restore byte-clean by copy. Previously 2026-09-12 — rang again after `#31` threaded the repository root through `reportFinished` and labelled the written line; same injection and signature; restore byte-clean by copy. Previously 2026-09-05 — rang, `the refusal does not name both flags` — the exit code is not the witness, as before
 ## Test: a gap-sourced completion with no decision is refused before anything is written
 **Purpose:** what a caller must not be able to do is pass silently through the decision, and only
 a refusal prevents that (R279)
@@ -469,8 +466,7 @@ silently left open, which is **exactly the state this whole change removed** —
 state a notice permitted, so the injection restores the design that was superseded rather than
 inventing a broken one. Red as `a gap-sourced item completed with no decision about its gap`
 **Inject:** internal/pending/pending.go:Finish
-**Pulled:** 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `a gap-sourced item completed with no decision about its gap`; restore byte-clean. Previously 2026-09-05 — rang, `a gap-sourced item completed with no decision about its gap`
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `17d2e63` after `#86` changed `Finish`; rang: `a gap-sourced item completed with no decision about its gap`; restore clean *Earlier —* 2026-09-13 — after `#78` added the missing-layer guard to `Finish` and `Start` (delegated `alarm-puller`s in worktrees at `d3cfe3e`, evidence read by hand): rang: `a gap-sourced item completed with no decision about its gap`; restore byte-clean. Previously 2026-09-05 — rang, `a gap-sourced item completed with no decision about its gap`
 ## Test: the written line says which write is tracked
 **Purpose:** validates R329 — a completion's four writes are named with their kind, so the carve flip reads as the one tracked, uncommitted file beside three ignored ones
 **Input:** a real repository tracking `carves/x.md` and ignoring the three trajectory files; `finish 4 --commit abc1234`
