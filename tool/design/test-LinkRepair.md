@@ -20,9 +20,9 @@
 **Code:** internal/update/links_test.go
 **Alarm:** 2
 **Fire alarm:** consider every link rather than only the missing ones, so every link enters the candidate search. Red: the second run considers every link in the tree, and the clean document's tracked, external and local links are all listed as considered.
-**Inject:** internal/update/links.go:Repair
-**Pulled:** 2026-09-15 — rang, by hand after the simplification pass, with the missing-only filter removed: the second run listed every link in the tree as considered, and the clean document's tracked link came back `unresolvable`; restore checksummed clean
-
+**Inject:** internal/update/links.go:RepairLinks
+**Pulled:** 2026-09-15 — rang, by hand, at `RepairLinks` — the site the 2026-09-15 pull was made at; the design had named it `Repair` and the census could not resolve that: with the missing-only filter removed, `TestOnlyMissingLinksAndASecondRunIsANoOp` red on every link in the tree being considered; restore checksummed clean
+*Pulled at `internal/update/links.go:Repair` — 2026-09-15 — rang, by hand after the simplification pass, with the missing-only filter removed: the second run listed every link in the tree as considered, and the clean document's tracked link came back `unresolvable`; restore checksummed clean — and the site has since moved, so this is history rather than a record.*
 ## Test: the default population, the report and the exit status
 **Purpose:** R463, R467, R468
 **Input:** the root above with a `.git` marker, run from a subdirectory with no arguments; then again

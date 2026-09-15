@@ -10,4 +10,4 @@
 **Alarm:** 1
 **Fire alarm:** print the bare `Tn` again — `fmt.Println(tn)` in place of the sentence — and confirm the retire assertion goes red with `T1` alone on stdout
 **Inject:** internal/cli/cli.go:runUpdate
-**Pulled:** 2026-09-13 — rang: `retire stdout = "T1\n", want the sentence`; restore byte-clean by copy
+**Pulled:** 2026-09-15 — rang again after `runUpdate` gained the `repair-links` dispatch for `#84`, same injection: `TestMintedValuesAreReportedNotReturned` red with the bare `T1` on stdout; restore checksummed clean *Earlier —* 2026-09-13 — rang: `retire stdout = "T1\n", want the sentence`; restore byte-clean by copy
