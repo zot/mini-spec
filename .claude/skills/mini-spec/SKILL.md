@@ -773,8 +773,10 @@ file** and **the done file** throughout, so a path never needs qualifying;
 
 - **The top item is active.** Ordering is by intent, which is a judgment, not a
   score: position carries the priority and the number is only an identifier.
-- **Finishing an item is `minispec pending finish <N> --commit <hash>`**, and it writes all
-  four surfaces in one act: the source file first (the carve where the work lives), then the
+- **Finishing an item is `minispec pending finish <N>`**, and it needs no commit to exist:
+  the item number is the identifier (Bill, 2026-09-15), so `finish` runs *before* the commit
+  and the carve flip lands in the commit that lands the work. It writes all four surfaces in
+  one act: the source file first (the carve where the work lives), then the
   current file's `## Active` section, then the move from the pending file to the done file.
   Source first, because that is the copy a future reader trusts, and the one nobody thinks
   to check.
@@ -795,19 +797,21 @@ file** and **the done file** throughout, so a path never needs qualifying;
   mints the number and writes both sides of the item↔part link. The only hand edit left in an
   item's round trip is the carve flip that names the item's commit, which rides in the next
   commit's tail.
-- **One commit per item, and the commit shows its steps.** An item takes checkpoint
-  commits while it is worked — a delegated alarm pull needs a commit to check out, and
-  the census sees only committed code — so fold them before finishing: `squash`, never
-  `fixup`, because every checkpoint's message is part of the record. Rewrite the folded
-  body as `Step 1 — <subject>`, `Step 2 — …` in commit order, one sign-off at the end,
-  and say up top what the later steps did to the earlier ones; successive checkpoints
-  touch the same files and a later one can alter an earlier one, so the record only
-  reads true in sequence. Never `#`-led headers — git strips them as comments. Re-read
-  the subject afterwards: it came from the first checkpoint and must describe the item's
-  final state. *This is a rule an agent must remember until `pending finish` can do it*
-  (gap `O12` in this repository's `tool/design/design.md`); it is what keeps a queue
-  item from spreading over five commits, which is what it took on the day it was
-  decided (Bill, 2026-09-04).
+- **One commit per batch, and the commit names every item it lands.** Finish the items,
+  then `minispec pending commit-message --out <file>` composes the message — subject
+  `#N, #M: titles`, body `Items #N, #M.` and each entry's done-file body — for
+  `git commit -F <file>` with your sign-off appended. The item number is the identifier
+  and `git log --grep '#N'` is the path from a part to its change, so a commit that forgets
+  its items breaks the pointer silently; that is why the message is the tool's to compose
+  and not yours to remember. Items may share a commit freely (Bill, 2026-09-15: three items
+  had taken six commits, one per item and one tail each, the day this was decided).
+  **The post-commit census re-pulls go back into that commit by amend, while it is
+  unpushed**: `pending commit-message --amend` returns `HEAD`'s message unchanged with the
+  new items after it — the previous message is part of the record, so an amend appends and
+  never rewrites — and refuses when `HEAD` is on a remote, where a follow-up commit is the
+  answer. A checkpoint commit an item needed while it was worked — a delegated pull checks
+  out a commit — is folded into the batch with `squash`, never `fixup`, before the batch
+  commit; never `#`-led headers, which git strips.
 - **The current file is a resume buffer.** To pause an item, lift its context
   into a sub-item under that item's `##` heading in the pending file, then reset
   the current file — freeing it for whatever you pick up next.
@@ -1082,11 +1086,11 @@ its subject is rewritten and nothing in a green suite will say so.
   *prescription* (here is the injection to run) rather than a *record* (I ran it, it
   rang). Those read identically in prose and are entirely different claims — the same
   reason `NOT VERIFIED` earns its own words in a carve's status block. **Write the date
-  and the failure's signature; never a commit hash.** Items are squashed to one commit
-  before they finish, so a hash written during the work names a commit the squash
-  rewrites away — a record pointing at nothing, in the field that exists to be a
-  record. When the tool owns the hash it can compare against a commit instead of a
-  date; until then the line carries what cannot go stale (Bill, 2026-09-04).
+  and the failure's signature; never a commit hash.** A batch commit is amended for the
+  census and a checkpoint is squashed into it, so a hash written during the work names a
+  commit that is rewritten away — a record pointing at nothing, in the field that exists
+  to be a record. The same reason took the hash out of the carve's `LANDED` line on
+  2026-09-15; the line carries what cannot go stale (Bill, 2026-09-04).
 - **`**Code:**`** — the test file, so the alarm and the test it vouches for are
   linked in the direction a tool can follow.
 
@@ -1394,9 +1398,11 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 ~/.claude/bin/minispec pending add-item --from <doc>#<part> "<title>" --status <text>   # mint + both sides
 ~/.claude/bin/minispec pending add-item --from O136 "<title>" --status <text>          # a gap is a source too
 ~/.claude/bin/minispec pending start <N> --context-file <f>     # write the current file's Active section
-~/.claude/bin/minispec pending finish <N> --commit <hash> --body-file <f>        # all four surfaces, one act
-~/.claude/bin/minispec pending finish <N> --commit <hash> --resolve              # ...and close the gap it named
-~/.claude/bin/minispec pending finish <N> --commit <hash> --no-resolve           # ...or record that it did not
+~/.claude/bin/minispec pending finish <N> --body-file <f>      # all four surfaces, one act; before the commit
+~/.claude/bin/minispec pending finish <N> --resolve            # ...and close the gap it named
+~/.claude/bin/minispec pending finish <N> --no-resolve         # ...or record that it did not
+~/.claude/bin/minispec pending commit-message --out <f>        # the batch's message, naming every item it lands
+~/.claude/bin/minispec pending commit-message --amend --out <f> # HEAD's message plus the items since, appended
 ~/.claude/bin/minispec pending revert                          # undo the most recent trajectory change
 ~/.claude/bin/minispec pending replay                          # redo what revert undid
 
