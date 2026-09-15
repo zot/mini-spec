@@ -24,10 +24,14 @@ is trajectory-specific.
     `schema.LangMarkdown`, a module dependency, and the `minispecsdom` readers over it, moved
     into `tool/internal/minispecsdom` on 2026-09-14 (`#80`). See *What landed, and what did
     not* below — two things this part promised are still owed to 1.2.
-  - [ ] **1.2 — extraction, resolution, git status, on top of it.** **OPEN (#83.)**
+  - [x] ~~**1.2 — extraction, resolution, git status, on top of it.**~~ **LANDED (`6d0dd9c`, 2026-09-15 — `#83`.)**
     Needs a link reader first: the DOM does not model links.
 - [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
 - [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
+- [ ] **Item 4 — repair links broken by a carve's move, both directions.** **OPEN (not queued.)**
+  Added 2026-09-15 after `query links`' first run found 32 of them (gap `O27`).
+- [ ] **Item 5 — a move verb that rewrites links as it moves.** **OPEN (not queued.)** Prevention
+  for the class Item 4 repairs; needs Item 4's rewrite.
 
 ## Decisions
 
@@ -228,6 +232,40 @@ that class. Everything else here still needs the model.
 the decision above; the report names the citing file, the link, and why it failed.
 `validate trajectory` already parses every carve and both queue files through the readers,
 so this is one more pass over documents the tool has in hand, not a new reading.
+
+**Item 4** — repair links broken by a carve's move. When `trajectory-tool.md` moved to
+`carves/done/` on 2026-09-14, every relative link in it kept pointing where it used to live,
+and the first run of `query links` over the done carves read 32 `missing` in that one file.
+The skill says to rewrite links as part of a move; the move is a hand `git mv`, so the rule
+has no forcing function, and this part is the repair for what has already broken.
+
+**DECIDED (Bill, 2026-09-15): a repair, and it lives with the tool's writes, not on
+`validate`.** `validate` is read-only by its spec and is run constantly; the one `--repair`
+in the tool is on `init`, which is itself a write over a file the tool owns the schema of.
+The home is `update repair-links [file...]` (Bill, same day, choosing it over a
+`query links --repair` flag), built on the classifier `query links` already runs.
+
+**The predicate is what makes writing into a human's document safe.** A link qualifies when
+it is `missing` now and resolves once re-based at the carve's former directory — for
+`carves/done/x.md`, at `carves/` — which is the classifier run twice. The rewrite is then
+mechanical: `../tool/…` becomes `../../tool/…`, `done/y.md` becomes `y.md`, spliced by byte
+range through the DOM so nothing else in the file moves. A link that resolves both ways, or
+neither, is reported and left alone; it is not the tool's to guess.
+
+**DECIDED (Bill, 2026-09-15): both directions.** When a carve moves, every document that
+linked it breaks too — `reference-discipline.md`'s own links to `trajectory-tool.md` were
+fixed by hand at the time — so the predicate is *missing, but resolves under a sibling
+relocation*, not *the moved file's own links*. Outgoing: re-base the citing file at the
+carve's former directory. Incoming: re-base the target under `done/`, or out of it. The
+population is every document `query links` reads, not the moved file alone.
+
+**Item 5** — a move verb that rewrites links as it moves. **DECIDED (Bill, 2026-09-15): the
+prevention is built too**, not left as a rule the skill states in prose and a hand `git mv`
+ignores. The verb moves a carve between `carves/` and `carves/done/` and rewrites both
+directions in the same act, so a moved carve never enters the state Item 4 repairs. The
+name and whether it also stages the move with git are the design's; what is decided is
+that the rewrite is Item 4's, called at move time, and that the verb refuses when a link it
+would have to rewrite fails the predicate rather than moving and leaving it broken.
 
 ## The hole the tool cannot close
 

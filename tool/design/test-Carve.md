@@ -107,7 +107,7 @@ The write-before-check injection was pulled first the same day and stayed green,
 **Fire alarm:** route `carves` through `getProject()` like the other subcommands and confirm
 this goes red with `no design/ directory found`
 **Inject:** internal/cli/cli.go:runQuery
-**Pulled:** 2026-09-07 — rang again after the gaps case was extracted from `runQuery` for `#75`, same injection and signature; restore byte-clean by copy. Previously 2026-09-04 — rang: `runQuery exited 1 in a tree with no design root; want 0`; restore byte-clean by copy
+**Pulled:** 2026-09-15 — rang again after `runQuery` gained the `links` dispatch for `#83`, same injection: the carves branch removed, the command fell through to the project lookup and exited 1 in a tree with no design root; restore checksummed clean *Earlier —* 2026-09-07 — rang again after the gaps case was extracted from `runQuery` for `#75`, same injection and signature; restore byte-clean by copy. Previously 2026-09-04 — rang: `runQuery exited 1 in a tree with no design root; want 0`; restore byte-clean by copy
 **Refs:** crc-CLI.md — R213
 **Code:** internal/cli/cli_carves_test.go
 

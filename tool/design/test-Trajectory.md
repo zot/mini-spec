@@ -66,8 +66,7 @@ thought to include, and the author of the shape this replaced had read no corpus
 **Alarm:** 4
 **Fire alarm:** delete the early-dispatch branch at the top of `runQuery`, so the subcommand falls through to `getProject()`. Goes red with `no design/ directory found` and exit 1. This is a **regression test for a real defect**, found by running the command rather than by reading it: the version first written failed in this very repository, whose design roots are `tool/` and `example/` while the queue sits above both
 **Inject:** internal/cli/cli.go:runQuery
-**Pulled:** 2026-09-07 — rang again after the gaps case was extracted from `runQuery` for `#75`, same injection and signature; restore byte-clean by copy. Previously 2026-09-04 — rang again after the done-entry reader change staled it (delegated `alarm-puller`, evidence read by hand): `TestNextIDItemNeedsNoDesignRoot` exited 1 with `no design/ directory found`, restore byte-clean. First pulled 2026-08-16, same signature
-
+**Pulled:** 2026-09-15 — rang again after `runQuery` gained the `links` dispatch for `#83`, same injection and signature: `runQuery exited 1 in a tree with no design root; want 0`; restore checksummed clean *Earlier —* 2026-09-07 — rang again after the gaps case was extracted from `runQuery` for `#75`, same injection and signature; restore byte-clean by copy. Previously 2026-09-04 — rang again after the done-entry reader change staled it (delegated `alarm-puller`, evidence read by hand): `TestNextIDItemNeedsNoDesignRoot` exited 1 with `no design/ directory found`, restore byte-clean. First pulled 2026-08-16, same signature
 ## Test: per-file counts accompany the answer
 **Purpose:** the number carries its evidence, so a silent parse failure is visible (R197)
 **Input:** a pending file with two items and a done file with three entries

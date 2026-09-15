@@ -20,9 +20,9 @@
 **Code:** internal/query/links_test.go
 **Alarm:** 2
 **Fire alarm:** return an empty report instead of the error. Red: the call succeeds with zero links.
-**Inject:** internal/query/links.go:Check
-**Pulled:** 2026-09-15 — rang, by hand: `want ErrNoGitTree and no report, got <nil>, &{Files:[] Links:[] Counts:map[]}`; restore checksummed clean
-
+**Inject:** internal/query/links.go:CheckLinks
+**Pulled:** 2026-09-15 — rang, by hand, at `CheckLinks` — the site the 2026-09-15 pull was actually made at; the design had named it `Check` and the census could not resolve that: `want ErrNoGitTree and no report, got <nil>, &{Files:[] Links:[] Counts:map[]}`; restore checksummed clean
+*Pulled at `internal/query/links.go:Check` — 2026-09-15 — rang, by hand: `want ErrNoGitTree and no report, got <nil>, &{Files:[] Links:[] Counts:map[]}`; restore checksummed clean — and the site has since moved, so this is history rather than a record.*
 ## Test: the default population is the live carves, and the CLI's exit status follows the errors
 **Purpose:** R455, R458, R461
 **Input:** a repository with `carves/a.md` (one tracked link), `carves/done/b.md` (a missing link) and no argument; then `--all`; then `carves/done/b.md` named explicitly
