@@ -15,7 +15,7 @@
 | `minispec query <sub>` | [queries.md](queries.md) | Read design files and print results. No modifications. |
 | `minispec update <sub>` | [updates.md](updates.md) | Atomic modifications to structured parts of design files. |
 | `minispec validate` | [validate.md](validate.md) | Run all structural validations and report issues. |
-| `minispec validate trajectory` | [validate.md](validate.md) | Check the trajectory layer — the queue files at the repository root against the carves that point at them — in both directions, plus the ledger, numbering, marking-agreement and current-file shape checks. Repository-scoped, never a design root; `make validate` runs both. |
+| `minispec validate trajectory` | [validate.md](validate.md) | Check the trajectory layer — the queue files at the repository root against the carves that point at them — in both directions, plus the ledger, numbering, marking-agreement and current-file shape checks. Repository-scoped, never a design root; `make validate` runs both. Since 2026-09-15 also the reference discipline: every link in the live and done carves classified as `query links` does; `ignored`, `missing` and `outside` fail the phase, `untracked` is a note, and outside a git tree the note says the links went unclassified. |
 | `minispec phase <sub>` | [phase.md](phase.md) | Phase-specific validation after each workflow phase. |
 | `minispec pending <sub>` | [queue-items.md](queue-items.md), [backup.md](backup.md) | Trajectory-item operations, and the backup slot beneath them. `add-item` / `start` / `finish` write the trajectory files and both sides of the item↔part link; `revert` / `replay` give one level of undo and one of redo. Resolves the **repository root**, never a design root. |
 

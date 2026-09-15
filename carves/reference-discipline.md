@@ -26,8 +26,8 @@ is trajectory-specific.
     not* below — two things this part promised are still owed to 1.2.
   - [x] ~~**1.2 — extraction, resolution, git status, on top of it.**~~ **LANDED (`6d0dd9c`, 2026-09-15 — `#83`.)**
     Needs a link reader first: the DOM does not model links.
-- [ ] **Item 2 — the document-class model.** **OPEN (not queued.)**
-- [ ] **Item 3 — wire into `validate` and report.** **OPEN (not queued.)**
+- [ ] **Item 2 — the document-class model.** **OPEN (#90.)**
+- [x] ~~**Item 3 — wire into `validate` and report.**~~ **LANDED (2026-09-15 — `#89`.)**
 - [x] ~~**Item 4 — repair links broken by a carve's move, both directions.**~~ **LANDED (`22974e6`, 2026-09-15 — `#84`.)**
   Added 2026-09-15 after `query links`' first run found 32 of them (gap `O27`).
 - [x] ~~**Item 5 — a move verb that rewrites links as it moves.**~~ **LANDED (2026-09-15 — `#85`.)** Prevention
@@ -41,12 +41,12 @@ precondition for everything else here.
 
 **What each document class may point at:**
 
-| document | may reference |
-|---|---|
-| private carve directory | anything, including planning scratch |
-| public `carves/` | **only VCS-managed files** |
-| `specs/migrations/` | **only VCS-managed files** |
-| the pending file | in between — it points at both scratch notes and carves |
+| document                | may reference                                           |
+|-------------------------|---------------------------------------------------------|
+| private carve directory | anything, including planning scratch                    |
+| public `carves/`        | **only VCS-managed files**                              |
+| `specs/migrations/`     | **only VCS-managed files**                              |
+| the pending file        | in between — it points at both scratch notes and carves |
 
 **DECIDED (Bill, 2026-08-04): git only, through the `git` command line.** No fossil
 support and no linked-in git library. Supporting a second VCS means the tool has to
@@ -215,6 +215,17 @@ are public, and what each may cite. It was coupled to Item 1 of
 [trajectory-tool.md](done/trajectory-tool.md), which decided how a project declares its
 siting; that carve is done, so the class of a document is now a fact about where it lives
 under a layout that is settled, and open question 1 below is this carve's alone to answer.
+
+**DECIDED (Bill, 2026-09-15): the class is git's to say.** A document is public exactly when
+git tracks it, and a public document may cite only what git tracks — which is what the
+classifier already checks. Nothing is declared: no configured directory list, no filename
+convention, no marker. The population of the check is every tracked markdown file under the
+repository root; the private files — the trajectory ledgers, ignored scratch — are outside
+it by the same rule. **A staged file counts as tracked**, new and uncommitted included: the
+question is asked of the index, not of history, so a carve written and staged this session
+cites cleanly before its first commit. Open question 1 is answered by this; Item 2 becomes
+the population change in `validate trajectory` and in `finished-carve`'s incoming rewrite,
+closing gap `O28`.
 
 **Ark made the case that this cannot be inferred.** Its queue files are fossil-only
 and untracked in git — private by a filename-case convention (top-level uppercase =

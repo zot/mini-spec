@@ -217,6 +217,24 @@ a dangling `#121` in a repository that never had one. That was the fifth ad-hoc 
 in this layer's history to return a confident wrong answer, and the first written by
 someone who had read the record of the other four.
 
+### Reference discipline
+
+Every markdown link in a public document must resolve for a cloner — the rule
+`carves/reference-discipline.md` was opened for, checked here because this is the phase
+that runs constantly. **The public documents are the live carves and `carves/done/`**
+(the document-class model, Item 2 of that carve, widens this later); the trajectory files
+are private and are not checked. Each link is classified as `query links` classifies it,
+and the same severities apply: **`ignored`, `missing` and `outside` fail the phase**, each
+reported with the citing file, its line, the link as written and the class; **`untracked`
+is a note**, not a failure, because a file written this session and not yet committed is
+the ordinary state rather than a mistake. Links inside code groups are examples and are
+never read.
+
+**Outside a git working tree the check cannot classify and says so**, as a note beside the
+other findings, rather than passing silently: a fossil-only project's references go
+unchecked, and a report that reads clean over links it could not see is the defect the
+whole layer exists to prevent. The trajectory checks above still run there.
+
 ### Ledger and status checks
 
 - **An item ID held by *both* the pending and the done file.** That is a live item and a

@@ -8,8 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/minispecsdom"
+	"github.com/zot/minispec/internal/parser"
+	"github.com/zot/minispec/internal/query"
 )
 
 // The two queue files, each check asking for one or the other by name. trajectory-format.md
@@ -63,6 +64,12 @@ type TrajectoryIssues struct {
 	// A carve that loses one loses it from `query carves` and from every check here at once,
 	// so it is an issue rather than a note. R298
 	Stateless []string `json:"stateless,omitempty"`
+	// Links names every link in a public carve a cloner cannot follow — ignored, missing,
+	// outside — with its citing file, line and class. R485
+	Links []string `json:"links,omitempty"`
+	// LinkNotes are the untracked links, usually just early, and the statement that the
+	// links went unclassified where there is no git tree. R486, R487
+	LinkNotes []string `json:"link_notes,omitempty"`
 }
 
 // HasIssues reports whether anything needs repair. Unreachable citations and unread entries
@@ -70,7 +77,7 @@ type TrajectoryIssues struct {
 func (t *TrajectoryIssues) HasIssues() bool {
 	return len(t.Dangling)+len(t.MissingParts)+len(t.Duplicates)+
 		len(t.Orphans)+len(t.Unmigrated)+len(t.Disagreements)+len(t.MissingIDs)+
-		len(t.Structure)+len(t.Stateless)+len(t.ReaderDisagreement) > 0
+		len(t.Structure)+len(t.Stateless)+len(t.ReaderDisagreement)+len(t.Links) > 0
 }
 
 // CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#1.2 | R284, R286
@@ -117,7 +124,45 @@ func RunTrajectory(repoRoot string) (*TrajectoryIssues, error) {
 	t.checkStateless(carves)
 	t.countUnreachable(carves)
 	t.countUnread(q, carves)
+	t.checkLinks(repoRoot, noCarves)
 	return t, nil
+}
+
+// CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.12 | R485, R486, R487
+//
+// checkLinks classifies every link in the public carves as `query links` does. Ignored,
+// missing and outside are findings; untracked is a note, since a file written this session
+// is the ordinary state; and outside a git tree the note says the links went unclassified,
+// never reading clean over links it could not see.
+func (t *TrajectoryIssues) checkLinks(repoRoot string, noCarves bool) {
+	if noCarves {
+		return
+	}
+	report, err := publicLinkReport(repoRoot)
+	if err != nil {
+		t.LinkNotes = append(t.LinkNotes, "links unclassified: "+err.Error())
+		return
+	}
+	for _, l := range report.Links {
+		if !l.Class.Decided() {
+			continue
+		}
+		line := fmt.Sprintf("%s:%d  %s  %s", l.File, l.Line, l.Link, l.Class)
+		if l.Class.IsError() {
+			t.Links = append(t.Links, line)
+		} else {
+			t.LinkNotes = append(t.LinkNotes, line+"  (usually just early: not yet committed)")
+		}
+	}
+}
+
+// publicLinkReport classifies every link in the public carves, or says why it could not.
+func publicLinkReport(repoRoot string) (*query.LinkReport, error) {
+	files, err := query.PublicCarves(repoRoot)
+	if err != nil {
+		return nil, err
+	}
+	return query.CheckLinks(repoRoot, files)
 }
 
 // Seq: seq-validate-trajectory.md#2.10 | R300
@@ -457,6 +502,8 @@ func (t *TrajectoryIssues) FormatText() string {
 		{"unmigrated done entries", t.Unmigrated},
 		{"lines whose markings disagree", t.Disagreements},
 		{"item numbers in no readable entry", t.missingIDLines()},
+		// R485 — a link a cloner cannot follow: the citing file, its line, the link, the class.
+		{"links a cloner cannot follow", t.Links},
 	} {
 		if len(sec.items) == 0 {
 			continue
@@ -466,7 +513,7 @@ func (t *TrajectoryIssues) FormatText() string {
 			fmt.Fprintf(&body, "    %s\n", it)
 		}
 	}
-	notes := t.unreadNote() + t.unreachableNote()
+	notes := t.unreadNote() + t.unreachableNote() + t.linkNote()
 	if body.Len() > 0 {
 		return "issues:\n" + body.String() + notes + "phase: validate trajectory FAILED\n"
 	}
@@ -526,4 +573,18 @@ func (t *TrajectoryIssues) unreachableNote() string {
 			"      references sit in key position where the position rule cannot read them.\n"+
 			"      Migrate to `Item N` and they become checkable.\n",
 		t.Unreachable, strings.Join(t.UnreachableDocs, ", "))
+}
+
+// R486, R487
+// linkNote is the untracked links and the unclassified statement, beside the findings.
+func (t *TrajectoryIssues) linkNote() string {
+	if len(t.LinkNotes) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("note: links —\n")
+	for _, n := range t.LinkNotes {
+		fmt.Fprintf(&b, "      %s\n", n)
+	}
+	return b.String()
 }

@@ -194,3 +194,14 @@ open part citing a live item, which is now part of alarm 6's case.
 **Fire alarm:** drop the `t.checkReaderAgreement(traj, q)` call from `RunTrajectory`. Red as `the two readers disagreed about the done file and nothing said so` — and on this repository's ledger the report goes back to four confident orphans over a file the document reader saw 17 of 58 entries of
 **Inject:** internal/validate/trajectory.go:RunTrajectory
 **Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `the two readers disagreed about the done file and nothing said so`; restore byte-clean by copy. Previously 2026-09-05
+
+## Test: links a cloner cannot follow fail the phase; untracked and no-git are notes
+**Purpose:** R485, R486, R487
+**Input:** a git repository whose live carve links a tracked file, an untracked file, an ignored file and a missing one, and whose done carve links `../tool/x.md` where `carves/tool/x.md` does not exist; then the same tree with no git
+**Expected:** two findings naming the ignored and missing links with file, line and class, plus one from the done carve; one untracked note; `HasIssues` true; the text names the section and ends `FAILED`. Without git: no link findings, a note that the links went unclassified, and the trajectory checks still reported
+**Refs:** crc-TrajectoryValidate.md, seq-validate-trajectory.md#2.12
+**Code:** internal/validate/trajectory_test.go
+**Alarm:** 17
+**Fire alarm:** count `untracked` among the findings. Red: three findings where two are expected, and a clean tree with one fresh file fails the phase.
+**Inject:** internal/validate/trajectory.go:TrajectoryIssues.checkLinks
+**Pulled:** 2026-09-15 — rang, by hand after the simplification pass, with `untracked` counted among the findings: `want three findings … got` four, the fresh file first, and `want one untracked note, got []`; restore checksummed clean

@@ -4,6 +4,7 @@ package validate
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -466,5 +467,60 @@ func TestCurrentFileAndCarveUnreadAreCounted(t *testing.T) {
 	out := got.FormatText()
 	if !strings.Contains(out, "CURRENT.md (1)") || !strings.Contains(out, "carves/x.md (1)") {
 		t.Errorf("the note does not name both files:\n%s", out)
+	}
+}
+
+// R485, R486, R487 — links a cloner cannot follow fail the phase; untracked and no-git are notes.
+func TestLinksACloneCannotFollowFailThePhase(t *testing.T) {
+	files := map[string]string{
+		"PENDING.md":         "# Pending\n\n---\n",
+		"DONE.md":            "# Done\n\n---\n",
+		"CURRENT.md":         "# Current\n\n---\n\n## Active\n\n_No active item._\n",
+		"tracked.md":         "t\n",
+		"fresh.md":           "u\n",
+		"private/p.md":       "p\n",
+		".gitignore":         "private/\nPENDING.md\nDONE.md\nCURRENT.md\n",
+		"carves/x.md":        "# Carve: x\n\n## Status\n\n- [ ] **Item 1 — a.** **OPEN (not queued.)**\n\nsee [t](../tracked.md), [u](../fresh.md), [p](../private/p.md), [m](../missing.md) and ` [f](../nope.md) `\n",
+		"carves/done/old.md": "# Carve: old\n\n## Status\n\n- [x] ~~**Item 1 — b.**~~ **LANDED (2026-09-01 — `#1`.)**\n\n[x](../tool/x.md)\n",
+	}
+	root := repo(t, files)
+	for _, args := range [][]string{{"init", "-q"}, {"add", "tracked.md", ".gitignore", "carves"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Skipf("git unavailable: %v: %s", err, out)
+		}
+	}
+	got, err := RunTrajectory(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Links) != 3 || !got.HasIssues() {
+		t.Errorf("want three findings (ignored, missing, and the done carve's), got %v", got.Links)
+	}
+	found := joined(got.Links)
+	for _, want := range []string{
+		"carves/x.md:7  [p](../private/p.md)  ignored",
+		"carves/x.md:7  [m](../missing.md)  missing",
+		"carves/done/old.md:7  [x](../tool/x.md)  missing",
+	} {
+		if !strings.Contains(found, want) {
+			t.Errorf("missing finding %q in %v", want, got.Links)
+		}
+	}
+	if len(got.LinkNotes) != 1 || !strings.Contains(got.LinkNotes[0], "[u](../fresh.md)  untracked") {
+		t.Errorf("want one untracked note, got %v", got.LinkNotes)
+	}
+	text := got.FormatText()
+	if !strings.Contains(text, "links a cloner cannot follow:") || !strings.HasSuffix(text, "FAILED\n") {
+		t.Errorf("report:\n%s", text)
+	}
+
+	plain := run(t, files)
+	if len(plain.Links) != 0 || len(plain.LinkNotes) != 1 || !strings.Contains(plain.LinkNotes[0], "unclassified") {
+		t.Errorf("without git: want no findings and the unclassified note, got %v / %v", plain.Links, plain.LinkNotes)
+	}
+	if !strings.Contains(plain.FormatText(), "note: links") {
+		t.Errorf("the note is not printed:\n%s", plain.FormatText())
 	}
 }

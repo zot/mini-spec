@@ -449,6 +449,9 @@
 - **R298:** A **status-block line the reader could not read as a part and lists as deviating** (`Stateless()` with deviations) is an issue, named with file, line and reason, and listed first because every other check reads through the parse it reports on; a checkbox-less `SPLIT` or `MOVED` parent carries no deviation and is not one. The August tree's independent flat-scan cross-check of the status block is not carried — see gap `O18`
 - **R299:** `validate trajectory` writes markdown to stdout, honours the global `--json` flag with one key convention, and exits 0 when consistent and 1 when it finds issues
 - **R300:** **The two readers of the queue files must agree, and this check is the second opinion.** `ScanTrajectory` reads item IDs line by line; `minispecsdom`'s document readers return entries. Every ID one saw and the other did not is a finding, listed first, per file. Measured 2026-09-05 on this repository: the line scan read 58 IDs from the done file and the document reader returned 17 entries with nothing unread — one unclosed backtick in an entry body absorbed the remaining 41 entries — and every check downstream reported four landed parts as orphans. A check that reads through one parser cannot see what that parser swallowed
+- **R485:** `validate trajectory` classifies every markdown link in the live carves and `carves/done/` as `query links` does; `ignored`, `missing` and `outside` links fail the phase, each reported with the citing file, line, link as written and class; the trajectory files are not checked.
+- **R486:** An `untracked` link is reported as a note beside the findings and never fails the phase; `tracked`, `external` and `local` links are not reported.
+- **R487:** Outside a git working tree the link check reports that it could not classify, as a note, and the trajectory checks still run; it never reads clean over links it could not see.
 
 ## Feature: traceability comment
 **Source:** specs/traceability-comment.md

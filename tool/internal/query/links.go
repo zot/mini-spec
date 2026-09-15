@@ -72,6 +72,26 @@ var ErrNoGitTree = errors.New("not a git working tree, so links cannot be classi
 // LiveCarves is the live-carve population, shared with the move repair.
 func LiveCarves(root string) ([]string, error) { return defaultPopulation(root) }
 
+// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R463, R485
+// PublicCarves is every live carve and every `*.md` directly under each carve directory's
+// `done/`: the public documents, shared by the move repair and the validation phase.
+func PublicCarves(root string) ([]string, error) {
+	files, err := defaultPopulation(root)
+	if err != nil {
+		return nil, err
+	}
+	for _, dir := range []string{"carves", ".carves"} {
+		done, err := filepath.Glob(filepath.Join(root, dir, "done", "*.md"))
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range done {
+			files = append(files, filepath.ToSlash(filepath.Join(dir, "done", filepath.Base(p))))
+		}
+	}
+	return files, nil
+}
+
 // CRC: crc-Links.md | Seq: seq-links.md#2.3.1 | R456, R464
 // ClassifyLink is classify for the move repair: the class a link has before git is asked,
 // "" with its repository-relative path when it exists inside the tree.

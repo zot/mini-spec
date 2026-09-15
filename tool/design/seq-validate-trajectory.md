@@ -93,5 +93,7 @@ pin to a step.
         every ID the line scan read and the document reader returned no entry
         for, and the reverse, per file; listed first in the report            // R300
 
+   2.12 checkLinks — query.CheckLinks over the live and done carves; errors bucketed as
+        findings, untracked as a note, no git tree as a note saying the links went unclassified
    2.11 TrajectoryValidate --> TrajectoryValidate: TrajectoryIssues, bucketed by class
 ```

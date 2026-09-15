@@ -52,25 +52,9 @@ func (r *RepairReport) Summary() string {
 }
 
 // CRC: crc-LinkRepair.md | Seq: seq-links.md#3.1 | R463
-// repairPopulation is the live carves and every `*.md` directly under each carve directory's
-// `done/`: both ends of a move can hold a broken link.
-func repairPopulation(root string) ([]string, error) {
-	files, err := query.LiveCarves(root)
-	if err != nil {
-		return nil, err
-	}
-	for _, dir := range []string{"carves", ".carves"} {
-		done, err := filepath.Glob(filepath.Join(root, dir, "done", "*.md"))
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range done {
-			rel, _ := filepath.Rel(root, p)
-			files = append(files, filepath.ToSlash(rel))
-		}
-	}
-	return files, nil
-}
+// repairPopulation is the public carves — live and done — since both ends of a move can hold
+// a broken link.
+func repairPopulation(root string) ([]string, error) { return query.PublicCarves(root) }
 
 // CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R463, R464, R466
 //
