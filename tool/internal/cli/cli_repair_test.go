@@ -1,4 +1,4 @@
-// CRC: crc-CLI.md | R463, R467, R468
+// CRC: crc-CLI.md | R489, R467, R468
 package cli
 
 import (
@@ -10,7 +10,7 @@ import (
 	"github.com/zot/minispec/internal/update"
 )
 
-// R463, R467, R468 — the default population spans both carve directories, the report names
+// R489, R467, R468 — the default population is every tracked document, the report names
 // every link with its outcome, and the exit status follows what was left.
 func TestRepairLinksPopulationReportAndExitStatus(t *testing.T) {
 	dir := t.TempDir()
@@ -24,7 +24,7 @@ func TestRepairLinksPopulationReportAndExitStatus(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
+	gitInit(t, dir, ".")
 	prev, _ := os.Getwd()
 	if err := os.Chdir(filepath.Join(dir, "tool")); err != nil {
 		t.Fatal(err)
@@ -42,13 +42,13 @@ func TestRepairLinksPopulationReportAndExitStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Files) != 2 {
+	if len(r.Files) != 3 { // every tracked markdown file, tool/x.md among them
 		t.Errorf("population: %v", r.Files)
 	}
 	var out strings.Builder
 	printRepair(&out, r)
 	if !strings.Contains(out.String(), "carves/done/moved.md:1  nowhere.md  left: unresolvable") ||
-		!strings.HasSuffix(strings.TrimSpace(out.String()), "1 links considered in 2 files: rewritten 0, unresolvable 1, ambiguous 0; 0 files written") {
+		!strings.HasSuffix(strings.TrimSpace(out.String()), "1 links considered in 3 files: rewritten 0, unresolvable 1, ambiguous 0; 0 files written") {
 		t.Errorf("report:\n%s", out.String())
 	}
 	moved, _ := os.ReadFile(filepath.Join(dir, "carves", "done", "moved.md"))

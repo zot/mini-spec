@@ -11,7 +11,7 @@ about.
 `TRAJECTORY-TOOL-20260804.md`, which holds the raw diagnosis and the drafts that
 were settled against. Everything from it that a stranger needs is restated here;
 the note is not linked because `.scratch/` is gitignored in this repo, which is
-the case the [reference rule](../reference-discipline.md) exists to prevent.
+the case the [reference rule](reference-discipline.md) exists to prevent.
 
 **Annotations.** `@undecided:` marks a proposal we are not yet sure is a decision —
 the state between unmarked thinking and `DECIDED`, and named for the state rather
@@ -26,7 +26,7 @@ this paragraph — it is a mention: ark skips it, and so can a reader's grep, by
 dropping any hit whose next character is a backtick. One character does the work a
 markdown parser would otherwise have to do. It does not retire that parser: a *link*
 inside a code span carries no such marker, which is still Item 1 of
-[reference-discipline.md](../reference-discipline.md).
+[reference-discipline.md](reference-discipline.md).
 
 ## Status
 
@@ -154,7 +154,7 @@ concern (Bill): `trajectory-format.md` states the target, and bringing a carve u
 is an agent's job.
 
 **DECIDED (Bill, 2026-08-16): one shared markdown-aware extractor, not one per parser.**
-[reference-discipline.md](../reference-discipline.md) Item 1 already owns *"it must parse
+[reference-discipline.md](reference-discipline.md) Item 1 already owns *"it must parse
 markdown, not grep it"*, and it earned that from the identical failure — a throwaway
 checker run on **this carve** on 2026-08-04 flagged a `[text](path)` inside a code span as
 a missing file. Trajectory Item 3 needs the same skill for status entries: a fenced
@@ -254,7 +254,7 @@ tree either, so both read as they did on 2026-08-16.
   - [x] ~~**1.1 — repository-root detection.**~~ **LANDED (`8197c6c`, 2026-08-07 — `#1`.)**
   - [x] ~~**1.2 — `.minispec/` and the config move.**~~ **LANDED (`fe0cd11`, 2026-08-07 — `#3`.)**
   - [x] ~~**1.3 — `init`, `track`, and `--repair`.**~~ **LANDED (`0711319`, 2026-08-11 — `#4`.)**
-- **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](../reference-discipline.md).)** No checkbox: nothing here left to close.
+- **Item 4 — reference-discipline checking.** **MOVED (Bill, 2026-08-04 — [reference-discipline.md](reference-discipline.md).)** No checkbox: nothing here left to close.
 
 ## Why
 
@@ -313,7 +313,7 @@ the migration is the wrong container.
 ### Reference discipline — moved
 
 The rule that governs which documents may cite which, and its four decisions, now
-live in [reference-discipline.md](../reference-discipline.md). Stated once, there, so
+live in [reference-discipline.md](reference-discipline.md). Stated once, there, so
 there is no second copy to drift.
 
 It still binds *these* documents: this carve is public, so it may cite only
@@ -987,7 +987,7 @@ use. Harmless here — it was reworded out of this paragraph rather than left as
 positive in the reference instance — but it is a second witness for the same limitation
 the annotation decision already names: the marker handles the common case, and a code span
 still needs the markdown-aware extraction that is Item 1 of
-[reference-discipline.md](../reference-discipline.md).
+[reference-discipline.md](reference-discipline.md).
 
 ### The split
 
@@ -1088,7 +1088,7 @@ complain.
 **Two things fold in here** (Bill, 2026-08-16):
 
 - **The shared markdown-aware extractor**, from
-  [reference-discipline.md](../reference-discipline.md) Item 1.1, which is therefore a
+  [reference-discipline.md](reference-discipline.md) Item 1.1, which is therefore a
   prerequisite. Without it a fenced `## Status` example is indistinguishable from a status
   block: measured 2026-08-16, a grep widened past `carves/` counts 32 open items where 12
   exist, four of the phantoms coming from `trajectory-format.md`'s own example. The same
@@ -1105,7 +1105,7 @@ lines inside the status block — never from a pattern swept over free text. Tha
 makes an agent's prose safe by construction rather than by inspection: the `#8` entry in
 this project's own ledger cites `#7` in its body, and the parser cannot see it.
 
-**Item 4** — moved to [reference-discipline.md](../reference-discipline.md). The number
+**Item 4** — moved to [reference-discipline.md](reference-discipline.md). The number
 stays retired here so nothing renumbers and no later part reuses it.
 
 **Item 10** (Bill, 2026-08-13) — every list this format tracks progress on uses
@@ -1598,7 +1598,7 @@ declaring what is private, everything already reads it, and using it creates no
 second copy to disagree with the first. The consequence is larger than the saving:
 once privacy lives there, a carve linking the queue stops being a trajectory concept
 and becomes an ordinary instance of a rule already decided in
-[reference-discipline.md](../reference-discipline.md) — **error on ignored**. The
+[reference-discipline.md](reference-discipline.md) — **error on ignored**. The
 visibility question is not answered, it is dissolved.
 
 **The human makes the call, once, at creation, and the agent never does.** The tool
@@ -1729,7 +1729,7 @@ first weaker marker it met; collecting lets the strong marker win from any depth
 while the weak ones stay available if it never appears.
 
 *Only `.git`, not `.fslckout`* — consistent with the git-only decision in
-[reference-discipline.md](../reference-discipline.md), and it costs nothing: a
+[reference-discipline.md](reference-discipline.md), and it costs nothing: a
 fossil-only tree simply falls through to the next marker down the list, which is the
 right answer there rather than a gap. Ark is such a tree in principle and carries a
 `.git` anyway, so the fallback goes unexercised there.

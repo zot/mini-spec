@@ -39,8 +39,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 2
 **Fire alarm:** delete the queue→carve pass entirely. Goes red here and **stays green on every other test**, which is the point: an item completing against a part its carve never recorded is invisible from the carve side, so only this direction reports it
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `got 0 missing-part findings, want 1`; restore byte-clean by copy. Previously 2026-09-05, same signature, every other test green
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `7936f07` after `#89` added the link check to `RunTrajectory`; rang: `got 0 missing-part findings, want 1`; restore clean *Earlier —* 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `got 0 missing-part findings, want 1`; restore byte-clean by copy. Previously 2026-09-05, same signature, every other test green
 ## Test: a backquoted prose example is not a citation
 **Purpose:** citations are ingested by position — a part line's marker — and never from a pattern swept over prose (R289)
 **Input:** this repository's own line 75 shape, verbatim: a status block containing the prose sentence ``Ark's live carves already read this way — `**Item 8 — a test harness…** **OPEN (#121.)**`.`` alongside one real part citing a live ID
@@ -61,8 +60,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 4
 **Fire alarm:** return an error, or an empty clean result with no statement. Both go red — the first on the exit assertion, the second on the report. The second half matters more: a silent clean result over an absent layer is indistinguishable from a clean result over a checked one, which is this project's own theme violated
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `a repository with no trajectory layer was not reported absent` and `the report does not state that the layer is absent`; restore byte-clean by copy. Previously 2026-09-05
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `7936f07` after `#89` added the link check to `RunTrajectory`; rang on the second half, an empty clean result with no statement: `not reported absent` and `the report does not state that the layer is absent`; restore clean *Earlier —* 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `a repository with no trajectory layer was not reported absent` and `the report does not state that the layer is absent`; restore byte-clean by copy. Previously 2026-09-05
 ## Test: only a cross-file ID collision is reported
 **Purpose:** an ID held by **both** queue files is a collision; repetition *within* the done file is a legitimate staged record (R290)
 **Input:** two trees — one whose done file records `#41` three times as staged passes, and one where `#8` is live in the pending file and completed in the done file
@@ -116,8 +114,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 9
 **Fire alarm:** drop the unreachable-count from the report. Goes red on the second assertion while the first still passes, which is the shape of the underlying danger: naming the migration target *looks* like a complete report, and a reader takes the silence about integrity as a pass. Measured 2026-08-16: ark yields 3 reachable citations, the rest sitting in key position
 **Inject:** internal/validate/trajectory.go:FormatText
-**Pulled:** 2026-09-05 — rang on both assertions — the migration target and the coverage statement both live in the dropped note
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `7936f07` after `#89` added the link note to `FormatText`; rang on both assertions: the migration target and the coverage statement both live in the dropped note; restore clean *Earlier —* 2026-09-05 — rang on both assertions — the migration target and the coverage statement both live in the dropped note
 ## Test: item numbers in no readable entry are found
 **Purpose:** every number from 1 to the maximum assigned appears in a readable entry (R295)
 **Input:** two ledgers — one contiguous, and one holding `#1`, `#3` and `#5` with `#2` and `#4` absent
@@ -160,8 +157,7 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 12
 **Fire alarm:** drop the json tag from one field. **Written because the sibling command shipped exactly this defect** — `query carves` emitted Go field names beside snake_case in one document until gap `O18` caught it by audit rather than by check, and nothing validates JSON shape anywhere in the tool. This guards the class at the point it would recur
 **Inject:** internal/validate/trajectory.go:TrajectoryIssues
-**Pulled:** 2026-09-05 — rang, `key "Unreachable" is not snake_case — a Go field name reached the JSON`. Site is the struct, so Inject names the type
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `7936f07` after `#89` added two fields to `TrajectoryIssues`; rang: `key "Unreachable" is not snake_case — a Go field name reached the JSON`; restore clean *Earlier —* 2026-09-05 — rang, `key "Unreachable" is not snake_case — a Go field name reached the JSON`. Site is the struct, so Inject names the type
 ## Test: `CURRENT.md` without exactly one `## Active` is reported
 **Purpose:** validates R296 — the heading bounds the region `pending finish` clears, and `activeRange` refused both the missing one and a duplicated one *at write time only*, so a corrupted file sat clean until the next completion met it. Measured 2026-08-19: green twice in one session over a file the verb had just damaged, in files git cannot diff, where the backup slot holds one level of undo
 **Input:** a `CURRENT.md` with no `## Active`; one with two; and one with exactly one
@@ -193,10 +189,9 @@ open part citing a live item, which is now part of alarm 6's case.
 **Alarm:** 15
 **Fire alarm:** drop the `t.checkReaderAgreement(traj, q)` call from `RunTrajectory`. Red as `the two readers disagreed about the done file and nothing said so` — and on this repository's ledger the report goes back to four confident orphans over a file the document reader saw 17 of 58 entries of
 **Inject:** internal/validate/trajectory.go:RunTrajectory
-**Pulled:** 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `the two readers disagreed about the done file and nothing said so`; restore byte-clean by copy. Previously 2026-09-05
-
+**Pulled:** 2026-09-15 — re-pulled by delegation at `7936f07` after `#89` added the link check to `RunTrajectory`; rang: `the two readers disagreed about the done file and nothing said so`; restore clean *Earlier —* 2026-09-06 — rang again after item 71's commit landed past midnight and staled it, `the two readers disagreed about the done file and nothing said so`; restore byte-clean by copy. Previously 2026-09-05
 ## Test: links a cloner cannot follow fail the phase; untracked and no-git are notes
-**Purpose:** R485, R486, R487
+**Purpose:** R491, R486, R487
 **Input:** a git repository whose live carve links a tracked file, an untracked file, an ignored file and a missing one, and whose done carve links `../tool/x.md` where `carves/tool/x.md` does not exist; then the same tree with no git
 **Expected:** two findings naming the ignored and missing links with file, line and class, plus one from the done carve; one untracked note; `HasIssues` true; the text names the section and ends `FAILED`. Without git: no link findings, a note that the links went unclassified, and the trajectory checks still reported
 **Refs:** crc-TrajectoryValidate.md, seq-validate-trajectory.md#2.12

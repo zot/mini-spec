@@ -25,7 +25,7 @@ func TestFinishedCarveNeedsNoDesignRootAndReports(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
+	gitInit(t, dir, ".")
 	prev, _ := os.Getwd()
 	if err := os.Chdir(filepath.Join(dir, "tool")); err != nil {
 		t.Fatal(err)

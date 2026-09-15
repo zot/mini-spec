@@ -496,6 +496,47 @@ func (g *Git) run(args ...string) (string, error) {
 
 var itemRefRe = regexp.MustCompile(`#(\d+)(?:\D|$)`)
 
+// CRC: crc-Git.md | Seq: seq-links.md#2.1 | R488
+//
+// TrackedMarkdown is every markdown file the index holds under the working directory,
+// repository-relative and slash-separated. The index, not history: a staged file counts as
+// tracked (Bill, 2026-09-15), so a document written and staged this session is public
+// before its first commit.
+func (g *Git) TrackedMarkdown() ([]string, error) {
+	if !g.IsRepo() {
+		return nil, ErrNoGit
+	}
+	out, err := g.run("ls-files", "-z", "--", "*.md")
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	for _, f := range strings.Split(out, "\x00") {
+		// R492 — a document under a testdata/ directory is a fixture, not a public document:
+		// Go's own convention, applied mechanically (Bill, 2026-09-15).
+		if f == "" || isFixture(f) {
+			continue
+		}
+		// The mirror of the staged rule: a file the index still holds but the disk does not —
+		// deleted or moved, the deletion not yet staged — is no longer a document. R488
+		if _, err := os.Stat(filepath.Join(g.workDir, f)); err != nil {
+			continue
+		}
+		files = append(files, filepath.ToSlash(f))
+	}
+	return files, nil
+}
+
+// isFixture reports a path with a `testdata` directory component.
+func isFixture(rel string) bool {
+	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+		if part == "testdata" {
+			return true
+		}
+	}
+	return false
+}
+
 // CRC: crc-Git.md | Seq: seq-queue-item.md#4.2 | R479
 //
 // NamedItems is every queue ID a commit message on HEAD's history names — `#N` bounded by a

@@ -1,4 +1,4 @@
-// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4 | R469, R470, R471, R472, R473, R474
+// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4 | R469, R470, R471, R490, R473, R474
 package update
 
 import (
@@ -142,21 +142,10 @@ func FinishCarve(root, carve string) (rep *FinishReport, err error) {
 	return report, nil
 }
 
-// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R472
-// finishPopulation is every document the tool reads for links: the live carves, the done
-// carves, and the three trajectory files at the repository root, those that exist.
-func finishPopulation(root string) ([]string, error) {
-	files, err := repairPopulation(root)
-	if err != nil {
-		return nil, err
-	}
-	for _, name := range []string{"PENDING.md", "CURRENT.md", "DONE.md"} {
-		if _, err := os.Stat(filepath.Join(root, name)); err == nil {
-			files = append(files, name)
-		}
-	}
-	return files, nil
-}
+// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R490
+// finishPopulation is the public documents — every tracked markdown file — since a move
+// breaks the link in every document that pointed at the carve, wherever it lives.
+func finishPopulation(root string) ([]string, error) { return query.PublicDocuments(root) }
 
 // CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.3 | R471
 //
@@ -191,7 +180,7 @@ func outgoingPlan(root, rel, dest string, report *FinishReport) (*plan, error) {
 	return p.finish()
 }
 
-// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R472
+// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R490
 // incomingPlan rewrites each link in file that resolves to the carve so it reaches dest.
 func incomingPlan(root, file, carve, dest string, report *FinishReport) (*plan, error) {
 	p, err := readPlan(root, file)

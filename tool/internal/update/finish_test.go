@@ -1,4 +1,4 @@
-// CRC: crc-FinishedCarve.md | R469, R470, R471, R472, R473, R474
+// CRC: crc-FinishedCarve.md | R469, R470, R471, R490, R473, R474
 package update
 
 import (
@@ -27,6 +27,8 @@ func finishRoot(t *testing.T) string {
 		"carves/done/x-twin.md":  "twin\n",
 		"carves/done/nowhere.md": "a file the carve never pointed at\n",
 		"PENDING.md":             "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/x.md), part `#1`.\n",
+		"specs/index.md":         "see the [carve](../carves/x.md#4).\n",
+		".gitignore":             "PENDING.md\n",
 	}
 	for name, body := range files {
 		p := filepath.Join(root, name)
@@ -35,6 +37,7 @@ func finishRoot(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
+	gitInit(t, root, "carves", "tool", "specs", ".gitignore")
 	return root
 }
 
@@ -52,7 +55,7 @@ func treeHash(t *testing.T, root string) map[string]string {
 	return out
 }
 
-// R469, R471, R472, R474 — the move, and every link follows in both directions.
+// R469, R471, R490, R474 — the move, and every link follows in both directions.
 func TestAFinishedCarveMovesAndEveryLinkFollows(t *testing.T) {
 	root := finishRoot(t)
 	before := treeHash(t, root)
@@ -67,7 +70,8 @@ func TestAFinishedCarveMovesAndEveryLinkFollows(t *testing.T) {
 		"carves/done/x.md":   landedStatus + "see [a](../../tool/a.md#s), [o](old.md), [t](../other.md), [n](nowhere.md), [e](https://x) and [l](#top)\n",
 		"carves/other.md":    landedStatus + "back to [x](done/x.md#4) and ` [x](x.md) `\n",
 		"carves/done/old.md": landedStatus + "up to [x](x.md)\n",
-		"PENDING.md":         "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/done/x.md), part `#1`.\n",
+		"PENDING.md":         "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/x.md), part `#1`.\n", // private, ignored: untouched
+		"specs/index.md":     "see the [carve](../carves/done/x.md#4).\n",
 	}
 	for rel, w := range want {
 		got, err := os.ReadFile(filepath.Join(root, rel))
@@ -94,6 +98,7 @@ func TestTheRefusalsLeaveEveryFileAsItWas(t *testing.T) {
 	os.WriteFile(filepath.Join(root, "carves", "nostatus.md"), []byte("# c\n\nprose only\n"), 0o644)
 	os.WriteFile(filepath.Join(root, "carves", "x-twin.md"), []byte(landedStatus+"would collide\n"), 0o644) // finished, so only the destination refuses it
 	os.WriteFile(filepath.Join(root, "elsewhere.md"), []byte(landedStatus), 0o644)
+	gitInit(t, root, "carves", "elsewhere.md")
 	before := treeHash(t, root)
 	cases := map[string]string{
 		"carves/open.md":     "open part",

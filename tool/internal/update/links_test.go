@@ -1,8 +1,9 @@
-// CRC: crc-LinkRepair.md | R463, R464, R465, R466, R468
+// CRC: crc-LinkRepair.md | R489, R464, R465, R466, R468
 package update
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -35,7 +36,24 @@ func repairRoot(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
+	gitInit(t, root, "carves", "tool")
 	return root
+}
+
+// gitInit makes root a repository and stages the named paths: the population is what the
+// index holds, so a fixture without one has no public documents.
+func gitInit(t *testing.T, root string, add ...string) {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not on PATH")
+	}
+	for _, args := range [][]string{{"init", "-q"}, append([]string{"add", "--"}, add...)} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
 }
 
 func readFile(t *testing.T, p string) string {

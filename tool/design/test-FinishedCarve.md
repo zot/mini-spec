@@ -2,9 +2,9 @@
 **Source:** crc-FinishedCarve.md
 
 ## Test: a finished carve moves and every link follows, both directions
-**Purpose:** R469, R471, R472, R474
-**Input:** a root with `carves/x.md` (status block, every part landed) linking `../tool/a.md#s`, `done/old.md`, `other.md` and `nowhere.md`; `carves/other.md` linking `x.md#4`; `carves/done/old.md` linking `../x.md`; `PENDING.md` linking `carves/x.md`; `carves/done/x-twin.md` that must not be touched, and `carves/done/nowhere.md`, a file the carve never pointed at
-**Expected:** `carves/done/x.md` exists with `../../tool/a.md#s`, `old.md`, `../other.md`, `nowhere.md` (left and reported, not retargeted at the twin); `carves/x.md` is gone; `other.md` reads `done/x.md#4`, `old.md` reads `x.md`, `PENDING.md` reads `carves/done/x.md`; every other byte of every file unchanged; the twin untouched; counts rewritten 6, left 1
+**Purpose:** R469, R471, R490, R474
+**Input:** a root with `carves/x.md` (status block, every part landed) linking `../tool/a.md#s`, `done/old.md`, `other.md` and `nowhere.md`; `carves/other.md` linking `x.md#4`; `carves/done/old.md` linking `../x.md`; a tracked `specs/index.md` linking `../carves/x.md#4`; the private, ignored `PENDING.md` linking `carves/x.md`; `carves/done/x-twin.md` that must not be touched, and `carves/done/nowhere.md`, a file the carve never pointed at
+**Expected:** `carves/done/x.md` exists with `../../tool/a.md#s`, `old.md`, `../other.md`, `nowhere.md` (left and reported, not retargeted at the twin); `carves/x.md` is gone; `other.md` reads `done/x.md#4`, `old.md` reads `x.md`, `specs/index.md` reads `../carves/done/x.md#4` (R490: every tracked document), `PENDING.md` is untouched because it is private; every other byte of every file unchanged; the twin untouched; counts rewritten 6, left 1
 **Refs:** crc-FinishedCarve.md, seq-links.md#4.3
 **Code:** internal/update/finish_test.go
 **Alarm:** 1

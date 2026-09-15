@@ -284,10 +284,11 @@ resolve at the relocated path to a different file would be silently retargeted, 
 repair's exactly-one rule exists to refuse and the move can avoid outright. A link in the
 carve that does not resolve today is reported and left; it is not the move's to fix.
 
-**The incoming population is every document the tool reads for links**: the live carves, the
-done carves, and the three trajectory files at the repository root, whose `Source:` lines link
-carves by root-relative path. Documents elsewhere — a spec or a design file that links a
-carve — are outside it today and are reported as such by `query links` after the fact.
+**The incoming population is every markdown file git tracks under the repository root**, the
+moved carve excluded — a spec index that links a done carve, a design document, a README —
+by the class decision of 2026-09-15: public is tracked, and a tracked document's links must
+resolve for a cloner. The trajectory ledgers are ignored files and so outside it; with
+`track: all` they are tracked and inside it, which is the rule working rather than a case.
 
 **Every rewrite goes through the `Markdown` reader's `SetDest`**, so the text, fragments, angle
 wrapping and every other byte stay; the carve's own rewritten content is written at its new
@@ -305,9 +306,9 @@ live, and every document that linked it broke the other way; `query links` read 
 in the moved file alone (gap `O27`). This is the repair for what has already broken; the
 move verb that prevents it is `carves/reference-discipline.md` Item 5.
 
-**With no file, the population is every live carve and every carve under `carves/done/`**
-(and `.carves/`), because both ends of a move can hold a broken link. With files, exactly
-those.
+**With no file, the population is every markdown file git tracks under the repository root**
+— the public documents, by the class decision of 2026-09-15 — because a move breaks links at
+both ends and in every document that pointed at the carve. With files, exactly those.
 
 **The predicate is what makes writing into a human's document safe: a link is rewritten only
 when it is `missing` now and exactly one sibling relocation resolves it.** The candidates are

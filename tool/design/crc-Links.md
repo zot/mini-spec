@@ -1,5 +1,5 @@
 # Links
-**Requirements:** R455, R456, R457, R459, R460
+**Requirements:** R455, R456, R457, R459, R460, R488, R492
 
 Resolves and classifies every link the Markdown reader found, against the file system
 and git. The checker `carves/reference-discipline.md` was opened for: a public document
@@ -10,7 +10,8 @@ citing a private file hands a cloner a dangling link.
 - per link: the citing file, line, link as written, resolved path, class
 
 ## Does
-- `Check(root, files)`: for each file, parse with `Markdown`, resolve each link relative to
+- `Check(root, files)`: the files given, or every markdown file git tracks (`PublicDocuments`);
+  for each, parse with `Markdown`, resolve each link relative to
   the file's directory with the fragment removed, and classify
 - classifies `external` (a scheme) and `local` (fragment only) before touching the disk;
   `outside` when the resolved path leaves the root or was absolute; `missing` when nothing
@@ -30,7 +31,7 @@ citing a private file hands a cloner a dangling link.
 ## Collaborators
 - minispecsdom.Markdown: the links
 - Git: `IsRepo`, `Ignored`, `Tracked`
-- parser.ScanCarves: the default population
+- Git: `TrackedMarkdown`, the default population — public is tracked, staged counts
 - CLI: `query links [--all] [file...]`, exit status, `--json`
 
 ## Sequences

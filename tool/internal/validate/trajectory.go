@@ -65,7 +65,7 @@ type TrajectoryIssues struct {
 	// so it is an issue rather than a note. R298
 	Stateless []string `json:"stateless,omitempty"`
 	// Links names every link in a public carve a cloner cannot follow — ignored, missing,
-	// outside — with its citing file, line and class. R485
+	// outside — with its citing file, line and class. R491
 	Links []string `json:"links,omitempty"`
 	// LinkNotes are the untracked links, usually just early, and the statement that the
 	// links went unclassified where there is no git tree. R486, R487
@@ -128,7 +128,7 @@ func RunTrajectory(repoRoot string) (*TrajectoryIssues, error) {
 	return t, nil
 }
 
-// CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.12 | R485, R486, R487
+// CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.12 | R491, R486, R487
 //
 // checkLinks classifies every link in the public carves as `query links` does. Ignored,
 // missing and outside are findings; untracked is a note, since a file written this session
@@ -158,7 +158,7 @@ func (t *TrajectoryIssues) checkLinks(repoRoot string, noCarves bool) {
 
 // publicLinkReport classifies every link in the public carves, or says why it could not.
 func publicLinkReport(repoRoot string) (*query.LinkReport, error) {
-	files, err := query.PublicCarves(repoRoot)
+	files, err := query.PublicDocuments(repoRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +502,7 @@ func (t *TrajectoryIssues) FormatText() string {
 		{"unmigrated done entries", t.Unmigrated},
 		{"lines whose markings disagree", t.Disagreements},
 		{"item numbers in no readable entry", t.missingIDLines()},
-		// R485 — a link a cloner cannot follow: the citing file, its line, the link, the class.
+		// R491 — a link a cloner cannot follow: the citing file, its line, the link, the class.
 		{"links a cloner cannot follow", t.Links},
 	} {
 		if len(sec.items) == 0 {

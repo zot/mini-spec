@@ -1,12 +1,12 @@
 # LinkRepair
-**Requirements:** R463, R464, R465, R466, R467
+**Requirements:** R463, R464, R465, R466, R467, R489
 
 Repairs the links a carve's move broke, both directions: for every `missing` link in the
 population, tries the four sibling relocations a move between `carves/` and `carves/done/`
 can produce, and rewrites the destination when exactly one resolves.
 
 ## Knows
-- the repository root and the population: the live carves and `carves/done/`, or the files given
+- the repository root and the population: every tracked markdown file, or the files given
 - per link considered: the citing file, line, old destination, and the outcome — rewritten
   to a new destination, unresolvable, or ambiguous
 
@@ -29,7 +29,7 @@ can produce, and rewrites the destination when exactly one resolves.
 
 ## Collaborators
 - minispecsdom.Markdown: `Links`, `SetDest`, `Render`
-- query: `classify`, the population of live carves
+- query: `classify`, `PublicDocuments`
 - parser.editFile: the atomic write with the read-back refusal
 - CLI: `update repair-links [file...]`, exit status
 

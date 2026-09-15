@@ -1,4 +1,4 @@
-// CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R463, R464, R465, R466, R467
+// CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R489, R464, R465, R466, R467
 package update
 
 import (
@@ -51,12 +51,11 @@ func (r *RepairReport) Summary() string {
 		len(r.Considered), len(r.Files), r.Counts[Rewritten], r.Counts[Unresolvable], r.Counts[Ambiguous], len(r.Written))
 }
 
-// CRC: crc-LinkRepair.md | Seq: seq-links.md#3.1 | R463
-// repairPopulation is the public carves — live and done — since both ends of a move can hold
-// a broken link.
-func repairPopulation(root string) ([]string, error) { return query.PublicCarves(root) }
+// CRC: crc-LinkRepair.md | Seq: seq-links.md#3.1 | R489
+// repairPopulation is the public documents: every tracked markdown file.
+func repairPopulation(root string) ([]string, error) { return query.PublicDocuments(root) }
 
-// CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R463, R464, R466
+// CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R489, R464, R466
 //
 // RepairLinks rewrites, in every file of the population, each missing link that exactly one
 // sibling relocation resolves. Only missing links are considered: the verb repairs one

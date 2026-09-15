@@ -221,9 +221,13 @@ someone who had read the record of the other four.
 
 Every markdown link in a public document must resolve for a cloner — the rule
 `carves/reference-discipline.md` was opened for, checked here because this is the phase
-that runs constantly. **The public documents are the live carves and `carves/done/`**
-(the document-class model, Item 2 of that carve, widens this later); the trajectory files
-are private and are not checked. Each link is classified as `query links` classifies it,
+that runs constantly. **The public documents are every markdown file git tracks under the repository root**
+(Bill, 2026-09-15: the class is git's — public is tracked, a staged file counts, nothing is
+declared); the trajectory ledgers and ignored scratch are private by the same rule and are
+not checked, and a document under a `testdata/` directory is a fixture, not a public
+document. Measured on the day the population widened: 159 tracked documents, 243 links,
+six missing — one the README's link to a file deleted at the 2.0.0 release, five in
+fixtures whose links point at nothing on purpose. Each link is classified as `query links` classifies it,
 and the same severities apply: **`ignored`, `missing` and `outside` fail the phase**, each
 reported with the citing file, its line, the link as written and the class; **`untracked`
 is a note**, not a failure, because a file written this session and not yet committed is

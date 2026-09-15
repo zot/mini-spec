@@ -470,7 +470,7 @@ func TestCurrentFileAndCarveUnreadAreCounted(t *testing.T) {
 	}
 }
 
-// R485, R486, R487 — links a cloner cannot follow fail the phase; untracked and no-git are notes.
+// R491, R486, R487 — links a cloner cannot follow fail the phase; untracked and no-git are notes.
 func TestLinksACloneCannotFollowFailThePhase(t *testing.T) {
 	files := map[string]string{
 		"PENDING.md":         "# Pending\n\n---\n",

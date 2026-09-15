@@ -1,4 +1,4 @@
-// CRC: crc-Links.md | Seq: seq-links.md#2 | R455, R456, R457, R459, R460
+// CRC: crc-Links.md | Seq: seq-links.md#2 | R488, R456, R457, R459, R460
 package query
 
 import (
@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/zot/minispec/internal/minispecsdom"
-	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 )
 
@@ -68,28 +67,13 @@ func (r *LinkReport) Errors() bool {
 // go unchecked, and the tool says so rather than passing silently. R460
 var ErrNoGitTree = errors.New("not a git working tree, so links cannot be classified")
 
-// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R455, R463
-// LiveCarves is the live-carve population, shared with the move repair.
-func LiveCarves(root string) ([]string, error) { return defaultPopulation(root) }
-
-// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R463, R485
-// PublicCarves is every live carve and every `*.md` directly under each carve directory's
-// `done/`: the public documents, shared by the move repair and the validation phase.
-func PublicCarves(root string) ([]string, error) {
-	files, err := defaultPopulation(root)
-	if err != nil {
-		return nil, err
-	}
-	for _, dir := range []string{"carves", ".carves"} {
-		done, err := filepath.Glob(filepath.Join(root, dir, "done", "*.md"))
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range done {
-			files = append(files, filepath.ToSlash(filepath.Join(dir, "done", filepath.Base(p))))
-		}
-	}
-	return files, nil
+// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R488, R489, R490, R491
+//
+// PublicDocuments is every markdown file git tracks under root: the public documents, by
+// the class decision of 2026-09-15 — public is tracked, a staged file counts, nothing is
+// declared. Shared by the query, the repair, the move and the validation phase.
+func PublicDocuments(root string) ([]string, error) {
+	return project.NewGit(root).TrackedMarkdown()
 }
 
 // CRC: crc-Links.md | Seq: seq-links.md#2.3.1 | R456, R464
@@ -99,25 +83,14 @@ func ClassifyLink(root, file string, l minispecsdom.Link) (LinkClass, string) {
 	return classify(root, file, l)
 }
 
-// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R455
-// defaultPopulation is the live carves — every `*.md` directly in carves/ and .carves/,
-// never carves/done/ — as `query carves` reads them.
-func defaultPopulation(root string) ([]string, error) {
-	scan, err := parser.ScanCarves(root)
-	if err != nil {
-		return nil, err
-	}
-	files := make([]string, 0, len(scan.Carves))
-	for _, cv := range scan.Carves {
-		files = append(files, cv.Path)
-	}
-	return files, nil
-}
+// CRC: crc-Links.md | Seq: seq-links.md#2.1 | R488
+// defaultPopulation is the public documents.
+func defaultPopulation(root string) ([]string, error) { return PublicDocuments(root) }
 
-// CRC: crc-Links.md | Seq: seq-links.md#2 | R455, R456, R459, R460
+// CRC: crc-Links.md | Seq: seq-links.md#2 | R488, R456, R459, R460
 //
 // CheckLinks resolves and classifies every link in files (repository-relative or absolute;
-// the live carves when none) against root's working tree. Git is asked once per citing
+// the public documents when none) against root's working tree. Git is asked once per citing
 // file, after the classes that need no disk and no git are decided, so a URL is never asked
 // of the disk and a missing file never of git.
 func CheckLinks(root string, files []string) (*LinkReport, error) {

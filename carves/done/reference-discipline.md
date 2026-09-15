@@ -5,7 +5,7 @@ working note hands a cloner a dangling link: it resolves to nothing, and nothing
 warned that it was ever going to. This carve is the rule for which documents may
 cite which, and the check that enforces it.
 
-**Provenance.** Split out of [trajectory-tool.md](done/trajectory-tool.md) on
+**Provenance.** Split out of [trajectory-tool.md](trajectory-tool.md) on
 2026-08-04 (Bill's call). It arrived there because trajectory documents are where
 the problem was noticed, but the rule is a validator over markdown links in any
 project document and is useful on `design/` and `specs/` today. Nothing about it
@@ -14,7 +14,7 @@ is trajectory-specific.
 ## Status
 
 - **Item 1 — the checker.** **SPLIT (Bill, 2026-08-16.)** No checkbox: the sub-items carry
-  the state. It blocked [trajectory-tool.md](done/trajectory-tool.md) Item 3 and 8.2, whose
+  the state. It blocked [trajectory-tool.md](trajectory-tool.md) Item 3 and 8.2, whose
   markdown reading is shared rather than reimplemented — a fenced example is not data,
   whether it holds a link or a status entry; both re-landed over the shared reading on
   2026-09-04 and 2026-09-05, so nothing waits on this carve any more.
@@ -26,7 +26,7 @@ is trajectory-specific.
     not* below — two things this part promised are still owed to 1.2.
   - [x] ~~**1.2 — extraction, resolution, git status, on top of it.**~~ **LANDED (`6d0dd9c`, 2026-09-15 — `#83`.)**
     Needs a link reader first: the DOM does not model links.
-- [ ] **Item 2 — the document-class model.** **OPEN (#90.)**
+- [x] ~~**Item 2 — the document-class model.**~~ **LANDED (2026-09-15 — `#90`.)**
 - [x] ~~**Item 3 — wire into `validate` and report.**~~ **LANDED (2026-09-15 — `#89`.)**
 - [x] ~~**Item 4 — repair links broken by a carve's move, both directions.**~~ **LANDED (`22974e6`, 2026-09-15 — `#84`.)**
   Added 2026-09-15 after `query links`' first run found 32 of them (gap `O27`).
@@ -134,7 +134,7 @@ a test each died to a counterexample.
 *The rule is not hypothetical — this project already has two, and never noticed.* The
 comment-eating `--repair` bug was cited here as motivation for **this** part, which is the
 right lesson and the wrong parser: `--repair` reads **YAML**. Its fix, landed in `5ea35f1`,
-is `setTrack` in [tool/internal/project/init.go](../tool/internal/project/init.go) parsing
+is `setTrack` in [tool/internal/project/init.go](../../tool/internal/project/init.go) parsing
 into a `yaml.Node` and rewriting **only the value node** — a YAML simple DOM, borrowed
 rather than written, whose own comment gives the pattern's argument exactly: unmarshalling
 into `Config` "discards three things at once: the file's comments, the order of its keys,
@@ -212,7 +212,7 @@ containing file, and tracked / untracked-but-not-ignored / ignored / missing cla
 
 **Item 2** — the document-class model: which classes exist in this project, which
 are public, and what each may cite. It was coupled to Item 1 of
-[trajectory-tool.md](done/trajectory-tool.md), which decided how a project declares its
+[trajectory-tool.md](trajectory-tool.md), which decided how a project declares its
 siting; that carve is done, so the class of a document is now a fact about where it lives
 under a layout that is settled, and open question 1 below is this carve's alone to answer.
 
@@ -225,7 +225,11 @@ it by the same rule. **A staged file counts as tracked**, new and uncommitted in
 question is asked of the index, not of history, so a carve written and staged this session
 cites cleanly before its first commit. Open question 1 is answered by this; Item 2 becomes
 the population change in `validate trajectory` and in `finished-carve`'s incoming rewrite,
-closing gap `O28`.
+closing gap `O28`. *One refinement, same day, from the first run over the whole tree:* a
+document under a `testdata/` directory is a fixture, not a public document — Go's own
+convention, applied mechanically — since this repository's sample documents carry links that
+point at nothing on purpose (Bill, 2026-09-15). The other finding was real: the README had
+linked `methodology.md` since the file was deleted at the 2.0.0 release.
 
 **Ark made the case that this cannot be inferred.** Its queue files are fossil-only
 and untracked in git — private by a filename-case convention (top-level uppercase =

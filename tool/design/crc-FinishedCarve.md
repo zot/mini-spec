@@ -1,5 +1,5 @@
 # FinishedCarve
-**Requirements:** R469, R470, R471, R472, R473, R474
+**Requirements:** R469, R470, R471, R472, R473, R474, R490
 
 Moves a carve to its directory's `done/` and rewrites every link the move would break, both
 directions, from where each link resolves now. Refuses, before any byte moves, to finish a
@@ -7,7 +7,7 @@ carve that is not finished.
 
 ## Knows
 - the repository root, the carve's current and destination paths
-- the incoming population: live carves, done carves, the three trajectory files
+- the incoming population: every tracked markdown file but the carve itself
 - per file: the rewrites planned (index, old, new) and the links left
 
 ## Does
@@ -16,7 +16,7 @@ carve that is not finished.
   part, naming them
 - plans the carve's outgoing rewrites: each link that resolves now, re-expressed from `done/`;
   a link that does not resolve is recorded as left
-- plans incoming rewrites: each link in each population document that resolves to the carve,
+- plans incoming rewrites: each link in each tracked markdown document that resolves to the carve,
   re-expressed to the destination, fragment kept
 - applies every plan in memory through `SetDest`, so a read-back failure refuses the whole
   move with nothing written; then writes the incoming documents in place, writes the carve's
@@ -32,7 +32,7 @@ carve that is not finished.
 
 ## Collaborators
 - minispecsdom.Markdown: `Links`, `SetDest`, `Render`
-- query: `ClassifyLink` (where a link resolves now), `LiveCarves`
+- query: `ClassifyLink` (where a link resolves now), `PublicDocuments`
 - parser: the carve reader for the status block and its open parts; `EditFile` for the
   in-place writes
 - CLI: `update finished-carve <carve>`

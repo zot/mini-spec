@@ -24,9 +24,9 @@
 **Pulled:** 2026-09-15 — rang, by hand, at `RepairLinks` — the site the 2026-09-15 pull was made at; the design had named it `Repair` and the census could not resolve that: with the missing-only filter removed, `TestOnlyMissingLinksAndASecondRunIsANoOp` red on every link in the tree being considered; restore checksummed clean
 *Pulled at `internal/update/links.go:Repair` — 2026-09-15 — rang, by hand after the simplification pass, with the missing-only filter removed: the second run listed every link in the tree as considered, and the clean document's tracked link came back `unresolvable`; restore checksummed clean — and the site has since moved, so this is history rather than a record.*
 ## Test: the default population, the report and the exit status
-**Purpose:** R463, R467, R468
-**Input:** the root above with a `.git` marker, run from a subdirectory with no arguments; then again
-**Expected:** both `carves/live.md` and `carves/done/moved.md` are in the population; the report lists each link with `old → new` or its reason and closes with the counts; exit 1 on the first run because one was left; the second run considers only that one, rewrites nothing, writes nothing, and still exits 1
+**Purpose:** R489, R467, R468
+**Input:** the root above as a repository with everything staged, run from a subdirectory with no arguments; then again
+**Expected:** every tracked markdown file is the population (R489), `carves/live.md` and `carves/done/moved.md` among them; the report lists each link with `old → new` or its reason and closes with the counts; exit 1 on the first run because one was left; the second run considers only that one, rewrites nothing, writes nothing, and still exits 1
 **Refs:** crc-LinkRepair.md, seq-links.md#3.1
 **Code:** internal/cli/cli_repair_test.go
 **Alarm:** 3

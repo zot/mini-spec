@@ -17,7 +17,7 @@
 ## 2. Classifying
 
 2. `Check(root, files)`
-   2.1. With no files, the population is `ScanCarves(root)`'s live carves
+   2.1. With no files, the population is every markdown file git tracks (`PublicDocuments`)
    2.2. Refuse when `root` is not a git working tree
    2.3. For each file: read, `ParseMarkdown`, and for each link
         2.3.1. A scheme → `external`; an empty path → `local`
@@ -31,8 +31,7 @@
 ## 3. Repairing
 
 3. `Repair(root, files)`
-   3.1. With no files, the population is the live carves and every `*.md` directly under
-        `carves/done/` (and the `.carves/` pair)
+   3.1. With no files, the population is every markdown file git tracks
    3.2. For each file: `ParseMarkdown`, then `classify` every link; only `missing` ones go on
    3.3. Candidates for a missing link: the citing directory re-based `carves/` ⇄
         `carves/done/`; `done/` inserted before, or removed from before, the target's name;
@@ -55,8 +54,7 @@
    4.3. Outgoing plan: for each link in the carve, `ClassifyLink`; one that resolves inside
         the tree is rewritten to reach the same target from `done/`, fragment kept; one that
         does not is recorded as left
-   4.4. Incoming plan: for each population document (live carves, done carves, the three
-        trajectory files) and each of its links, the one whose resolved path is the carve is
+   4.4. Incoming plan: for each tracked markdown document but the carve, and each of its links, the one whose resolved path is the carve is
         rewritten to reach the destination from that document's directory
    4.5. Apply every plan in memory through `SetDest` — a read-back panic refuses the whole
         move before any file is written

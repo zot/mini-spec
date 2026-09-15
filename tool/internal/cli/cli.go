@@ -582,7 +582,7 @@ func (c *CLI) runUpdate(args []string) int {
 		return 1
 	}
 
-	// CRC: crc-CLI.md | Seq: seq-links.md#3.1 | R463
+	// CRC: crc-CLI.md | Seq: seq-links.md#3.1 | R489
 	// Carves are repository-scoped, so the move repair answers before any design root is
 	// resolved, like `query carves` and `query links`.
 	if args[0] == "repair-links" {
@@ -1107,7 +1107,7 @@ func printFinish(w io.Writer, r *update.FinishReport) {
 	fmt.Fprintln(w, r.Summary())
 }
 
-// CRC: crc-CLI.md | Seq: seq-links.md#3.6 | R463, R467, R468
+// CRC: crc-CLI.md | Seq: seq-links.md#3.6 | R489, R467, R468
 // runRepairLinks: `update repair-links [file...]`. Named files are relative to the working
 // directory; the repair resolves relative paths against the repository root. Exit 1 when any
 // considered link was left, so the run itself says whether the documents are clean.
@@ -1441,7 +1441,7 @@ func (c *CLI) queryCarves(args []string) int {
 	return 0
 }
 
-// CRC: crc-CLI.md | Seq: seq-links.md#2.5 | R455, R458, R461
+// CRC: crc-CLI.md | Seq: seq-links.md#2.5 | R488, R458, R461
 // queryLinks answers before any design root is resolved, like carves: the population is
 // repository-scoped. Exit 1 when any link is an error, so the query can stand in for the
 // validate wiring until it lands.

@@ -38,7 +38,7 @@ Design docs are *much* smaller than code—easier for humans to review, and they
 | Scripts | None | Build tooling |
 | Learning curve | Minutes | Hours |
 
-Mini-spec gives you just enough structure to catch misalignment early, without the overhead of a full design methodology. See [methodology.md](methodology.md) for background on CRC cards and how the design layer works.
+Mini-spec gives you just enough structure to catch misalignment early, without the overhead of a full design methodology. The `/minimap` skill describes the design layer and its CRC cards.
 
 ## Quick Start
 

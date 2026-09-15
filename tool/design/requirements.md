@@ -449,9 +449,10 @@
 - **R298:** A **status-block line the reader could not read as a part and lists as deviating** (`Stateless()` with deviations) is an issue, named with file, line and reason, and listed first because every other check reads through the parse it reports on; a checkbox-less `SPLIT` or `MOVED` parent carries no deviation and is not one. The August tree's independent flat-scan cross-check of the status block is not carried — see gap `O18`
 - **R299:** `validate trajectory` writes markdown to stdout, honours the global `--json` flag with one key convention, and exits 0 when consistent and 1 when it finds issues
 - **R300:** **The two readers of the queue files must agree, and this check is the second opinion.** `ScanTrajectory` reads item IDs line by line; `minispecsdom`'s document readers return entries. Every ID one saw and the other did not is a finding, listed first, per file. Measured 2026-09-05 on this repository: the line scan read 58 IDs from the done file and the document reader returned 17 entries with nothing unread — one unclosed backtick in an entry body absorbed the remaining 41 entries — and every check downstream reported four landed parts as orphans. A check that reads through one parser cannot see what that parser swallowed
-- **R485:** `validate trajectory` classifies every markdown link in the live carves and `carves/done/` as `query links` does; `ignored`, `missing` and `outside` links fail the phase, each reported with the citing file, line, link as written and class; the trajectory files are not checked.
+- **~~R485:~~** (Retired T14 — see R491) `validate trajectory` classifies every markdown link in the live carves and `carves/done/` as `query links` does; `ignored`, `missing` and `outside` links fail the phase, each reported with the citing file, line, link as written and class; the trajectory files are not checked.
 - **R486:** An `untracked` link is reported as a note beside the findings and never fails the phase; `tracked`, `external` and `local` links are not reported.
 - **R487:** Outside a git working tree the link check reports that it could not classify, as a note, and the trajectory checks still run; it never reads clean over links it could not see.
+- **R491:** `validate trajectory` classifies every markdown link in every markdown file git tracks under the repository root as `query links` does; `ignored`, `missing` and `outside` links fail the phase, each reported with the citing file, line, link as written and class; untracked and ignored documents, the trajectory ledgers among them, are not checked.
 
 ## Feature: traceability comment
 **Source:** specs/traceability-comment.md
@@ -774,23 +775,26 @@
 
 ## Feature: Reference Links View
 **Source:** specs/queries.md
-- **R455:** `query links [file...]` reads the named documents, or with none every `*.md` directly in `<repo root>/carves/` and `.carves/` (never `carves/done/`); it resolves at the repository root and needs no design root.
+- **~~R455:~~** (Retired T11 — see R488) `query links [file...]` reads the named documents, or with none every `*.md` directly in `<repo root>/carves/` and `.carves/` (never `carves/done/`); it resolves at the repository root and needs no design root.
 - **R456:** Each link is resolved relative to its citing file's directory with the fragment removed, and classified as exactly one of `tracked`, `untracked`, `ignored`, `missing`, `outside` (above the repository root or absolute), `external` (a URL scheme) or `local` (fragment only).
 - **R457:** `ignored`, `missing` and `outside` are errors; `untracked` is a warning; `tracked`, `external` and `local` carry no decision.
 - **R458:** The report prints one line per link carrying a decision — citing file, line, the link as written, and its class — `--all` prints every link, and the closing count states every class, zeros included.
 - **R459:** A directory target resolves when it exists and is `tracked` when git holds any file under it.
 - **R460:** Classification uses the `git` command line only — `ls-files --error-unmatch` and `check-ignore`, batched per citing file — and outside a git working tree the query refuses to classify and says so rather than passing silently.
 - **R461:** The exit status is 1 when any link is an error, and `--json` is honoured anywhere among the arguments.
+- **R488:** `query links [file...]` reads the named documents, or with none every markdown file git tracks under the repository root — the public documents, a staged file counting as tracked (Bill, 2026-09-15) — resolves at the repository root, needs no design root, and consults no git for the population beyond the index.
+- **R492:** A document under a `testdata/` directory is a fixture and never a public document — Go's own convention, applied mechanically — so it is outside every population `PublicDocuments` supplies, however git tracks it.
 
 
 ## Feature: Link Repair
 **Source:** specs/updates.md
-- **R463:** `update repair-links [file...]` reads the named documents, or with none every live carve and every `*.md` directly under `carves/done/` (and `.carves/`, `.carves/done/`); it resolves at the repository root, needs no design root, and consults no git.
+- **~~R463:~~** (Retired T12 — see R489) `update repair-links [file...]` reads the named documents, or with none every live carve and every `*.md` directly under `carves/done/` (and `.carves/`, `.carves/done/`); it resolves at the repository root, needs no design root, and consults no git.
 - **R464:** A link is rewritten only when it is `missing` now and exactly one of the four sibling relocations resolves on disk: the citing file re-based from `carves/` to `carves/done/` or back, or the target moved into or out of `done/`; every other class is untouched.
 - **R465:** A missing link that no relocation resolves, or that more than one resolves, is reported and left unchanged, each with its reason.
 - **R466:** The new destination is the relocated target relative to the citing file's directory, slash-separated, with the fragment kept as written and `<…>` wrapping kept only if it was there; the rewrite goes through `Markdown.SetDest` so every other byte of the document stays.
 - **R467:** The report lists every link considered per file — rewritten with old and new destination, or left with its reason — and closes with the counts of rewritten, unresolvable and ambiguous, zeros included; a run that repaired nothing writes no file and says so.
 - **R468:** The exit status is 1 when any considered link was left unrepaired, and a second run over repaired documents finds nothing to do and changes no byte.
+- **R489:** `update repair-links [file...]` reads the named documents, or with none every markdown file git tracks under the repository root; it resolves at the repository root, needs no design root, and consults no git beyond the index.
 
 
 ## Feature: Finished Carve
@@ -798,8 +802,9 @@
 - **R469:** `update finished-carve <carve>` moves a carve that sits directly in `carves/` or `.carves/` to that directory's `done/`, one direction; a path elsewhere, a carve already under `done/`, or a file already at the destination is refused.
 - **R470:** The verb refuses a carve with no status block or whose status block has an open part, naming each open part, before any byte moves.
 - **R471:** Every link in the carve that resolves now is rewritten to reach the same target from `done/`; a link that does not resolve is reported and left.
-- **R472:** Every link in the incoming population — the live carves, the done carves, and the pending, current and done files at the repository root — that resolves to the carve is rewritten to reach it at its new path, fragment kept.
+- **~~R472:~~** (Retired T13 — see R490) Every link in the incoming population — the live carves, the done carves, and the pending, current and done files at the repository root — that resolves to the carve is rewritten to reach it at its new path, fragment kept.
 - **R473:** Every rewrite is computed through `Markdown.SetDest` and read back before any file is written; a read-back failure refuses the whole move and no file changes.
 - **R474:** The move is a plain rename with nothing staged: the rewritten carve is written at its new path and the old file removed, and the rewritten incoming documents are written in place.
 - **R475:** The report names the move, each rewrite per file with old and new destination, each link left, and the counts of rewritten and left, zeros included; the verb resolves at the repository root and needs no design root.
+- **R490:** Every link in the incoming population — every markdown file git tracks under the repository root, the moved carve excluded — that resolves to the carve is rewritten to reach it at its new path, fragment kept; an untracked or ignored document is outside the population, private by the same rule that makes a tracked one public.
 

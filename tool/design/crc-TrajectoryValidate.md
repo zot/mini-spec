@@ -1,5 +1,5 @@
 # TrajectoryValidate
-**Requirements:** R284, R285, R286, R287, R288, R290, R291, R292, R293, R294, R295, R296, R297, R298, R299, R289, R300, R302, R485, R486, R487
+**Requirements:** R284, R285, R286, R287, R288, R290, R291, R292, R293, R294, R295, R296, R297, R298, R299, R289, R300, R302, R485, R486, R487, R491
 
 Checks the trajectory layer for consistency: the queue files at the repository root against
 the carves that point at them. Read-only, like [Validate](crc-Validate.md), and separate
@@ -79,12 +79,12 @@ therefore takes a repository root and never a Project, the same shape as `NextIt
     every statement about the references inside it a claim about a document nobody can trust. A
     missing trajectory layer is not this finding — absence is already answered, and two checks
     giving one fact different words is worse than either alone
-- checkLinks (R485, R486, R487): classifies every link in the live and done carves with
+- checkLinks (R491, R486, R487): classifies every link in every tracked markdown file with
   `query.CheckLinks`; `ignored`, `missing` and `outside` are findings that fail the phase,
   `untracked` a note, and outside a git tree the note says the links went unclassified
 
 ## Collaborators
-- query: `CheckLinks` over `PublicCarves`, the classifier `query links` runs
+- query: `CheckLinks` over `PublicDocuments`, the classifier `query links` runs
 - Carve: the carve status blocks, their parts and their stateless lines, already ingested by
   position through the dependency's reader
 - Trajectory: the queue files twice — `ScanTrajectory`'s line-scanned IDs and `ScanQueue`'s

@@ -342,11 +342,15 @@ to.
 query adds resolution and git. A link inside a code group is an example and is never listed,
 which is the whole reason the check waited for a DOM.
 
-**With no file, the population is the live carves** — every `*.md` directly in
-`<repo root>/carves/` and `.carves/`, as `query carves` reads them, since those are the public
-documents the rule was written for. With files, exactly those. Which documents are public and
-what each may cite is the document-class model, still open; until it lands the caller names
-the population.
+**With no file, the population is every markdown file git tracks under the repository root**
+— the public documents, by the document-class decision of 2026-09-15 (Bill): a document is
+public exactly when git tracks it, a staged file counting as tracked, and nothing is declared;
+the mirror holds too — a file the index still holds but the disk does not, its deletion not yet
+staged, is no longer a document.
+The trajectory ledgers and ignored scratch are outside it by the same rule, and so is any
+document under a `testdata/` directory — Go's own convention for a fixture, applied
+mechanically (Bill, 2026-09-15): this repository's sample documents carry links that point at
+nothing on purpose. With files, exactly those.
 
 **Resolution is relative to the citing file's directory**, with the fragment removed first.
 Each link is classified as exactly one of:
