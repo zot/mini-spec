@@ -63,7 +63,7 @@ const pendingSrc = `# Pending
 ---
 
 ## 3. **an older item** (mini-spec).
-   Source: [carves/x.md](carves/x.md), part ` + "`#1`" + `.
+Source: [carves/x.md](carves/x.md), part ` + "`#1`" + `.
 
 ---
 

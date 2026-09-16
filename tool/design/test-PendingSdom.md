@@ -88,6 +88,16 @@
 **Fire alarm:** drop `closeTail` from `Remove`. Red: the plain fixture ends in a blank line after the round trip — the one-line growth mini-spec measured.
 **Inject:** internal/minispecsdom/pending.go:Pending.Remove
 **Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `not the identity`, a `Source:` tail and an extra blank line in both the plain and the no-final-newline cases; restore clean. *Earlier —* 2026-09-05 — rang: `plain: not the identity; tail "…\n\n"` and the no-final-newline case, only `TestPlaceThenRemoveIsTheIdentity`.
+## Test: The canonical entry is flush left and an indented one still reads
+**Purpose:** R501
+**Input:** `Place` of a part entry (the gap form's render is asserted by *A source is a part or a gap*); then `ParsePending` over a file whose `Source:` and `Next:` lines carry the old three-space indent
+**Expected:** the rendered `Source:` and `Next:` lines begin at column zero; the indented file's entry reads its document, key and next action exactly as an unindented one does
+**Refs:** crc-PendingSdom.md, seq-pending.md#2.2
+**Code:** internal/minispecsdom/pending_test.go
+**Fire alarm:** restore the three-space prefix in `Place`'s render. Red: the rendered `Source:` line begins with spaces.
+**Inject:** internal/minispecsdom/pending.go:Pending.Place
+**Pulled:** 2026-09-16 — rang: `not flush left`, the rendered `Source:` line opening with three spaces
+
 ## Test: a title with emphasis inside reads whole
 **Purpose:** R412 — the title from the node, not a regex
 **Input:** `## 5. **A **b** c** (skill). status here.` with a `Source:` line

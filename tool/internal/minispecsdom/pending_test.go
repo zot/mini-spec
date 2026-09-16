@@ -47,7 +47,7 @@ func TestTheFixturesEntriesReadBack(t *testing.T) {
 		t.Errorf("MaxID %d", p.MaxID())
 	}
 	if u := p.Unread(); len(u) != 2 || u[0] != (Unread{25, "Notes"}) ||
-		u[1] != (Unread{33, "   Source: [design/design.md](design/design.md), gap `O1-O3`."}) {
+		u[1] != (Unread{33, "Source: [design/design.md](design/design.md), gap `O1-O3`."}) {
 		t.Errorf("unread %+v", u)
 	}
 	// R395: every entry knows its line, 1-based.
@@ -87,7 +87,7 @@ func TestPlaceByPositionRefusedNotClamped(t *testing.T) {
 		t.Fatalf("after Place at 1: %v, want [20 8 12 3 14 15]", got)
 	}
 	r, _ := p.Render()
-	if !strings.Contains(r, "---\n\n## 20. **New**. Fresh.\n   Source: [carves/z.md](carves/z.md), part `#1`.\n\n## 8. ") {
+	if !strings.Contains(r, "---\n\n## 20. **New**. Fresh.\nSource: [carves/z.md](carves/z.md), part `#1`.\n\n## 8. ") {
 		t.Errorf("placed at 1:\n%s", r)
 	}
 	pos, err := p.After(12)
@@ -104,7 +104,7 @@ func TestPlaceByPositionRefusedNotClamped(t *testing.T) {
 		t.Fatalf("ids %v, want [20 8 12 21 3 14 15 22]", got)
 	}
 	r, _ = p.Render()
-	if !strings.Contains(r, "kept here until resumed.\n\n## 21. **After twelve**") || !strings.HasSuffix(r, "gap `O1-O3`.\n\n## 22. **Last**. S.\n   Source: [d](d), part `#3`.\n") {
+	if !strings.Contains(r, "kept here until resumed.\n\n## 21. **After twelve**") || !strings.HasSuffix(r, "gap `O1-O3`.\n\n## 22. **Last**. S.\nSource: [d](d), part `#3`.\n") {
 		t.Errorf("after and last:\n%s", r)
 	}
 	before, _ := p.Render()
@@ -148,7 +148,7 @@ func TestRemoveDropsExactlyTheRun(t *testing.T) {
 // Found by injecting past the alarm list: the fixture's only rule precedes its
 // entries, so nothing proved a `---` after an entry ends its region.
 func TestARuleEndsARegion(t *testing.T) {
-	src := "# Pending\n\n---\n\n## 4. **Only**. S.\n   Source: [d](d), part `#1`.\n\n---\n\nTrailing prose after the rule.\n"
+	src := "# Pending\n\n---\n\n## 4. **Only**. S.\nSource: [d](d), part `#1`.\n\n---\n\nTrailing prose after the rule.\n"
 	p := ParsePending(src)
 	e := p.Entry(4)
 	if e == nil || strings.Contains(runText(e), "Trailing prose") {
@@ -181,7 +181,7 @@ func TestASourceIsAPartOrAGap(t *testing.T) {
 	}
 	// The writer emits one form for each kind, and refuses what would not read back.
 	g := EntryText{ID: 30, Title: "Fix", Status: "S.", SourceDoc: "d.md", SourceKey: "O7", Kind: SourceGap}
-	if got, want := g.Text(), "## 30. **Fix**. S.\n   Source: [d.md](d.md), gap `O7`.\n\n"; got != want {
+	if got, want := g.Text(), "## 30. **Fix**. S.\nSource: [d.md](d.md), gap `O7`.\n\n"; got != want {
 		t.Errorf("gap form:\n%q\nwant\n%q", got, want)
 	}
 	if err := p.Place(EntryText{ID: 31, Title: "Bad", Status: "S.", SourceDoc: "d.md", SourceKey: "O1, O2", Kind: SourceGap}, 1); !errors.Is(err, ErrBadGapSource) {
@@ -197,7 +197,7 @@ func TestASourceIsAPartOrAGap(t *testing.T) {
 
 // CRC: crc-PendingSdom.md | R403
 func TestAGroupOpenAtEndOfInputIsUnreadInPending(t *testing.T) {
-	src := "# Pending\n\n---\n\n## 1. **T**. s\n   Source: [x](x.md), part `#1`.\n\n``oops`\n## 2. **U**. s\n"
+	src := "# Pending\n\n---\n\n## 1. **T**. s\nSource: [x](x.md), part `#1`.\n\n``oops`\n## 2. **U**. s\n"
 	p := ParsePending(src)
 	// R445: the two-run is demoted at end of input and the entry after it reads; the lone
 	// backtick it had enclosed then opens a span of its own, demoted in turn.
@@ -213,7 +213,7 @@ func TestAGroupOpenAtEndOfInputIsUnreadInPending(t *testing.T) {
 // CRC: crc-PendingSdom.md | Seq: seq-pending.md#2.3.1 | R407
 func TestPlaceAtTheLastPositionLandsBeforeTheRule(t *testing.T) {
 	e := EntryText{ID: 20, Title: "New", Status: "Fresh.", SourceDoc: "carves/z.md", SourceKey: "1"}
-	placed := "## 20. **New**. Fresh.\n   Source: [carves/z.md](carves/z.md), part `#1`.\n"
+	placed := "## 20. **New**. Fresh.\nSource: [carves/z.md](carves/z.md), part `#1`.\n"
 
 	p := ParsePending(pendingFixture(t) + "\n---\n\nprose after the entries.\n")
 	if err := p.Place(e, len(p.Entries())+1); err != nil {
@@ -265,7 +265,7 @@ func TestPlaceThenRemoveIsTheIdentity(t *testing.T) {
 
 // CRC: crc-PendingSdom.md | Seq: seq-pending.md#1.2 | R412
 func TestATitleWithEmphasisInsideReadsWhole(t *testing.T) {
-	p := ParsePending("# P\n\n---\n\n## 5. **A **b** c** (skill). status here.\n   Source: [x](x.md), part `#1`.\n")
+	p := ParsePending("# P\n\n---\n\n## 5. **A **b** c** (skill). status here.\nSource: [x](x.md), part `#1`.\n")
 	e := p.Entry(5)
 	if e == nil {
 		t.Fatal("entry 5 not read")
@@ -296,12 +296,12 @@ func TestAWriteThatDoesNotReadBackPanics(t *testing.T) {
 // the region runs on to the next entry, and Remove leaves no tail behind.
 func TestARuleIsALineOfItsOwnOutsideCode(t *testing.T) {
 	head := "# Pending\n\n---\n\n"
-	two := "## 6. **two**. s\n   Source: [c.md](c.md), part `#2`.\n"
+	two := "## 6. **two**. s\nSource: [c.md](c.md), part `#2`.\n"
 	for name, body := range map[string]string{
 		"span":  "body from its `---` rule the way it does.\n\nmore tail.\n\n",
 		"fence": "```\n---\n```\n\nmore tail.\n\n",
 	} {
-		src := head + "## 5. **one**. s\n   Source: [c.md](c.md), part `#1`.\n\n" + body + two
+		src := head + "## 5. **one**. s\nSource: [c.md](c.md), part `#1`.\n\n" + body + two
 		p := ParsePending(src)
 		if n := len(p.Entries()); n != 2 {
 			t.Fatalf("%s: %d entries, want 2", name, n)
@@ -312,5 +312,23 @@ func TestARuleIsALineOfItsOwnOutsideCode(t *testing.T) {
 		if got, _ := p.Render(); got != head+two {
 			t.Errorf("%s: the region ended at the dashes, leaving a tail:\n%s", name, got)
 		}
+	}
+}
+
+// CRC: crc-PendingSdom.md | Seq: seq-pending.md#2.2 | R501
+func TestTheCanonicalEntryIsFlushLeftAndAnIndentedOneStillReads(t *testing.T) {
+	p := ParsePending("# P\n\n---\n\n## 5. **one**. s\nSource: [c.md](c.md), part `#1`.\n")
+	if err := p.Place(EntryText{ID: 9, Title: "nine", Status: "S", SourceDoc: "c.md", SourceKey: "2", Kind: SourcePart, Next: "go"}, 2); err != nil {
+		t.Fatal(err)
+	}
+	r, _ := p.Render()
+	if !strings.Contains(r, "\n## 9. **nine**. S\nSource: [c.md](c.md), part `#2`.\nNext: go\n") {
+		t.Errorf("not flush left:\n%s", r)
+	}
+	// The earlier stencil's three-space indent is deliberate here: the readers accept
+	// leading whitespace, so entries written under it still read.
+	old := ParsePending("# P\n\n---\n\n## 5. **one**. s\n   Source: [c.md](c.md), part `#1`.\n   Next: write it.\n")
+	if e := old.Entry(5); e == nil || e.SourceDoc != "c.md" || e.SourceKey != "1" || e.Next != "write it." {
+		t.Errorf("indented entry misread: %+v", e)
 	}
 }

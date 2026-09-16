@@ -20,8 +20,8 @@
 2. `Place(e, pos)`
    2.1. Refuse a position outside `1 … len+1`
         2.1.1. Refuse a gap source whose key is not one gap ID
-   2.2. Render the canonical entry text, ending in a blank line, in the part or gap form
-        by `Kind`
+   2.2. Render the canonical entry text, every line at column zero, ending in a blank line,
+        in the part or gap form by `Kind`
    2.3. Inside a window, `Insert` it as one synthetic text before the entry at `pos`, or
         where the entries end; re-read the document and re-derive the entries
         2.3.1. When a rule closes the region, split the last entry's tail at the rule and

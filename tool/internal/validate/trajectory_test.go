@@ -68,7 +68,7 @@ func TestDanglingCitationIsFound(t *testing.T) {
 func TestQueueEntryMissingFromItsCarveIsFound(t *testing.T) {
 	got := run(t, map[string]string{
 		"PENDING.md": "# Pending\n\n## 1. **live**. Active.\n" +
-			"   Source: [carves/x.md](carves/x.md), part `#7`.\n",
+			"Source: [carves/x.md](carves/x.md), part `#7`.\n",
 		"DONE.md":     "# Done\n",
 		"carves/x.md": "# Carve: x\n\n## Status\n\n- [ ] **Item 3 — a part.** **OPEN (#1.)**\n",
 	})
@@ -456,7 +456,7 @@ func TestTheTwoReadersOfTheQueueFilesMustAgree(t *testing.T) {
 // its later parts out of every check above, and this count is the only one that says so.
 func TestCurrentFileAndCarveUnreadAreCounted(t *testing.T) {
 	got := run(t, map[string]string{
-		"PENDING.md":  "# Pending\n\n---\n\n## 2. **live**. Active.\n   Source: [carves/x.md](carves/x.md), part `#1`.\n",
+		"PENDING.md":  "# Pending\n\n---\n\n## 2. **live**. Active.\nSource: [carves/x.md](carves/x.md), part `#1`.\n",
 		"DONE.md":     "# Done\n",
 		"CURRENT.md":  "# Current\n\n---\n\n## Active\n\n#2 — live.\n\n```\nnever closed\n",
 		"carves/x.md": "# Carve: x\n\n## Status\n\n- [ ] **Item 1 — live.** **OPEN (#2.)**\n\n## Item 1\n\n`never closed\n",

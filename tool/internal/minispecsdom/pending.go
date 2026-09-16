@@ -343,9 +343,9 @@ func (e EntryText) Text() string {
 	if e.Kind == SourceGap {
 		word, key = "gap", e.SourceKey
 	}
-	fmt.Fprintf(&b, ". %s\n   Source: [%s](%s), %s `%s`.\n", e.Status, e.SourceDoc, e.SourceDoc, word, key)
+	fmt.Fprintf(&b, ". %s\nSource: [%s](%s), %s `%s`.\n", e.Status, e.SourceDoc, e.SourceDoc, word, key)
 	if e.Next != "" {
-		fmt.Fprintf(&b, "   Next: %s\n", e.Next)
+		fmt.Fprintf(&b, "Next: %s\n", e.Next)
 	}
 	b.WriteString("\n")
 	return b.String()

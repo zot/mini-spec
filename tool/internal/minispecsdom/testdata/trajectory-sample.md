@@ -22,4 +22,4 @@ Prose with a - b in it, and see [x] in prose, and `a **code** span`.
 ```
 
 ## 8. **A pending entry** (mini-spec). One-line status.
-   Source: [carves/x.md](carves/x.md), part `#7`.
+Source: [carves/x.md](carves/x.md), part `#7`.

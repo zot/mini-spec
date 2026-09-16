@@ -69,13 +69,20 @@ entry, by construction.
 
 **Placement is a node placement, never a byte splice.** `Place(e, pos)` renders the
 canonical entry — the heading line, the `Source:` line, an optional `Next:` line, a blank
-line — as one synthetic text and inserts it before the entry at `pos`. **At one past the
+line, **every line at column zero** — as one synthetic text and inserts it before the entry at `pos`. **At one past the
 last it lands where the entries end, not where the file does**: before the rule that closes
 the region when one follows — the shape `trajectory-format.md` describes, entries then `---`
 then commentary — else at end of file, where the separator is adjusted so the file still ends
 in one newline; with no entries at all, after the header's rule. A position outside
 `1 … len+1` is **refused, not clamped**: a clamp silently reinterprets an instruction the
 caller was specific about.
+
+**The canonical entry is flush left, and a read accepts any indent.** Earlier stencils
+indented the `Source:` and `Next:` lines three spaces under the heading, a hanging indent
+that no reader needs and that turns into a ragged margin the moment a line wraps (Bill,
+2026-09-16). The writer emits column zero; the `Source:` and `Next:` readers accept leading
+whitespace, so a file written under the old stencil still reads — flexible on input, rigid
+on output.
 
 **Removal drops the run, and Place then Remove is the identity.** `Remove(id)` takes the
 entry's nodes out of the array — splitting the shared tail text at the region's end so the

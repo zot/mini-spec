@@ -606,6 +606,9 @@
 - **R447:** A `---` counts as the rule only when it is a whole document line outside a code group;
   a code span's interior reading `---` and a `---` line inside a fence are body text, and the header
   rule is found before a placement's mutation window opens.
+- **R501:** The canonical entry text `Place` renders begins every line at column zero — no
+  hanging indent under the heading — while the `Source:` and `Next:` readers accept leading
+  whitespace, so entries written under the earlier indented stencil still read.
 
 ## Feature: done schema
 **Source:** specs/done-schema.md

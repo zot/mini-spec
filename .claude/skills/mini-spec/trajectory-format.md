@@ -78,17 +78,20 @@ the queue did. See `config-reference.md`.
 ---
 
 ## 8. **<title>** (<skill that runs it — or omit>). <one-line status>.
-   Source: [<doc>](<path>), part `#<key>`.
-   Next: <next action>.
+Source: [<doc>](<path>), part `#<key>`.
+Next: <next action>.
 
 ## 12. **<title>** …
-   Source: [<design root>/design.md](<path>), gap `<gap ID>`.
+Source: [<design root>/design.md](<path>), gap `<gap ID>`.
 ```
 
 - **Ordered by intent — the top item is active.** Position is the priority; the number is
   only the identifier, so the numbers run out of sequence and that is expected.
 - **Each item is a `##` heading.** That is what lets a paused item's context nest beneath
   it as a sub-item.
+- **Everything under the heading sits at column zero.** No hanging indent: it looked like
+  one only until a line wrapped, and the tool never needed it. Files written under the older
+  three-space stencil still read; the tool writes flush left.
 - **An entry is a pointer, not the design.** Subject, the skill that runs it (or nothing),
   a one-line status, and one doc link. Rationale, findings and open questions live in the
   linked document. No instructions in entries.

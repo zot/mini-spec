@@ -201,7 +201,7 @@ func TestFinishWiresTheResolvedBodyThrough(t *testing.T) {
 		}
 	}
 	write("PENDING.md", "# Pending\n\n---\n\n## 4. **a part to queue** (mini-spec). Status.\n"+
-		"   Source: [carves/x.md](carves/x.md), part `#7`.\n")
+		"Source: [carves/x.md](carves/x.md), part `#7`.\n")
 	write("DONE.md", "# Done\n\n---\n")
 	write("CURRENT.md", "# Current\n\n## Active\n\n`#4` — a part to queue.\n")
 	write("carves/x.md", "# Carve: x\n\n## Status\n\n- [ ] **Item 7 — a part to queue.** **OPEN (#4.)**\n")
@@ -363,7 +363,7 @@ func TestWrittenLineSaysWhichWriteIsTracked(t *testing.T) {
 		}
 	}
 	write(".gitignore", "PENDING.md\nCURRENT.md\nDONE.md\n.minispec/\n")
-	write("PENDING.md", "# Pending\n\n---\n\n## 4. **a part to queue** (mini-spec). Status.\n   Source: [carves/x.md](carves/x.md), part `#7`.\n")
+	write("PENDING.md", "# Pending\n\n---\n\n## 4. **a part to queue** (mini-spec). Status.\nSource: [carves/x.md](carves/x.md), part `#7`.\n")
 	write("DONE.md", "# Done\n\n---\n")
 	write("CURRENT.md", "# Current\n\n## Active\n\n`#4` — a part to queue.\n")
 	write("carves/x.md", "# Carve: x\n\n## Status\n\n- [ ] **Item 7 — a part to queue.** **OPEN (#4.)**\n")

@@ -1,5 +1,5 @@
 # PendingSdom
-**Requirements:** R370, R371, R372, R374, R376, R377, R395, R396, R399, R400, R401, R403, R407, R408, R411, R412, R413, R445, R447
+**Requirements:** R370, R371, R372, R374, R376, R377, R395, R396, R399, R400, R401, R403, R407, R408, R411, R412, R413, R445, R447, R501
 
 The pending file schema: embeds the markdown base, owns the document, and adds the
 queue entry — a view over a heading region, since nothing in an entry is a field a
@@ -19,7 +19,8 @@ tool writes into.
   context reports open at end of input, at its opener's line, last
 - reads a `Source:` line as a part or a gap by the word and shape; `Kind` says which,
   `SourceKey` carries either key; a source that reads as neither is `SourceNone` and unread
-- `Place(e, pos)`: renders the canonical entry as one synthetic text and `Insert`s it
+- `Place(e, pos)`: renders the canonical entry — flush left, no hanging indent — as one
+  synthetic text and `Insert`s it
   before the entry at `pos`, or where the entries end — before a closing rule, else at
   end of file with the separator adjusted, or after the header's rule when there are
   none; refuses a position out of range, and a gap key that is not one gap ID
