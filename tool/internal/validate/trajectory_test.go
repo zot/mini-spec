@@ -474,7 +474,7 @@ func TestCurrentFileAndCarveUnreadAreCounted(t *testing.T) {
 func TestLinksACloneCannotFollowFailThePhase(t *testing.T) {
 	files := map[string]string{
 		"PENDING.md":         "# Pending\n\n---\n",
-		"DONE.md":            "# Done\n\n---\n",
+		"DONE.md":            "# Done\n\n---\n\n- **2026-09-01 — #9: gone.** Part `carves/gone.md#1`. see [z](zzz.md) and `PATH#x`\n",
 		"CURRENT.md":         "# Current\n\n---\n\n## Active\n\n_No active item._\n",
 		"tracked.md":         "t\n",
 		"fresh.md":           "u\n",
@@ -508,8 +508,9 @@ func TestLinksACloneCannotFollowFailThePhase(t *testing.T) {
 			t.Errorf("missing finding %q in %v", want, got.Links)
 		}
 	}
-	if len(got.LinkNotes) != 1 || !strings.Contains(got.LinkNotes[0], "[u](../fresh.md)  untracked") {
-		t.Errorf("want one untracked note, got %v", got.LinkNotes)
+	notes := joined(got.LinkNotes)
+	if len(got.LinkNotes) != 3 || !strings.Contains(notes, "[u](../fresh.md)  untracked") || !strings.Contains(notes, "DONE.md:5  Part `carves/gone.md#1`  missing document  (a private file; noted, not failed)") || !strings.Contains(notes, "DONE.md:5  [z](zzz.md)  missing  (a private file; noted, not failed)") || strings.Contains(notes, "PATH") {
+		t.Errorf("want the untracked note and the two ledger notes, no prose span, got %v", got.LinkNotes)
 	}
 	text := got.FormatText()
 	if !strings.Contains(text, "links a cloner cannot follow:") || !strings.HasSuffix(text, "FAILED\n") {
@@ -517,7 +518,7 @@ func TestLinksACloneCannotFollowFailThePhase(t *testing.T) {
 	}
 
 	plain := run(t, files)
-	if len(plain.Links) != 0 || len(plain.LinkNotes) != 1 || !strings.Contains(plain.LinkNotes[0], "unclassified") {
+	if len(plain.Links) != 0 || len(plain.LinkNotes) != 2 || !strings.Contains(joined(plain.LinkNotes), "unclassified") || !strings.Contains(joined(plain.LinkNotes), "missing document") { // the part-document note needs no git
 		t.Errorf("without git: want no findings and the unclassified note, got %v / %v", plain.Links, plain.LinkNotes)
 	}
 	if !strings.Contains(plain.FormatText(), "note: links") {

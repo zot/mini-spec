@@ -45,6 +45,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Requirements.md → `internal/minispecsdom/requirements.go`
 - [x] crc-Markdown.md → `internal/minispecsdom/mdbase.go`
 - [x] crc-Links.md → `internal/query/links.go`
+- [x] crc-Refs.md → `internal/query/refs.go`
 - [x] crc-LinkRepair.md → `internal/update/links.go`
 - [x] crc-FinishedCarve.md → `internal/update/finish.go`
 
@@ -63,7 +64,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
 - [x] seq-backup.md → `internal/backup/backup.go`, `internal/project/git.go`
-- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`, `internal/update/links.go`, `internal/update/finish.go`
+- [x] seq-links.md → `internal/minispecsdom/mdbase.go`, `internal/query/links.go`, `internal/update/links.go`, `internal/update/finish.go`, `internal/query/refs.go`
 - [x] seq-current.md → `internal/minispecsdom/current.go`
 - [x] seq-done.md → `internal/minispecsdom/done.go`
 - [x] seq-pending.md → `internal/minispecsdom/pending.go`
@@ -95,6 +96,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-Trajectory.md → `internal/parser/trajectory_test.go`, `internal/cli/cli_next_id_test.go`
 - [x] test-Markdown.md → `internal/minispecsdom/mdbase_test.go`
 - [x] test-Links.md → `internal/query/links_test.go`, `internal/cli/cli_links_test.go`
+- [x] test-Refs.md → `internal/query/refs_test.go`, `internal/cli/cli_refs_test.go`
 - [x] test-LinkRepair.md → `internal/update/links_test.go`, `internal/cli/cli_repair_test.go`
 - [x] test-FinishedCarve.md → `internal/update/finish_test.go`, `internal/cli/cli_finish_test.go`
 - [x] test-Current.md → `internal/minispecsdom/current_test.go`
@@ -161,3 +163,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - T12: R463 retired by R489 (2026-09-15 reference-discipline Item 2: the class is git's, the population is every tracked markdown file)
 - T13: R472 retired by R490 (2026-09-15 reference-discipline Item 2: the class is git's, the population is every tracked markdown file)
 - T14: R485 retired by R491 (2026-09-15 reference-discipline Item 2: the class is git's, the population is every tracked markdown file)
+- [x] O29: A carve's move rewrites only the tracked documents (`#90`), so the tool's own documents go stale: the three trajectory files, the private carves under `.carves/` and both `done/` directories are ignored files and fell out of the population when public-is-tracked was applied to every verb. Two questions were conflated — *whom is a pointer for* (severity, git's to answer) and *who wrote it* (the tool, for every document it sites). Measured 2026-09-16: after `trajectory-tool.md` moved on 09-14, the done ledger still links `carves/trajectory-tool.md` at line 15 and every done entry that landed one of its parts still carries `Part `carves/trajectory-tool.md#k``, a code-span pointer no link machinery reads; `validate trajectory` passes because done entries' part documents are never resolved. Repair: `finished-carve` and `repair-links` take the union of the tracked documents and the sited ones — trajectory files, `carves/`, `.carves/`, their `done/` — the move also rewrites `Part` pointers through the done reader, and `validate trajectory` reports a done entry whose part document is missing and lists the ledgers' unresolvable links as notes (Bill, 2026-09-16)

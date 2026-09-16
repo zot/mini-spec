@@ -52,8 +52,8 @@ func (r *RepairReport) Summary() string {
 }
 
 // CRC: crc-LinkRepair.md | Seq: seq-links.md#3.1 | R489
-// repairPopulation is the public documents: every tracked markdown file.
-func repairPopulation(root string) ([]string, error) { return query.PublicDocuments(root) }
+// repairPopulation is the owned documents: every tracked markdown file plus every sited one. R497
+func repairPopulation(root string) ([]string, error) { return query.OwnedDocuments(root) }
 
 // CRC: crc-LinkRepair.md | Seq: seq-links.md#3 | R489, R464, R466
 //
@@ -89,6 +89,28 @@ func RepairLinks(root string, files []string) (*RepairReport, error) {
 					c.Outcome = Rewritten
 					c.New = newDest(rel, cands[0], l)
 					if err := m.SetDest(i, c.New); err != nil {
+						return "", err
+					}
+					wrote = true
+				default:
+					c.Outcome = Ambiguous
+				}
+				considered = append(considered, c)
+			}
+			// R500 — pointers by the same rule: missing now, exactly one relocation resolves.
+			for _, r := range query.RefsIn(root, rel, m) {
+				if r.Kind != "pointer" || r.Resolved != "" {
+					continue
+				}
+				doc := m.Pointers()[r.Index].Doc
+				c := Considered{File: rel, Line: r.Line, Old: r.Text}
+				switch cands := candidates(root, pointerBase(rel), minispecsdom.Link{Path: doc}); len(cands) {
+				case 0:
+					c.Outcome = Unresolvable
+				case 1:
+					c.Outcome = Rewritten
+					c.New = pointerDoc(rel, cands[0])
+					if err := m.SetPointerDoc(r.Index, c.New); err != nil {
 						return "", err
 					}
 					wrote = true
@@ -162,6 +184,15 @@ func acrossDone(dir string) string {
 		return path.Dir(dir)
 	}
 	return path.Join(dir, "done")
+}
+
+// pointerBase is the file a pointer in file resolves from: a pointer in a trajectory file is
+// written from the repository root, so it resolves as a file sitting at the root would. R500
+func pointerBase(file string) string {
+	if query.IsTrajectoryFile(file) {
+		return "root.md" // any name at the root: candidates reads only its directory
+	}
+	return file
 }
 
 // CRC: crc-LinkRepair.md | Seq: seq-links.md#3.4 | R466

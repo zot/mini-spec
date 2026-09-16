@@ -383,6 +383,30 @@ and `git check-ignore`, batched once per citing file.
 wiring (`carves/reference-discipline.md` Item 3) until that lands. Resolves at the repository
 root; needs no design root. Markdown to stdout; `--json` honoured anywhere among the arguments.
 
+## minispec query refs [--to \<path\>] [file...]
+
+The inventory of references: every markdown link and every **pointer** — the tool's own
+form, a code span holding `doc.md` or `doc.md#key`, which is how the ledgers name a part
+(`` Part `carves/x.md#3` ``) and how a carve names a document without linking it. One line per
+reference: the citing file, its line, the reference as written, its kind (`link` or
+`pointer`) and the repository-relative path it resolves to, `—` when it does not.
+
+**`query links` is the classifier; this is the inventory.** Links carries the cloner-facing
+severities and the git classes; `refs` carries every kind of reference and passes no
+judgment, which is why it is the query a move is specified against: `finished-carve`
+rewrites exactly what `query refs --to <carve>` lists, so the verb is checkable against the
+query before it runs.
+
+**`--to <path>` inverts the question**: every reference in the population that resolves to
+that path, which is what to ask before moving or deleting a document. With no file the
+population is the union `finished-carve` uses — every tracked markdown file and every
+document the trajectory layer sites; with files, exactly those.
+
+**A pointer resolves like a link**, relative to the citing file's directory, except that a
+pointer in a trajectory file resolves from the repository root, which is where the format
+sites those files and how every `Part` pointer is written. A code span that does not end in
+`.md` before its `#` is not a pointer: `#N` alone is a queue ID, `R5` a requirement.
+
 ## minispec query carves
 
 The cross-document status view over every live carve: one line each, with how many of its

@@ -3,6 +3,7 @@ package minispecsdom
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -151,8 +152,9 @@ func (m *markdownDoc) boundary(off int) (sdom.Node, error) {
 // system and git are the classifier's.
 type Markdown struct {
 	markdownDoc
-	src   string
-	links []Link
+	src      string
+	links    []Link
+	pointers []Pointer
 }
 
 // CRC: crc-Markdown.md | R448, R451
@@ -294,6 +296,105 @@ func (m *Markdown) SetDest(i int, dest string) error {
 		got = out[l.destSpan[0]:l.destSpan[1]]
 	}
 	mustReadBack("Markdown", "SetDest", strconv.Itoa(i), got == dest, dest, got)
+	*m = *fresh
+	return nil
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#5.1 | R493
+//
+// Pointer is a code span whose content is a markdown path, optionally `#` and a key: the
+// tool's own reference form, which no link machinery reads.
+type Pointer struct {
+	Raw     string // the span as written, backticks included
+	Doc     string // the bytes before `#`, ending in .md
+	Key     string // the bytes after `#`, "" when none
+	line    int
+	offset  int
+	docSpan [2]int // the document bytes, at parse time
+}
+
+func (p Pointer) Line() int   { return p.line }
+func (p Pointer) Offset() int { return p.offset }
+
+// ErrNoPointer is SetPointerDoc on an index no pointer carries.
+var ErrNoPointer = errors.New("minispecsdom: no pointer at that index")
+
+var pointerSpanRe = regexp.MustCompile("`([^`\n]+)`")
+
+// Pointers is every pointer, in document order.
+func (m *Markdown) Pointers() []Pointer {
+	if m.pointers == nil {
+		m.scanPointers()
+	}
+	return m.pointers
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#5.1 | R493
+//
+// scanPointers finds single-backtick spans whose content, before any `#`, ends in `.md`. A
+// span inside a fenced block is an example: the base places the fence, and a span opener
+// that sits inside a code group is skipped. `#7` is a queue ID and `R5` a requirement, and
+// neither ends in `.md`, so neither is a pointer.
+func (m *Markdown) scanPointers() {
+	m.pointers = []Pointer{}
+	for _, loc := range pointerSpanRe.FindAllStringSubmatchIndex(m.src, -1) {
+		start, end, cStart, cEnd := loc[0], loc[1], loc[2], loc[3]
+		if m.inCode(start) && m.enclosingIsFence(start) {
+			continue
+		}
+		doc, key, _ := strings.Cut(m.src[cStart:cEnd], "#")
+		if !strings.HasSuffix(doc, ".md") || strings.ContainsAny(doc, " \t") {
+			continue
+		}
+		m.pointers = append(m.pointers, Pointer{
+			Raw: m.src[start:end], Doc: doc, Key: key,
+			line: m.doc.Line(start), offset: start, docSpan: [2]int{cStart, cStart + len(doc)},
+		})
+	}
+}
+
+// enclosingIsFence reports whether the code group holding off is a fence rather than the
+// span itself: a span's own opener is inside its own group, so inCode alone cannot tell a
+// span in prose from a span quoted inside a fenced block.
+func (m *Markdown) enclosingIsFence(off int) bool {
+	n := nodeAt(m.doc.Nodes(), off)
+	if n == nil {
+		return false
+	}
+	lang := m.ctx.Language()
+	for enc := m.ctx.Enclosing(n); enc != nil; enc = m.ctx.Enclosing(enc) {
+		s, _ := enc.Render()
+		if g := lang.GroupFor(s); g != nil && g.Kind == "code" && len(s) >= 3 {
+			return true
+		}
+	}
+	return false
+}
+
+// CRC: crc-Markdown.md | Seq: seq-links.md#5.2 | R494
+//
+// SetPointerDoc replaces pointer i's document bytes — before the `#`, or the whole content
+// when there is no key — with doc, the key and the backticks untouched, and reads the
+// pointer back at the same index or panics with a ReadBackError.
+func (m *Markdown) SetPointerDoc(i int, doc string) error {
+	ps := m.Pointers()
+	if i < 0 || i >= len(ps) {
+		return ErrNoPointer
+	}
+	span := ps[i].docSpan
+	if err := m.doc.Mutate(func() error { return m.replaceSpan(span[0], span[1], doc) }); err != nil {
+		return err
+	}
+	out, err := m.Render()
+	if err != nil {
+		return err
+	}
+	fresh := ParseMarkdown(out)
+	got := ""
+	if fp := fresh.Pointers(); i < len(fp) {
+		got = fp[i].Doc
+	}
+	mustReadBack("Markdown", "SetPointerDoc", strconv.Itoa(i), got == doc, doc, got)
 	*m = *fresh
 	return nil
 }

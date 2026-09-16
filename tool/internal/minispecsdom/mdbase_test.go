@@ -196,3 +196,27 @@ func TestSetDestRewritesTheDestinationBytesAlone(t *testing.T) {
 		t.Errorf("want ErrNoLink, got %v", err)
 	}
 }
+
+// R493, R494 — pointers are `doc.md#key` code spans outside fences; SetPointerDoc rewrites
+// the document bytes alone.
+func TestPointersAreReadAndRewritten(t *testing.T) {
+	src := "- **x.** Part `carves/x.md#3`. See `specs/a.md` and `#7` and `R5` and `a b.md`.\n\n```\nPart `carves/fenced.md#1`\n```\n"
+	m := ParseMarkdown(src)
+	ps := m.Pointers()
+	if len(ps) != 2 || ps[0].Doc != "carves/x.md" || ps[0].Key != "3" || ps[0].Raw != "`carves/x.md#3`" || ps[1].Doc != "specs/a.md" || ps[1].Key != "" || ps[0].Line() != 1 {
+		t.Fatalf("pointers: %+v", ps)
+	}
+	if err := m.SetPointerDoc(0, "carves/done/x.md"); err != nil {
+		t.Fatal(err)
+	}
+	want := strings.Replace(src, "`carves/x.md#3`", "`carves/done/x.md#3`", 1)
+	if out, _ := m.Render(); out != want {
+		t.Errorf("render:\n%s", out)
+	}
+	if m.Pointers()[0].Key != "3" || m.Pointers()[0].Doc != "carves/done/x.md" {
+		t.Errorf("after the write: %+v", m.Pointers()[0])
+	}
+	if err := m.SetPointerDoc(9, "x"); err != ErrNoPointer {
+		t.Errorf("want ErrNoPointer, got %v", err)
+	}
+}

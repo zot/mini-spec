@@ -1,5 +1,5 @@
 # Sequence: reading a document's links, classifying them, repairing a move, and finishing a carve
-**Requirements:** R448, R449, R450, R451, R453, R455, R456, R457, R459, R460, R462, R463, R464, R465, R466, R467, R469, R470, R471, R472, R473, R474
+**Requirements:** R493, R494, R495, R496, R497, R498, R448, R449, R450, R451, R453, R455, R456, R457, R459, R460, R462, R463, R464, R465, R466, R467, R469, R470, R471, R472, R473, R474
 
 ## 1. Reading
 
@@ -54,9 +54,22 @@
    4.3. Outgoing plan: for each link in the carve, `ClassifyLink`; one that resolves inside
         the tree is rewritten to reach the same target from `done/`, fragment kept; one that
         does not is recorded as left
-   4.4. Incoming plan: for each tracked markdown document but the carve, and each of its links, the one whose resolved path is the carve is
+   4.4. Incoming plan: for each owned document but the carve, each link and each pointer
+        (`RefsIn`) that resolves to the carve — exactly what `query refs --to` lists —, the one whose resolved path is the carve is
         rewritten to reach the destination from that document's directory
    4.5. Apply every plan in memory through `SetDest` — a read-back panic refuses the whole
         move before any file is written
    4.6. Write the incoming documents in place, write the carve's content at the destination,
         remove the old file; report the move, the rewrites, the links left, the counts
+
+## 5. The inventory of references
+
+5. `Refs(root, files, to)`
+   5.1. For each document, `ParseMarkdown`; every link resolved as the classifier resolves
+        it, every pointer — a code span ending in `.md` before its `#`, outside a fence —
+        resolved from the citing directory, or from the root in a trajectory file
+   5.2. `SetPointerDoc(i, doc)`: `replaceSpan` over the document bytes of pointer `i`, the
+        key and backticks kept, read back at the same index
+   5.3. With no files, `OwnedDocuments`: the tracked documents plus the sited ones
+   5.4. Print one line per reference — file, line, text, kind, resolved path — and the count;
+        with `to`, only those resolving to it

@@ -234,6 +234,15 @@ is a note**, not a failure, because a file written this session and not yet comm
 the ordinary state rather than a mistake. Links inside code groups are examples and are
 never read.
 
+**The tool's own documents are checked as well, and reported as notes.** A done entry whose
+`Part` pointer — a code span ending in `.md` before its `#` — names a document that does not
+exist, and a ledger link that does not resolve, are listed beside the findings and never fail
+the phase. *Measured 2026-09-16, the day the check was written:* 63 such entries before the
+ledger was repaired and 27 after, of which 21 name carves dropped at the `new-sdom` restart
+or belonging to mini-spec-tool — history nobody will repair, and a finding that can never be
+cleared is a red phase everyone learns to ignore. The note is what makes the next hand move
+visible: a run of fresh entries naming one document is the signature.
+
 **Outside a git working tree the check cannot classify and says so**, as a note beside the
 other findings, rather than passing silently: a fossil-only project's references go
 unchecked, and a report that reads clean over links it could not see is the defect the

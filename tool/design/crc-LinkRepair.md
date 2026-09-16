@@ -1,5 +1,5 @@
 # LinkRepair
-**Requirements:** R463, R464, R465, R466, R467, R489
+**Requirements:** R463, R464, R465, R466, R467, R489, R500
 
 Repairs the links a carve's move broke, both directions: for every `missing` link in the
 population, tries the four sibling relocations a move between `carves/` and `carves/done/`
@@ -15,6 +15,7 @@ can produce, and rewrites the destination when exactly one resolves.
   `query links` classifier, and for each `missing` one compute the candidates
 - `candidates`: re-base the citing directory `carves/` ⇄ `carves/done/`; insert or remove
   `done/` before the target's name; keep those that exist inside the root, deduplicated
+- repairs pointers by the same predicate through `SetPointerDoc`, keys kept (R500)
 - rewrites through `Markdown.SetDest` — the relocated target relative to the citing file's
   directory, fragment kept, `<…>` kept if present — then writes the file atomically
 - `Report`: every link considered with its outcome, and the counts, zeros included;

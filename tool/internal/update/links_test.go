@@ -131,3 +131,30 @@ func TestOnlyMissingLinksAndASecondRunIsANoOp(t *testing.T) {
 		t.Errorf("a clean document: %+v %v", r, err)
 	}
 }
+
+// R500 — a pointer is repaired by the same rule, the key kept.
+func TestAPointerIsRepairedByTheSameRule(t *testing.T) {
+	root := t.TempDir()
+	for name, body := range map[string]string{
+		"carves/done/moved.md": "m\n",
+		"DONE.md":              "# Done\n\n---\n\n- **2026-09-01 — #5: x.** Part `carves/moved.md#1`. and `carves/nowhere.md#2`\n",
+	} {
+		p := filepath.Join(root, name)
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	gitInit(t, root, "carves")
+	r, err := RepairLinks(root, []string{"DONE.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Counts[Rewritten] != 1 || r.Counts[Unresolvable] != 1 {
+		t.Errorf("counts: %v (%+v)", r.Counts, r.Considered)
+	}
+	got := readFile(t, filepath.Join(root, "DONE.md"))
+	if !strings.Contains(got, "Part `carves/done/moved.md#1`.") || !strings.Contains(got, "`carves/nowhere.md#2`") {
+		t.Errorf("ledger after repair:\n%s", got)
+	}
+}

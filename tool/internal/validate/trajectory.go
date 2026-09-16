@@ -4,6 +4,7 @@ package validate
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -125,7 +126,51 @@ func RunTrajectory(repoRoot string) (*TrajectoryIssues, error) {
 	t.countUnreachable(carves)
 	t.countUnread(q, carves)
 	t.checkLinks(repoRoot, noCarves)
+	t.checkDonePartDocs(repoRoot, q)
+	t.noteLedgerLinks(repoRoot)
 	return t, nil
+}
+
+// CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.13 | R499
+// checkDonePartDocs: a done entry whose Part pointer — a code span ending in .md before its
+// # — names a document that does not exist is a note beside the findings, never a failure:
+// the ledger is private, and entries naming documents dropped at a restart or belonging to
+// another project are history nobody will repair. Measured 2026-09-16: 63 before the
+// ledger was repaired, 27 after, 21 of them such history.
+func (t *TrajectoryIssues) checkDonePartDocs(repoRoot string, q parser.QueueScan) {
+	for _, e := range q.Done {
+		if !strings.HasSuffix(e.PartDoc, ".md") {
+			continue // the reader takes the first `a#b` span; only a .md path is a pointer
+		}
+		if _, err := os.Stat(filepath.Join(repoRoot, filepath.FromSlash(e.PartDoc))); err != nil {
+			t.LinkNotes = append(t.LinkNotes, fmt.Sprintf("DONE.md:%d  Part `%s#%s`  missing document  (a private file; noted, not failed)", e.Line, e.PartDoc, e.PartKey))
+		}
+	}
+}
+
+// CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.13 | R499
+// noteLedgerLinks: the trajectory files' links that do not resolve are notes, never
+// failures — a private file cannot strand a cloner, and this repository's ledger points at
+// another project's carves by history.
+func (t *TrajectoryIssues) noteLedgerLinks(repoRoot string) {
+	var files []string
+	for _, f := range []string{pendingFile, currentFile, doneFile} {
+		if _, err := os.Stat(filepath.Join(repoRoot, f)); err == nil {
+			files = append(files, f)
+		}
+	}
+	if len(files) == 0 {
+		return
+	}
+	report, err := query.CheckLinks(repoRoot, files)
+	if err != nil {
+		return // no git: the public check already said the links went unclassified
+	}
+	for _, l := range report.Links {
+		if l.Class.IsError() {
+			t.LinkNotes = append(t.LinkNotes, fmt.Sprintf("%s:%d  %s  %s  (a private file; noted, not failed)", l.File, l.Line, l.Link, l.Class))
+		}
+	}
 }
 
 // CRC: crc-TrajectoryValidate.md | Seq: seq-validate-trajectory.md#2.12 | R491, R486, R487

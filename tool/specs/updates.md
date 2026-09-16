@@ -284,11 +284,14 @@ resolve at the relocated path to a different file would be silently retargeted, 
 repair's exactly-one rule exists to refuse and the move can avoid outright. A link in the
 carve that does not resolve today is reported and left; it is not the move's to fix.
 
-**The incoming population is every markdown file git tracks under the repository root**, the
-moved carve excluded — a spec index that links a done carve, a design document, a README —
-by the class decision of 2026-09-15: public is tracked, and a tracked document's links must
-resolve for a cloner. The trajectory ledgers are ignored files and so outside it; with
-`track: all` they are tracked and inside it, which is the rule working rather than a case.
+**The incoming population is the union `repair-links` uses** — every tracked markdown file
+plus every document the trajectory layer sites, the moved carve excluded — and the rewrite
+covers **both reference kinds**: links, and the pointers the ledgers carry (`` Part
+`carves/x.md#3` ``), rewritten through the reader's `SetPointerDoc` with the key kept. The
+verb rewrites exactly what `query refs --to <carve>` lists (Bill, 2026-09-16), so it is
+checkable against the query. Measured 2026-09-16: after the hand move of `trajectory-tool.md`
+on 09-14, every done entry that landed one of its parts still named `carves/trajectory-tool.md`
+and nothing reported it.
 
 **Every rewrite goes through the `Markdown` reader's `SetDest`**, so the text, fragments, angle
 wrapping and every other byte stay; the carve's own rewritten content is written at its new
@@ -306,9 +309,13 @@ live, and every document that linked it broke the other way; `query links` read 
 in the moved file alone (gap `O27`). This is the repair for what has already broken; the
 move verb that prevents it is `carves/reference-discipline.md` Item 5.
 
-**With no file, the population is every markdown file git tracks under the repository root**
-— the public documents, by the class decision of 2026-09-15 — because a move breaks links at
-both ends and in every document that pointed at the carve. With files, exactly those.
+**With no file, the population is the union of the public documents and the tool's own**:
+every markdown file git tracks under the repository root, plus every document the trajectory
+layer sites — the three trajectory files, `carves/`, `.carves/` and each of their `done/` —
+whether git tracks them or not (Bill, 2026-09-16). Two questions were being conflated: *whom a
+pointer is for*, which git answers and which sets the severity, and *who wrote it*, which for
+every sited document is the tool, so a move that leaves one dangling is the tool breaking its
+own reference. With files, exactly those.
 
 **The predicate is what makes writing into a human's document safe: a link is rewritten only
 when it is `missing` now and exactly one sibling relocation resolves it.** The candidates are
@@ -327,6 +334,11 @@ left alone; more than one, and the tool cannot tell which the author meant — r
 ambiguous and left alone. Every other class (`tracked`, `outside`, `external`, `local`,
 `untracked`, `ignored`) is untouched: the verb repairs one defect, a move, and does not
 retarget links for any other reason. The fragment is kept as written.
+
+**Pointers are repaired by the same rule** (2026-09-16): a `` `doc.md#key` `` code span that does
+not resolve, and that exactly one relocation resolves, has its document bytes rewritten with
+the key kept, and is reported beside the links. That is how a carve moved by hand before the
+move verb existed gets its ledger entries straight.
 
 **The rewrite is a byte-range splice through the `Markdown` reader** ([links-schema.md](links-schema.md)),
 replacing the destination bytes alone: the text, the fragment, the title and everything

@@ -14,6 +14,16 @@ func (m *Markdown) Render() (string, error)
 func (m *Markdown) Links() []Link             // every link, in document order
 func (m *Markdown) Unread() []Unread          // groups never closed or closing nothing
 func (m *Markdown) SetDest(i int, dest string) error   // rewrite link i's destination bytes alone
+func (m *Markdown) Pointers() []Pointer                 // every `doc.md` / `doc.md#key` code span, in document order
+func (m *Markdown) SetPointerDoc(i int, doc string) error // rewrite pointer i's document bytes alone, key kept
+
+type Pointer struct {
+    Raw  string   // the span as written, backticks included
+    Doc  string   // the bytes before `#`, ending in .md
+    Key  string   // the bytes after `#`, "" when none
+}
+func (p Pointer) Line() int
+func (p Pointer) Offset() int
 
 type Link struct {
     Raw      string   // the link as written, `[` (or `!`) through `)`
@@ -57,6 +67,16 @@ for the reader's caller to check or ignore.
 every reader does, because a fence never closed swallows every link after it and nothing
 else would say so.
 
+## Pointers
+
+**A pointer is a code span whose content is a markdown path, optionally followed by `#` and
+a key**: `` `carves/x.md#3` ``, `` `specs/index.md` ``. It is the tool's own reference form —
+the ledgers name a part that way and a carve names a document it does not link — and no
+link machinery reads it, which is how a move left every done entry naming a carve's old
+path. A code span is a pointer only when the bytes before any `#` end in `.md`: `` `#7` ``
+is a queue ID and `` `R5` `` a requirement. Spans inside a fenced block are examples and are
+not read. Every pointer reports its line and offset, like a link.
+
 ## What it writes
 
 **`SetDest(i, dest)`** replaces the destination bytes of link `i` — the bytes between `(` and
@@ -67,6 +87,10 @@ move repair ([updates.md](updates.md), `update repair-links`). An index out of r
 same index with the new destination, or panics with `ReadBackError`, as every reader does.
 Byte offsets of the parse are what `Links()` reports, so several links may be rewritten in
 one document as long as each is written once.
+
+**`SetPointerDoc(i, doc)`** replaces the document bytes of pointer `i` — before the `#`, or
+the whole content when there is no key — with `doc`, the key and the backticks untouched;
+`ErrNoPointer` for an index none carries; read back like every write.
 
 ## What it does not do
 

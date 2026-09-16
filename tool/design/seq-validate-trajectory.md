@@ -95,5 +95,7 @@ pin to a step.
 
    2.12 checkLinks — query.CheckLinks over the live and done carves; errors bucketed as
         findings, untracked as a note, no git tree as a note saying the links went unclassified
+   2.13 checkDonePartDocs, noteLedgerLinks — a done entry's part document that does not
+        exist, and the trajectory files' unresolvable links, are notes
    2.11 TrajectoryValidate --> TrajectoryValidate: TrajectoryIssues, bucketed by class
 ```

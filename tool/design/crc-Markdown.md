@@ -1,5 +1,5 @@
 # Markdown
-**Requirements:** R448, R449, R450, R451, R452, R453, R454, R462
+**Requirements:** R448, R449, R450, R451, R452, R453, R454, R462, R493, R494
 
 The plain-markdown reader: the base as a document of its own, for the one question no
 schema reader asks — where does this document point? It owns the DOM of any markdown file
@@ -18,6 +18,9 @@ repair.
 - `Links`, `Doc`, `Render`; `Unread`: every group open at end of input or closing nothing
 - splits `Dest` into `Path` and `Fragment` at the first `#`; unwraps `<…>`; strips a
   trailing quoted title
+- `Pointers()`: every single-backtick span whose content ends in `.md` before any `#`,
+  outside a fence, with document, key, line and offset; `SetPointerDoc(i, doc)` rewrites
+  the document bytes alone, key and backticks kept, read back; `ErrNoPointer`
 - `SetDest(i, dest)`: replaces the bytes between link `i`'s `(` and `)` inside `Mutate` and
   reads the link back at the same index, or panics with `ReadBackError`; `ErrNoLink`
 

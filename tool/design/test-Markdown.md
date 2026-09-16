@@ -55,3 +55,14 @@
 **Fire alarm:** replace from the `[` rather than from after the `(`, so the text goes with the destination. Red: the read-back panics with a `ReadBackError` — link 0 no longer reads back with the destination written — and the test binary dies on it; a file write through `EditFile` turns the same panic into a refusal.
 **Inject:** internal/minispecsdom/mdbase.go:Markdown.SetDest
 **Pulled:** 2026-09-15 — rang, by hand after the simplification pass, with the span starting at the `[`: the test binary died on the `ReadBackError` panic from `SetDest` — the link no longer read back with the destination written; restore checksummed clean
+
+## Test: pointers are read outside fences and rewritten with the key kept
+**Purpose:** R493, R494
+**Input:** a line with `` `carves/x.md#3` ``, `` `specs/a.md` ``, `` `#7` ``, `` `R5` `` and `` `a b.md` ``, then a fenced block quoting `` `carves/fenced.md#1` ``; `SetPointerDoc(0, "carves/done/x.md")`; `SetPointerDoc(9, …)`
+**Expected:** two pointers — `carves/x.md` with key `3` and `specs/a.md` with none — at line 1; the fenced one, the queue ID, the requirement and the path with a space are not pointers; after the write the render is the source with exactly that span's document replaced and the key kept; `ErrNoPointer`
+**Refs:** crc-Markdown.md, seq-links.md#5.2
+**Code:** internal/minispecsdom/mdbase_test.go
+**Alarm:** 6
+**Fire alarm:** drop the `.md` test so every code span is a pointer. Red: `#7` and `R5` are read as pointers and the count is five.
+**Inject:** internal/minispecsdom/mdbase.go:Markdown.scanPointers
+**Pulled:** 2026-09-16 — rang, by hand after the simplification pass, with the `.md` test dropped: `#7` and `R5` read as pointers; restore checksummed clean

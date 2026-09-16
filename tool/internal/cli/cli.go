@@ -308,6 +308,9 @@ func (c *CLI) runQuery(args []string) int {
 	if args[0] == "links" {
 		return c.queryLinks(args[1:])
 	}
+	if args[0] == "refs" {
+		return c.queryRefs(args[1:])
+	}
 
 	p, err := c.getProject()
 	if err != nil {
@@ -1437,6 +1440,47 @@ func (c *CLI) queryCarves(args []string) int {
 		c.output(carveReport(&scan, *open))
 	} else {
 		printCarves(os.Stdout, &scan, *open)
+	}
+	return 0
+}
+
+// CRC: crc-CLI.md | Seq: seq-links.md#5.4 | R495, R496
+// queryRefs: `query refs [--to <path>] [file...]`, the inventory; answered before any design
+// root is resolved, like the other reference verbs.
+func (c *CLI) queryRefs(args []string) int {
+	fs := flag.NewFlagSet("refs", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	to := fs.String("to", "", "list every reference that resolves to this path")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	files, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	repoRoot, err := project.RepoRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	for i, f := range files {
+		files[i], _ = filepath.Abs(f)
+	}
+	target := *to
+	if target != "" {
+		abs, _ := filepath.Abs(target)
+		if rel, err := filepath.Rel(repoRoot, abs); err == nil {
+			target = filepath.ToSlash(rel)
+		}
+	}
+	refs, err := query.Refs(repoRoot, files, target)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(refs)
+	} else {
+		fmt.Print(query.FormatRefs(refs))
 	}
 	return 0
 }

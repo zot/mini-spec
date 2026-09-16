@@ -1,5 +1,5 @@
 # Links
-**Requirements:** R455, R456, R457, R459, R460, R488, R492
+**Requirements:** R455, R456, R457, R459, R460, R488, R492, R497
 
 Resolves and classifies every link the Markdown reader found, against the file system
 and git. The checker `carves/reference-discipline.md` was opened for: a public document

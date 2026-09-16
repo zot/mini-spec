@@ -143,9 +143,9 @@ func FinishCarve(root, carve string) (rep *FinishReport, err error) {
 }
 
 // CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R490
-// finishPopulation is the public documents — every tracked markdown file — since a move
-// breaks the link in every document that pointed at the carve, wherever it lives.
-func finishPopulation(root string) ([]string, error) { return query.PublicDocuments(root) }
+// finishPopulation is the owned documents — every tracked markdown file plus every sited
+// one — since a move breaks the reference in every document the tool wrote. R497
+func finishPopulation(root string) ([]string, error) { return query.OwnedDocuments(root) }
 
 // CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.3 | R471
 //
@@ -180,12 +180,27 @@ func outgoingPlan(root, rel, dest string, report *FinishReport) (*plan, error) {
 	return p.finish()
 }
 
-// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R490
-// incomingPlan rewrites each link in file that resolves to the carve so it reaches dest.
+// CRC: crc-FinishedCarve.md | Seq: seq-links.md#4.4 | R490, R498
+// incomingPlan rewrites each link and each pointer in file that resolves to the carve so it
+// reaches dest: exactly what `query refs --to carve` lists for the file.
 func incomingPlan(root, file, carve, dest string, report *FinishReport) (*plan, error) {
 	p, err := readPlan(root, file)
 	if err != nil {
 		return nil, err
+	}
+	// R498 — pointers: the document bytes rewritten, the key kept. A pointer in a trajectory
+	// file is written from the repository root, so its new form is dest itself.
+	for _, r := range query.RefsIn(root, file, p.doc) {
+		if r.Kind != "pointer" || r.Resolved != carve {
+			continue
+		}
+		c := Considered{File: file, Line: r.Line, Old: r.Text, Outcome: Rewritten, New: pointerDoc(file, dest)}
+		if err := p.doc.SetPointerDoc(r.Index, c.New); err != nil {
+			return nil, err
+		}
+		p.changed = true
+		report.Counts[Rewritten]++
+		report.Considered = append(report.Considered, c)
 	}
 	for i, l := range p.doc.Links() {
 		if cls, target := query.ClassifyLink(root, file, l); cls != "" || target != carve {
@@ -218,4 +233,23 @@ func (p *plan) finish() (*plan, error) {
 	}
 	p.render = out
 	return p, nil
+}
+
+// relDoc is target relative to file's directory, slash-separated.
+func relDoc(file, target string) string {
+	rel, err := filepath.Rel(filepath.FromSlash(path.Dir(file)), filepath.FromSlash(target))
+	if err != nil {
+		return target
+	}
+	return filepath.ToSlash(rel)
+}
+
+// pointerDoc is target as a pointer in file writes it: dest itself in a trajectory file,
+// where a pointer is written from the repository root, relative to the citing file's
+// directory otherwise. R498, R500
+func pointerDoc(file, target string) string {
+	if query.IsTrajectoryFile(file) {
+		return target
+	}
+	return relDoc(file, target)
 }

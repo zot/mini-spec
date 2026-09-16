@@ -28,7 +28,9 @@ func finishRoot(t *testing.T) string {
 		"carves/done/nowhere.md": "a file the carve never pointed at\n",
 		"PENDING.md":             "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/x.md), part `#1`.\n",
 		"specs/index.md":         "see the [carve](../carves/x.md#4).\n",
-		".gitignore":             "PENDING.md\n",
+		".carves/private.md":     "note [x](../carves/x.md) and `../carves/x.md#2`\n",
+		"DONE.md":                "# Done\n\n---\n\n- **2026-09-01 — #5: x.** Part `carves/x.md#1`.\n",
+		".gitignore":             "PENDING.md\nDONE.md\n.carves/\n",
 	}
 	for name, body := range files {
 		p := filepath.Join(root, name)
@@ -70,7 +72,9 @@ func TestAFinishedCarveMovesAndEveryLinkFollows(t *testing.T) {
 		"carves/done/x.md":   landedStatus + "see [a](../../tool/a.md#s), [o](old.md), [t](../other.md), [n](nowhere.md), [e](https://x) and [l](#top)\n",
 		"carves/other.md":    landedStatus + "back to [x](done/x.md#4) and ` [x](x.md) `\n",
 		"carves/done/old.md": landedStatus + "up to [x](x.md)\n",
-		"PENDING.md":         "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/x.md), part `#1`.\n", // private, ignored: untouched
+		"PENDING.md":         "# Pending\n\n## 5. **x**. Source: [carves/x.md](carves/done/x.md), part `#1`.\n", // sited: rewritten
+		".carves/private.md": "note [x](../carves/done/x.md) and `../carves/done/x.md#2`\n",
+		"DONE.md":            "# Done\n\n---\n\n- **2026-09-01 — #5: x.** Part `carves/done/x.md#1`.\n",
 		"specs/index.md":     "see the [carve](../carves/done/x.md#4).\n",
 	}
 	for rel, w := range want {
@@ -86,7 +90,7 @@ func TestAFinishedCarveMovesAndEveryLinkFollows(t *testing.T) {
 	if after["carves/done/x-twin.md"] != before["carves/done/x-twin.md"] || after["tool/a.md"] != before["tool/a.md"] {
 		t.Error("a file the move should never touch changed")
 	}
-	if r.Counts[Rewritten] != 6 || r.Counts[Left] != 1 || r.From != "carves/x.md" || r.To != "carves/done/x.md" {
+	if r.Counts[Rewritten] != 10 || r.Counts[Left] != 1 || r.From != "carves/x.md" || r.To != "carves/done/x.md" {
 		t.Errorf("report: %+v", r)
 	}
 }

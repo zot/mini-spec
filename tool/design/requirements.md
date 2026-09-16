@@ -453,6 +453,7 @@
 - **R486:** An `untracked` link is reported as a note beside the findings and never fails the phase; `tracked`, `external` and `local` links are not reported.
 - **R487:** Outside a git working tree the link check reports that it could not classify, as a note, and the trajectory checks still run; it never reads clean over links it could not see.
 - **R491:** `validate trajectory` classifies every markdown link in every markdown file git tracks under the repository root as `query links` does; `ignored`, `missing` and `outside` links fail the phase, each reported with the citing file, line, link as written and class; untracked and ignored documents, the trajectory ledgers among them, are not checked.
+- **R499:** `validate trajectory` reports a done entry whose `Part` pointer — a code span ending in `.md` before its `#` — names a document that does not exist, and the trajectory files' unresolvable links, as notes beside the findings, never failures: the ledger is private, and entries naming documents dropped at a restart or belonging to another project are history nobody will repair.
 
 ## Feature: traceability comment
 **Source:** specs/traceability-comment.md
@@ -771,6 +772,8 @@
 - **R453:** `Unread` lists every bracket group open at end of input or closer that closes nothing, ordered by line.
 - **R454:** The reader resolves no destination and knows neither the file system nor git; classification is the query's.
 - **R462:** `SetDest(i, dest)` replaces link `i`'s destination bytes — between `(` and `)`, title included — with `dest` and nothing else; an index no link carries is `ErrNoLink`; the reader reads the link back at the same index with the new destination or panics with `ReadBackError`.
+- **R493:** A pointer is a code span whose content, before any `#`, ends in `.md`: `Pointers()` returns every one in document order with the span as written, its document, its key and its line and offset; a span inside a fenced block, or one not ending in `.md`, is not a pointer.
+- **R494:** `SetPointerDoc(i, doc)` replaces pointer `i`'s document bytes — before the `#`, or the whole content when there is no key — with `doc`, keeping the key and the backticks; an index no pointer carries is `ErrNoPointer`; the write is read back like every other.
 
 
 ## Feature: Reference Links View
@@ -784,6 +787,9 @@
 - **R461:** The exit status is 1 when any link is an error, and `--json` is honoured anywhere among the arguments.
 - **R488:** `query links [file...]` reads the named documents, or with none every markdown file git tracks under the repository root — the public documents, a staged file counting as tracked (Bill, 2026-09-15) — resolves at the repository root, needs no design root, and consults no git for the population beyond the index.
 - **R492:** A document under a `testdata/` directory is a fixture and never a public document — Go's own convention, applied mechanically — so it is outside every population `PublicDocuments` supplies, however git tracks it.
+- **R495:** `query refs [--to <path>] [file...]` lists every link and every pointer in the named files, or in the union population, one line each with the citing file, line, the reference as written, its kind and the repository-relative path it resolves to, or `—`; it passes no judgment.
+- **R496:** `--to <path>` lists every reference in the population that resolves to that path; a pointer resolves relative to the citing file's directory except in a trajectory file, where it resolves from the repository root.
+- **R497:** The population of `repair-links`, `finished-carve`'s incoming rewrite and `query refs` is the union of every tracked markdown file and every document the trajectory layer sites — the three trajectory files, `carves/`, `.carves/` and each of their `done/` — whether git tracks them or not.
 
 
 ## Feature: Link Repair
@@ -795,6 +801,7 @@
 - **R467:** The report lists every link considered per file — rewritten with old and new destination, or left with its reason — and closes with the counts of rewritten, unresolvable and ambiguous, zeros included; a run that repaired nothing writes no file and says so.
 - **R468:** The exit status is 1 when any considered link was left unrepaired, and a second run over repaired documents finds nothing to do and changes no byte.
 - **R489:** `update repair-links [file...]` reads the named documents, or with none every markdown file git tracks under the repository root; it resolves at the repository root, needs no design root, and consults no git beyond the index.
+- **R500:** A pointer that does not resolve is repaired by the same rule as a link — rewritten only when exactly one sibling relocation across `done/` resolves it, through `SetPointerDoc` with the key kept — and reported as rewritten, unresolvable or ambiguous alongside the links.
 
 
 ## Feature: Finished Carve
@@ -807,4 +814,5 @@
 - **R474:** The move is a plain rename with nothing staged: the rewritten carve is written at its new path and the old file removed, and the rewritten incoming documents are written in place.
 - **R475:** The report names the move, each rewrite per file with old and new destination, each link left, and the counts of rewritten and left, zeros included; the verb resolves at the repository root and needs no design root.
 - **R490:** Every link in the incoming population — every markdown file git tracks under the repository root, the moved carve excluded — that resolves to the carve is rewritten to reach it at its new path, fragment kept; an untracked or ignored document is outside the population, private by the same rule that makes a tracked one public.
+- **R498:** `finished-carve` rewrites both kinds of reference to the moved carve — links through `SetDest` and pointers through `SetPointerDoc`, keys kept — so that it rewrites exactly what `query refs --to <carve>` listed before the move.
 
