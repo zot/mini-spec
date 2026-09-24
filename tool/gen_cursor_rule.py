@@ -172,6 +172,15 @@ body = sub(
     "refine recently modified code for clarity, consistency, and maintainability without changing behavior.",
 )
 
+# The in-session pass needs no plugin, so the note on a missing one does not apply.
+body = sub(
+    body,
+    "\n\n`code-simplifier` is a standard Anthropic plugin. If it is not available, skip the "
+    "simplification pass and tell the user they can install it with "
+    "`claude plugin install code-simplifier`. The alarm pulls below still run.",
+    "",
+)
+
 body = sub(
     body,
     "See `config-reference.md` (in this skill directory)",

@@ -11,7 +11,11 @@ Release contents (zip file):
   opening directive points at nothing. v2.9.0 ships exactly that broken pair: minimap
   was split out in `520a783` (2026-06-07), the tag landed 2026-06-09, and the zip's
   SKILL.md names `/minimap` three times with no minimap alongside it.
-- `.claude/agents/spec-agent.md` (agent)
+- `.claude/agents/{spec-agent,alarm-puller,measurer,coder}.md` (agents) — **all four**:
+  `SKILL.md` tells agents to spawn `alarm-puller` and `measurer`, so leaving them out ships
+  the same dangling directive as the minimap case below. Name them rather than zipping the
+  directory: `code-simplifier.md` there is untracked and comes from the plugin. Through
+  v2.11.0 the list named only `spec-agent`; v3.0.0 is the first zip with all four.
 - Exclude Emacs backup files: `zip -x "*.~undo-tree~"`
 
 Release process:
