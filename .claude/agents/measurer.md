@@ -3,6 +3,7 @@ name: measurer
 description: Answer one precise measurement question about a corpus and return counts, an enumeration, and what it could not classify. Spawn one per question, passing a brief that names the question, the population, and the paths. Never asks it what the numbers mean, and never asks it to find out what to measure.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
+effort: medium
 ---
 
 # Measurer

@@ -21,7 +21,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
 - [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
-- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`
+- [ ] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`, `internal/query/implementation.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
 - [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`, `internal/update/alarmfields.go`

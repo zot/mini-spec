@@ -3,6 +3,7 @@ name: alarm-puller
 description: Re-pull one recorded fire alarm and return evidence. Spawn one per alarm, with isolation "worktree", passing the brief from `minispec query alarms --unverified --brief` as the prompt. Never asks it for a verdict.
 tools: Read, Edit, Bash, Grep, Glob
 model: sonnet
+effort: medium
 ---
 
 # Alarm puller

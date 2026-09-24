@@ -150,6 +150,46 @@ Output: CRC and Seq references found, or "missing" indicator.
 
 Scan all code files listed in Artifacts and report traceability status.
 
+## minispec query implementation \<Rn... | pattern\> [--retired]
+
+The reverse of the requirements→code coverage check: given a requirement, every code
+location that implements it. Where `missing impl coverage` reports the *negative* — which
+requirements no code claims — this reports the *positive*, per requirement: the `file:line`
+and traceability comment of every inline `Rn` ref. It honors the harvest's shape rules, so a
+ref counts exactly where the coverage check counts it and never the parenthetical or prose
+mentions a raw `grep Rn` would also catch.
+
+**The argument is a set of `R#`s or a text pattern, and the command decides which.** If the
+arguments parse cleanly as requirement refs — bare `R57`, ranges (`R5-R8`, `R5-8`), comma
+lists, and mixtures, the grammar `query gaps` already uses — it is **number mode**. Otherwise
+the single argument is a **regular expression** matched against requirement text. The
+motivating case is the second: knowing the concern (`@status`, `@from-project`) but not the
+number.
+
+- **Number mode lists the code locations only.** The caller named the `Rn`, so echoing its
+  text back is noise.
+- **Text mode lists each matched requirement** — its `Rn` and one-line text — then its code
+  locations, so the caller sees which requirements the pattern caught.
+- **A matched requirement with no implementing code prints an explicit "no impl refs"** — the
+  same fact `missing impl coverage` reports, from the other side, so absence is stated rather
+  than shown as empty output.
+
+**Retired requirements: included by number, excluded by text unless `--retired`.** Asking for
+a retired `Rn` by number is a cleanup query — *what code still points at a requirement we
+retired?* — so it always answers. A text pattern surveys live intent, so retired requirements
+are left out unless `--retired` is passed. The flag has no effect in number mode, where the
+ask was already explicit.
+
+**Refs are read through `minispecsdom`'s traceability-comment reader**, over each code file the
+`design.md` Artifacts manifest lists — the population `validate`'s impl-coverage check already
+walks. The reader carries positions, so each location is a real `file:line`, and a range in a
+comment (`R5-R8`) is expanded to its members, so a query for `R6` finds the comment that wrote
+the range. [traceability-comment.md](traceability-comment.md) owns the comment grammar.
+
+Output: per requirement, the `Rn` (and, in text mode, its one-line text), then each `file:line`
+with its comment; grouped by requirement, requirements ascending. `--json` gives the
+machine-readable form.
+
 ## minispec query unindexed-specs
 
 List per-feature specs (`specs/*.md`, non-recursive) that are not referenced

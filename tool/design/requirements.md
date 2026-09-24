@@ -32,6 +32,12 @@
 - **R321:** `--open` selects gaps whose checkbox is unchecked and `--closed` those whose checkbox is checked; a **permanent gap (`A`, `T`) carries no checkbox by rule and is selected by neither**, since it records an approval or a retirement rather than work, and stays reachable by naming it in a range
 - **R322:** Passing **both** `--open` and `--closed` selects every gap that has a checkbox — the natural reading of the pair, and the only way to say *work items only* without naming them
 - **R323:** `--open` and `--closed` are **subcommand flags** parsed wherever they sit among the positional arguments, never global ones, and the selection is applied **before the output form is chosen** so `--json` renders exactly the selected set; a valid selection that matches nothing prints what was asked and that nothing came back (`no open gaps in O22-O28`), with exit 0
+- **R502:** query implementation reports, for a requirement, every code location (file, line, and the traceability comment) where an inline Rn reference implements it, honoring the impl-coverage shape rules rather than a raw text match.
+- **R503:** query implementation classifies its arguments: those parsing cleanly as requirement references (a bare Rn, Rn-Rm ranges, comma lists, and mixtures) select number mode; otherwise the sole argument is a regular expression matched against requirement text, selecting text mode.
+- **R504:** In number mode query implementation outputs code locations only; in text mode it outputs each matched requirement (its Rn and one-line text) then its code locations, grouped by requirement in ascending order, and reports a matched requirement with no implementing code explicitly rather than omitting it.
+- **R505:** query implementation includes retired requirements when they are selected by number and excludes them in text mode unless the --retired flag is given; --retired has no effect in number mode.
+- **R506:** query implementation harvests implementation references through the minispecsdom traceability-comment reader over the code files listed in the design.md Artifacts manifest, producing real file and line positions and expanding a comment's requirement range (such as R5-R8) to its members.
+- **R507:** query implementation supports --json machine-readable output.
 
 ## Feature: Updates
 **Source:** specs/updates.md

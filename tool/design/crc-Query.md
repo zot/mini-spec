@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507
 
 Read-only operations that query parsed design data.
 
@@ -46,6 +46,16 @@ Read-only operations that query parsed design data.
   R191). `gap` answers for **every** gap type, since numbering runs a separate sequence
   per type (R192), and `req` counts retired requirements, whose numbers are permanently
   taken (R193)
+- Implementation(args, retired): the reverse lookup — where a requirement is implemented.
+  Classify the args: a clean list of requirement refs (the `ExpandGapRefs` grammar, R-only)
+  is number mode, otherwise the sole arg is a regexp over requirement text. Number mode
+  prints code locations only; text mode prints each matched requirement (its Rn and one-line
+  text) then its locations, with an explicit "no impl refs" for a match with none; retired is
+  included by number and excluded by text unless `--retired` (R502, R503, R504, R505, R507)
+- implRefs(): the positioned harvest — parse each Artifacts code file with sdom for its
+  language (a per-extension map picks the `BracketLang`), run the traceability-comment reader,
+  and collect each Rn with its `file:line` and comment, ranges expanded by the reader. Factored
+  so Item 1 of the carve can promote it for validate (R506)
 
 ## Collaborators
 - Project: to locate files
@@ -55,6 +65,8 @@ Read-only operations that query parsed design data.
   needs and never the wording
 - RepoRoot: to express the design root as a path a delegated agent can resolve in its own
   checkout, since an absolute path is wrong in a worktree
+- TraceabilityComment: the minispecsdom reader that parses a code file's traceability comments
+  into positioned, range-expanded refs; implRefs runs it per code file
 
 ## Sequences
 - seq-query.md

@@ -2,7 +2,8 @@
 name: spec-agent
 description: design, update, and implement programs, reverse engineer code
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, Task
-model: opus
+model: claude-opus-4-8
+effort: high
 ---
 
 # mini-spec Agent
