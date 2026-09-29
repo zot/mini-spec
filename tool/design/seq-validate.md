@@ -42,11 +42,11 @@ end
 
 Validate -> Validate: record gap findings
 
-loop each code file in artifacts
-    Validate -> Project: CommentPattern(ext)
-    Project --> Validate: pattern
-    Validate -> Parser: ParseTraceability(path, pattern)
-    Parser --> Validate: Traceability
+Validate -> Harvest: HarvestArtifacts(root, artifacts, languages)
+Harvest --> Validate: files with their comments, and the unread list
+Validate -> Validate: unread code files join the coverage note
+loop each harvested code file
+    Validate -> Validate: no comment with a CRC field → missing traceability
     Validate -> Validate: check CRC/Seq refs exist
     alt SeqRef has Fragment
         Validate -> Parser: ParseSeqDoc(seq-file)

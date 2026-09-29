@@ -1,5 +1,5 @@
 # Project
-**Requirements:** R32, R33, R34, R35, R38, R39, R57, R58, R93, R118, R119, R120, R121, R122, R123, R124, R125, R126, R127, R128, R129, R130, R135
+**Requirements:** R520, R521, R522, R32, R33, R34, R35, R93, R118, R119, R120, R121, R122, R123, R124, R125, R127, R128, R129, R130, R135, R526, R527
 
 Finds and loads a mini-spec project's configuration and design files.
 
@@ -9,39 +9,44 @@ Finds and loads a mini-spec project's configuration and design files.
 - designDir: path to design/ directory
 - srcDir: path to src/ directory
 - config: the **effective** configuration, resolved in three layers — built-in
-  defaults, then `<repo root>/.minispec/config.yaml`, then this design root's own
-  `.minispec.yaml`
+  defaults, then `<repo root>/.minispec/config.toml`, then this design root's own
+  `.minispec.toml`
 - origins: for each setting, which layer supplied it. Recorded during merging, since
   after merging there is no way to tell where an inherited value came from
+- config.languages: the `[[languages]]` definitions (`minispecsdom.LanguageDef`), layered by
+  name — a later layer's definition replaces an earlier one of the same name whole, and a new
+  name is added (R526, R527)
 - config.track: the one **repository-scoped** setting. It resolves like any other
   scalar, but only the repository layer may supply one — see `applyLayerFile` below.
   Its meaning and verification belong to `Track`, not here
-- commentPatterns: map of file extension to comment prefix regex (e.g., ".go" -> `//\s*`)
-- commentClosers: map of file extension to closing delimiter (e.g., ".md" -> ` -->`)
 
 ## Does
 - Detect(): walk up from cwd to find design/ directory
 - LoadConfig(): resolve the effective configuration across the three layers, rejecting
-  a `.minispec.yaml` at the repository root before reading anything. A missing
+  a legacy YAML configuration — `.minispec/config.yaml` or a design root's `.minispec.yaml`
+  — and a `.minispec.toml` at the repository root before reading anything (R122, R522). A missing
   repository root simply means no repository layer
 - applyLayer(cfg, layer): apply one layer over what is resolved — scalars replace,
-  maps merge per key, lists union with duplicates dropped and inherited order kept —
+  languages replace by name (R527), lists union with duplicates dropped and inherited order kept —
   and record the layer as the origin of every setting it supplied
 - applyLayerFile(cfg, path, isRepoLayer): read one layer and apply it, **refusing a
   design root that states `track`**. Refused rather than ignored: silently dropping it
   would leave someone editing a line that has no effect, with no way to discover that
 - DesignPath(filename): resolve path within design dir
 - SrcPath(filename): resolve path within src dir
-- CommentPattern(ext): return regex pattern for the given extension (with defaults)
-- CommentCloser(ext): return closing delimiter for the given extension (empty if line-terminating)
+- decodeLayer(path): build each `[[languages]]` definition the file holds and fail naming
+  the file when one does not check (R528); then decode one file strictly — every key the file sets that the tool does not
+  read is an error naming the file and the key, and `comment_patterns` / `comment_closers` are
+  named as retired, pointing at `query comment-patterns` (R521)
 - ResolveSpecSource(src): map a Source value to its on-disk path; for `specs/migrations/X.md` falls back to `specs/migrations/complete/<NNN>-X.md` (NNN digits) so requirements pointing at migrated-completed specs still resolve
 
 ## Collaborators
 - Parser: to load and parse design files
-- RepoRoot: to locate the repository configuration, and the forbidden `.minispec.yaml`
+- RepoRoot: to locate the repository configuration, and the forbidden `.minispec.toml`
   beside it. A failure to resolve is not an error here — it means no repository layer
 - os/filepath: for path operations
-- gopkg.in/yaml.v3: to parse each configuration layer
+- github.com/BurntSushi/toml: to decode each configuration layer; `MetaData.Undecoded()` is
+  what names an unknown key
 
 ## Sequences
 - seq-init.md

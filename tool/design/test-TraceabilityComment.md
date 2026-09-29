@@ -61,3 +61,11 @@
 **Fire alarm:** drop the `g.Kind == kind` half of the candidate filter in `Comments`, so every opener is tried. Red: three comments recognized in a file with none. Every other test stayed green under this injection when it was tried on 2026-09-03, because no fixture had a bracket interior shaped like a field.
 **Inject:** internal/minispecsdom/comment.go:Comments
 **Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `3 comments recognized in a file with none`; restore clean. *Earlier —* 2026-09-03 — rang: `3 comments recognized in a file with none`, only this test.
+
+## Test: a full stop after the requirement list starts the description
+**Purpose:** R508 — the `Rn. Prose` form this repository uses in twenty places
+**Input:** interiors `R271. A gap is a source`, `CRC: crc-X.md | R5. note`, and `CRC: crc-X.md`
+alone (whose `.` sits inside a file name)
+**Expected:** the first two read refs then a description; the third reads `crc-X.md` whole, the
+`.` never taken as a separator
+**Refs:** crc-TraceabilityComment.md — R508

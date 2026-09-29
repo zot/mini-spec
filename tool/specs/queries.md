@@ -30,15 +30,14 @@ sorted by name. Settings no configuration file set report the built-in defaults.
 
 This exists because configuration resolves across three layers, so the effective
 value is not what any single file says. Without it, "why is this value what it is"
-means reading two files and knowing the precedence by heart. Map settings are listed
-per key (`comment_patterns[.go]`), matching the granularity at which they merge. See
-the Config Scopes section of [config.md](config.md).
+means reading two files and knowing the precedence by heart. See the Config Scopes
+section of [config.md](config.md).
 
 Output:
 ```
 design_dir               design                        (built-in defaults)
-src_dir                  lib                           /home/me/work/ark/.minispec/config.yaml
-comment_patterns[.html]  <!--\s*|//\s*                  /home/me/work/ark/tool/.minispec.yaml
+src_dir                  lib                           /home/me/work/ark/.minispec/config.toml
+code_extensions          .go, .ts, .html               /home/me/work/ark/tool/.minispec.toml
 ```
 
 JSON output is an array of objects with keys `setting`, `value`, `origin`.
@@ -142,22 +141,35 @@ retired with it on 2026-09-07.
 
 ## minispec query traceability [file]
 
-Check if a code file has proper traceability comments.
+Check if a code file has proper traceability comments, read through the file's language
+table as the harvest reads it ([traceability-comment.md](traceability-comment.md)).
 
-Output: CRC and Seq references found, or "missing" indicator.
+Output: CRC and Seq references found, or "missing" indicator. A file the harvest cannot read
+says why — no table for its extension, or a group its parse left unclosed — rather than
+reporting it as missing.
 
 ## minispec query traceability --all
 
-Scan all code files listed in Artifacts and report traceability status.
+Scan all code files listed in Artifacts through the harvest and report traceability status,
+with every file it could not read listed and the reason.
+
+## minispec query comment-patterns
+
+How to write a traceability comment in each extension the tool reads. For every extension in
+the language table: the form to write — the table's comment style, prefix and suffix — and the
+other comment forms the reader accepts, so an agent meeting an existing `/* CRC: … */` in a C
+file knows it counts. **Every extension whose written form has a closer carries a warning**:
+an unclosed block comment swallows all the code after it, and the closer is what the agent
+most often forgets.
 
 ## minispec query implementation \<Rn... | pattern\> [--retired]
 
 The reverse of the requirements→code coverage check: given a requirement, every code
 location that implements it. Where `missing impl coverage` reports the *negative* — which
 requirements no code claims — this reports the *positive*, per requirement: the `file:line`
-and traceability comment of every inline `Rn` ref. It honors the harvest's shape rules, so a
-ref counts exactly where the coverage check counts it and never the parenthetical or prose
-mentions a raw `grep Rn` would also catch.
+and traceability comment of every inline `Rn` ref. It reads the same harvest `validate` does,
+so a ref counts exactly where the coverage check counts it and never the parenthetical or
+prose mentions a raw `grep Rn` would also catch.
 
 **The argument is a set of `R#`s or a text pattern, and the command decides which.** If the
 arguments parse cleanly as requirement refs — bare `R57`, ranges (`R5-R8`, `R5-8`), comma
@@ -180,11 +192,12 @@ retired?* — so it always answers. A text pattern surveys live intent, so retir
 are left out unless `--retired` is passed. The flag has no effect in number mode, where the
 ask was already explicit.
 
-**Refs are read through `minispecsdom`'s traceability-comment reader**, over each code file the
-`design.md` Artifacts manifest lists — the population `validate`'s impl-coverage check already
-walks. The reader carries positions, so each location is a real `file:line`, and a range in a
-comment (`R5-R8`) is expanded to its members, so a query for `R6` finds the comment that wrote
-the range. [traceability-comment.md](traceability-comment.md) owns the comment grammar.
+**Refs come from the harvest** ([traceability-comment.md](traceability-comment.md)), over
+each code file the `design.md` Artifacts manifest lists. The reader carries positions, so each
+location is a real `file:line`, and a range in a comment (`R5-R8`) is expanded to its members,
+so a query for `R6` finds the comment that wrote the range. Files the harvest could not read
+are listed after the answer, since a requirement implemented only inside one would otherwise
+read as unimplemented.
 
 Output: per requirement, the `Rn` (and, in text mode, its one-line text), then each `file:line`
 with its comment; grouped by requirement, requirements ascending. `--json` gives the

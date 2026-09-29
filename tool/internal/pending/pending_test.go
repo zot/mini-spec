@@ -97,7 +97,7 @@ func fixture(t *testing.T) string {
 	// contains only what its author thought to include, twice over.
 	write("CURRENT.md", currentSrc)
 	write("carves/x.md", carveSrc)
-	write(".minispec/config.yaml", "track: private-trajectory\n")
+	write(".minispec/config.toml", "track = \"private-trajectory\"\n")
 	write(".gitignore", "PENDING.md\nCURRENT.md\nDONE.md\n.minispec/backup\n")
 	for _, args := range [][]string{
 		{"init", "-q"}, {"add", "-A"},

@@ -52,13 +52,26 @@ deepest
 **Expected:** returns `root/a`
 **Refs:** seq-reporoot.md#1.3.3 — R110
 
-## Test: .minispec.yaml is the last resort
+## Test: .minispec.toml is the last resort
 **Purpose:** validates the second weak fallback and its rank below `.claude`
-**Input:** (a) `.minispec.yaml` at `root` alone; (b) `.minispec.yaml` at `root/a` and
+**Input:** (a) `.minispec.toml` at `root` alone; (b) `.minispec.toml` at `root/a` and
 `.claude` at `root`; start from `root/a/b`
 **Expected:** (a) returns `root`; (b) returns `root` — `.claude` outranks
-`.minispec.yaml` regardless of depth
+`.minispec.toml` regardless of depth
 **Refs:** seq-reporoot.md#1.5 — R111
+
+## Test: a legacy .minispec.yaml still resolves the root
+**Purpose:** a tree configured in YAML must resolve far enough to be told to convert, rather
+than failing the search as though it held no marker at all
+**Input:** a marker-free tree with `.minispec.yaml` at `root`; start from `root/a`
+**Expected:** returns `root`, where the configuration loader then reports the YAML file
+**Code:** internal/project/reporoot_test.go
+**Alarm:** 1
+**Fire alarm:** drop the legacy name from the weak-marker test, leaving only `.minispec.toml`,
+and confirm the search fails with no repository root found
+**Inject:** internal/project/reporoot.go:RepoRootFrom
+**Pulled:** 2026-09-27 — rang: "no repository root found"; restore byte-clean
+**Refs:** seq-reporoot.md#1.3.4 — R523
 
 ## Test: the home boundary is never crossed
 **Purpose:** validates the exclusion that keeps created files out of the user's home

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Every case runs against a temporary directory and the fake Git from track_test.go,
@@ -342,7 +344,7 @@ func TestRepairRefusesAMalformedConfig(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	broken := "track: all\n  : [unclosed\n"
+	broken := "track = \"all\"\n[unclosed\n"
 	if err := os.WriteFile(RepoConfigPath(dir), []byte(broken), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -369,7 +371,7 @@ func TestRepairAcceptsAConfigWithNoTrack(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(RepoConfigPath(dir), []byte("design_dir: design\n"), 0o644); err != nil {
+	if err := os.WriteFile(RepoConfigPath(dir), []byte("design_dir = \"design\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -382,101 +384,57 @@ func TestRepairAcceptsAConfigWithNoTrack(t *testing.T) {
 	}
 }
 
-// R177 — the writer edits one key and leaves the rest of the file as written.
-//
-// Every property here was destroyed by the obvious implementation (unmarshal into
-// Config, marshal back), and none of them had a test: the suite asserted what the file
-// *gained* and never what it kept. Measured on this tool's own reference repository,
-// where a repair deleted ten lines of comment explaining a non-obvious setting.
-func TestRepairPreservesCommentsAndUnknownSettings(t *testing.T) {
+// repairIn writes original as the repository configuration, runs --repair to track, and
+// returns the file afterwards.
+func repairIn(t *testing.T, original string, track TrackValue) (string, *InitResult) {
+	t.Helper()
 	dir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	original := `# why this project needs three comment prefixes
-# (the reasoning a human left for the next reader)
-comment_patterns:
-  .html: "<!--\\s*|//\\s*"
-
-# written by a newer tool version than this binary
-future_setting: 42
-`
-	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := initIn(t, dir, TrackPrivateTrajectory, true, gitWith()); err != nil {
-		t.Fatalf("--repair failed: %v", err)
-	}
-
-	after := readFile(t, RepoConfigPath(dir))
-	for _, want := range []string{
-		"# why this project needs three comment prefixes",
-		"# (the reasoning a human left for the next reader)",
-		"# written by a newer tool version than this binary",
-		`.html: "<!--\\s*|//\\s*"`,
-		"future_setting: 42",
-		"track: private-trajectory",
-	} {
-		if !strings.Contains(after, want) {
-			t.Errorf("repair dropped %q:\n%s", want, after)
-		}
-	}
-	// Key order is part of what a human wrote, so the new key lands at the end rather
-	// than the document being re-serialised in struct-field order.
-	if i, j := strings.Index(after, "comment_patterns"), strings.Index(after, "track:"); i > j {
-		t.Errorf("repair reordered the file's keys:\n%s", after)
-	}
-}
-
-// R177 — the *replace* branch, which the append case above does not reach. Changing a
-// value that is already there must edit that one scalar and leave the annotation on it
-// standing, since a repair in either direction is the whole point of the verb.
-func TestRepairChangingAnExistingValueKeepsItsComment(t *testing.T) {
-	dir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	original := "# the queue ships with this repository on purpose\ntrack: all\ndesign_dir: design\n"
-	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := initIn(t, dir, TrackPrivateTrajectory, true, gitWith()); err != nil {
-		t.Fatalf("--repair failed: %v", err)
-	}
-	after := readFile(t, RepoConfigPath(dir))
-	for _, want := range []string{
-		"# the queue ships with this repository on purpose",
-		"track: private-trajectory",
-		"design_dir: design",
-	} {
-		if !strings.Contains(after, want) {
-			t.Errorf("repair dropped %q:\n%s", want, after)
-		}
-	}
-	if strings.Contains(after, "track: all") {
-		t.Errorf("repair did not change the value:\n%s", after)
-	}
-}
-
-// R177 — a value that is already correct leaves the file byte-for-byte alone, so a
-// no-op repair cannot reformat what it did not need to touch.
-func TestRepairOfACorrectValueRewritesNothing(t *testing.T) {
-	dir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(dir, ConfigDirName), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	original := "# a note\ntrack:   all\ndesign_dir: design\n"
-	if err := os.WriteFile(RepoConfigPath(dir), []byte(original), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	result, err := initIn(t, dir, TrackAll, true, gitWith())
+	writeFile(t, RepoConfigPath(dir), original)
+	result, err := initIn(t, dir, track, true, gitWith())
 	if err != nil {
 		t.Fatalf("--repair failed: %v", err)
 	}
-	if after := readFile(t, RepoConfigPath(dir)); after != original {
+	return readFile(t, RepoConfigPath(dir)), result
+}
+
+// R524 — the writer edits one line and leaves every other byte as written.
+//
+// The YAML-era writer lost comments to the obvious implementation (decode into Config,
+// encode back), and nothing caught it: the suite asserted what the file *gained* and
+// never what it kept. Measured on this tool's own reference repository, where a repair
+// deleted ten lines of comment explaining a non-obvious setting. So this compares bytes.
+func TestRepairPreservesEveryByteOutsideTheTrackLine(t *testing.T) {
+	original := `# why this project reads only Go
+# (the reasoning a human left for the next reader)
+code_extensions = [".go"]
+
+
+design_dir = "design"   # spacing a person chose
+`
+	after, _ := repairIn(t, original, TrackPrivateTrajectory)
+	if want := original + "track = \"private-trajectory\"\n"; after != want {
+		t.Errorf("repair changed more than one line:\ngot:\n%s\nwant:\n%s", after, want)
+	}
+}
+
+// R524 — the *replace* branch, which the insert case above does not reach. Only the
+// quoted value changes: the comment above the line, the one trailing it, and the
+// neighbouring setting stay as written.
+func TestRepairChangingAnExistingValueKeepsItsComments(t *testing.T) {
+	original := "# the queue ships with this repository on purpose\ntrack = \"all\"  # why this value\ndesign_dir = \"design\"\n"
+	after, _ := repairIn(t, original, TrackPrivateTrajectory)
+	want := "# the queue ships with this repository on purpose\ntrack = \"private-trajectory\"  # why this value\ndesign_dir = \"design\"\n"
+	if after != want {
+		t.Errorf("repair changed more than the value:\ngot:\n%s\nwant:\n%s", after, want)
+	}
+}
+
+// R524 — a value that is already correct leaves the file byte-for-byte alone, so a
+// no-op repair cannot reformat what it did not need to touch.
+func TestRepairOfACorrectValueRewritesNothing(t *testing.T) {
+	original := "# a note\ntrack   =   \"all\"\ndesign_dir = \"design\"\n"
+	after, result := repairIn(t, original, TrackAll)
+	if after != original {
 		t.Errorf("no-op repair rewrote the config:\ngot:\n%s\nwant:\n%s", after, original)
 	}
 	if len(result.Unchanged) == 0 {
@@ -484,25 +442,43 @@ func TestRepairOfACorrectValueRewritesNothing(t *testing.T) {
 	}
 }
 
-// R177 — the degenerate documents. An absent, empty or comment-only file parses to a
-// document with no content, which the node walk must not dereference and must not
-// encode as `null`.
+// R524 — every key after a table header belongs to that table, so an inserted `track`
+// has to land above the first one. Appended at the end it would still be *in the file*,
+// which is all a text check asks, and decode as the table's key.
+func TestInsertedTrackGoesAboveTheFirstTable(t *testing.T) {
+	original := "design_dir = \"design\"\n\n[[languages]]\nname = \"x\"\n"
+	out, err := setTrack([]byte(original), TrackAll)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc map[string]any
+	if _, err := toml.Decode(string(out), &doc); err != nil {
+		t.Fatalf("result does not decode: %v\n%s", err, out)
+	}
+	if doc["track"] != "all" {
+		t.Errorf("top-level track = %v, want all:\n%s", doc["track"], out)
+	}
+	if langs, _ := doc["languages"].([]map[string]any); len(langs) != 1 || langs[0]["track"] != nil {
+		t.Errorf("the table gained a track, or was lost: %v\n%s", doc["languages"], out)
+	}
+}
+
+// R524 — the degenerate documents have no line to replace and no table to insert before,
+// so the line goes after whatever they hold, and nothing they hold moves.
 func TestSetTrackHandlesDegenerateDocuments(t *testing.T) {
-	for _, tc := range []struct{ name, body string }{
-		{"absent", ""},
-		{"blank lines", "\n\n"},
-		{"comments only", "# nothing but a comment\n"},
+	for _, tc := range []struct{ name, body, want string }{
+		{"absent", "", "track = \"none\"\n"},
+		{"blank lines", "\n\n", "\n\ntrack = \"none\"\n"},
+		{"comments only", "# nothing but a comment\n", "# nothing but a comment\ntrack = \"none\"\n"},
+		{"no final newline", "design_dir = \"d\"", "design_dir = \"d\"\ntrack = \"none\"\n"},
 	} {
 		out, err := setTrack([]byte(tc.body), TrackNone)
 		if err != nil {
 			t.Errorf("%s: setTrack failed: %v", tc.name, err)
 			continue
 		}
-		if !strings.Contains(string(out), "track: none") {
-			t.Errorf("%s: setTrack = %q, want it to set track", tc.name, out)
-		}
-		if strings.Contains(string(out), "null") {
-			t.Errorf("%s: setTrack emitted a null document: %q", tc.name, out)
+		if string(out) != tc.want {
+			t.Errorf("%s: setTrack = %q, want %q", tc.name, out, tc.want)
 		}
 	}
 }
@@ -520,5 +496,23 @@ func TestReportNamesEveryFileTouched(t *testing.T) {
 	}
 	if !strings.Contains(report, GitIgnoreName) {
 		t.Errorf("report does not name .gitignore:\n%s", report)
+	}
+}
+
+// init is exempt from the gate, so it reports a YAML configuration itself — before the
+// "nothing to repair" and "already exists" refusals, which would otherwise send the user
+// the wrong way over a file they already have. R522
+func TestInitReportsAYAMLConfigFirst(t *testing.T) {
+	for _, repair := range []bool{false, true} {
+		dir := t.TempDir()
+		legacy := filepath.Join(dir, ConfigDirName, LegacyRepoConfigName)
+		writeFile(t, legacy, "track: all\n")
+		_, err := initIn(t, dir, TrackAll, repair, gitWith())
+		if err == nil || !strings.Contains(err.Error(), legacy) || !strings.Contains(err.Error(), "TOML") {
+			t.Errorf("repair=%v: error %v does not report the YAML file", repair, err)
+		}
+		if _, statErr := os.Stat(RepoConfigPath(dir)); statErr == nil {
+			t.Errorf("repair=%v: init wrote %s beside the YAML file", repair, RepoConfigName)
+		}
 	}
 }

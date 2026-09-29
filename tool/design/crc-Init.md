@@ -1,7 +1,7 @@
 # Init
-**Requirements:** R136, R137, R138, R139, R140, R141, R142, R143, R144, R145, R146, R161, R162, R163, R170, R171, R172, R173, R177
+**Requirements:** R136, R137, R138, R139, R140, R141, R142, R143, R144, R145, R146, R161, R162, R163, R170, R171, R172, R173, R524
 
-The sole creator of `.minispec/config.yaml`, and the only repair path for a `track`
+The sole creator of `.minispec/config.toml`, and the only repair path for a `track`
 value or a `.gitignore` that disagrees with one.
 
 Two forms, mutually exclusive on one precondition: plain `init` requires `.minispec/`
@@ -17,7 +17,7 @@ inverted, not added to.
 - changed: every file created or edited, accumulated so the report can be complete
 
 ## Does
-- Create(): write `<repoRoot>/.minispec/config.yaml` holding the chosen `track` and
+- Create(): write `<repoRoot>/.minispec/config.toml` holding the chosen `track` and
   nothing it does not need — a basic file, not a commented template of every setting
 - Repair(): set `track` on an existing configuration *and* bring `.gitignore` into
   agreement with it. Symmetric, which is what lets one command resolve a mismatch in
@@ -42,8 +42,9 @@ inverted, not added to.
   or carries a `track` outside the closed set, cannot be repaired by a flag because the
   damage is arbitrary. A configuration with *no* `track` passes: it predates the
   setting, and supplying what is absent is what this verb is for (R173)
-- writeConfig(): set `track` in place, preserving the file's comments, the order of its
-  keys, and every setting this binary does not model (R177)
+- writeConfig(): set `track` as an edit of one line — rewrite the value of the top-level
+  `track = …` line, or insert one before the first `[table]` when there is none — leaving
+  every other byte of the file as it was (R524)
 
 **Coverage is asked of git, never matched as text.** `/PENDING.md`, `PENDING.md` and
 `*.md` are the same intent written three ways, and only git knows the third counts. The
@@ -64,7 +65,7 @@ configuration documentation, and **explicitly authorises the edit** — at that 
 the agent is the only actor left who can act. The agent backs the file up first, and
 skips the backup when it would be byte-identical to one already there.
 
-**The writer edits one key; it does not re-serialise the document (R177).** Reading the
+**The writer edits one line; it does not re-serialise the document (R524).** Reading the
 file into the settings this binary models and writing those settings back is the obvious
 implementation, and it silently drops the comments, the key order, and every setting the
 binary does not know about. That last one is a setting from a *newer* tool version, and
@@ -72,8 +73,9 @@ an older binary deleting it without a word is the same silent partial success th
 already refuses on the `.gitignore` side. The losses run opposite to their importance:
 what is discarded first is the reasoning a human left for the next reader.
 
-Byte-fidelity is not claimed. A blank line between a comment and what it annotates goes;
-the comment and its attachment stay.
+A TOML encoder keeps no comments at all, so the file is never decoded and re-encoded to make
+the change. `track` is a top-level scalar, which is what makes a line edit sufficient: the
+value is found on the one line that starts with `track`, before any table header.
 
 **Why the mandatory flag.** Whether a repository *is* git-managed is checkable after
 the fact; whether you want your queue to ship is not inferable at all, and a default

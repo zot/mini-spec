@@ -8,7 +8,7 @@
 
 | Command | Owning spec | Summary |
 |---|---|---|
-| `minispec init --track-<style>` | [initialization.md](initialization.md) | Create `<repo root>/.minispec/config.yaml` recording `track`, and write the ignore lines that value implies. Sole creator of the repository configuration; the flag is mandatory. Refuses when `.minispec/` already exists. |
+| `minispec init --track-<style>` | [initialization.md](initialization.md) | Create `<repo root>/.minispec/config.toml` recording `track`, and write the ignore lines that value implies. Sole creator of the repository configuration; the flag is mandatory. Refuses when `.minispec/` already exists. |
 | `minispec init --track-<style> --repair` | [initialization.md](initialization.md) | Set `track` on an existing configuration *and* bring `.gitignore` into agreement with it. Requires `.minispec/` to exist. The agent confirms the value with the user before running it. |
 | `minispec init carve <name>` | [initialization.md](initialization.md) | Scaffolds `carves/<name>.md` with its status block holding one open part; refuses an existing file (R334). |
 | `minispec check-version` | [config.md](config.md), [repository-root.md](repository-root.md) | Verify tool binary version matches the skill's `README.md`, looked up under the repository root first, then `~/`. Exits 0 on match. Runs without a configuration. |
@@ -31,11 +31,11 @@
 | `query orphan-designs` | [queries.md](queries.md) | List CRC cards missing or with empty Requirements field. |
 | `query artifacts` | [queries.md](queries.md) | List all artifacts from design.md with checkbox states. |
 | `query gaps [RANGE...] [--open] [--closed]` | [queries.md](queries.md) | Gap items from `design.md`'s Gaps section, read through `minispecsdom`'s gaps reader; RANGE selects by ID in the inline-ref grammar (`O22`, `O22-O28`, `O22,O25`), one type per range, nothing matched refused, partly unassigned fine; `--open`/`--closed` select by checkbox and never claim a permanent gap; both flags mean every checkbox; a valid empty selection says so. |
-| `query traceability [file]` | [queries.md](queries.md) | Check traceability comments in one code file. |
-| `query traceability --all` | [queries.md](queries.md) | Scan all artifact code files and report traceability status. |
-| `query implementation <Rn... \| pattern> [--retired]` | [queries.md](queries.md) | Reverse of impl-coverage: every code `file:line` implementing a requirement, read through `minispecsdom`'s traceability reader over the Artifacts code files (positions and comment ranges honored). Args parsing as R# refs (ranges/commas, the `query gaps` grammar) → number mode (locations only); otherwise a regex over requirement text → text mode (each matched requirement then its locations, with explicit "no impl refs" for none). Retired included by number, excluded by text unless `--retired`. |
+| `query traceability [file]` | [queries.md](queries.md) | Check traceability comments in one code file, read through the harvest; a file it cannot read says why. |
+| `query traceability --all` | [queries.md](queries.md) | Scan all artifact code files through the harvest and report traceability status, listing every file it could not read. |
+| `query implementation <Rn... \| pattern> [--retired]` | [queries.md](queries.md) | Reverse of impl-coverage: every code `file:line` implementing a requirement, read through the harvest `validate` uses (positions and comment ranges honored). Args parsing as R# refs (ranges/commas, the `query gaps` grammar) → number mode (locations only); otherwise a regex over requirement text → text mode (each matched requirement then its locations, with explicit "no impl refs" for none). Retired included by number, excluded by text unless `--retired`. |
 | `query migrations` | [migrations/complete/001-migration-and-retirement.md](migrations/complete/001-migration-and-retirement.md) | List in-flight migration specs under `specs/migrations/` (non-recursive). |
-| `query comment-patterns` | [config.md](config.md) | Show recognized comment patterns and closers per file extension. |
+| `query comment-patterns` | [queries.md](queries.md) | How to write a traceability comment per extension: the language table's comment style, the other forms read, and a warning wherever the written form has a closer. |
 | `query unindexed-specs` | [queries.md](queries.md) | List per-feature specs not referenced in the root index `specs/index.md` (exact `.md`-token match; lists all when index absent). |
 | `query alarms [--unverified] [--brief]` | [queries.md](queries.md) | Census of fault injections recorded in `design/test-*.md`, one line per alarm, with its state: `verified`, `stale`, `unrecorded`, `unanchored`, `unresolvable` — or `unchecked` where git cannot answer. `--unverified` lists only the states that carry a decision while the closing count still reports the whole population. `--brief` replaces each line with the spawn prompt for a delegated re-pull: sites, the test files the Artifacts manifest maps the document to, the `**Fire alarm:**` prose verbatim, and the evidence-never-a-verdict contract. The two compose. |
 | `query refs [--to <path>] [file...]` | [queries.md](queries.md), [links-schema.md](links-schema.md) | The inventory of references — links and pointers (`doc.md#key` code spans) — one line per reference with citing file, line, text, kind and resolved path; `--to` lists everything that resolves to a path. Population: every tracked markdown file plus every sited document. No judgment; `query links` is the classifier. |
@@ -89,9 +89,9 @@
 
 | Flag | Behavior |
 |---|---|
-| `--track-none` | Record `track: none` — the project is not under version control. |
-| `--track-private-trajectory` | Record `track: private-trajectory` — git, trajectory files ignored. |
-| `--track-all` | Record `track: all` — git, trajectory files tracked. |
+| `--track-none` | Record `track = "none"` — the project is not under version control. |
+| `--track-private-trajectory` | Record `track = "private-trajectory"` — git, trajectory files ignored. |
+| `--track-all` | Record `track = "all"` — git, trajectory files tracked. |
 | `--repair` | Operate on an existing configuration instead of creating one; sets `track` and reconciles `.gitignore`. |
 
 Exactly one `--track-*` flag is required. `--repair` inverts the `.minispec/` precondition rather than adding a mode.

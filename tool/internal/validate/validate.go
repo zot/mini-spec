@@ -49,6 +49,9 @@ type ValidationResult struct {
 	ReaderDisagreement []string
 	// Unread is what those readers could not read, per file — coverage, not an issue. R328
 	Unread map[string]int
+	// UnreadCode is every code file the harvest could not read, or read only up to a string
+	// or comment left open, with the reason: coverage, not an issue, and never silence. R516
+	UnreadCode []string
 }
 
 // Validate runs all structural validations
@@ -152,39 +155,49 @@ func (v *Validate) Run() (*ValidationResult, error) {
 		}
 	}
 
-	implCovered := make(map[string]bool)
+	// A listed code file that does not exist is a missing artifact; the harvest leaves
+	// those to this check.
 	for _, art := range artifacts {
 		for _, cf := range art.CodeFiles {
-			fullPath := filepath.Join(v.Project.RootPath, cf.Path)
-			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-				if cf.Checked {
-					result.MissingArtifacts = append(result.MissingArtifacts, cf.Path)
-				}
-				continue
+			if _, err := os.Stat(filepath.Join(v.Project.RootPath, cf.Path)); os.IsNotExist(err) && cf.Checked {
+				result.MissingArtifacts = append(result.MissingArtifacts, cf.Path)
 			}
+		}
+	}
 
-			ext := filepath.Ext(cf.Path)
-			pattern := v.Project.CommentPattern(ext)
-			closer := v.Project.CommentCloser(ext)
-			trace, err := parser.ParseTraceability(fullPath, pattern, closer)
-			if err != nil {
-				continue
-			}
-			if len(trace.CRCRefs) == 0 {
-				result.MissingTraceability = append(result.MissingTraceability, cf.Path)
-			}
+	// CRC: crc-Validate.md | Seq: seq-validate.md | R29, R42, R68, R69, R513, R516
+	// Every traceability fact below comes from the one harvest query implementation also
+	// reads, so a ref counts here exactly where it counts there.
+	configured, err := v.Project.Languages()
+	if err != nil {
+		return nil, err
+	}
+	harvest, err := parser.HarvestArtifacts(v.Project.RootPath, artifacts, configured)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range harvest.Unread {
+		result.UnreadCode = append(result.UnreadCode, u.Where()+": "+u.Reason)
+	}
 
+	implCovered := make(map[string]bool)
+	for _, fh := range harvest.Files {
+		hasCRC := false
+		for _, c := range fh.Comments {
+			if len(c.CRC) > 0 {
+				hasCRC = true
+			}
 			// CRC and Seq refs must resolve to files in design/.
 			// dedupAndSortAll handles deduplication of the result list.
-			for _, ref := range trace.CRCRefs {
+			for _, ref := range c.CRC {
 				if _, err := os.Stat(v.Project.DesignPath(ref)); os.IsNotExist(err) {
-					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+					result.MissingDesignRefs[fh.Path] = append(result.MissingDesignRefs[fh.Path], ref)
 				}
 			}
-			for _, ref := range trace.SeqRefs {
+			for _, ref := range c.Seq {
 				file, fragment := parser.SplitSeqRef(ref)
 				if _, err := os.Stat(v.Project.DesignPath(file)); os.IsNotExist(err) {
-					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+					result.MissingDesignRefs[fh.Path] = append(result.MissingDesignRefs[fh.Path], ref)
 					continue
 				}
 				if fragment == "" {
@@ -192,16 +205,18 @@ func (v *Validate) Run() (*ValidationResult, error) {
 				}
 				doc, err := parser.ParseSeqDoc(v.Project.DesignPath(file))
 				if err != nil || !doc.Has(fragment) {
-					result.MissingSeqFragments[cf.Path] = append(result.MissingSeqFragments[cf.Path], ref)
+					result.MissingSeqFragments[fh.Path] = append(result.MissingSeqFragments[fh.Path], ref)
 				}
 			}
-
-			for _, ref := range trace.ReqRefs {
+			for _, ref := range c.Refs {
 				if !validReqs[ref] && !retired[ref] {
-					result.MissingDesignRefs[cf.Path] = append(result.MissingDesignRefs[cf.Path], ref)
+					result.MissingDesignRefs[fh.Path] = append(result.MissingDesignRefs[fh.Path], ref)
 				}
 				implCovered[ref] = true
 			}
+		}
+		if !hasCRC {
+			result.MissingTraceability = append(result.MissingTraceability, fh.Path)
 		}
 	}
 
@@ -715,10 +730,26 @@ func (v *Validate) checkAlarmFreshness(result *ValidationResult) {
 }
 
 // R328
-// unreadNote is the coverage statement: what the design-document readers could not read,
-// printed whether or not anything else fired, because a reader takes silence about coverage
-// as a claim of completeness.
+// unreadNote is the coverage statement: what the design-document readers and the code
+// harvest could not read, printed whether or not anything else fired, because a reader
+// takes silence about coverage as a claim of completeness.
 func (r *ValidationResult) unreadNote() string {
+	return r.unreadLinesNote() + r.unreadCodeNote()
+}
+
+// CRC: crc-Validate.md | R516
+// unreadCodeNote names every code file the harvest could not read, with the reason, so a
+// coverage answer never reads clean over code nobody searched.
+func (r *ValidationResult) unreadCodeNote() string {
+	if len(r.UnreadCode) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("note: %d code file(s) were not read, so their traceability comments were not counted:\n      %s\n",
+		len(r.UnreadCode), strings.Join(r.UnreadCode, "\n      "))
+}
+
+// unreadLinesNote names the design-document lines the readers could not read, per file.
+func (r *ValidationResult) unreadLinesNote() string {
 	if len(r.Unread) == 0 {
 		return ""
 	}

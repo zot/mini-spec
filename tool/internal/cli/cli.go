@@ -154,7 +154,8 @@ Query subcommands:
   next-id <class>       Next free ID for item|gap|req, with the files it counted
   traceability <file>   Check file for traceability comments
   traceability --all    Check all code files
-  comment-patterns      Show recognized comment patterns per file extension
+  implementation <Rn...|pattern> [--retired]  Where requirements are implemented: code file:line and comment per Rn; refs select by number, anything else is a regexp over requirement text
+  comment-patterns      How to write a traceability comment per extension, closers included
 
 Update subcommands:
   check <file> <item>           Check a checkbox
@@ -505,70 +506,67 @@ func (c *CLI) runQuery(args []string) int {
 			return 1
 		}
 		if args[1] == "--all" {
-			traces, err := q.TraceabilityAll()
+			h, err := q.TraceabilityAll()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				return 1
 			}
 			if c.JSON {
-				c.output(traces)
+				c.output(h)
 			} else {
-				for path, trace := range traces {
-					if len(trace.CRCRefs) > 0 {
-						fmt.Printf("%s: CRC=%s", path, strings.Join(trace.CRCRefs, ","))
-						if len(trace.SeqRefs) > 0 {
-							fmt.Printf(" Seq=%s", strings.Join(trace.SeqRefs, ","))
+				for _, fh := range h.Files {
+					crc, seq := traceFields(fh)
+					if len(crc) > 0 {
+						fmt.Printf("%s: CRC=%s", fh.Path, strings.Join(crc, ","))
+						if len(seq) > 0 {
+							fmt.Printf(" Seq=%s", strings.Join(seq, ","))
 						}
 						fmt.Println()
 					} else {
-						fmt.Printf("%s: (missing)\n", path)
+						fmt.Printf("%s: (missing)\n", fh.Path)
 					}
+				}
+				for _, u := range h.Unread {
+					fmt.Printf("%s: (not read: %s)\n", u.Where(), u.Reason)
 				}
 			}
 		} else {
-			trace, err := q.Traceability(args[1])
+			fh, unread, err := q.Traceability(args[1])
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				return 1
 			}
 			if c.JSON {
-				c.output(trace)
+				c.output(map[string]any{"file": fh, "unread": unread})
 			} else {
-				if len(trace.CRCRefs) > 0 {
-					fmt.Printf("CRC: %s\n", strings.Join(trace.CRCRefs, ", "))
+				crc, seq := traceFields(fh)
+				if len(crc) > 0 {
+					fmt.Printf("CRC: %s\n", strings.Join(crc, ", "))
 				}
-				if len(trace.SeqRefs) > 0 {
-					fmt.Printf("Seq: %s\n", strings.Join(trace.SeqRefs, ", "))
+				if len(seq) > 0 {
+					fmt.Printf("Seq: %s\n", strings.Join(seq, ", "))
 				}
-				if len(trace.CRCRefs) == 0 && len(trace.SeqRefs) == 0 {
+				if unread != nil {
+					fmt.Printf("(not read: %s)\n", unread.Reason)
+				} else if len(crc) == 0 && len(seq) == 0 {
 					fmt.Println("(no traceability comments found)")
 				}
 			}
 		}
 
+	case "implementation":
+		return c.queryImplementation(q, args[1:])
+
 	case "comment-patterns":
-		patterns := q.CommentPatterns()
-		closers := q.CommentClosers()
+		forms, err := q.CommentForms()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
 		if c.JSON {
-			c.output(map[string]any{
-				"patterns": patterns,
-				"closers":  closers,
-			})
+			c.output(forms)
 		} else {
-			fmt.Println("Recognized comment patterns:")
-			for ext, pattern := range patterns {
-				fmt.Printf("  %s: %s\n", ext, pattern)
-			}
-			if len(closers) > 0 {
-				fmt.Println()
-				fmt.Println("Comment closers (MUST appear at end of traceability comments):")
-				for ext, closer := range closers {
-					fmt.Printf("  %s: %q\n", ext, closer)
-				}
-				fmt.Println()
-				fmt.Println("WARNING: Extensions with closers use block comments.")
-				fmt.Println("An unclosed comment will silently swallow all subsequent code.")
-			}
+			printCommentForms(forms)
 		}
 
 	default:
@@ -1410,6 +1408,59 @@ func (c *CLI) queryGaps(q *query.Query, args []string) int {
 	return 0
 }
 
+// CRC: crc-CLI.md | Seq: seq-query.md | R502, R503, R504, R505, R507
+// queryImplementation prints where each selected requirement is implemented: number mode the
+// locations only, text mode each requirement's line first, and "no impl refs" for one with
+// none, so absence is stated rather than shown as empty output.
+func (c *CLI) queryImplementation(q *query.Query, args []string) int {
+	fs := flag.NewFlagSet("implementation", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	retired := fs.Bool("retired", false, "text mode: include retired requirements")
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	rest, err := parseFlagsAnywhere(fs, args)
+	if err != nil {
+		return 1
+	}
+	c.JSON = c.JSON || *asJSON
+	sel, err := query.ClassifyImplArgs(rest, *retired)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	res, err := q.Implementation(sel)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+	if c.JSON {
+		c.output(res)
+		return 0
+	}
+	if len(res.Entries) == 0 {
+		fmt.Printf("no requirements match %s\n", rest[0])
+	}
+	for _, e := range res.Entries {
+		head := e.ID
+		if e.Text != "" {
+			head += ": " + e.Text
+		}
+		if e.Retired {
+			head += " (retired)"
+		}
+		fmt.Println(head)
+		if len(e.Locations) == 0 {
+			fmt.Println("  no impl refs")
+		}
+		for _, l := range e.Locations {
+			fmt.Printf("  %s:%d  %s\n", l.Path, l.Line, l.Comment)
+		}
+	}
+	for _, u := range res.Unread {
+		fmt.Printf("not read: %s: %s\n", u.Where(), u.Reason)
+	}
+	return 0
+}
+
 // CRC: crc-CLI.md | Seq: seq-carve-status.md#1 | R207, R213, R214, R215
 // queryCarves is the cross-document census over carves/ and .carves/ at the repository root.
 func (c *CLI) queryCarves(args []string) int {
@@ -1777,4 +1828,43 @@ func (c *CLI) runAddReq(u *update.Update, args []string) int {
 		fmt.Printf("Added %s to %q\n", minted, *section)
 	}
 	return 0
+}
+
+// traceFields gathers a file's CRC and Seq items across its comments, in order.
+func traceFields(fh parser.FileHarvest) (crc, seq []string) {
+	for _, cm := range fh.Comments {
+		crc = append(crc, cm.CRC...)
+		seq = append(seq, cm.Seq...)
+	}
+	return crc, seq
+}
+
+// CRC: crc-CLI.md | R518
+// printCommentForms shows how to write a traceability comment in each extension and what
+// else is read, warning wherever the written form needs a closer: an unclosed block comment
+// swallows the code after it, and the closer is what gets forgotten.
+func printCommentForms(forms []query.CommentFormsEntry) {
+	fmt.Println("How to write a traceability comment, per extension:")
+	var closers []string
+	for _, f := range forms {
+		written := strings.TrimRight(f.Write.Open, " ") + " CRC: …"
+		if f.Write.Close != "" {
+			written += " " + strings.TrimLeft(f.Write.Close, " ")
+			closers = append(closers, f.Extension)
+		}
+		var reads []string
+		for _, r := range f.Reads {
+			if r.Close != "" {
+				reads = append(reads, r.Open+" … "+r.Close)
+			} else {
+				reads = append(reads, r.Open)
+			}
+		}
+		fmt.Printf("  %-6s %-22s reads: %s\n", f.Extension, written, strings.Join(reads, ", "))
+	}
+	if len(closers) > 0 {
+		fmt.Println()
+		fmt.Printf("WARNING: %s write a block comment, so every traceability comment there\n", strings.Join(closers, ", "))
+		fmt.Println("MUST end with its closer. An unclosed comment silently swallows all subsequent code.")
+	}
 }

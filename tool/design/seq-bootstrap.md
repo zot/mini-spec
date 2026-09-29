@@ -13,7 +13,7 @@ Run before any command that does more than report its version.
 1. Gate a command on the repository's bootstrap state
 1.1. Exempt the commands needing no mini-spec files: --version, help, check-version — return immediately
 1.2. Resolve the repository root; on failure, refuse with the no-root crank handle naming the absolute path searched from
-1.3. Look for <repo root>/.minispec/config.yaml
+1.3. Look for <repo root>/.minispec/config.toml
 1.4. If it is absent, refuse with the no-configuration crank handle and stop — only init may proceed from here
 1.5. Load the configuration; if it does not parse, refuse with the malformed crank handle authorising the agent to edit it
 1.6. Read the track value; an unrecognised value is malformed, not a fourth behavior
@@ -77,7 +77,7 @@ invariants — an unmet one is worth saying every run and is never worth refusin
 2.1. Require exactly one --track-<style> flag; refuse when absent, because the value cannot be inferred
 2.2. Resolve the repository root the configuration will be written under
 2.3. Refuse if .minispec/ already exists, naming --repair and saying to confirm the value with the user first
-2.4. Create .minispec/ and write config.yaml holding the track value
+2.4. Create .minispec/ and write config.toml holding the track value
 2.5. Ask Git whether the tree is a working tree; if not, skip every ignore line
 2.6. Ask Git, in one invocation, which of the governed paths some rule already ignores
 2.7. Add anchored lines for the paths this value requires ignored and step 2.6 found uncovered

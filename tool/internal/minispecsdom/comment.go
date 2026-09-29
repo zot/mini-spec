@@ -204,13 +204,23 @@ func (c *TraceabilityComment) walk(text string, loc sdom.Loc) ([]sdom.Node, bool
 	return kids, true
 }
 
-// CRC: crc-TraceabilityComment.md | R339
+// refsThenDot finds a requirement-list segment followed directly by a full stop: the
+// `R271. A gap is a source` form. The segment must be all refs from its `|` (or the
+// interior's start) to the dot, which is what keeps a dot inside a file name from
+// ever reading as a separator.
+var refsThenDot = regexp.MustCompile(`(?:^|\|)\s*R\d+(?:\s*-\s*R?\d+)?(?:\s*,\s*R\d+(?:\s*-\s*R?\d+)?)*\s*(\.)`)
+
+// CRC: crc-TraceabilityComment.md | R339, R508
 //
-// descSep finds the description separator: the first "--" or "—", or the first
-// ":" that does not immediately follow a field keyword. Returns len(text), 0 when
-// there is none.
+// descSep finds the description separator: the first "--" or "—", the first ":"
+// that does not immediately follow a field keyword, or a "." directly after the
+// requirement list, whichever comes first. Returns len(text), 0 when there is none.
 func descSep(text string) (int, int) {
-	for i := 0; i < len(text); i++ {
+	dot := len(text)
+	if m := refsThenDot.FindStringSubmatchIndex(text); m != nil {
+		dot = m[2]
+	}
+	for i := 0; i < dot; i++ {
 		switch {
 		case strings.HasPrefix(text[i:], "--"):
 			return i, 2
@@ -223,6 +233,9 @@ func descSep(text string) (int, int) {
 			}
 			return i, 1
 		}
+	}
+	if dot < len(text) {
+		return dot, 1
 	}
 	return len(text), 0
 }

@@ -65,32 +65,6 @@
 **Expected:** 5 gaps, R1 marked resolved, correct types
 **Refs:** crc-Parser.md
 
-## Test: ParseTraceability_Found
-**Purpose:** Find traceability comments in code
-**Input:**
-```go
-// CRC: crc-Store.md | Seq: seq-crud.md
-func Add() {}
-```
-**Expected:** Traceability{CRCRefs: ["crc-Store.md"], SeqRefs: ["seq-crud.md"]}
-**Refs:** crc-Parser.md
-
-## Test: ParseTraceability_Missing
-**Purpose:** Handle code file without traceability comments
-**Input:** Go file with no // CRC: comments
-**Expected:** Traceability with empty slices
-**Refs:** crc-Parser.md
-
-## Test: ParseTraceability_CustomPattern
-**Purpose:** Use configurable comment pattern per file extension
-**Input:**
-```python
-# CRC: crc-Store.md | Seq: seq-crud.md
-def add(): pass
-```
-**Expected:** With pattern `#\s*`, finds Traceability{CRCRefs: ["crc-Store.md"], SeqRefs: ["seq-crud.md"]}
-**Refs:** crc-Parser.md
-
 ## Test: an alarm never adopts the next test's fields
 **Purpose:** validates R178 — attributing a `**Pulled:**` to an alarm that never had one
 is the strongest false claim this parser could make: it would report an unverified

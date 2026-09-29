@@ -55,9 +55,9 @@ Configuration lives at two scopes, matching the two roots.
 
 | file | scope | holds |
 |---|---|---|
-| `<repo root>/.minispec/config.yaml` | the repository | settings shared by every design root in it |
-| `<design root>/.minispec.yaml` | one design root | only what differs from the repository config |
-| `<repo root>/.minispec.yaml` | — | **an error, with no exception** |
+| `<repo root>/.minispec/config.toml` | the repository | settings shared by every design root in it |
+| `<design root>/.minispec.toml` | one design root | only what differs from the repository config |
+| `<repo root>/.minispec.toml` | — | **an error, with no exception** |
 
 `.minispec/` is a tool-managed directory at the repository root. It holds the
 repository configuration and the tool's machine-local working files, which is why
@@ -69,10 +69,10 @@ written only by `minispec init`, and it is verified rather than merely stored. A
 design root cannot set or override it, because it describes the repository. See
 [initialization.md](initialization.md).
 
-**A top-level `.minispec.yaml` is always an error.** Not because the case never
+**A top-level `.minispec.toml` is always an error.** Not because the case never
 arises, but because the inheritance would be incoherent: it would have to inherit
-from `.minispec/config.yaml`, a file inside its own directory. Where the repository
-root *is* a design root, `.minispec/config.yaml` is that design root's configuration
+from `.minispec/config.toml`, a file inside its own directory. Where the repository
+root *is* a design root, `.minispec/config.toml` is that design root's configuration
 too — there is no second file. The check is one existence test, and it catches a
 symlink as readily as a regular file, since a link to the new location is still the
 forbidden shape rather than a supported alias.
@@ -81,8 +81,6 @@ forbidden shape rather than a supported alias.
 built-in defaults, then the repository config, then the design root's own file.
 
 - **Scalars replace.** `design_dir`, `src_dir` — a scalar cannot merge.
-- **Maps merge per key.** A design root adding one `comment_patterns` entry keeps
-  every other entry the repository set.
 - **Lists merge as a union — between configuration layers.** `code_extensions`
   entries from the repository are kept and the design root's additions appended, with
   duplicates dropped and repository order preserved so the result is deterministic.
@@ -114,79 +112,86 @@ value what it is" requires reading two files and knowing the precedence by heart
 **Two layouts, and a project should pick one.**
 
 - **Full-repo** — the repository root is the design root. One project, one config,
-  all of it in `.minispec/config.yaml`.
+  all of it in `.minispec/config.toml`.
 - **Repo-projects** — no design root at the top level; each project has its own
-  `design/` and its own `.minispec.yaml` inheriting the shared settings.
+  `design/` and its own `.minispec.toml` inheriting the shared settings.
 
 Mixing them — repo-projects *plus* the top level as a project in its own right — is
 possible but not recommended: the top level's settings have to live in
-`.minispec/config.yaml`, so every repo-project then has to override all of them. The
+`.minispec/config.toml`, so every repo-project then has to override all of them. The
 answer is to avoid the shape rather than design around it.
 
 ## Config File (Optional)
 
-`.minispec.yaml` in a design root:
+`.minispec.toml` in a design root:
 
-```yaml
-design_dir: design
-src_dir: src
-comment_patterns:
-  .go: "//\\s*"
-  .js: "//\\s*"
-  .ts: "//\\s*"
-  .py: "#\\s*"
-  .lua: "--\\s*"
-  .c: "//\\s*"
-  .h: "//\\s*"
-  .sh: "#\\s*"
-  .pas: "\\{\\s*"
-  .dpr: "\\{\\s*"
-comment_closers:
-  .pas: " }"
-  .dpr: " }"
+```toml
+design_dir = "design"
+src_dir = "src"
 ```
 
-## Comment Patterns
+## Languages
 
-The `comment_patterns` map defines regex patterns for single-line comments by file extension. The pattern matches the comment prefix; the tool appends `CRC:` to find traceability comments. The pattern may be an **alternation** — e.g. `.html: "<!--\\s*|//\\s*"` for HTML files that embed JS traceability in `<script>` alongside HTML comments. The tool wraps the configured prefix in a non-capturing group, so the alternation composes correctly (R106).
+A project can define languages beyond the built-in tables (see
+[traceability-comment.md](traceability-comment.md)), or replace a built-in table for the
+extensions it names. Each definition is a `[[languages]]` table whose fields are sdom's own
+`BracketLang` and `BracketGroup` fields in snake case, so what is written is what sdom
+receives:
 
-Default patterns (built-in):
-| Extension | Pattern | Languages |
-|-----------|---------|-----------|
-| `.go` | `//\s*` | Go |
-| `.js`, `.ts` | `//\s*` | JavaScript, TypeScript |
-| `.c`, `.h`, `.cpp` | `//\s*` | C, C++ |
-| `.py` | `#\s*` | Python |
-| `.lua` | `--\s*` | Lua |
-| `.sh`, `.bash` | `#\s*` | Shell |
-| `.md` | `<!--\s*` | Markdown (HTML comments) |
-| `.html` | `<!--\s*` | HTML |
-| `.css` | `/\*\s*` | CSS |
+```toml
+[[languages]]
+name = "c-family"
+extensions = [".c", ".h"]
+comment = { prefix = "// ", suffix = "\n", kind = "comment" }
 
-Custom patterns override defaults for matching extensions.
+[[languages.brackets]]
+open = ["//"]
+close = "\n"
+allowed_inner = []
+kind = "comment"
 
-## Comment Closers
-
-The `comment_closers` map defines closing delimiters for block-comment languages. Extensions not listed use line-terminating comments (no closer needed).
-
-Default closers (built-in):
-| Extension | Closer | Languages |
-|-----------|--------|-----------|
-| `.md` | ` -->` | Markdown (HTML comments) |
-| `.html` | ` -->` | HTML |
-| `.css` | ` */` | CSS |
-
-Custom closers override defaults for matching extensions. Example for Pascal:
-
-```yaml
-comment_closers:
-  .pas: " }"
-  .dpr: " }"
+[[languages.brackets]]
+open = ["{"]
+close = "}"
 ```
 
-The closer string is stripped from the end of parsed traceability refs. This is necessary because block-comment languages require a closing delimiter after the traceability comment content, and without stripping, the closer would become part of the ref (e.g., `seq-compile.md }` instead of `seq-compile.md`).
+- **A group's fields** are `open`, `open_regex`, `close`, `close_regex`, `close_is_open`,
+  `separators`, `escape`, `after_open`, `before_open`, `before_close`,
+  `reject_longer_closes`, `demote_unclosed`, `blank_line_bound`, `line_head_unbound`,
+  `allowed_inner`, `allowed_parent` and `kind`, each meaning what sdom's field means.
+- **`allowed_inner` absent is code mode; `allowed_inner = []` is raw.** TOML keeps the two
+  apart, and the difference is the whole difference between a bracket and a comment.
+- **Groups are listed in matching order**, exactly as in sdom: the first opener that matches
+  wins, so a longer marker precedes any marker that is its prefix.
+- **`comment` is required.** It is the form written in that language, and `query
+  comment-patterns` reports it.
+- **`tab`, `transparent` and `continuation`**, when any is set, make the definition an
+  indent language, as sdom's `IndentLang` is a `BracketLang` with those three fields.
+- **A definition names its extensions** and overrides the built-in table for each.
+- **Layering:** a design root's definition replaces a repository definition of the same
+  name whole, and adds one of a new name; definitions never merge field by field.
+- **Every definition is checked when the configuration loads**, with sdom's own check, and a
+  definition sdom rejects is an error naming the file, the language and the group.
 
-**Danger:** Extensions with closers use block comments. An unclosed comment will silently swallow all subsequent code. The `query comment-patterns` command displays a WARNING when closers are configured to alert users to this risk.
+An example defining C, C++, Java, Go and Python ships in the skill directory as
+`languages-example.toml`, to copy from.
+
+## Format
+
+Configuration files are **TOML**. Every file is decoded strictly:
+
+- **An unknown key is an error** naming the file and the key, and the command stops. A key
+  the tool does not read would leave someone editing a line with no effect and no way to
+  find out, which is the reason a design root stating `track` is refused rather than
+  ignored. `comment_patterns` and `comment_closers` get a message of their own: they are
+  **retired**, since code files are now read through a language table chosen by extension
+  (see [traceability-comment.md](traceability-comment.md)), and how to write a comment in
+  each extension is what `query comment-patterns` reports (see [queries.md](queries.md)).
+- **A YAML configuration is an error.** The format was YAML until 2026-09-25. A
+  `.minispec/config.yaml` or a `.minispec.yaml` found where a configuration would be read is
+  named, with the instruction to convert it to TOML by hand, and the command stops. Nothing
+  reads YAML, so the tool never guesses at an old file's meaning, and a file converted by
+  hand is read under the same strict rules as any other.
 
 ## Version
 

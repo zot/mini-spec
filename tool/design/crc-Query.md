@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507, R518, R519
 
 Read-only operations that query parsed design data.
 
@@ -36,10 +36,13 @@ Read-only operations that query parsed design data.
   flags mean every checkbox, document order always (R317, R318, R319, R320, R321, R322)
 - Migrations(): list specs/migrations/*.md (non-recursive, excludes complete/)
 - UnindexedSpecs(): list specs/*.md not referenced in specs/index.md (exact .md-token match; all specs when index absent)
-- Traceability(path): check single file for CRC/Seq comments (passes pattern+closer from Project)
-- TraceabilityAll(): check all code files in Artifacts
-- CommentPatterns(): return configured comment patterns map
-- CommentClosers(): return configured comment closers map
+- Traceability(path): check one code file through the harvest (`HarvestFile`); a file it
+  cannot read reports the reason rather than a missing comment (R519)
+- TraceabilityAll(): the harvest over every code file in Artifacts, its unread list included
+  (R519)
+- CommentForms(): for every extension a table reads — built in or configured — the comment
+  style to write, the other comment forms the table accepts, and whether the written form has
+  a closer, for `query comment-patterns` to warn on (R518)
 - NextID(class): the next free identifier for `item`, `gap` or `req`. The class picks
   the root as well as the count — `item` is repository-scoped and delegates to
   Trajectory, `gap` and `req` are design-scoped and read what is already parsed (R189,
@@ -52,10 +55,14 @@ Read-only operations that query parsed design data.
   prints code locations only; text mode prints each matched requirement (its Rn and one-line
   text) then its locations, with an explicit "no impl refs" for a match with none; retired is
   included by number and excluded by text unless `--retired` (R502, R503, R504, R505, R507)
-- implRefs(): the positioned harvest — parse each Artifacts code file with sdom for its
-  language (a per-extension map picks the `BracketLang`), run the traceability-comment reader,
-  and collect each Rn with its `file:line` and comment, ranges expanded by the reader. Factored
-  so Item 1 of the carve can promote it for validate (R506)
+- Implementation reads the one harvest `validate` reads (`HarvestArtifacts`), indexing each
+  Rn to its `file:line` and comment, so a ref counts in both exactly alike (R506)
+- ClassifyImplArgs(args), SelectImplementation(reqs, harvest, sel): the two pure halves of
+  Implementation, so neither needs a project on disk. The classifier returns number mode with
+  the IDs sorted and deduplicated, or text mode with the compiled pattern; more than one arg
+  that is not a clean ref list, or a pattern that does not compile, is an error naming it. The
+  selection keeps one entry per selected requirement, ascending, each with its locations in
+  manifest then line order — an entry with none is kept, empty, never dropped (R503, R504, R505)
 
 ## Collaborators
 - Project: to locate files
@@ -65,8 +72,8 @@ Read-only operations that query parsed design data.
   needs and never the wording
 - RepoRoot: to express the design root as a path a delegated agent can resolve in its own
   checkout, since an absolute path is wrong in a worktree
-- TraceabilityComment: the minispecsdom reader that parses a code file's traceability comments
-  into positioned, range-expanded refs; implRefs runs it per code file
+- Harvest: the one reader of code files' traceability, shared with Validate
+- Languages: the tables each extension reads with, for CommentForms
 
 ## Sequences
 - seq-query.md

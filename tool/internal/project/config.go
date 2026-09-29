@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/BurntSushi/toml"
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
 // Origin labels for settings that no configuration file supplied.
@@ -16,8 +17,7 @@ const OriginDefaults = "(built-in defaults)"
 
 // CRC: crc-Project.md | Seq: seq-config.md#2.4 | R129
 // Origins records which layer supplied each effective setting, keyed by setting
-// name — maps are keyed per entry (`comment_patterns[.go]`) because that is the
-// granularity at which they merge.
+// name.
 type Origins map[string]string
 
 // Setting is one resolved setting: its name, its effective value, and the file that
@@ -42,26 +42,15 @@ func (p *Project) EffectiveSettings() []Setting {
 		}
 		out = append(out, Setting{Name: name, Value: value, Origin: origin})
 	}
-	// A map setting is listed per key, the granularity at which it merges.
-	addMap := func(setting string, values map[string]string) {
-		keys := make([]string, 0, len(values))
-		for k := range values {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			add(fmt.Sprintf("%s[%s]", setting, k), values[k])
-		}
-	}
-
 	if p.Config.Track != "" {
 		add("track", p.Config.Track)
 	}
 	add("design_dir", p.Config.DesignDir)
 	add("src_dir", p.Config.SrcDir)
 	add("code_extensions", strings.Join(p.Config.CodeExtensions, ", "))
-	addMap("comment_patterns", p.Config.CommentPatterns)
-	addMap("comment_closers", p.Config.CommentClosers)
+	for _, def := range p.Config.Languages {
+		add("languages["+def.Name+"]", strings.Join(def.Extensions, ", "))
+	}
 	return out
 }
 
@@ -70,11 +59,93 @@ func (p *Project) EffectiveSettings() []Setting {
 // the repository config lives here rather than beside `.git`. R119
 const ConfigDirName = ".minispec"
 
-// RepoConfigName is the repository configuration inside ConfigDirName. R118
-const RepoConfigName = "config.yaml"
+// RepoConfigName is the repository configuration inside ConfigDirName. R118, R520
+const RepoConfigName = "config.toml"
 
-// DesignConfigName is a design root's own configuration. R34
-const DesignConfigName = ".minispec.yaml"
+// DesignConfigName is a design root's own configuration. R34, R520
+const DesignConfigName = ".minispec.toml"
+
+// The configuration's names before it moved to TOML, kept only so a file still under
+// one of them is reported rather than passed over as no configuration at all. R522
+const (
+	LegacyRepoConfigName   = "config.yaml"
+	LegacyDesignConfigName = ".minispec.yaml"
+)
+
+// retiredKeys are keys a configuration once set and the tool no longer reads, with
+// what replaced each. R521
+var retiredKeys = map[string]string{
+	"comment_patterns": "code files are read through a language table chosen by extension",
+	"comment_closers":  "code files are read through a language table chosen by extension",
+}
+
+// CRC: crc-Project.md | Seq: seq-config.md#1.2.1 | R522
+// LegacyConfigError names the first configuration still in YAML among the places one
+// would be read — the repository's `.minispec/config.yaml`, a `.minispec.yaml` at the
+// repository root, and a design root's — or returns nil. Nothing reads YAML, so the
+// tool never guesses at an old file's meaning: the person converts it by hand, and the
+// converted file is read under the same strict rules as any other. Either root may be
+// empty.
+func LegacyConfigError(repoRoot, designRoot string) error {
+	var candidates []string
+	if repoRoot != "" {
+		candidates = append(candidates,
+			filepath.Join(repoRoot, ConfigDirName, LegacyRepoConfigName),
+			filepath.Join(repoRoot, LegacyDesignConfigName))
+	}
+	if designRoot != "" {
+		candidates = append(candidates, filepath.Join(designRoot, LegacyDesignConfigName))
+	}
+	for _, path := range candidates {
+		if _, err := os.Lstat(path); err != nil {
+			continue
+		}
+		converted := strings.TrimSuffix(path, ".yaml") + ".toml"
+		return fmt.Errorf(
+			"%s is a YAML configuration, and mini-spec configuration is TOML as of 2026-09-25.\n"+
+				"Nothing reads YAML any more, so this file is not being applied.\n"+
+				"Convert it by hand to %s and remove the YAML file; the keys keep their names,\n"+
+				"and the format is documented in .claude/skills/mini-spec/config-reference.md.",
+			path, converted)
+	}
+	return nil
+}
+
+// CRC: crc-Project.md | Seq: seq-config.md#2.1.1 | R521
+// decodeLayer decodes one configuration file strictly. A key the tool does not read is
+// an error naming the file and the key: silently dropping it would leave someone
+// editing a line with no effect and no way to find out, which is why a design root
+// stating `track` is refused rather than ignored. A retired key says what replaced it.
+// A file that does not parse is reported with the decoder's own message, for the
+// caller to frame.
+func decodeLayer(path string, data []byte) (Config, error) {
+	var cfg Config
+	md, err := toml.Decode(string(data), &cfg)
+	if err != nil {
+		return Config{}, err
+	}
+	// R528: every definition is built and checked where it was written, so a table sdom
+	// would reject is an error naming this file rather than a panic at parse time.
+	for _, def := range cfg.Languages {
+		if _, err := def.Build(); err != nil {
+			return Config{}, err
+		}
+	}
+	undecoded := md.Undecoded()
+	if len(undecoded) == 0 {
+		return cfg, nil
+	}
+	// Only the first undecoded key is reported.
+	key := undecoded[0]
+	top := key[0]
+	if why, retired := retiredKeys[top]; retired {
+		return Config{}, fmt.Errorf(
+			"%s sets `%s`, which is retired: %s.\n"+
+				"Remove it. `minispec query comment-patterns` shows how to write a comment in each extension.",
+			path, top, why)
+	}
+	return Config{}, fmt.Errorf("%s sets `%s`, which is not a mini-spec setting. Remove it or correct its name.", path, key.String())
+}
 
 // RepoConfigPath is where the repository configuration sits under a repository root.
 func RepoConfigPath(repoRoot string) string {
@@ -108,8 +179,8 @@ func readRepoConfig(cfgPath string) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("cannot read %s: %w", cfgPath, err)
 	}
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	cfg, err := decodeLayer(cfgPath, data)
+	if err != nil {
 		return Config{}, malformedConfigError(cfgPath, err)
 	}
 	return cfg, nil
@@ -138,6 +209,14 @@ func resolveConfigFrom(designRoot, repoRoot string, hasRepo bool) (Config, Origi
 			return Config{}, nil, err
 		}
 	}
+	// step 1.2.1 — a configuration still in YAML, at either scope
+	legacyRepo := ""
+	if hasRepo {
+		legacyRepo = repoRoot
+	}
+	if err := LegacyConfigError(legacyRepo, designRoot); err != nil {
+		return Config{}, nil, err
+	}
 
 	// step 1.3
 	cfg := DefaultConfig()
@@ -161,8 +240,8 @@ func resolveConfigFrom(designRoot, repoRoot string, hasRepo bool) (Config, Origi
 }
 
 // CRC: crc-Project.md | Seq: seq-config.md#1.2 | R122, R123
-// rejectRepoRootDesignConfig fails when a `.minispec.yaml` sits at the repository
-// root. It would have to inherit from `.minispec/config.yaml` — a file inside its own
+// rejectRepoRootDesignConfig fails when a `.minispec.toml` sits at the repository
+// root. It would have to inherit from `.minispec/config.toml` — a file inside its own
 // directory — so the shape is incoherent in every layout, including the one where the
 // repository root is also a design root. Lstat rather than Stat: a symlink to the new
 // location is still the forbidden shape, not a supported alias.
@@ -193,8 +272,9 @@ func applyLayerFile(cfg *Config, origins Origins, path string, isRepoLayer bool)
 	if err != nil {
 		return nil
 	}
-	var layer Config
-	if err := yaml.Unmarshal(data, &layer); err != nil {
+	// step 2.1.1
+	layer, err := decodeLayer(path, data)
+	if err != nil {
 		return fmt.Errorf("invalid config %s: %w", path, err)
 	}
 	if layer.Track != "" && !isRepoLayer {
@@ -208,7 +288,7 @@ func applyLayerFile(cfg *Config, origins Origins, path string, isRepoLayer bool)
 	return nil
 }
 
-// CRC: crc-Project.md | Seq: seq-config.md#2 | R125-R128, R130
+// CRC: crc-Project.md | Seq: seq-config.md#2 | R125, R127, R128, R130
 // applyLayer applies one layer over what is already resolved. The three rules are one
 // rule seen through three types: a layer states only what it adds or changes, never
 // what it keeps. A scalar cannot merge, so replacement is the only form that rule can
@@ -251,17 +331,37 @@ func applyLayer(cfg *Config, layer Config, origin string, origins Origins) {
 		cfg.CodeExtensions = union(inherited, layer.CodeExtensions)
 		origins["code_extensions"] = origin
 	}
-	// step 2.2 — per key, so a design root adding one entry keeps every other
-	mergeMap(cfg.CommentPatterns, layer.CommentPatterns, "comment_patterns", origin, origins)
-	mergeMap(cfg.CommentClosers, layer.CommentClosers, "comment_closers", origin, origins)
+	// step 2.2 retired with R126: no map settings remain.
+
+	// step 2.5 — a definition is replaced whole by name, or added under a new one; never
+	// merged field by field, since half of one table and half of another is neither. R527
+	for _, def := range layer.Languages {
+		i := slices.IndexFunc(cfg.Languages, func(d minispecsdom.LanguageDef) bool { return d.Name == def.Name })
+		if i >= 0 {
+			cfg.Languages[i] = def
+		} else {
+			cfg.Languages = append(cfg.Languages, def)
+		}
+		origins["languages["+def.Name+"]"] = origin
+	}
 }
 
-// mergeMap merges one map setting per key, recording an origin per entry. R126
-func mergeMap(dst, src map[string]string, setting, origin string, origins Origins) {
-	for k, v := range src {
-		dst[k] = v
-		origins[fmt.Sprintf("%s[%s]", setting, k)] = origin
+// CRC: crc-Project.md | R526, R527
+// Languages is the extension map the project's configured languages make, for the harvest
+// to consult before the built-in tables. Each definition was checked when its file loaded,
+// so building it again cannot fail on a configuration that resolved.
+func (p *Project) Languages() (minispecsdom.Configured, error) {
+	out := minispecsdom.Configured{}
+	for _, def := range p.Config.Languages {
+		lang, err := def.Build()
+		if err != nil {
+			return nil, err
+		}
+		for _, ext := range def.Extensions {
+			out[ext] = lang
+		}
 	}
+	return out, nil
 }
 
 // union appends entries not already present, keeping inherited order. R127

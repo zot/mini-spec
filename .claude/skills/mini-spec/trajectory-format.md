@@ -60,9 +60,9 @@ name on the queue puts it in the title (`# Pending: Ark State`), which nothing p
 2026-08-04. Files found there are legacy and want moving; the directory still holds
 in-flight migration specs, which are a different artifact.
 
-**Privacy is declared in `.gitignore`, recorded as `track` in `.minispec/config.yaml`,
-and verified on every run.** `track: private-trajectory` requires the three queue files to
-be ignored; `track: all` requires them not to be; `.carves/` is required ignored under
+**Privacy is declared in `.gitignore`, recorded as `track` in `.minispec/config.toml`,
+and verified on every run.** `track = "private-trajectory"` requires the three queue files to
+be ignored; `track = "all"` requires them not to be; `.carves/` is required ignored under
 either, because a directory whose whole purpose is privacy does not become public because
 the queue did. See `config-reference.md`.
 

@@ -233,17 +233,17 @@ func TestPreferenceReportNamesOnlyUnmetPreferences(t *testing.T) {
 // accepted. So each case names the error it must produce.
 func TestLoadTrackRejectsAMissingOrBadValue(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "config.yaml")
+	path := filepath.Join(dir, RepoConfigName)
 
 	for _, tc := range []struct {
 		name, body  string
 		wantNoTrack bool
 	}{
 		{name: "empty", body: "", wantNoTrack: true},
-		{name: "no track key", body: "design_dir: design\n", wantNoTrack: true},
-		{name: "blank track", body: "track: \"\"\n", wantNoTrack: true},
-		{name: "unknown value", body: "track: sometimes\n"},
-		{name: "unparseable", body: "track: [\n"},
+		{name: "no track key", body: "design_dir = \"design\"\n", wantNoTrack: true},
+		{name: "blank track", body: "track = \"\"\n", wantNoTrack: true},
+		{name: "unknown value", body: "track = \"sometimes\"\n"},
+		{name: "unparseable", body: "track = [\n"},
 	} {
 		if err := os.WriteFile(path, []byte(tc.body), 0o644); err != nil {
 			t.Fatal(err)
@@ -264,7 +264,7 @@ func TestLoadTrackRejectsAMissingOrBadValue(t *testing.T) {
 		}
 	}
 
-	if err := os.WriteFile(path, []byte("track: all\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("track = \"all\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if v, err := LoadTrack(path); err != nil || v != TrackAll {

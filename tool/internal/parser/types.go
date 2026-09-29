@@ -49,10 +49,3 @@ type Gap struct {
 	HasCheckbox bool // R74, R75: A/T entries should not have checkboxes
 	Line        int
 }
-
-// Traceability represents traceability comments found in a code file
-type Traceability struct {
-	CRCRefs []string
-	SeqRefs []string
-	ReqRefs []string
-}

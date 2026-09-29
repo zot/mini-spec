@@ -86,7 +86,7 @@ func mustRejectIn(t *testing.T, root, sub, forbidden string) error {
 // The repository configuration reaches a design root beneath it. R118, R121
 func TestRepoConfigAppliesToDesignRootBelow(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "src_dir: lib\n")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
 
 	cfg, _ := mustResolveIn(t, root, "tool")
 	if cfg.SrcDir != "lib" {
@@ -97,8 +97,8 @@ func TestRepoConfigAppliesToDesignRootBelow(t *testing.T) {
 // A design root's own file overrides the repository layer. R124, R125
 func TestDesignRootOverridesRepo(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "src_dir: lib\n")
-	proj := designConfig(t, root, "tool", "src_dir: source\n")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
+	proj := designConfig(t, root, "tool", "src_dir = \"source\"\n")
 
 	cfg, origins := mustResolveIn(t, root, "tool")
 	if cfg.SrcDir != "source" {
@@ -112,54 +112,22 @@ func TestDesignRootOverridesRepo(t *testing.T) {
 // A design root whose settings match the repository needs no file at all. R121
 func TestDesignRootWithNoFileInheritsEverything(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "src_dir: lib\ncomment_patterns:\n  .zig: \"//\\\\s*\"\n")
+	repoConfig(t, root, "src_dir = \"lib\"\ncode_extensions = [\".zig\"]\n")
 
 	cfg, _ := mustResolveIn(t, root, "tool")
 	if cfg.SrcDir != "lib" {
 		t.Errorf("src_dir = %q, want %q", cfg.SrcDir, "lib")
 	}
-	if cfg.CommentPatterns[".zig"] == "" {
-		t.Error("inherited comment_patterns entry missing")
-	}
-}
-
-// Maps merge per key, so a project adds one pattern without restating the rest. R126
-func TestMapsMergePerKey(t *testing.T) {
-	root := mkTree(t, "tool/design/")
-	repo := repoConfig(t, root, "comment_patterns:\n  .zig: \"ZIG\"\n  .nim: \"NIM\"\n")
-	designConfig(t, root, "tool", "comment_patterns:\n  .odin: \"ODIN\"\n")
-
-	cfg, origins := mustResolveIn(t, root, "tool")
-	for ext, want := range map[string]string{".zig": "ZIG", ".nim": "NIM", ".odin": "ODIN"} {
-		if got := cfg.CommentPatterns[ext]; got != want {
-			t.Errorf("comment_patterns[%s] = %q, want %q", ext, got, want)
-		}
-	}
-	if origins["comment_patterns[.zig]"] != repo {
-		t.Errorf("inherited key lost its origin: %q", origins["comment_patterns[.zig]"])
-	}
-}
-
-// Merging per key still overrides at the key. R126
-func TestMapKeySetByBothTakesDesignRoot(t *testing.T) {
-	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "comment_patterns:\n  .zig: \"REPO\"\n  .nim: \"NIM\"\n")
-	designConfig(t, root, "tool", "comment_patterns:\n  .zig: \"PROJECT\"\n")
-
-	cfg, _ := mustResolveIn(t, root, "tool")
-	if cfg.CommentPatterns[".zig"] != "PROJECT" {
-		t.Errorf("comment_patterns[.zig] = %q, want PROJECT", cfg.CommentPatterns[".zig"])
-	}
-	if cfg.CommentPatterns[".nim"] != "NIM" {
-		t.Errorf("untouched key changed: %q", cfg.CommentPatterns[".nim"])
+	if !slices.Equal(cfg.CodeExtensions, []string{".zig"}) {
+		t.Errorf("code_extensions = %v, want the inherited [.zig]", cfg.CodeExtensions)
 	}
 }
 
 // Lists union rather than replace, so a project states additions. R127
 func TestListsUnion(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "code_extensions: [.go, .ts]\n")
-	designConfig(t, root, "tool", "code_extensions: [.lua]\n")
+	repoConfig(t, root, "code_extensions = [\".go\", \".ts\"]\n")
+	designConfig(t, root, "tool", "code_extensions = [\".lua\"]\n")
 
 	cfg, _ := mustResolveIn(t, root, "tool")
 	want := []string{".go", ".ts", ".lua"}
@@ -171,8 +139,8 @@ func TestListsUnion(t *testing.T) {
 // Repeating an inherited entry is harmless rather than doubling it. R127
 func TestListDuplicatesDropped(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "code_extensions: [.go, .ts]\n")
-	designConfig(t, root, "tool", "code_extensions: [.ts, .lua]\n")
+	repoConfig(t, root, "code_extensions = [\".go\", \".ts\"]\n")
+	designConfig(t, root, "tool", "code_extensions = [\".ts\", \".lua\"]\n")
 
 	cfg, _ := mustResolveIn(t, root, "tool")
 	want := []string{".go", ".ts", ".lua"}
@@ -184,8 +152,8 @@ func TestListDuplicatesDropped(t *testing.T) {
 // The flat rule, on the shape it exists to forbid. R122
 func TestRepoRootDesignConfigRejected(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "src_dir: lib\n")
-	forbidden := designConfig(t, root, "", "src_dir: other\n")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
+	forbidden := designConfig(t, root, "", "src_dir = \"other\"\n")
 
 	mustRejectIn(t, root, "tool", forbidden)
 }
@@ -194,7 +162,7 @@ func TestRepoRootDesignConfigRejected(t *testing.T) {
 // exact transition scaffolding left in the reference project. R123
 func TestRejectionCatchesSymlink(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "src_dir: lib\n")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
 	link := filepath.Join(root, DesignConfigName)
 	if err := os.Symlink(filepath.Join(ConfigDirName, RepoConfigName), link); err != nil {
 		t.Fatalf("symlink: %v", err)
@@ -206,7 +174,7 @@ func TestRejectionCatchesSymlink(t *testing.T) {
 // The error is about presence, not parseability, because rejection precedes reading. R122
 func TestRejectionPrecedesReading(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	forbidden := designConfig(t, root, "", "this: [is not: valid yaml\n")
+	forbidden := designConfig(t, root, "", "this = [is not valid toml\n")
 
 	err := mustRejectIn(t, root, "tool", forbidden)
 	if strings.Contains(err.Error(), "invalid config") {
@@ -218,8 +186,8 @@ func TestRejectionPrecedesReading(t *testing.T) {
 // repository root and design root are the same directory. R120, R122
 func TestRejectionAppliesWhenRootsCoincide(t *testing.T) {
 	root := mkTree(t, "design/")
-	repoConfig(t, root, "src_dir: lib\n")
-	designConfig(t, root, "", "src_dir: other\n")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
+	designConfig(t, root, "", "src_dir = \"other\"\n")
 
 	_, _, err := resolveConfigFrom(root, root, true)
 	if err == nil {
@@ -231,7 +199,7 @@ func TestRejectionAppliesWhenRootsCoincide(t *testing.T) {
 // layer, and the design root's own file applies over the defaults. R124
 func TestNoRepoRootMeansNoRepoLayer(t *testing.T) {
 	root := mkTree(t, "design/")
-	designConfig(t, root, "", "src_dir: source\n")
+	designConfig(t, root, "", "src_dir = \"source\"\n")
 
 	cfg, origins := mustResolveNoRepo(t, root)
 	if cfg.SrcDir != "source" {
@@ -248,15 +216,14 @@ func TestNoRepoRootMeansNoRepoLayer(t *testing.T) {
 // A value's origin is answerable without reading two files. R129
 func TestProvenanceNamesTheSourceFile(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repo := repoConfig(t, root, "src_dir: lib\ncomment_patterns:\n  .zig: \"ZIG\"\n")
-	proj := designConfig(t, root, "tool", "design_dir: spec\ncomment_patterns:\n  .odin: \"ODIN\"\n")
+	repo := repoConfig(t, root, "src_dir = \"lib\"\ncode_extensions = [\".go\"]\n")
+	proj := designConfig(t, root, "tool", "design_dir = \"spec\"\ncode_extensions = [\".lua\"]\n")
 
 	_, origins := mustResolveIn(t, root, "tool")
 	for setting, want := range map[string]string{
-		"src_dir":                 repo,
-		"comment_patterns[.zig]":  repo,
-		"design_dir":              proj,
-		"comment_patterns[.odin]": proj,
+		"src_dir":         repo,
+		"design_dir":      proj,
+		"code_extensions": proj,
 	} {
 		if origins[setting] != want {
 			t.Errorf("origin of %s = %q, want %q", setting, origins[setting], want)
@@ -270,7 +237,7 @@ func TestProvenanceNamesTheSourceFile(t *testing.T) {
 // nothing sits below the defaults to move a setting down to. R127
 func TestFirstLayerReplacesDefaults(t *testing.T) {
 	root := mkTree(t, "tool/design/")
-	repoConfig(t, root, "code_extensions: [.go]\n")
+	repoConfig(t, root, "code_extensions = [\".go\"]\n")
 
 	cfg, _ := mustResolveIn(t, root, "tool")
 	if want := []string{".go"}; !slices.Equal(cfg.CodeExtensions, want) {
@@ -281,10 +248,138 @@ func TestFirstLayerReplacesDefaults(t *testing.T) {
 // A design root alone, with no repository layer, also replaces the defaults. R127
 func TestDesignRootAloneReplacesDefaults(t *testing.T) {
 	root := mkTree(t, "design/")
-	designConfig(t, root, "", "code_extensions: [.lua]\n")
+	designConfig(t, root, "", "code_extensions = [\".lua\"]\n")
 
 	cfg, _ := mustResolveNoRepo(t, root)
 	if want := []string{".lua"}; !slices.Equal(cfg.CodeExtensions, want) {
 		t.Errorf("code_extensions = %v, want %v", cfg.CodeExtensions, want)
+	}
+}
+
+// An unknown key stops resolution, naming the file and the key: a line with no effect
+// would otherwise go unnoticed. R521
+func TestUnknownKeyIsAnError(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	path := repoConfig(t, root, "src_dir = \"lib\"\nsrcdir = \"x\"\n")
+
+	_, _, err := resolveIn(t, root, "tool")
+	if err == nil {
+		t.Fatal("expected an error for the unknown key srcdir")
+	}
+	for _, want := range []string{path, "srcdir"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not name %s", err, want)
+		}
+	}
+}
+
+// A retired key is named as retired, pointing at what replaced it. R521
+func TestRetiredKeyIsNamedAsRetired(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
+	path := designConfig(t, root, "tool", "[comment_patterns]\n\".go\" = \"//\"\n")
+
+	_, _, err := resolveIn(t, root, "tool")
+	if err == nil {
+		t.Fatal("expected an error for the retired key comment_patterns")
+	}
+	for _, want := range []string{path, "comment_patterns", "retired", "query comment-patterns"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not contain %q", err, want)
+		}
+	}
+}
+
+// A repository configuration still in YAML is reported, not passed over as absent. R522
+func TestYAMLRepoConfigIsReported(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	legacy := filepath.Join(root, ConfigDirName, LegacyRepoConfigName)
+	writeFile(t, legacy, "src_dir: lib\n")
+
+	_, _, err := resolveIn(t, root, "tool")
+	if err == nil {
+		t.Fatal("expected an error naming the YAML configuration")
+	}
+	for _, want := range []string{legacy, "TOML", "by hand"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not contain %q", err, want)
+		}
+	}
+}
+
+// A design root's configuration still in YAML is reported too, and the repository layer
+// is not applied alone as though the design root had no file. R522
+func TestYAMLDesignConfigIsReported(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	repoConfig(t, root, "src_dir = \"lib\"\n")
+	legacy := filepath.Join(root, "tool", LegacyDesignConfigName)
+	writeFile(t, legacy, "src_dir: source\n")
+
+	_, _, err := resolveIn(t, root, "tool")
+	if err == nil || !strings.Contains(err.Error(), legacy) {
+		t.Fatalf("error %v does not name %s", err, legacy)
+	}
+}
+
+// The check the gate and init share finds the repository-level YAML files on its own,
+// with no design root — which is how the gate calls it, before it knows one. R522
+func TestLegacyConfigErrorAtTheRepositoryScope(t *testing.T) {
+	for _, rel := range []string{filepath.Join(ConfigDirName, LegacyRepoConfigName), LegacyDesignConfigName} {
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, rel), "track: all\n")
+		err := LegacyConfigError(root, "")
+		if err == nil || !strings.Contains(err.Error(), filepath.Join(root, rel)) {
+			t.Errorf("%s: error %v does not name the file", rel, err)
+		}
+	}
+	if err := LegacyConfigError(t.TempDir(), ""); err != nil {
+		t.Errorf("a tree with no YAML reported %v", err)
+	}
+}
+
+// langDef writes a minimal [[languages]] table whose one comment form is marker.
+func langDef(name, ext, marker string) string {
+	return "[[languages]]\nname = \"" + name + "\"\nextensions = [\"" + ext + "\"]\n" +
+		"comment = { prefix = \"" + marker + " \", suffix = \"\\n\", kind = \"comment\" }\n" +
+		"  [[languages.brackets]]\n  open = [\"" + marker + "\"]\n  close = \"\\n\"\n  allowed_inner = []\n  kind = \"comment\"\n"
+}
+
+// Languages layer by name: a design root replaces one whole and adds another, and the
+// repository's others stand. R527
+func TestLanguagesLayerByName(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	repo := repoConfig(t, root, langDef("a", ".a", "%%")+langDef("b", ".b", "%%"))
+	proj := designConfig(t, root, "tool", langDef("b", ".bb", "@@")+langDef("c", ".c", "@@"))
+
+	cfg, origins := mustResolveIn(t, root, "tool")
+	got := map[string][]string{}
+	for _, d := range cfg.Languages {
+		got[d.Name] = d.Extensions
+	}
+	want := map[string][]string{"a": {".a"}, "b": {".bb"}, "c": {".c"}}
+	if len(got) != 3 || !slices.Equal(got["a"], want["a"]) || !slices.Equal(got["b"], want["b"]) || !slices.Equal(got["c"], want["c"]) {
+		t.Errorf("languages = %v, want %v", got, want)
+	}
+	if origins["languages[a]"] != repo || origins["languages[b]"] != proj {
+		t.Errorf("origins a=%q b=%q", origins["languages[a]"], origins["languages[b]"])
+	}
+}
+
+// A language sdom rejects stops the load, naming the file, the language and the group. R528
+func TestRejectedLanguageNamesTheFile(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	bad := "[[languages]]\nname = \"broken\"\nextensions = [\".x\"]\n" +
+		"comment = { prefix = \"// \", suffix = \"\\n\", kind = \"comment\" }\n" +
+		"  [[languages.brackets]]\n  open = [\"<\"]\n  close = \">\"\n  close_regex = \">\"\n"
+	path := repoConfig(t, root, bad)
+
+	_, _, err := resolveIn(t, root, "tool")
+	if err == nil {
+		t.Fatal("expected the definition to be rejected")
+	}
+	for _, want := range []string{path, "broken", "group 0"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not name %q", err, want)
+		}
 	}
 }

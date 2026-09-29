@@ -38,7 +38,8 @@ they agree and no ordering among them is needed.
 **Weaker fallbacks, in order, used only when no strong marker is found:**
 
 1. the deepest `.claude` directory
-2. the deepest `.minispec.yaml`
+2. the deepest `.minispec.toml`, or a legacy `.minispec.yaml`, so a tree still configured
+   in YAML resolves far enough to be told to convert it
 
 **Otherwise the search fails**, reporting the directory it started from.
 
@@ -58,8 +59,8 @@ maintainer's machine — the repository, its parent, and the home directory — 
 first-match walk accepting `.claude` would resolve a directory that is not a
 repository at all as the repository root.
 
-`.minispec.yaml` is likewise the design-root marker, and a repository may hold
-several. The innermost wins any upward walk, so "the first `.minispec.yaml` going
+`.minispec.toml` is likewise the design-root marker, and a repository may hold
+several. The innermost wins any upward walk, so "the first `.minispec.toml` going
 up" would resolve this repository's root to `tool/`. Presence is not a declaration,
 which is why it ranks last.
 

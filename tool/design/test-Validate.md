@@ -112,3 +112,18 @@ Pulled again after the simplification pass restructured the function — still r
 **Fire alarm:** widen the gap line scan to any bullet — drop the `X<n>:` key from `gapLineRe` — and confirm the sub-bullet reads as a gap the reader did not return
 **Inject:** internal/validate/validate.go:readerAgreement
 **Pulled:** 2026-09-12 — rang again, the commit having landed five days after the pull, and once more the same day after the fixture moved to fenced samples on the dependency's `b9f4c70`; same injection and signature; restore byte-clean by copy. Previously 2026-09-07 — rang: `healthy documents: findings [design.md: the line scan read gap sub …]`; restore byte-clean by copy, and again after the simplification pass restructured `readerAgreement`, same signature
+
+## Test: validate reports the code files it could not read
+**Purpose:** R516 — coverage must never read clean over code nobody searched. Found by a probe
+past the alarm list, 2026-09-29: with the note dropped, every test stayed green
+**Input:** a manifest listing `x.zig` (no language table) and `a.go` (a string opened on line 2
+and never closed)
+**Expected:** `UnreadCode` names `x.zig` with "no language for .zig" and `a.go:2`, and the text
+output carries the "2 code file(s) were not read" note
+**Code:** internal/validate/validate_test.go
+**Alarm:** 4
+**Fire alarm:** stop appending the harvest's unread entries to `UnreadCode`, and confirm the test
+sees an empty list and no note
+**Inject:** internal/validate/validate.go:Validate.Run
+**Pulled:** 2026-09-29 — rang on all three assertions; restore byte-clean
+**Refs:** seq-validate.md — R516

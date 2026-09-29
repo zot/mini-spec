@@ -60,7 +60,7 @@ func RepoRootFrom(startDir, homeBoundary string) (string, error) {
 	// Weak markers are recorded rather than returned on sight: a strong marker may
 	// still sit above, and `.claude` in particular exists at several levels of an
 	// ordinary path.
-	var claudeCandidate, yamlCandidate string
+	var claudeCandidate, configCandidate string
 
 	// step 1.3 — the upward walk
 	dir := start
@@ -76,12 +76,15 @@ func RepoRootFrom(startDir, homeBoundary string) (string, error) {
 			return dir, nil
 		}
 		// steps 1.3.3 and 1.3.4 — independent, not alternatives: one directory may
-		// hold both a .claude and a .minispec.yaml
+		// hold both a .claude and a .minispec.toml
 		if claudeCandidate == "" && isDir(filepath.Join(dir, ".claude")) {
 			claudeCandidate = dir
 		}
-		if yamlCandidate == "" && exists(filepath.Join(dir, ".minispec.yaml")) {
-			yamlCandidate = dir
+		// R523: the legacy name counts too, so a tree still configured in YAML resolves
+		// far enough for the configuration loader to tell it to convert
+		if configCandidate == "" && (exists(filepath.Join(dir, DesignConfigName)) ||
+			exists(filepath.Join(dir, LegacyDesignConfigName))) {
+			configCandidate = dir
 		}
 		// step 1.3.5
 		parent := filepath.Dir(dir)
@@ -95,8 +98,8 @@ func RepoRootFrom(startDir, homeBoundary string) (string, error) {
 	if claudeCandidate != "" {
 		return claudeCandidate, nil
 	}
-	if yamlCandidate != "" {
-		return yamlCandidate, nil
+	if configCandidate != "" {
+		return configCandidate, nil
 	}
 	// step 1.6 — absence is reported as an error carrying the search origin, never
 	// as a bare failure a caller could mistake for a clean result

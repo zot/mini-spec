@@ -1,5 +1,5 @@
 # Validate
-**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101, R179, R183, R184, R188, R327, R328
+**Requirements:** R24, R25, R26, R27, R28, R29, R30, R31, R3, R40, R41, R42, R43, R63, R64, R65, R66, R68, R69, R70, R72, R76, R78, R84, R85, R86, R88, R90, R91, R92, R93, R97, R98, R99, R100, R101, R179, R183, R184, R188, R327, R328, R516
 
 Runs structural validations and reports findings.
 
@@ -16,7 +16,10 @@ Runs structural validations and reports findings.
 - ValidateGaps(): check ID format (S/R/D/C/I/O/A/T), no duplicates, flag A/T entries that carry a checkbox
 - approvedGapReqs(): extract Rn references (individual and ranges) from approved gap descriptions
 - retiredReqs(): set of Rn IDs marked retired in requirements.md
-- ValidateTraceability(): check code files have CRC comments, CRC/Seq refs exist, inline Rn refs exist in requirements.md
+- ValidateTraceability(): read the harvest over the Artifacts code files; a file with no
+  comment carrying a CRC field is missing traceability, CRC/Seq refs must exist, inline Rn refs
+  must exist in requirements.md; every file the harvest could not read joins the coverage
+  note with its reason (R516)
 - ValidateImplementationCoverage(): check every non-retired, non-approved requirement appears as inline Rn ref in at least one code file
 - ValidateArtifactsCompleteness(): check all design files are listed in Artifacts
 - ValidateSpecSources(): for each path in each Requirement's Sources list, classify as malformed (bad shape) or missing (clean but not on disk); also scan requirements.md for suspicious Source-like lines that don't match the canonical pattern

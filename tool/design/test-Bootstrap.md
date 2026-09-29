@@ -114,3 +114,18 @@ this assertion strictly stronger
 attempt deleted the branch outright, which orphaned an import and broke the *build* —
 the test never ran, so it proved nothing and was reshaped
 **Refs:** seq-bootstrap.md#1.6 — R174
+
+## Test: the gate reports a YAML configuration before the no-configuration refusal
+**Purpose:** a repository still configured in YAML has a configuration, just not one the tool
+reads; the no-configuration refusal would send the user to `init` over a file they already
+have. Found by a probe past the alarm list, 2026-09-27: removing the check left every test green
+**Input:** a temporary tree holding only `.minispec/config.yaml`; `gate("validate")` from inside it
+**Expected:** stops with exit 1, names the YAML file and TOML, and does not show the
+no-configuration refusal
+**Code:** internal/cli/bootstrap_test.go
+**Alarm:** 4
+**Fire alarm:** make the gate's `LegacyConfigError` check never fire, and confirm the test sees
+the no-configuration refusal instead
+**Inject:** internal/cli/bootstrap.go:gate
+**Pulled:** 2026-09-27 — rang on both assertions: YAML not reported, no-configuration refusal shown; restore byte-clean
+**Refs:** seq-bootstrap.md#1 — R522

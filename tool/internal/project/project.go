@@ -6,20 +6,23 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/zot/minispec/internal/minispecsdom"
 )
 
-// Config holds project configuration
+// CRC: crc-Project.md | R520
+// Config holds project configuration, decoded from TOML.
 type Config struct {
-	DesignDir       string            `yaml:"design_dir,omitempty"`
-	SrcDir          string            `yaml:"src_dir,omitempty"`
-	CodeExtensions  []string          `yaml:"code_extensions,omitempty"`
-	CommentPatterns map[string]string `yaml:"comment_patterns,omitempty"`
-	CommentClosers  map[string]string `yaml:"comment_closers,omitempty"`
+	DesignDir      string   `toml:"design_dir,omitempty"`
+	SrcDir         string   `toml:"src_dir,omitempty"`
+	CodeExtensions []string `toml:"code_extensions,omitempty"`
+	// Languages are the project's own tables, layered by name. R526, R527
+	Languages []minispecsdom.LanguageDef `toml:"languages,omitempty"`
 	// Track is repository-scoped and belongs to the repository layer alone: it
 	// describes the repository, and a repository may hold several design roots, so
 	// letting one of them answer for the whole would be the two-roots confusion this
 	// tool has already paid for once. R131, R135
-	Track string `yaml:"track,omitempty"`
+	Track string `toml:"track,omitempty"`
 }
 
 // Project represents a mini-spec project
@@ -34,43 +37,12 @@ type Project struct {
 	Origins Origins
 }
 
-// DefaultCommentPatterns returns the default comment patterns per file extension
-func DefaultCommentPatterns() map[string]string {
-	return map[string]string{
-		".go":   `//\s*`,
-		".js":   `//\s*`,
-		".ts":   `//\s*`,
-		".c":    `//\s*`,
-		".h":    `//\s*`,
-		".cpp":  `//\s*`,
-		".py":   `#\s*`,
-		".lua":  `--\s*`,
-		".sh":   `#\s*`,
-		".bash": `#\s*`,
-		".md":   `<!--\s*`,
-		".html": `<!--\s*`,
-		".css":  `/\*\s*`,
-	}
-}
-
-// DefaultCommentClosers returns closers for block-comment languages.
-// Extensions not listed here use line-terminating comments (no closer needed).
-func DefaultCommentClosers() map[string]string {
-	return map[string]string{
-		".md":   " -->",
-		".html": " -->",
-		".css":  " */",
-	}
-}
-
 // DefaultConfig returns default configuration
 func DefaultConfig() Config {
 	return Config{
-		DesignDir:       "design",
-		SrcDir:          "src",
-		CodeExtensions:  []string{".go", ".ts", ".js", ".lua", ".py", ".c", ".h", ".cpp", ".sh"},
-		CommentPatterns: DefaultCommentPatterns(),
-		CommentClosers:  DefaultCommentClosers(),
+		DesignDir:      "design",
+		SrcDir:         "src",
+		CodeExtensions: []string{".go", ".ts", ".js", ".lua", ".py", ".c", ".h", ".cpp", ".sh"},
 	}
 }
 
@@ -199,16 +171,4 @@ func (p *Project) ResolveSpecSource(src string) (resolved string, ok bool) {
 		}
 	}
 	return direct, false
-}
-
-// CommentPattern returns the comment regex pattern for the given file extension.
-// Returns empty string if no pattern is configured for the extension.
-func (p *Project) CommentPattern(ext string) string {
-	return p.Config.CommentPatterns[ext]
-}
-
-// CommentCloser returns the closing delimiter for the given file extension.
-// Returns empty string if the extension uses line-terminating comments.
-func (p *Project) CommentCloser(ext string) string {
-	return p.Config.CommentClosers[ext]
 }

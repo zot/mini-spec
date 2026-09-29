@@ -10,7 +10,7 @@ pointers — the named spec stays canonical, this file mirrors it.
 
 | spec | covers |
 |---|---|
-| [config.md](config.md) | design-root detection, the two config scopes and their inheritance, comment patterns and closers, global flags, version reporting |
+| [config.md](config.md) | design-root detection, the two config scopes and their inheritance, the TOML format, configured languages, the retired comment-pattern keys, global flags, version reporting |
 | [repository-root.md](repository-root.md) | repository-root detection, the two-root distinction, marker ranking, the home-directory exclusion |
 | [initialization.md](initialization.md) | `init` and `--repair`, the `track` setting and its startup check, the no-configuration refusal, git preferences |
 
@@ -38,7 +38,7 @@ over `github.com/zot/simple-dom`, which stays a module dependency.
 
 | spec | covers |
 |---|---|
-| [traceability-comment.md](traceability-comment.md) | the `// CRC: … | Seq: … | Rn` comment as a declaration: its segments, keywords, and canonical write |
+| [traceability-comment.md](traceability-comment.md) | the `// CRC: … | Seq: … | Rn` comment as a declaration: its segments, keywords, and canonical write; the language tables that read each extension; the harvest every traceability check reads |
 | [part-line.md](part-line.md) | a carve's part line: head, markers, trailing text, the strike, and the marker rule |
 | [carve-schema.md](carve-schema.md) | the carve document: status block, parts, decisions, `Land`, `Open`, `SetMarker` |
 | [pending-schema.md](pending-schema.md) | the pending file: entries, `Place`, `Remove`, the source slot |

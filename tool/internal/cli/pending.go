@@ -537,7 +537,7 @@ func missingTrajectoryMessage(repoRoot string, e *pending.MissingTrajectoryError
 	track, err := project.LoadTrack(filepath.Join(repoRoot, project.ConfigDirName, project.RepoConfigName))
 	switch {
 	case err != nil:
-		b.WriteString("Whether the queue is private or ships with the repository is `track` in\n.minispec/config.yaml, which could not be read; `minispec init --track-<value>` sets it.\n")
+		b.WriteString("Whether the queue is private or ships with the repository is `track` in\n.minispec/config.toml, which could not be read; `minispec init --track-<value>` sets it.\n")
 	case track == project.TrackPrivateTrajectory:
 		b.WriteString("track is private-trajectory: init already wrote the .gitignore lines, so the three\nfiles will be ignored — private to this checkout.\n")
 	default:

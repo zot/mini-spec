@@ -47,9 +47,8 @@ the ask; a valid selection matching nothing prints what was asked (R317–R323).
 The args classify first: parsed cleanly as requirement refs (the `ExpandGapRefs` grammar,
 R-only) they are the selected set and it is number mode; otherwise the sole arg compiles to a
 regexp and the selected set is the requirements whose text it matches (text mode). The harvest
-then runs once — for each code file the Artifacts manifest lists, parse it with the sdom
-language its extension maps to, run the traceability-comment reader, and index each Rn (ranges
-expanded) to its `file:line` and comment. Each selected requirement is looked up in that index;
+(`HarvestArtifacts`, the one `validate` reads) runs once, and each Rn it found — ranges
+expanded — is indexed to its `file:line` and comment. Each selected requirement is looked up in that index;
 number mode prints only its locations, text mode prints the requirement then its locations, and
 a selected requirement absent from the index prints "no impl refs". Retired requirements are
 kept in the selected set by number and dropped in text mode unless `--retired` (R502–R507).

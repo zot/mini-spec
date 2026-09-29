@@ -57,6 +57,13 @@ func (c *CLI) gate(cmd string) (int, bool) {
 		return 1, true
 	}
 
+	// A configuration still in YAML is reported before the no-configuration refusal,
+	// which would otherwise send the user to init over a file they already have. R522
+	if err := project.LegacyConfigError(repoRoot, ""); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1, true
+	}
+
 	// steps 1.3 and 1.4
 	cfgPath := project.RepoConfigPath(repoRoot)
 	if _, statErr := os.Stat(cfgPath); statErr != nil {

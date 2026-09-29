@@ -53,7 +53,7 @@ is exactly where that is missed
 **Refs:** crc-Git.md — R167
 
 ## Test: a tracked file reports as tracked, an untracked one does not
-**Purpose:** the fact behind the `.minispec/config.yaml` preference
+**Purpose:** the fact behind the `.minispec/config.toml` preference
 **Input:** a repository with one added file and one untracked file
 **Expected:** `IsTracked` distinguishes them
 **Refs:** crc-Git.md — R164

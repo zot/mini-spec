@@ -252,3 +252,45 @@ func TestOnlyCommentGroupsAreCandidates(t *testing.T) {
 		t.Errorf("the pass changed a document it recognized nothing in")
 	}
 }
+
+// R508 — a full stop directly after the requirement list starts the description, and a
+// dot anywhere else (a file name) is never taken for one.
+func TestFullStopAfterRefsStartsTheDescription(t *testing.T) {
+	for _, tc := range []struct {
+		interior, desc string
+		refs           []int
+		crc            []string
+	}{
+		{"R271. A gap is a source", " A gap is a source", []int{271}, nil},
+		{"CRC: crc-X.md | R5. note", " note", []int{5}, []string{"crc-X.md"}},
+		{"CRC: crc-X.md", "", nil, []string{"crc-X.md"}},
+		{"R5-7, R9. spans", " spans", []int{5, 6, 7, 9}, nil},
+	} {
+		_, c := one(t, goc(tc.interior), &sdom.LangGo)
+		if got := descText(c); got != tc.desc {
+			t.Errorf("%q: description %q, want %q", tc.interior, got, tc.desc)
+		}
+		var refs []int
+		if c.Refs() != nil {
+			refs = c.Refs().Items()
+		}
+		if !slices.Equal(refs, tc.refs) {
+			t.Errorf("%q: refs %v, want %v", tc.interior, refs, tc.refs)
+		}
+		var crc []string
+		if c.CRC() != nil {
+			crc = c.CRC().Items()
+		}
+		if !slices.Equal(crc, tc.crc) {
+			t.Errorf("%q: CRC %v, want %v", tc.interior, crc, tc.crc)
+		}
+	}
+}
+
+func descText(c *TraceabilityComment) string {
+	if c.Description() == nil {
+		return ""
+	}
+	s, _ := c.Description().Render()
+	return s
+}

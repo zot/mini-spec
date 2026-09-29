@@ -1,5 +1,5 @@
 # RepoRoot
-**Requirements:** R107, R108, R109, R110, R111, R112, R113, R114
+**Requirements:** R107, R108, R109, R110, R111, R112, R113, R114, R523
 
 Resolves the **repository root** — the top of the version-controlled working tree,
 which owns `.claude/`, `carves/` and the trajectory files.
@@ -16,7 +16,9 @@ card exists to remove.
 - strongMarkers: `.git`, `.minispec/`, `carves/`, and the trajectory filenames
   (`PENDING.md`, `CURRENT.md`, `DONE.md`) — equal, unordered
 - claudeCandidate: deepest `.claude` directory seen so far, if any
-- yamlCandidate: deepest `.minispec.yaml` seen so far, if any
+- configCandidate: deepest `.minispec.toml`, or legacy `.minispec.yaml`, seen so far, if any
+  (R523) — the legacy name counts so a YAML-configured tree resolves far enough to be told
+  to convert
 
 ## Does
 - RepoRoot(): walk upward from the current directory, bounded by the user's home

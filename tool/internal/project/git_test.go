@@ -144,7 +144,7 @@ func TestNegatedPatternIsNotIgnored(t *testing.T) {
 	}
 }
 
-// R164 — the fact behind the .minispec/config.yaml preference.
+// R164 — the fact behind the .minispec/config.toml preference.
 func TestTrackedDistinguishesAddedFromUntracked(t *testing.T) {
 	dir := newRepo(t)
 	write(t, dir, "loose.txt", "loose\n")

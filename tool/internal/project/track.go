@@ -36,7 +36,7 @@ const PrivateCarvesDir = ".carves"
 
 // BackupDirName holds the tool's machine-local working files, including the revert
 // slot's stamp. One ignore line then covers everything machine-local, leaving
-// config.yaml the only visible thing in `.minispec/`. R165
+// config.toml the only visible thing in `.minispec/`. R165
 const BackupDirName = "backup"
 
 // BackupIgnorePath is the .gitignore entry for that directory.

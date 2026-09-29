@@ -4,6 +4,8 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -93,11 +95,11 @@ func TestNoConfigMessageCarriesEachClause(t *testing.T) {
 // what the whole case exists to correct: the malformed refusal sent the agent to
 // hand-edit a file `--repair` accepts, and a hand edit leaves `.gitignore` unreconciled.
 func TestPreTrackMessageNamesRepairAndNotHandEditing(t *testing.T) {
-	got := preTrackMessage("/tmp/x/.minispec/config.yaml")
+	got := preTrackMessage("/tmp/x/.minispec/config.toml")
 	if !strings.Contains(got, "--repair") {
 		t.Errorf("refusal does not name the repair verb:\n%s", got)
 	}
-	if !strings.Contains(got, "/tmp/x/.minispec/config.yaml") {
+	if !strings.Contains(got, "/tmp/x/.minispec/config.toml") {
 		t.Errorf("refusal does not name the configuration it is refusing:\n%s", got)
 	}
 	// The malformed refusal's authorisation must not leak into this one — it is the
@@ -127,7 +129,7 @@ func TestPreTrackMessageAsksIntentAndStops(t *testing.T) {
 // ErrNoTrack's own text names `--repair`, so sending absence down the damage branch
 // still prints something plausible while the intent question and the stop are gone.
 func TestTrackRefusalRoutesAbsenceAndDamageApart(t *testing.T) {
-	const cfg = "/tmp/x/.minispec/config.yaml"
+	const cfg = "/tmp/x/.minispec/config.toml"
 
 	// Each branch is compared against the whole message it must produce, rather than
 	// against a clause of it: the two tests above own what each message *says*, and this
@@ -176,5 +178,38 @@ func TestTrackFlagsCoverExactlyTheClosedSet(t *testing.T) {
 		if string(want) != strings.TrimPrefix(flag, "--track-") {
 			t.Errorf("%q maps to %q, want the matching value", flag, want)
 		}
+	}
+}
+
+// R522 — a repository whose configuration is still YAML is told to convert it, and is
+// never shown the no-configuration refusal, which would send the user to `init` over a
+// file they already have. `.minispec/` is a strong root marker, so the tree needs
+// nothing else for the gate to find its root.
+func TestGateReportsAYAMLConfigBeforeNoConfig(t *testing.T) {
+	root := t.TempDir()
+	legacy := filepath.Join(root, project.ConfigDirName, project.LegacyRepoConfigName)
+	if err := os.MkdirAll(filepath.Dir(legacy), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(legacy, []byte("track: all\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	wd, _ := os.Getwd()
+	defer os.Chdir(wd)
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+
+	var code int
+	var stopped bool
+	out := capture(t, &os.Stderr, func() { code, stopped = (&CLI{}).gate("validate") })
+	if !stopped || code != 1 {
+		t.Fatalf("gate = (%d, %v), want (1, true)", code, stopped)
+	}
+	if !strings.Contains(out, project.LegacyRepoConfigName) || !strings.Contains(out, "TOML") {
+		t.Errorf("gate did not report the YAML configuration:\n%s", out)
+	}
+	if strings.Contains(out, "doesn't look like this is a minispec project") {
+		t.Errorf("gate showed the no-configuration refusal over an existing YAML file:\n%s", out)
 	}
 }

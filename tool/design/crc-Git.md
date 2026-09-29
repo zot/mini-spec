@@ -22,7 +22,7 @@ repository: a fake `Git` states the world the check is being run against.
   at once. **Returns an error where no ignore state can be determined** — a tree
   managed by another version-control system reaches this, and is told so
 - Tracked(path): report whether a path is known to the index — the question behind the
-  `.minispec/config.yaml` preference
+  `.minispec/config.toml` preference
 - LastChanged(file, symbol): report when a named **function** last changed. Asked of
   the function rather than the file because a file-level answer marks every alarm in a
   busy file stale and so discriminates nothing. Five outcomes stay apart — no work tree,

@@ -115,6 +115,24 @@ minispec query traceability src/store.go
 minispec query traceability --all
 ```
 
+### query implementation
+
+Where a requirement is implemented: every code `file:line` whose traceability comment
+carries its `Rn`, read through the same harvest `validate` uses, so a range such as
+`R5-R8` answers for `R6` and a prose mention such as `(see R6)` does not.
+
+```bash
+# By number: the code locations only (ranges and comma lists work)
+minispec query implementation R502-R504,R507
+
+# By text: each requirement the regexp matches, then its locations;
+# "no impl refs" under one that has none
+minispec query implementation '@status'
+
+# Retired requirements answer by number always, by text only with --retired
+minispec query implementation 'retired form' --retired
+```
+
 ### update check / uncheck
 
 Toggle checkboxes in design files.
@@ -210,39 +228,29 @@ minispec --json query gaps
 
 ## Configuration
 
-Optional `.minispec.yaml` in project root:
+Configuration is TOML, at two scopes: `.minispec/config.toml` at the repository root
+(written by `minispec init`, and the only home of `track`), and an optional
+`.minispec.toml` in a design root holding only what differs from it:
 
-```yaml
-design_dir: design
-src_dir: src
-code_extensions:
-  - .go
-  - .ts
-  - .lua
-comment_patterns:
-  .go: "//\\s*"
-  .ts: "//\\s*"
-  .lua: "--\\s*"
+```toml
+design_dir = "design"
+src_dir = "src"
+code_extensions = [".go", ".ts", ".lua"]
 ```
 
-### Comment Patterns
+A key the tool does not read is an error naming the file and the key. A configuration
+still in YAML (`.minispec/config.yaml`, `.minispec.yaml`) is reported with the
+instruction to convert it by hand. `minispec query config` shows every effective setting
+and the file it came from. The full reference is
+`.claude/skills/mini-spec/config-reference.md`.
 
-The `comment_patterns` map defines regex patterns for single-line comments by file extension. The tool appends `CRC:` to find traceability comments.
+### Comments in code files
 
-Default patterns (built-in):
-| Extension | Pattern | Languages |
-|-----------|---------|-----------|
-| `.go` | `//\s*` | Go |
-| `.js`, `.ts` | `//\s*` | JavaScript, TypeScript |
-| `.c`, `.h`, `.cpp` | `//\s*` | C, C++ |
-| `.py` | `#\s*` | Python |
-| `.lua` | `--\s*` | Lua |
-| `.sh`, `.bash` | `#\s*` | Shell |
-| `.md` | `<!--\s*` | Markdown (HTML comments) |
-| `.html` | `<!--\s*` | HTML |
-| `.css` | `/\*\s*` | CSS |
-
-Custom patterns in `.minispec.yaml` override defaults for matching extensions.
+Code files are read through a language table chosen by extension; a file with no table is
+reported as not read. `comment_patterns` and `comment_closers` are retired. `minispec query
+comment-patterns` reports how to write a traceability comment in each extension, closers
+included, and a project can define further languages as `[[languages]]` tables (see the
+skill's `config-reference.md` and `languages-example.toml`).
 
 ## File Formats
 

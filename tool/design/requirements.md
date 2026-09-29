@@ -11,7 +11,7 @@
 - **R6:** Tool parses CRC card format (Requirements field)
 - **R7:** Tool parses design.md Artifacts section (nested checkboxes)
 - **R8:** Tool parses design.md Gaps section (typed IDs: S/R/D/C/O)
-- **R9:** Tool parses code traceability comments (// CRC: pattern)
+- **~~R9:~~** (Retired T15 — see R513) Tool parses code traceability comments (// CRC: pattern)
 
 ## Feature: Queries
 **Source:** specs/queries.md
@@ -38,6 +38,8 @@
 - **R505:** query implementation includes retired requirements when they are selected by number and excludes them in text mode unless the --retired flag is given; --retired has no effect in number mode.
 - **R506:** query implementation harvests implementation references through the minispecsdom traceability-comment reader over the code files listed in the design.md Artifacts manifest, producing real file and line positions and expanding a comment's requirement range (such as R5-R8) to its members.
 - **R507:** query implementation supports --json machine-readable output.
+- **R518:** `query comment-patterns` reports, for every extension a language table reads, the comment style to write, the other comment forms the reader accepts, and a warning for every extension whose written form has a closer.
+- **R519:** `query traceability`, for one file or `--all`, reads through the harvest, and a file the harvest cannot read reports the reason rather than a missing comment.
 
 ## Feature: Updates
 **Source:** specs/updates.md
@@ -70,18 +72,20 @@
 - **R31:** Exit code 0 if no issues, 1 if issues found
 - **R327:** **The two readers of every design document `minispecsdom` owns must agree, and this check is the second opinion**: for the Gaps section, requirements.md and every test design, an independent line scan — a regex over lines, bounded for the gaps section by its heading and the next level-2 heading, built on nothing the reader is built on — is compared with what the reader returned, IDs for gaps and requirements and entry counts for test designs, and every difference is a finding listed first, because every check below it reads through the document reader alone. A reader that lost a file's tail to one unclosed span agrees with itself forever; only a scan that shares none of its blind spots can say how much of the file it actually saw
 - **R328:** `validate` prints what the design-document readers could not read — an entry-like line outside the shape, a group never closed — as a **coverage note** naming each file and its count, whether or not anything else fired, because a reader takes silence about coverage as a claim of completeness; it is never an issue in itself
+- **R516:** `validate` lists every code file the harvest could not read in its coverage note, with the reason, beside the design documents' unread lines.
 
 ## Feature: Configuration
 **Source:** specs/config.md
 
 - **R32:** Design-root detection walks up to find the design/ directory
 - **R33:** Default paths: design/, src/, crc-*.md, seq-*.md
-- **R34:** Optional `.minispec.yaml` config file in a **design root**, for overrides
+- **R34:** Optional `.minispec.toml` config file in a **design root**, for overrides
 - **R35:** CLI flags: --design-dir, --src-dir, --quiet, --json
 - **R36:** JSON output mode for tooling integration
 - **R37:** (deferred) MCP server mode via `minispec serve`
-- **R38:** Configurable comment patterns per file extension (map in config)
-- **R39:** Default comment patterns for go, js/ts, python, lua, c/h, shell
+- **~~R38:~~** (Retired T16 — see R509) Configurable comment patterns per file extension (map in config)
+- **~~R39:~~** (Retired T17 — see R509) Default comment patterns for go, js/ts, python, lua, c/h, shell
+- **~~R517:~~** (Retired T28 — see R521) A configuration file that sets the retired `comment_patterns` or `comment_closers` key is named, with the key, in a `validate` note, and the key is not applied.
 
 ## Feature: Extended Validation
 **Source:** specs/validate.md
@@ -119,10 +123,10 @@
 ## Feature: Comment Closers
 **Source:** specs/config.md
 
-- **R57:** Configurable comment closers per file extension (map in config), merged over defaults
-- **R58:** Default comment closers for block-comment languages (.md, .html, .css)
-- **R59:** Parser strips config-provided comment closer from traceability refs
-- **R60:** `query comment-patterns` shows closers section with WARNING when closers are configured
+- **~~R57:~~** (Retired T18 — see R509) Configurable comment closers per file extension (map in config), merged over defaults
+- **~~R58:~~** (Retired T19 — see R509) Default comment closers for block-comment languages (.md, .html, .css)
+- **~~R59:~~** (Retired T20 — see R513) Parser strips config-provided comment closer from traceability refs
+- **~~R60:~~** (Retired T21 — see R518) `query comment-patterns` shows closers section with WARNING when closers are configured
 
 ## Feature: Approved Gaps
 **Source:** specs/updates.md
@@ -141,15 +145,15 @@
 ## Feature: Inline Requirement Traceability
 **Source:** specs/validate.md
 
-- **R67:** Traceability parser extracts Rn refs from an optional third pipe-delimited section (e.g. `| R5, R12`) into a ReqRefs field
+- **~~R67:~~** (Retired T22 — see R514) Traceability parser extracts Rn refs from an optional third pipe-delimited section (e.g. `| R5, R12`) into a ReqRefs field
 - **R68:** Validate checks that inline Rn refs in code files exist in requirements.md
 - **R69:** Validate checks implementation coverage: every requirement should appear as an inline Rn ref in at least one code file (requirements covered by approved gaps are excluded)
 - **R70:** Requirements with design coverage but no implementation coverage are reported as I-type (implementation) gaps
 - **R71:** Tool parses gap type "I" (implementation) in addition to S/R/D/C/O/A
 - **R72:** Validate output includes an implementation coverage section showing which requirements have code-level refs
-- **R104:** Traceability parser also extracts inline Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — collecting the leading comma-separated `Rn` refs into ReqRefs. A ref that does not immediately follow the comment leader (a prose mention like `// see R5` or `// computed (R5)`) is not counted.
-- **R105:** Inline Rn ref harvesting (both the `// CRC: … | Rn` tail and the bare annotation) expands `Rn-Rm` range syntax into every member, so a range-form annotation (`// R5-R8`) covers the whole span; the second `R` is optional (`R5-8`), comma-separated lists and ranges may be mixed (`// R5-R7, R10`), and a reversed range (`R8-R5`) contributes only the low ref.
-- **R106:** The configured comment prefix is wrapped in a non-capturing group when composed into the traceability and bare-annotation regexes, so an alternation pattern (e.g. `<!--\s*|//\s*` for HTML with embedded JS) composes correctly instead of the `|` binding loosely and matching the first alternative without the rest of the comment.
+- **~~R104:~~** (Retired T23 — see R514) Traceability parser also extracts inline Rn refs from a bare annotation — a comment whose first token after the comment leader is a requirement ref (`// R5: desc`, `// R5, R6`, trailing `foo() // R7`) — collecting the leading comma-separated `Rn` refs into ReqRefs. A ref that does not immediately follow the comment leader (a prose mention like `// see R5` or `// computed (R5)`) is not counted.
+- **~~R105:~~** (Retired T24 — see R513) Inline Rn ref harvesting (both the `// CRC: … | Rn` tail and the bare annotation) expands `Rn-Rm` range syntax into every member, so a range-form annotation (`// R5-R8`) covers the whole span; the second `R` is optional (`R5-8`), comma-separated lists and ranges may be mixed (`// R5-R7, R10`), and a reversed range (`R8-R5`) contributes only the low ref.
+- **~~R106:~~** (Retired T25 — see R511) The configured comment prefix is wrapped in a non-capturing group when composed into the traceability and bare-annotation regexes, so an alternation pattern (e.g. `<!--\s*|//\s*` for HTML with embedded JS) composes correctly instead of the `|` binding loosely and matching the first alternative without the rest of the comment.
 
 ## Feature: Migration Workflow
 **Source:** specs/migrations/complete/001-migration-and-retirement.md
@@ -205,42 +209,50 @@
 - **R108:** Repository-root detection searches upward from the current directory **collecting** markers rather than accepting the first one met, so a strong marker wins from any depth below it
 - **R109:** `.git`, `.minispec/`, `carves/`, and a trajectory file (`PENDING.md`, `CURRENT.md`, `DONE.md`) are equal strong markers: the deepest directory carrying any of them is the repository root, and no ordering among them is defined
 - **R110:** When no strong marker is found, the deepest `.claude` directory is the repository root
-- **R111:** When neither a strong marker nor a `.claude` directory is found, the deepest `.minispec.yaml` is the repository root — the weak final fallback, meaningful only because a design root is sometimes also the repository root
+- **R111:** When neither a strong marker nor a `.claude` directory is found, the deepest `.minispec.toml` is the repository root — the weak final fallback, meaningful only because a design root is sometimes also the repository root
 - **R112:** Repository-root detection never considers the user's home directory or any directory above it
 - **R113:** Repository-root detection failure is an error naming the directory the search started from
 - **R114:** Only `.git` counts as a version-control marker; a tree managed by another VCS falls through to the next marker rather than being detected
 - **R115:** `query project` reports the repository root alongside the design root
 - **R116:** `query project` states when the repository root and the design root are the same directory, rather than printing the same path twice unlabeled
 - **R117:** `check-version` finds the skill's `README.md` under the repository root first, then under the user's home directory
+- **R523:** A legacy `.minispec.yaml` counts as the weak fallback marker alongside `.minispec.toml`, so a tree still configured in YAML resolves far enough to be told to convert it.
 
 ## Feature: Config Scopes
 **Source:** specs/config.md
 
-- **R118:** Repository configuration lives at `<repository root>/.minispec/config.yaml`
+- **R118:** Repository configuration lives at `<repository root>/.minispec/config.toml`
 - **R119:** `.minispec/` is a tool-managed directory at the repository root, holding the repository configuration and the tool's machine-local working files
-- **R120:** Where the repository root is also a design root, `.minispec/config.yaml` is that design root's configuration too — there is no second file
-- **R121:** A design root's `.minispec.yaml` states only what differs from the repository configuration; a design root whose settings match it needs no file at all
-- **R122:** A `.minispec.yaml` at the repository root is an error with no exception, because it would have to inherit from `.minispec/config.yaml` — a file inside its own directory
-- **R123:** The repository-root `.minispec.yaml` check is a single existence test that detects a symlink as readily as a regular file, so a link to the new location is rejected rather than treated as a supported alias
+- **R120:** Where the repository root is also a design root, `.minispec/config.toml` is that design root's configuration too — there is no second file
+- **R121:** A design root's `.minispec.toml` states only what differs from the repository configuration; a design root whose settings match it needs no file at all
+- **R122:** A `.minispec.toml` at the repository root is an error with no exception, because it would have to inherit from `.minispec/config.toml` — a file inside its own directory
+- **R123:** The repository-root `.minispec.toml` check is a single existence test that detects a symlink as readily as a regular file, so a link to the new location is rejected rather than treated as a supported alias
 - **R124:** Settings resolve in three layers, each applied over the previous: built-in defaults, then the repository configuration, then the design root's own file
 - **R125:** Scalar settings (`design_dir`, `src_dir`) replace the inherited value when present
-- **R126:** Map settings (`comment_patterns`, `comment_closers`) merge per key, so a design root adding one entry keeps every other entry the repository set
+- **~~R126:~~** (Retired T26 — no replacement) Map settings (`comment_patterns`, `comment_closers`) merge per key, so a design root adding one entry keeps every other entry the repository set
 - **R127:** List settings (`code_extensions`) merge as a union **between configuration layers**: repository entries are kept, design-root additions appended, duplicates dropped, and repository order preserved so the result is deterministic
 - **R130:** The first configuration layer to set a list **replaces** the built-in defaults rather than unioning onto them, so a project can still narrow a shipped list. The remedy in R128 works by moving a setting down a level, and nothing sits below the defaults to move it to; defaults are also not a layer anyone authored, so "state only what you add" cannot apply to them
 - **R128:** (inferred) A design root can add to an inherited list but cannot remove from one; removal is achieved by dropping the setting from the repository configuration and stating it in each design root that needs it, so no removal syntax exists
 - **R129:** The tool can report which file each effective setting came from, so a value's origin does not require reading two files and knowing the precedence
+- **R520:** Configuration files are TOML: the repository's `.minispec/config.toml` and a design root's `.minispec.toml`.
+- **R521:** An unknown key in a configuration file is an error naming the file and the key, and the command stops; the retired `comment_patterns` and `comment_closers` are named as retired, with a pointer to `query comment-patterns`.
+- **R522:** A `.minispec/config.yaml` or a `.minispec.yaml` found where a configuration would be read is an error naming the file, with the instruction to convert it to TOML by hand, and the command stops before any other check, `init` included; nothing reads YAML.
+- **R526:** A `[[languages]]` definition in a configuration file names a language, its extensions and its `comment` style (required), and lists its bracket groups in matching order with sdom's `BracketGroup` fields in snake case; an absent `allowed_inner` is code mode and an empty one raw; setting `tab`, `transparent` or `continuation` makes it an indent language.
+- **R527:** A configured language overrides the built-in table for each extension it names; a design root's definition replaces a repository definition of the same name whole and adds one of a new name, never merging field by field.
+- **R528:** Every configured language is checked when the configuration loads, with sdom's own table check, and a definition sdom rejects is an error naming the file, the language and the group.
+- **R529:** The skill ships `languages-example.toml`, defining C, C++, Java, Go and Python, and it loads and passes the check as a configuration would.
 
 ## Feature: Initialization
 **Source:** specs/initialization.md
 
-- **R131:** `track` is a repository-scoped setting in `.minispec/config.yaml` with exactly three values: `none`, `private-trajectory`, `all`
+- **R131:** `track` is a repository-scoped setting in `.minispec/config.toml` with exactly three values: `none`, `private-trajectory`, `all`
 - **R132:** `track: none` asserts the project is not version-controlled; `private-trajectory` and `all` both assert it is git-managed, differing only in whether the trajectory files are ignored
 - **R133:** The paths whose ignore state `track` governs are `PENDING.md`, `CURRENT.md` and `DONE.md` at the repository root, plus `.carves/` whenever it exists
 - **R134:** `.carves/` must be ignored under every git-managed `track` value, including `all`; public `carves/` is never required to be ignored
-- **R135:** A design root's `.minispec.yaml` cannot set or override `track`, because it describes the repository rather than one design root
+- **R135:** A design root's `.minispec.toml` cannot set or override `track`, because it describes the repository rather than one design root
 - **R136:** `minispec init` requires exactly one `--track-<style>` flag and never infers or defaults the value
-- **R137:** `minispec init` is the sole creator of `.minispec/config.yaml`; no other command brings it into existence
-- **R138:** `init` writes `<repository root>/.minispec/config.yaml` recording the chosen `track` value
+- **R137:** `minispec init` is the sole creator of `.minispec/config.toml`; no other command brings it into existence
+- **R138:** `init` writes `<repository root>/.minispec/config.toml` recording the chosen `track` value
 - **R139:** `init` adds an ignore line for `.minispec/backup` to the top-level `.gitignore` under any git-managed `track` value
 - **R140:** `init` adds ignore lines for the trajectory files under `track: private-trajectory`
 - **R141:** `init` reports every file it created or edited, in full, so an agent never has to infer what changed
@@ -254,7 +266,7 @@
 - **R149:** A `track` mismatch gripes and exits, naming which fact disagrees and `minispec init --track-<style> --repair` as the repair
 - **R150:** The mismatch gripe fires on every run until repaired, rather than once per session
 - **R151:** In a tree with no git at all, the `track` check and the git preferences are silent
-- **R152:** With no `.minispec/config.yaml`, the only commands that run are `init`, `--version`, `help`, and `check-version`
+- **R152:** With no `.minispec/config.toml`, the only commands that run are `init`, `--version`, `help`, and `check-version`
 - **R153:** `check-version` runs without a configuration deliberately, so an agent whose first instruction is to run it can establish tool/skill agreement before being told to initialize
 - **R154:** Every other command refuses with a crank handle when no configuration exists
 - **R155:** The no-configuration refusal names the absolute path it would make the repository root, so the user's assent lands on a stated location
@@ -266,7 +278,7 @@
 - **R161:** `--repair` validates the configuration's well-formedness before acting on it
 - **R162:** A malformed configuration is the one case where the tool explicitly authorises the agent to edit the configuration directly, stating every problem found and pointing at the skill's configuration documentation
 - **R163:** The agent backs up the configuration before editing it, skipping the backup when it would be byte-identical to one already present
-- **R164:** The tool gripes while `.minispec/config.yaml` is not tracked by git
+- **R164:** The tool gripes while `.minispec/config.toml` is not tracked by git
 - **R165:** The tool gripes while `.minispec/backup` is not ignored by git
 - **R166:** The tool does not stage, commit, reset, or otherwise alter git state; editing `.gitignore` is not excluded by this, being a file edit rather than a change to git's state
 - **R167:** Version-control checks shell out to the `git` command line only — no second VCS is supported and no VCS library is linked in
@@ -279,8 +291,9 @@
 - **R174:** The startup check refuses a pre-`track` configuration with its own crank handle naming `minispec init --track-<style> --repair`, distinct from the malformed-configuration refusal, which would otherwise send the agent to hand-edit a file a flag can repair — and hand-editing sets `track` without reconciling `.gitignore`
 - **R175:** The pre-`track` refusal asks the agent only for the user's intent — whether the work queue stays private or ships with the repository — because the configuration's existence already settles that this is a mini-spec project and where its repository root is
 - **R176:** The pre-`track` refusal instructs the agent to report and wait, never to choose a `track` value on the user's behalf
-- **R177:** Writing `track` into an existing configuration preserves its comments, the order of its keys, and every setting the running binary does not model, rather than re-serialising the file from the settings it knows about
+- **~~R177:~~** (Retired T27 — see R524) Writing `track` into an existing configuration preserves its comments, the order of its keys, and every setting the running binary does not model, rather than re-serialising the file from the settings it knows about
 - **R334:** `minispec init carve <name>` scaffolds `carves/<name>.md` in the shape the format mandates — the title, a `## Status` block holding one open unqueued part, a `## Decisions` section, and the part's elaboration stub — creating `carves/` when absent, refusing an existing file and a name that is a path or carries an extension, and reporting the write with its git kind and the `add-item` that queues its first part
+- **R524:** `init --repair` writes `track` as an edit of one line — the top-level `track` line's value rewritten, or a `track` line inserted before the first table — leaving every other byte of the configuration as it was.
 
 ## Feature: Fire Alarm Freshness
 **Source:** specs/validate.md, specs/queries.md
@@ -491,6 +504,15 @@
   so no child list is hand-built and the node has no origin.
 - **R348:** The node exposes typed accessors `CRC`, `Seq`, `Test`, `Refs` and `Description`, nil
   when the field is absent.
+- **R508:** A `.` directly after the requirement list is also a description separator, read and never written, so `R271. A gap is a source` reads `R271` then a description; a `.` anywhere else in the interior is text.
+- **R509:** A code file is read through the bracket table its extension names: sdom's Go (`.go`), JavaScript (`.js`, `.ts`), Lua (`.lua`), Shell (`.sh`, `.bash`), Python (`.py`) and Pascal (`.pas`, `.dpr`) tables, and this package's C (`.c`, `.h`), C++ (`.cpp`, `.hpp`, `.cc`), Java (`.java`), Emacs Lisp (`.el`), HTML (`.html`), Markdown (`.md`) and CSS (`.css`) tables.
+- **R510:** `LangC` is `LangGo` without the backtick raw string; `LangCPP` is `LangC` with raw strings, `R"delim( … )delim"` with an optional `u8`/`u`/`U`/`L` prefix, closing only where the delimiter matches the one opened; `LangJava` is `LangC` with `"""` text blocks ahead of `"`; `LangMarkdown` recognizes only `<!--` to `-->`, raw inside; `LangCSS` recognizes `/*` to `*/`, raw inside, and both quoted strings.
+- **R511:** `LangHTML` recognizes `<!--` to `-->`, raw inside, everywhere; `<script` to `</script>` in code mode, with every JavaScript group listing `<script` and the JavaScript brackets as its allowed parents; and `<style` to `</style>` restricted to `/*` and both quotes. No JavaScript group is live in page text or in a stylesheet.
+- **R512:** The comment form written in a language is its table's `Comment` style; every table sets one, and the order of a table's brackets belongs to matching and carries no preference.
+- **R513:** The harvest reads every code file in the `design.md` Artifacts manifest through its table and the traceability-comment pass, keeping each comment with its file and line, its CRC and Seq items, and its requirement list expanded so `R5-R8` yields each member; `validate`, `query traceability` and `query implementation` all read it.
+- **R514:** Every traceability comment supplies its requirement refs whatever other fields it carries — led by `CRC:`, Seq-only, or refs alone — and text the grammar does not read supplies none.
+- **R515:** A code file whose extension has no table, or whose parse leaves a string or comment open at end of input — a restricted group, inside which no comment can be recognized — is listed as unread with its reason and line, and is never skipped; a stray closer or an unclosed code bracket hides no comment and is not reported.
+- **R525:** `LangElisp` recognizes `;` line comments, `"` strings with `\` escapes, `( )` and `[ ]` brackets, and character literals: a `?` opening only at the start of a token, closed by the one character after it, escaped or with modifiers (`?\(`, `?\C-x`).
 
 ## Feature: part line
 **Source:** specs/part-line.md

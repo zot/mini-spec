@@ -1,5 +1,5 @@
 # TraceabilityComment
-**Requirements:** R337, R338, R339, R340, R341, R342, R343, R344, R345, R346, R347, R348
+**Requirements:** R337, R338, R339, R340, R341, R342, R343, R344, R345, R346, R347, R348, R508
 
 Mini-spec's anchor comment as **one node over the whole comment**, opener through
 closer, one kind for every language. The first code that knows what a CRC card is,
@@ -16,7 +16,8 @@ in package `minispecsdom`, a sibling of `sdom`.
   and fills itself **off to the side**; false when the interior is not one text node
   or the walk does not consume it
 - the **segment walk**: split the interior on `|`, peel a description off the first
-  separator that is not a field-key colon, run one `StencilBuilder` per segment with
+  separator that is not a field-key colon — or off a `.` directly after the requirement
+  list (R508) — run one `StencilBuilder` per segment with
   an alternation regex so each segment classifies itself by which group participated,
   hand list texts to `ParseList` / `ParseRequirementList`, splice the results flat
 - `Comments(d, ctx)`: the pass — every opener whose group kind equals the language's

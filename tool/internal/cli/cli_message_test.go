@@ -18,7 +18,7 @@ func TestCommitMessageWritesTheFileAndNeverCommits(t *testing.T) {
 		"PENDING.md":            "# Pending\n\n---\n",
 		"CURRENT.md":            "# Current\n\n---\n\n## Active\n\n_No active item._\n",
 		"DONE.md":               "# Done\n\n---\n\n- **2026-09-15 — #4: a part to queue.** Part `carves/x.md#7`.\n  the body.\n",
-		".minispec/config.yaml": "track: private-trajectory\n",
+		".minispec/config.toml": "track = \"private-trajectory\"\n",
 		".gitignore":            "PENDING.md\nCURRENT.md\nDONE.md\n.minispec/backup\n",
 		"carves/x.md":           "# c\n",
 		"tool/.keep":            "",

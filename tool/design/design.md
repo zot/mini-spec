@@ -20,8 +20,8 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Git.md → `internal/project/git.go`
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
-- [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/traceability.go`, `internal/parser/seqdoc.go`
-- [ ] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`, `internal/query/implementation.go`
+- [ ] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/seqdoc.go`
+- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`, `internal/query/implementation.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
 - [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`, `internal/update/alarmfields.go`
@@ -39,7 +39,9 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-CarveSdom.md → `internal/minispecsdom/carve.go`
 - [x] crc-PartLine.md → `internal/minispecsdom/partline.go`
 - [x] crc-MarkerSpan.md → `internal/minispecsdom/partline.go`
-- [x] crc-TraceabilityComment.md → `internal/minispecsdom/comment.go`
+- [ ] crc-TraceabilityComment.md → `internal/minispecsdom/comment.go`
+- [ ] crc-Languages.md → `internal/minispecsdom/langs.go`
+- [x] crc-Harvest.md → `internal/parser/harvest.go`
 - [x] crc-TestDoc.md → `internal/minispecsdom/testdoc.go`, `internal/minispecsdom/mdbase.go`
 - [x] crc-Gaps.md → `internal/minispecsdom/gaps.go`
 - [x] crc-Requirements.md → `internal/minispecsdom/requirements.go`
@@ -71,6 +73,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] seq-carve.md → `internal/minispecsdom/carve.go`
 - [x] seq-partline.md → `internal/minispecsdom/partline.go`
 - [x] seq-anchor.md → `internal/minispecsdom/comment.go`
+- [x] seq-harvest.md → `internal/parser/harvest.go`, `internal/minispecsdom/langs.go`
 - [x] seq-testdoc.md → `internal/minispecsdom/testdoc.go`
 - [x] seq-gaps.md → `internal/minispecsdom/gaps.go`
 - [x] seq-requirements.md → `internal/minispecsdom/requirements.go`
@@ -78,7 +81,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 ### Test Designs
 - [ ] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
 - [ ] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`, `internal/update/addreq_test.go`
-- [ ] test-Query.md → `internal/query/gaps_test.go`
+- [x] test-Query.md → `internal/query/gaps_test.go`, `internal/query/implementation_test.go`
 - [ ] test-CLI.md → `internal/cli/cli_minted_test.go`
 - [ ] test-Validate.md → `internal/validate/validate_test.go`
 - [x] test-RepoRoot.md → `internal/project/reporoot_test.go`
@@ -104,7 +107,9 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-PendingSdom.md → `internal/minispecsdom/pending_test.go`
 - [x] test-CarveSdom.md → `internal/minispecsdom/carve_test.go`
 - [x] test-PartLine.md → `internal/minispecsdom/partline_test.go`
-- [x] test-TraceabilityComment.md → `internal/minispecsdom/comment_test.go`
+- [ ] test-TraceabilityComment.md → `internal/minispecsdom/comment_test.go`
+- [ ] test-Languages.md → `internal/minispecsdom/langs_test.go`
+- [x] test-Harvest.md → `internal/parser/harvest_test.go`
 - [x] test-TestDoc.md → `internal/minispecsdom/testdoc_test.go`
 - [x] test-Gaps.md → `internal/minispecsdom/gaps_test.go`
 - [x] test-Requirements.md → `internal/minispecsdom/requirements_test.go`
@@ -124,7 +129,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [ ] O2: DetectFrom in project.go duplicates the new isDir helper from reporoot.go (os.Stat + IsDir inline). One-line reuse, same package, noticed during simplification of the repo-root work
 - [ ] O3: Project.RootPath is the design root but its name says neither — the exact ambiguity R107 exists to remove. Renaming touches every call site, so it was left out of the repository-root work rather than folded in
 - [ ] O4: No test covers loadProject end-to-end against a real design root: resolveConfigFrom is well covered, but the wiring from Detect through loadProject to a Project with Origins populated is only exercised by running the binary
-- [ ] O5: gate() and runInit() have no automated test: both resolve the repository root from the process working directory, so testing them needs os.Chdir — process-global state, unsafe alongside parallel tests. The refusal messages, the exempt/known command sets and the flag table are covered directly (test-Bootstrap.md); the wiring between them is only exercised by running the binary, which was done by hand end-to-end this session. Repair: thread a start directory through gate as RepoRootFrom already does for RepoRoot. **Amended 2026-08-16: the stated blocker is softer than it reads.** internal/cli/cli_next_id_test.go now chdirs into a temp tree and drives runQuery, restoring via t.Cleanup — so chdir testing is workable today, provided the test is never marked parallel. That does not close this gap (gate and runInit are still untested and threading a start directory is still the better repair) but it removes "we cannot test it" as the reason, which is the part that would otherwise keep the gap parked forever. Note t.Chdir, the tidier form, needs go1.24 while the module declares go1.21
+- [ ] O5: gate() and runInit() have no automated test: both resolve the repository root from the process working directory, so testing them needs os.Chdir — process-global state, unsafe alongside parallel tests. The refusal messages, the exempt/known command sets and the flag table are covered directly (test-Bootstrap.md); the wiring between them is only exercised by running the binary, which was done by hand end-to-end this session. Repair: thread a start directory through gate as RepoRootFrom already does for RepoRoot. **Amended 2026-08-16: the stated blocker is softer than it reads.** internal/cli/cli_next_id_test.go now chdirs into a temp tree and drives runQuery, restoring via t.Cleanup — so chdir testing is workable today, provided the test is never marked parallel. That does not close this gap (gate and runInit are still untested and threading a start directory is still the better repair) but it removes "we cannot test it" as the reason, which is the part that would otherwise keep the gap parked forever. Note t.Chdir, the tidier form, needs go1.24 while the module declares go1.21 **Amended 2026-09-27:** the first gate test exists — `TestGateReportsAYAMLConfigBeforeNoConfig` (test-Bootstrap.md alarm 4) drives `gate` from a temporary tree with `os.Chdir`, not parallel, and covers only the YAML path; the rest of `gate` and `runInit` remain untested, so the gap stays open.
 - [ ] O6: Git.Tracked reports a genuine git failure as "not tracked". ls-files --error-unmatch exits non-zero both when a path is untracked and when the command itself fails, and the error is discarded. Harm is bounded — a spurious preference note, never a refusal — but it is the project's own "report absence as error, never as silence" theme violated at a seam that exists to interrogate an external tool. Repair: distinguish exit 1 from other failures
 - [ ] O7: printUsage's query-subcommand list is a hand-maintained mirror with no completeness check. knownCommands has TestKnownCommandsCoversEveryDispatchedCommand asserting it covers every dispatched top-level command; nothing does that for the query subcommands, which live in a prose block. next-id was added to it by hand and nothing would have reported the omission. Repair: a table the dispatch switch and the usage text both read, or a test that greps the switch cases against the block
 - [ ] O8: strconv.Atoi(strings.TrimPrefix(id, "R")) is now a sixth copy of one idiom — validate.go:248, :431, :454, update.go:extractNum, and query.go:nextReqID. A parser.ReqNum(id) (int, bool) collapses all six. Noticed during simplification of the next-id work; left out because it is a cross-package edit of code that pass did not touch
@@ -164,3 +169,20 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - T13: R472 retired by R490 (2026-09-15 reference-discipline Item 2: the class is git's, the population is every tracked markdown file)
 - T14: R485 retired by R491 (2026-09-15 reference-discipline Item 2: the class is git's, the population is every tracked markdown file)
 - [x] O29: A carve's move rewrites only the tracked documents (`#90`), so the tool's own documents go stale: the three trajectory files, the private carves under `.carves/` and both `done/` directories are ignored files and fell out of the population when public-is-tracked was applied to every verb. Two questions were conflated — *whom is a pointer for* (severity, git's to answer) and *who wrote it* (the tool, for every document it sites). Measured 2026-09-16: after `trajectory-tool.md` moved on 09-14, the done ledger still links `carves/trajectory-tool.md` at line 15 and every done entry that landed one of its parts still carries `Part `carves/trajectory-tool.md#k``, a code-span pointer no link machinery reads; `validate trajectory` passes because done entries' part documents are never resolved. Repair: `finished-carve` and `repair-links` take the union of the tracked documents and the sited ones — trajectory files, `carves/`, `.carves/`, their `done/` — the move also rewrites `Part` pointers through the done reader, and `validate trajectory` reports a done entry whose part document is missing and lists the ledgers' unresolvable links as notes (Bill, 2026-09-16)
+- T15: R9 retired by R513 (2026-09-25 #93 harvest through the language tables)
+- T16: R38 retired by R509 (2026-09-25 #93 harvest through the language tables)
+- T17: R39 retired by R509 (2026-09-25 #93 harvest through the language tables)
+- T18: R57 retired by R509 (2026-09-25 #93 harvest through the language tables)
+- T19: R58 retired by R509 (2026-09-25 #93 harvest through the language tables)
+- T20: R59 retired by R513 (2026-09-25 #93 harvest through the language tables)
+- T21: R60 retired by R518 (2026-09-25 #93 harvest through the language tables)
+- T22: R67 retired by R514 (2026-09-25 #93 harvest through the language tables)
+- T23: R104 retired by R514 (2026-09-25 #93 harvest through the language tables)
+- T24: R105 retired by R513 (2026-09-25 #93 harvest through the language tables)
+- T25: R106 retired by R511 (2026-09-25 #93 harvest through the language tables)
+- T26: R126 retired (2026-09-25 #93 harvest through the language tables)
+- [x] O30: Configuration is YAML and moves to TOML (Bill, 2026-09-25): `.minispec/config.toml` and a design root's `.minispec.toml`; a `config.yaml` or `.minispec.yaml` found is an error naming the file and saying to convert it by hand, and the tool exits. TOML keeps an absent array distinct from `[]` with no null (measured, BurntSushi/toml v1.5.0), which the language definitions of #93 rely on; unknown keys are named, not dropped; `init --repair` edits the `track` line in place, since the TOML encoder keeps no comments.
+- T27: R177 retired by R524 (2026-09-25 #94 configuration moves to TOML)
+- T28: R517 retired by R521 (2026-09-25 #94 configuration moves to TOML)
+- [ ] O31: The CLI help still shows `finish <N> --commit <hash>`, but `pending finish` takes no `--commit` since the item number became the identifier (2026-09-15); `#94` finished without one on 2026-09-27. The usage line misleads a reader into looking for a hash. Seen 2026-09-29 in `minispec` with no arguments.
+- [ ] O32: `pending commit-message` counts an item as committed when any message on HEAD's history contains `#N` anywhere (`Git.NamedItems`, `itemRefRe` over `git log --format=%B`), so a commit that only mentions a queued item lands it. Measured 2026-09-29: `ff59d9e` wrote "then `query implementation` (#92)" while planning it; after `#94`, `#93` and `#92` finished, the tool refused with "every done entry is named by a commit; nothing to compose (the newest, #92, is named)", and because the run stops at the first named entry it dropped `#93` and `#94` too. The signal to read is the line the tool itself writes — `Items #N, #M.` and, on an amend, `Also lands #N.` — not a `#N` in prose. The done entry's commit slot, the other half of the stop rule, is unaffected.

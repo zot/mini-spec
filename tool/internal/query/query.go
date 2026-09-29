@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zot/minispec/internal/minispecsdom"
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 )
@@ -191,44 +192,55 @@ func (q *Query) UnindexedSpecs() ([]string, error) {
 	return paths, nil
 }
 
-// Traceability checks a code file for CRC/Seq comments
-func (q *Query) Traceability(path string) (parser.Traceability, error) {
-	ext := filepath.Ext(path)
-	pattern := q.Project.CommentPattern(ext)
-	closer := q.Project.CommentCloser(ext)
-	return parser.ParseTraceability(path, pattern, closer)
+// CRC: crc-Query.md | R519
+// Traceability reads one code file through the harvest, path as the caller gave it. A file
+// the harvest cannot read comes back with the reason, never as a file with no comments.
+func (q *Query) Traceability(path string) (parser.FileHarvest, *parser.UnreadFile, error) {
+	configured, err := q.Project.Languages()
+	if err != nil {
+		return parser.FileHarvest{}, nil, err
+	}
+	return parser.HarvestFile("", path, configured)
 }
 
-// TraceabilityAll checks all code files in Artifacts
-func (q *Query) TraceabilityAll() (map[string]parser.Traceability, error) {
+// CRC: crc-Query.md | R519
+// TraceabilityAll is the harvest over every code file in Artifacts, in manifest order, its
+// unread list included.
+func (q *Query) TraceabilityAll() (parser.Harvest, error) {
 	artifacts, err := q.Artifacts()
+	if err != nil {
+		return parser.Harvest{}, err
+	}
+	configured, err := q.Project.Languages()
+	if err != nil {
+		return parser.Harvest{}, err
+	}
+	return parser.HarvestArtifacts(q.Project.RootPath, artifacts, configured)
+}
+
+// CommentFormsEntry is how one extension writes a traceability comment, and what else it
+// reads. R518
+type CommentFormsEntry struct {
+	Extension string                     `json:"extension"`
+	Write     minispecsdom.CommentForm   `json:"write"`
+	Reads     []minispecsdom.CommentForm `json:"reads"`
+}
+
+// CRC: crc-Query.md | R518
+// CommentForms reports, for every extension a table reads — built in or configured — the
+// comment form to write and the forms read, sorted by extension.
+func (q *Query) CommentForms() ([]CommentFormsEntry, error) {
+	configured, err := q.Project.Languages()
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]parser.Traceability)
-	for _, art := range artifacts {
-		for _, cf := range art.CodeFiles {
-			trace, err := q.Traceability(cf.Path)
-			if err != nil {
-				// File might not exist yet
-				result[cf.Path] = parser.Traceability{}
-				continue
-			}
-			result[cf.Path] = trace
-		}
+	var out []CommentFormsEntry
+	for _, ext := range minispecsdom.Extensions(configured) {
+		lang, _ := minispecsdom.LanguageFor(ext, configured)
+		write, reads := minispecsdom.CommentForms(lang)
+		out = append(out, CommentFormsEntry{Extension: ext, Write: write, Reads: reads})
 	}
-	return result, nil
-}
-
-// CommentPatterns returns the configured comment patterns per file extension
-func (q *Query) CommentPatterns() map[string]string {
-	return q.Project.Config.CommentPatterns
-}
-
-// CommentClosers returns the configured comment closers per file extension
-func (q *Query) CommentClosers() map[string]string {
-	return q.Project.Config.CommentClosers
+	return out, nil
 }
 
 // NextIDSource is one file's contribution to a next-ID answer, and the evidence that

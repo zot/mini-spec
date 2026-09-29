@@ -35,7 +35,7 @@ Run after Design Phase. Validates:
 
 Run after Implementation Phase. Validates:
 - Code files listed in Artifacts exist
-- Code files have traceability comments (// CRC:)
+- Code files have traceability comments with a `CRC:` field, read through the harvest
 - Traceability refs point to existing design files
 - Reports artifact checkbox states
 

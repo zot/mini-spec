@@ -183,8 +183,8 @@ body = sub(
 
 body = sub(
     body,
-    "See `config-reference.md` (in this skill directory)",
-    "See `.claude/skills/mini-spec/config-reference.md`",
+    "(see `config-reference.md` in this skill directory)",
+    "(see `.claude/skills/mini-spec/config-reference.md`)",
 )
 
 # Cursor has no skill directory, so every on-demand reference has to become a repo

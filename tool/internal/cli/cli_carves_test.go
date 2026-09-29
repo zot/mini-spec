@@ -87,7 +87,7 @@ func TestCarvesNeedsNoDesignRoot(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "carves", "x.md"), []byte(censusFixture), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, ".minispec.yaml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".minispec.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	wd, _ := os.Getwd()

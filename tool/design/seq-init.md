@@ -22,10 +22,10 @@ alt no design/ found
     CLI --> User: exit 1
 end
 
-Project -> os: Stat(rootPath + "/.minispec.yaml")
+Project -> os: Stat(rootPath + "/.minispec.toml")
 alt config exists
-    Project -> yaml: Unmarshal(file)
-    yaml --> Project: Config
+    Project -> toml: Decode(file)
+    toml --> Project: Config, undecoded keys
 else no config
     Project -> Project: use defaults
 end
@@ -35,9 +35,8 @@ Project --> CLI: Project{rootPath, designDir, srcDir, config}
 
 # Default Configuration
 
-```yaml
-design_dir: design
-src_dir: src
-code_extensions: [.go, .ts, .js, .lua, .py]
-traceability_pattern: "// CRC:"
+```toml
+design_dir = "design"
+src_dir = "src"
+code_extensions = [".go", ".ts", ".js", ".lua", ".py", ".c", ".h", ".cpp", ".sh"]
 ```

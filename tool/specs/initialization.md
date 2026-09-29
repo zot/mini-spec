@@ -11,7 +11,7 @@ with the repository.
 
 ## The `track` setting
 
-`track` lives in the repository configuration, `<repo root>/.minispec/config.yaml`.
+`track` lives in the repository configuration, `<repo root>/.minispec/config.toml`.
 It has three values:
 
 | value | means |
@@ -42,12 +42,12 @@ possibly before any ignore line exists to read it from.
 The flag is mandatory and takes one of `--track-none`,
 `--track-private-trajectory`, `--track-all`.
 
-`init` is the **sole creator** of `.minispec/config.yaml`. No other command brings it
+`init` is the **sole creator** of `.minispec/config.toml`. No other command brings it
 into existence, so there is no path to a configuration with no `track` value in it.
 
 It creates:
 
-- `<repo root>/.minispec/config.yaml`, holding `track` and nothing else it does not
+- `<repo root>/.minispec/config.toml`, holding `track` and nothing else it does not
   need. A basic file, not a commented template of every available setting.
 - an ignore line for `<repo root>/.minispec/backup` in the top-level `.gitignore`,
   under any git-managed `track` value.
@@ -105,9 +105,10 @@ without a word. A repair that quietly narrows a configuration to what the runnin
 happens to understand is the same silent partial success this layer refuses everywhere
 else.
 
-The one thing it does not promise is byte-fidelity: a blank line separating a comment
-from what it annotates is not preserved. Comments survive, their attachment survives,
-the spacing between them does not.
+It is an edit of **one line**: the top-level `track = …` line has its value rewritten, or,
+when there is none, a `track` line is inserted before the first table. Every other byte of
+the file is left as it was, blank lines and spacing included. A TOML encoder keeps none of
+a file's comments, so the file is never decoded and re-encoded to make the change.
 
 **What repair cannot reach, it names.** Making a path public means deleting the line
 that ignores it, and the tool only owns the top-level `.gitignore`. A path ignored by a
@@ -148,7 +149,10 @@ anything, so the tool stays quiet.
 
 ## Running without a configuration
 
-With no `.minispec/config.yaml`, the only commands that run are `init` and those
+A configuration still in YAML is reported before anything else, `init` included: the
+file is named, with the instruction to convert it to TOML by hand (see
+[config.md](config.md)), and the command stops. Otherwise, with no `.minispec/config.toml`,
+the only commands that run are `init` and those
 needing no mini-spec files at all — `--version`, `help`, and `check-version`.
 
 `check-version` is deliberately among them. A skill's first instruction is to run it,
@@ -250,14 +254,14 @@ byte-identical to one already there.
 
 Two properties the tool prefers and gripes about while unmet:
 
-- `.minispec/config.yaml` **should be tracked** by git.
+- `.minispec/config.toml` **should be tracked** by git.
 - `.minispec/backup` **should be ignored** by git.
 
 Both are computed — `git ls-files` and `git check-ignore` answer them — so there is
 nothing to assert and nothing to go stale.
 
 The stamp and working files live in `.minispec/backup`, so one ignore line covers
-everything machine-local and `config.yaml` is the only thing left in `.minispec/`.
+everything machine-local and `config.toml` is the only thing left in `.minispec/`.
 "The tracked one is the only one you can see" then holds by structure rather than by
 remembering two paths.
 
@@ -274,7 +278,7 @@ ignored status for free and stays correct as git changes.
 
 The consequence is a real narrowing and the tool states it rather than passing
 silently: a project whose files are managed by something other than git gets no ignore
-checking, and is told so. `track: none` is the honest declaration for such a project —
+checking, and is told so. `track = "none"` is the honest declaration for such a project —
 it says "not git-managed," which is true, rather than claiming an ignore state nothing
 can verify.
 
@@ -288,7 +292,7 @@ predates `track` is asked the question, and the crank handle is what carries the
 
 **There are two such populations, and they take opposite forms of the command.** A
 project with no `.minispec/` at all meets the no-configuration refusal and runs plain
-`init`. A project that already has a `.minispec/config.yaml` written before `track`
+`init`. A project that already has a `.minispec/config.toml` written before `track`
 existed meets the pre-`track` refusal and runs `--repair`, because plain `init` refuses
 where `.minispec/` is present. Both are asked the same question and neither can be
 inferred; only the verb differs, and the refusal each meets is the one that names the

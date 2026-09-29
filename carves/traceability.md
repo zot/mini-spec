@@ -29,8 +29,9 @@ number" case. Developed from planning notes worked up with Bill on 2026-09-18.
 
 ## Status
 
-- [ ] **Item 1 — wire `minispecsdom.Comments` into the harvest; retire `parser.ParseTraceability`.** **OPEN (not queued.)** Re-point `validate.go`'s impl-coverage harvest and `query.go`'s code-ref reader onto the sdom reader. Build one positioned harvest both consume.
-- [ ] **Item 2 — `minispec query implementation` (ark's request).** **OPEN (#92.)** Reverse lookup `Rn` (or a pattern) → the code that implements it, over the sdom harvest. Rides on Item 1's positioned harvest.
+- [x] ~~**Item 1 — wire `minispecsdom.Comments` into the harvest; retire `parser.ParseTraceability`.**~~ **LANDED (2026-09-29 — `#93`.)** Re-point `validate.go`'s impl-coverage harvest and `query.go`'s code-ref reader onto the sdom reader. Build one positioned harvest both consume.
+- [x] ~~**Item 2 — `minispec query implementation` (ark's request).**~~ **LANDED (2026-09-29 — `#92`.)** Reverse lookup `Rn` (or a pattern) → the code that implements it, over the sdom harvest. Rides on Item 1's positioned harvest.
+- **Item 4 — C++ raw strings.** **MOVED (Bill, 2026-09-25 — [sdom.md](sdom.md) Item 5.5.)** Language support is tracked in the sdom carve.
 - [ ] **Item 3 — `RangeSet` on `RequirementList`.** **OPEN (not queued.)** An interval view (`Ranges() [][2]int` / `Contains(n)`) beside `Items()`. Enhancement, not a correctness fix — see Decisions.
 
 ## Decisions
@@ -60,6 +61,106 @@ n)`, and requirement spans are tiny). A `RangeSet` of `(lo,hi)` intervals is wor
 for the **write** side — editing a ref while keeping the range literal, cheap inclusion
 without materializing — but it does not block the read query, so Item 3 is independent
 of Item 2.
+
+**DECIDED (Bill, 2026-09-25): Item 1 lands before Item 2, in the same batch.** Measured the
+same day over this repository's 92 Artifacts code files: of about 890 distinct (file, Rn)
+pairs, the regex harvest and the sdom reader disagree on 36. `query implementation` promises a
+ref counts exactly where validate counts it, which cannot hold while the two read differently.
+The 36 fall into three classes, and each is decided:
+
+- **A ref followed by a full stop and prose counts** (`// R271. A gap is a source…`, 20
+  pairs). The regex counted it and the sdom grammar rejected the whole comment, so the grammar
+  widens: a `.` directly after the refs segment starts the description, as `:` does.
+- **A Seq-only comment counts, refs included** (`// Seq: seq-backup.md#2.2 | R232`, 15 pairs).
+  The sdom reader already counts it; the regex required `CRC:`. This supersedes the skill's
+  "a `Seq:`-only line does not trigger".
+- **A `//` quoted inside a comment's prose does not count** (1 pair). The regex matched a
+  comment leader inside backticks; the sdom reader sees one comment and is right.
+
+**DECIDED (Bill, 2026-09-25): minimal language tables for what sdom does not ship.** The
+harvest picks a reader by file extension. Go, JavaScript/TypeScript, Lua, Shell and Python come
+from sdom; HTML, Markdown, CSS and C/C++ are constructed in `minispecsdom` (*superseded the same
+day for C/C++: C, C++ and Java are three tables — see below*). HTML's embedded
+JavaScript and CSS are read through bracket groups, the way a template literal restricts to
+`${`: `<!--` is raw and live everywhere, `<script` is code mode, `<style` is restricted to
+comments and strings, and every JavaScript group lists `<script` and the JavaScript brackets
+as its allowed parents, since `AllowedParent` checks the immediate parent only. A file whose
+extension has no table is reported as not read, never skipped. Where a language has several
+comment forms, the one to write is its table's `Comment` style, which every table sets: bracket
+order belongs to matching (Lua's `--[[` must precede `--`), so it cannot also mean "preferred".
+
+**DECIDED (Bill, 2026-09-25): the configurable comment patterns retire.** Once the harvest
+reads through the language tables, nothing reads `comment_patterns` or `comment_closers`, so
+the keys, their defaults and `parser.ParseTraceability` retire, superseded at their source. A
+config that still sets them is told the keys are retired, not silently obeyed or silently
+ignored. **`query comment-patterns` stays in role**: it teaches an agent how to write a
+comment in each extension, closers included, so it reports each table's comment style instead
+of a regex. ~~No config key maps new extensions to a table yet; an unmapped file is reported until the tool learns its language.~~ *Superseded the same day: projects define languages in their configuration — see below.*
+
+**DECIDED (Bill, 2026-09-25): C, C++ and Java are three built-in tables.** Their comment
+shapes agree from C99 on; their strings do not. C++'s table carries raw strings,
+`R"delim( … )delim"` ([sdom.md](sdom.md) Item 5.5), and Java's carries text blocks, `"""…"""`, as a group ahead
+of `"` so a text block is not read as an empty string followed by another. Extensions: `.c`,
+`.h` for C; `.cpp`, `.hpp`, `.cc` for C++; `.java` for Java.
+
+**DECIDED (Bill, 2026-09-29): the grammar stays strict about the separator; ark fixes its
+comments.** The regex reader's bare-annotation rule counted a ref followed straight by prose,
+`// R5 handles the retry`; the grammar reads that as prose, since its interior is not wholly
+fields. This repository has none. Ark had 29 (measured by grep over its 258 tracked code
+files, an upper bound). Widening the grammar once more would have kept them, at the cost of
+another exception to recognition-is-consumption and of making `// R5 is wrong here` a claim
+that R5 is implemented. Bill chose the separator instead: it is what makes the intent
+unambiguous. Ark is asked to add a colon after the refs before the new binary replaces its
+minispec (`requests/ark-ref-separators.md`), and SKILL.md teaches the separator form.
+
+**DECIDED (Bill, 2026-09-27): Emacs Lisp is built in, and Pascal is mapped.** A census of
+YAML configurations under `~/work` found two projects on languages no table covered: NitroPascal
+(`.pas`, `.dpr`, `{ … }` comments) and nuterm (`.el`, `;` comments). Pascal is sdom's own
+`LangPascal`, so it joins the extension map. Emacs Lisp gets a table here: `;` line comments,
+`"` strings with `\` escapes, `( )` and `[ ]` brackets. Its character literals (`?(`, `?\)`)
+need a group that opens only at a token start, because `?` also ends predicate names
+(`f-exists?`): measured over 10,730 installed `.el` files, 17% hold a bracket char literal, and
+16,571 `?` follow a symbol character. sdom cannot yet test what precedes an opener, so
+`BeforeOpen` — the dual of `BeforeClose`, mechanism rather than language — is requested from
+simple-dom ([sdom.md](sdom.md) Item 5.7); the table itself stays here.
+
+**DECIDED (Bill, 2026-09-25): projects define languages in their configuration, mirroring
+sdom's own structs.** A `languages` entry in `.minispec/config.toml` is a `BracketLang` (or
+`IndentLang`) written field for field in snake case — `brackets` with `open`, `close`,
+`escape`, `separators`, `allowed_inner`, `allowed_parent`, `kind` and the rest, plus the
+`comment` style — rather than ark's chunker categories, which special-case what the structs
+already say. Bracket order is matching order, exactly as in Go, and `comment` is required,
+since it is the form written. A definition names its extensions and overrides the built-in
+table for them; a same-named definition in a design root replaces the repository's whole.
+The code/raw distinction survives the file: TOML decodes an absent `allowed_inner` as nil
+and `allowed_inner = []` as empty (measured, BurntSushi/toml v1.5.0), and has no null to
+blur them. A definition sdom rejects is an error naming the file and the language.
+**An example configuration ships in the skill directory** defining C, C++, Java, Go and
+Python, as a template to copy from rather than a second source of the built-ins.
+
+**DECIDED (Bill, 2026-09-25): configuration moves to TOML first.** The language definitions
+are written once, in TOML, so the format change goes ahead of Item 1 as its own item (`#94`,
+from gap `O30`); Item 1 (`#93`) is paused behind it.
+
+**SENT (Daneel, 2026-09-25): two requests to simple-dom** (`mini-spec-tool`,
+`requests/sdom-check-and-matching-close-groups.md`). An exported `Check() error`, because
+`NewBracketParser` panics on a malformed table as a library invariant, and a table read from
+a user's configuration is caller input. And a pattern closer whose named groups must equal
+the opener's, generalizing `CloseIsOpen` — Bill's design — which C++ raw strings need and
+which also fixes Lua's long brackets (`[==[ … ]==]`).
+
+*Answered and landed the same day* (mini-spec-tool `#40`–`#44`, response
+`RESP-sdom-check-and-matching-close-groups.md`): `BracketLang.Check() error`, and
+`BracketGroup.CloseRegex` — with **no** `CloseGroupsMatchOpen` flag, since naming the same
+capture groups in `OpenRegex` and `CloseRegex` is the declaration, and `Check()` refuses
+patterns whose group sets differ. A configured language is therefore checked with `Check()`,
+never by recovering a panic, and the configuration mirrors `close_regex` with no flag. A
+behaviour change arrives with it: in code mode a closer now closes an enclosing group from
+inside a child, ending the groups between (`( { )` pairs `(` and lists `{` unclosed), so
+unclosed and stray counts on malformed code shift, and the harvest's unread report reads
+those. **It reaches this tool only through a simple-dom release:** `go.mod` requires the
+published v1.0.0, and `~/work/go.work`, which uses the local checkout, is off in release
+builds and in worktree alarm pulls.
 
 ## The CLAUDE.md obligation
 

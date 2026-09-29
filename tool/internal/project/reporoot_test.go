@@ -119,21 +119,30 @@ func TestDeepestClaudeWins(t *testing.T) {
 	}
 }
 
-// `.minispec.yaml` is the last resort, and ranks below `.claude` regardless of
+// `.minispec.toml` is the last resort, and ranks below `.claude` regardless of
 // depth — presence is not a declaration. R111
-func TestMinispecYamlIsLastResort(t *testing.T) {
+func TestMinispecConfigIsLastResort(t *testing.T) {
 	t.Run("alone", func(t *testing.T) {
-		root := mkTree(t, "a/b/", ".minispec.yaml")
+		root := mkTree(t, "a/b/", ".minispec.toml")
 		if got := mustResolve(t, root, "a/b"); got != root {
 			t.Errorf("got %s, want %s", got, root)
 		}
 	})
 	t.Run("outranked by a shallower .claude", func(t *testing.T) {
-		root := mkTree(t, "a/b/", ".claude/", "a/.minispec.yaml")
+		root := mkTree(t, "a/b/", ".claude/", "a/.minispec.toml")
 		if got := mustResolve(t, root, "a/b"); got != root {
-			t.Errorf("got %s, want %s (.claude outranks .minispec.yaml at any depth)", got, root)
+			t.Errorf("got %s, want %s (.claude outranks .minispec.toml at any depth)", got, root)
 		}
 	})
+}
+
+// A legacy `.minispec.yaml` still resolves the root, so the loader can tell a tree
+// still configured in YAML to convert it rather than failing the search. R523
+func TestLegacyMinispecYamlStillResolves(t *testing.T) {
+	root := mkTree(t, "a/", ".minispec.yaml")
+	if got := mustResolve(t, root, "a"); got != root {
+		t.Errorf("got %s, want %s", got, root)
+	}
 }
 
 // Nothing at or above the home boundary is consulted, even a strong marker. R112

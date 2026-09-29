@@ -131,7 +131,7 @@ func (g *Git) abs(p string) string {
 
 // CRC: crc-Git.md | R164
 // Tracked reports whether a path is known to the index — the fact behind the
-// `.minispec/config.yaml` preference.
+// `.minispec/config.toml` preference.
 func (g *Git) Tracked(path string) (bool, error) {
 	if !g.IsRepo() {
 		return false, ErrNoGit
