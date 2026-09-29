@@ -2,15 +2,26 @@
 **Source:** crc-CommitMessage.md
 
 ## Test: the uncommitted items are the ones no message names, bounded
-**Purpose:** R479, R480, R481
-**Input:** the fixture with `#4` finished; then a commit whose message names `#40`; then an old-scheme entry with a hash in its slot; then a commit naming `#4`
+**Purpose:** R530, R480, R481
+**Input:** the fixture with `#4` finished; then a commit whose naming line is `Items #40.`; then an old-scheme entry with a hash in its slot; then a commit whose naming line is `Items #4.`
 **Expected:** first, a message with subject `#4: a part to queue`, body opening `Items #4.` and carrying the entry's body; after the `#40` commit the same, because `#40` does not name `#4`; the hash-bearing entry is never composed; after the `#4` commit a refusal naming `#4` and that commit, and an older entry with neither hash nor naming commit below `#4` stays history; the `#4` commit a refusal naming `#4` and that commit
 **Refs:** crc-CommitMessage.md, seq-queue-item.md#4.2
 **Code:** internal/pending/message_test.go
 **Alarm:** 1
 **Fire alarm:** match `#N` as a prefix rather than bounded. Red: after the `#40` commit the verb refuses, reading `#4` as named. A second injection at `uncommitted`: judge each entry alone instead of stopping at the first named one. Red: the older unnamed entry is composed.
 **Inject:** internal/project/git.go:Git.NamedItems, internal/pending/message.go:uncommitted
-**Pulled:** 2026-09-15 — rang, by hand after the simplification pass, twice: with `#N` matched on one digit, `#40 was read as naming #4` and the verb refused; with `uncommitted` judging each entry alone (`continue` for `break`), `an entry older than a named one was composed`; restore checksummed clean both times
+**Pulled:** 2026-09-29 — rang, by hand after the simplification pass, twice, over the naming-line rule: with `itemRefRe` matching one digit, `#40 was read as naming #4` and the verb refused; with `uncommitted` taking `continue` for `break`, `an entry older than a named one was composed: <nil>`; restore byte-clean by copy both times. First pulled 2026-09-15
+
+## Test: a #N outside a naming line is a mention, not a landing
+**Purpose:** R530 — only a line of its own reading `Items #N, #M.` or `Also lands #N.` names an item; a `#N` in a subject or in prose does not, and a naming line anywhere in the body counts
+**Input:** the fixture with `#4` finished; then a commit `plan: then the query (#4)` with body `Next is #4, once #3 lands.`; then a commit whose body carries `Also lands #4.` after prose
+**Expected:** after the planning commit, a message composing `#4`; after the amend-shaped commit, the nothing-to-compose refusal naming `#4`
+**Refs:** crc-CommitMessage.md, crc-Git.md, seq-queue-item.md#4.2 — R530
+**Code:** internal/pending/message_test.go
+**Alarm:** 4
+**Fire alarm:** scan the whole message in `Git.NamedItems` instead of its naming lines — the defect `O32` measured. Red: after the planning commit the verb refuses, reading the mentioned `#4` as landed
+**Inject:** internal/project/git.go:Git.NamedItems
+**Pulled:** 2026-09-29 — rang: with `NamedItems` scanning the whole message, `a mentioned #4 was read as landed: every done entry is named by a commit`; restore byte-clean by copy
 
 ## Test: amend appends after the existing message and refuses on a remote
 **Purpose:** R482, R483

@@ -1408,7 +1408,7 @@ func (c *CLI) queryGaps(q *query.Query, args []string) int {
 	return 0
 }
 
-// CRC: crc-CLI.md | Seq: seq-query.md | R502, R503, R504, R505, R507
+// CRC: crc-CLI.md | Seq: seq-query.md | R502, R503, R504, R505, R507, R531
 // queryImplementation prints where each selected requirement is implemented: number mode the
 // locations only, text mode each requirement's line first, and "no impl refs" for one with
 // none, so absence is stated rather than shown as empty output.
@@ -1448,7 +1448,10 @@ func (c *CLI) queryImplementation(q *query.Query, args []string) int {
 			head += " (retired)"
 		}
 		fmt.Println(head)
-		if len(e.Locations) == 0 {
+		switch {
+		case e.Unknown: // R531
+			fmt.Println("  no such requirement")
+		case len(e.Locations) == 0:
 			fmt.Println("  no impl refs")
 		}
 		for _, l := range e.Locations {

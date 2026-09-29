@@ -35,6 +35,7 @@ type ImplEntry struct {
 	ID        string         `json:"id"`
 	Text      string         `json:"text,omitempty"`
 	Retired   bool           `json:"retired,omitempty"`
+	Unknown   bool           `json:"unknown,omitempty"` // number mode: no requirement carries this ID (R531)
 	Locations []ImplLocation `json:"locations"`
 }
 
@@ -125,7 +126,9 @@ func SelectImplementation(reqs []parser.Requirement, h parser.Harvest, sel ImplS
 			retired[r.ID] = r.Retired
 		}
 		for _, id := range sel.IDs {
-			res.Entries = append(res.Entries, ImplEntry{ID: id, Retired: retired[id], Locations: index[id]})
+			// R531 — a number no requirement carries is unknown, not unimplemented.
+			isRetired, known := retired[id]
+			res.Entries = append(res.Entries, ImplEntry{ID: id, Retired: isRetired, Unknown: !known, Locations: index[id]})
 		}
 		return res
 	}

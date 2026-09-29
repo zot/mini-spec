@@ -1,5 +1,5 @@
 # CommitMessage
-**Requirements:** R479, R480, R481, R482, R483, R484
+**Requirements:** R480, R481, R482, R483, R484, R530
 
 Composes the commit message for the items finished since the last commit, so every commit
 names the items it lands. Writes the message; never stages or commits.
@@ -10,7 +10,8 @@ names the items it lands. Writes the message; never stages or commits.
 - the uncommitted entries, in the order they finished
 
 ## Does
-- `Compose(root, amend)`: reads the done file, asks git which items its messages name, keeps
+- `Compose(root, amend)`: reads the done file, asks git which items its messages name on
+  their naming lines (R530), keeps
   every entry with an identifier no message names, and refuses when none is left
 - writes the subject `#N, #M: title; title` and the body `Items #N, #M.` followed by each
   entry's `#N — title` and its done-file body

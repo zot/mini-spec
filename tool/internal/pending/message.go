@@ -1,4 +1,4 @@
-// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4 | R479, R480, R481, R482, R483
+// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4 | R530, R480, R481, R482, R483
 package pending
 
 import (
@@ -39,7 +39,7 @@ type item struct {
 	body  string
 }
 
-// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4 | R479, R480, R481, R482, R483
+// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4 | R530, R480, R481, R482, R483
 //
 // Compose writes the message for the items no commit names yet. Git says which those are:
 // the done file is private and never in a commit, so the tool asks which `#N` the messages
@@ -98,7 +98,7 @@ func Compose(repoRoot string, amend bool) (Message, error) {
 	return msg, nil
 }
 
-// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4.3 | R479
+// CRC: crc-CommitMessage.md | Seq: seq-queue-item.md#4.3 | R530
 // uncommitted is every done entry with an identifier no commit names, oldest first, and the
 // newest entry's identifiers for the refusal.
 func uncommitted(repoRoot string, git *project.Git) ([]item, string, error) {

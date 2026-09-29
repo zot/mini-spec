@@ -70,7 +70,7 @@ than failing the search as though it held no marker at all
 **Fire alarm:** drop the legacy name from the weak-marker test, leaving only `.minispec.toml`,
 and confirm the search fails with no repository root found
 **Inject:** internal/project/reporoot.go:RepoRootFrom
-**Pulled:** 2026-09-27 — rang: "no repository root found"; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with the legacy name dropped from `RepoRootFrom`, `unexpected error: no repository root found`; restore clean (empty diff), delegated
 **Refs:** seq-reporoot.md#1.3.4 — R523
 
 ## Test: the home boundary is never crossed

@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507, R518, R519
+**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507, R518, R519, R531
 
 Read-only operations that query parsed design data.
 
@@ -62,7 +62,9 @@ Read-only operations that query parsed design data.
   the IDs sorted and deduplicated, or text mode with the compiled pattern; more than one arg
   that is not a clean ref list, or a pattern that does not compile, is an error naming it. The
   selection keeps one entry per selected requirement, ascending, each with its locations in
-  manifest then line order — an entry with none is kept, empty, never dropped (R503, R504, R505)
+  manifest then line order — an entry with none is kept, empty, never dropped (R503, R504, R505).
+  In number mode an ID no requirement carries is marked unknown, its locations still listed
+  (R531)
 
 ## Collaborators
 - Project: to locate files

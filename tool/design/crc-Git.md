@@ -1,5 +1,5 @@
 # Git
-**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309, R315, R335, R479, R483, R488, R492
+**Requirements:** R151, R164, R165, R166, R167, R168, R180, R184, R182, R236, R237, R238, R303, R304, R305, R306, R307, R308, R309, R315, R335, R483, R488, R492, R530
 
 Answers questions about the version-controlled working tree by invoking the `git`
 command line. Every question it answers is a **computed property** — there is
@@ -29,6 +29,11 @@ repository: a fake `Git` states the world the check is being run against.
   no history for the path, a tracked file whose symbol the parse cannot find, a symbol
   declared more than once, and a function that exists and has never changed. Only the
   last is a clean result (R180, R182, R184, R307)
+- NamedItems(): every queue ID a message on HEAD's history names on a **naming line** — a
+  line of its own, `Items #N, #M.` or `Also lands #N.`, the lines `pending commit-message`
+  writes. A `#N` anywhere else is a mention: a planning commit writes the number of an item
+  not yet worked, and reading it as a landing hides that item and every one finished before
+  it (R530)
 - SiteResolves(file, symbol): whether a site names exactly one declaration in HEAD's copy of
   the file, with LastChanged's failures kept apart and none of its history walk — what the
   census asks of a prescription (R309)

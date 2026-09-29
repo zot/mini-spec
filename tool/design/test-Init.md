@@ -163,7 +163,7 @@ back with the TOML encoder — and confirm the comparison reports the comments a
 lines dropped. This is the literal defect in its TOML form; in YAML it deleted a ten-line
 comment block on ark
 **Inject:** internal/project/init.go:setTrack
-**Pulled:** 2026-09-27 — rang: "repair changed more than one line"; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with `setTrack` as a decode-set-encode round trip, `repair changed more than one line`, three tests red. The delegate's run used `-run 'TestInit'`, which selects none of the repair tests, and came back green; re-run by hand over the whole package in its worktree; restore clean (empty diff)
 **Refs:** seq-bootstrap.md#3.4 — R524
 
 ## Test: changing an existing value keeps its comments
@@ -177,7 +177,7 @@ neighbouring setting are unchanged
 **Fire alarm:** rewrite the whole line as `track = "<value>"` instead of replacing only the
 quoted value, and confirm the trailing comment is reported dropped
 **Inject:** internal/project/init.go:setTrack
-**Pulled:** 2026-09-27 — rang: "repair changed more than the value"; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with `setTrack` writing the bare entry over the line, `repair changed more than the value` — the `# why this value` comment dropped; restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#3.4 — R524
 
 ## Test: a no-op repair rewrites nothing
@@ -192,7 +192,7 @@ rewrites the line, and confirm the test goes red on the missing `unchanged` repo
 edit keeps the key's spacing, so rewriting a correct value leaves the bytes identical and only
 the report can tell; under the YAML writer it was the byte comparison that rang
 **Inject:** internal/project/init.go:setTrack
-**Pulled:** 2026-09-27 — rang: "no-op repair did not report the config as unchanged"; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with the equal-value early return removed from `setTrack`, `no-op repair did not report the config as unchanged`; restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#3.4 — R524
 
 ## Test: an inserted `track` goes above the first table
@@ -207,7 +207,7 @@ with a top-level `track` and a `languages` entry carrying no `track`
 **Fire alarm:** append the new line at end of file instead of before the first table header,
 and confirm the decode reads no top-level `track`
 **Inject:** internal/project/init.go:setTrack
-**Pulled:** 2026-09-27 — rang: top-level track nil and the table gained `track = "all"`; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with the no-top-level case appending at end of file, `top-level track = <nil>, want all` and `the table gained a track`; restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#3.4 — R524
 
 ## Test: the degenerate documents gain `track` and nothing else
@@ -219,7 +219,7 @@ insert before
 **Fire alarm:** with no table header to insert before, put the line at the start of the file
 instead of after the existing content, and confirm the comments-only case goes red on order
 **Inject:** internal/project/init.go:setTrack
-**Pulled:** 2026-09-27 — rang: blank-lines, comments-only and no-final-newline cases all put the line first; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with the no-table case prepending the entry, three cases red (`blank lines`, `comments only`, `no final newline`); restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#3.4 — R524
 
 ## Test: init reports a YAML configuration before its own refusals
@@ -233,5 +233,5 @@ user the wrong way over a file they already have
 **Fire alarm:** move the `LegacyConfigError` check in `RunInit` below the `.minispec/` existence
 tests, and confirm the repair case reports "nothing to repair" instead
 **Inject:** internal/project/init.go:RunInit
-**Pulled:** 2026-09-27 — rang in both forms: plain init said "already exists", repair said "cannot read config.toml"; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with `RunInit`'s YAML check moved below its own refusals, `TestInitReportsAYAMLConfigFirst` red both ways (`already exists` / `cannot read config.toml` … `does not report the YAML file`); restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#2.1 — R522

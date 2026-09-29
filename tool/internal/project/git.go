@@ -496,6 +496,10 @@ func (g *Git) run(args ...string) (string, error) {
 
 var itemRefRe = regexp.MustCompile(`#(\d+)(?:\D|$)`)
 
+// namingLineRe is a line `pending commit-message` writes to name what a commit lands: `Items`
+// or `Also lands`, then the `#N` list, then a full stop. R530
+var namingLineRe = regexp.MustCompile(`(?m)^[ \t]*(?:Items|Also lands) (#\d+(?:, *#\d+)*)\.[ \t]*$`)
+
 // CRC: crc-Git.md | Seq: seq-links.md#2.1 | R488
 //
 // TrackedMarkdown is every markdown file the index holds under the working directory,
@@ -537,11 +541,13 @@ func isFixture(rel string) bool {
 	return false
 }
 
-// CRC: crc-Git.md | Seq: seq-queue-item.md#4.2 | R479
+// CRC: crc-Git.md | Seq: seq-queue-item.md#4.2 | R530
 //
-// NamedItems is every queue ID a commit message on HEAD's history names — `#N` bounded by a
-// non-digit, so `#40` does not name `#4`. The done file is private and never in a commit, so
-// the question is asked this way round. A repository with no commits names nothing.
+// NamedItems is every queue ID a commit message on HEAD's history names on a naming line —
+// `Items #N, #M.` or `Also lands #N.` — `#N` bounded by a non-digit, so `#40` does not name
+// `#4`. A `#N` anywhere else is a mention: a planning commit writes the number of an item not
+// yet worked. The done file is private and never in a commit, so the question is asked this
+// way round. A repository with no commits names nothing.
 func (g *Git) NamedItems() (map[int]bool, error) {
 	if !g.IsRepo() {
 		return nil, ErrNoGit
@@ -551,9 +557,11 @@ func (g *Git) NamedItems() (map[int]bool, error) {
 	if err != nil {
 		return named, nil // no commits yet
 	}
-	for _, m := range itemRefRe.FindAllStringSubmatch(out, -1) {
-		n, _ := strconv.Atoi(m[1])
-		named[n] = true
+	for _, line := range namingLineRe.FindAllStringSubmatch(out, -1) {
+		for _, m := range itemRefRe.FindAllStringSubmatch(line[1], -1) {
+			n, _ := strconv.Atoi(m[1])
+			named[n] = true
+		}
 	}
 	return named, nil
 }

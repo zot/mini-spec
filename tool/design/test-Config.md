@@ -108,7 +108,7 @@ resolves
 **Fire alarm:** skip the undecoded-key loop in `decodeLayer`, so an unknown key decodes silently,
 and confirm the test reports no error where one was expected
 **Inject:** internal/project/config.go:decodeLayer
-**Pulled:** 2026-09-27 — rang: both the unknown-key and the retired-key test reported no error where one was expected; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with `decodeLayer`'s undecoded-key check removed, `expected an error for the unknown key srcdir`; restore clean (empty diff), delegated
 **Refs:** seq-config.md#2.1.1 — R521
 
 ## Test: a retired key is named as retired
@@ -130,7 +130,7 @@ not the no-configuration refusal
 **Fire alarm:** make `LegacyConfigError` return nil, so the YAML file is passed over as though
 there were no configuration, and confirm both YAML tests go red
 **Inject:** internal/project/config.go:LegacyConfigError
-**Pulled:** 2026-09-27 — rang: both YAML tests got a nil error; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with `LegacyConfigError` returning nil, four tests red, `TestYAMLRepoConfigIsReported: expected an error naming the YAML configuration` first; restore clean (empty diff), delegated
 **Refs:** seq-config.md#1.2.1 — R522
 
 ## Test: a YAML design-root configuration stops everything

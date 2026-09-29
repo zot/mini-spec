@@ -91,10 +91,11 @@ cover a fragment of the change rather than the change.
 
 4. `Compose(root, amend)`
    4.1. Read the done file; every entry with its line
-   4.2. Ask git for every `#N` named by a message on `HEAD`'s history, bounded by a non-digit;
+   4.2. Ask git for every `#N` on a naming line — `Items #N, #M.` or `Also lands #N.` — of a
+        message on `HEAD`'s history, bounded by a non-digit; a `#N` elsewhere is a mention;
         no commits names nothing
    4.3. Keep the newest entries down to, and excluding, the first a commit names — a hash in
-        its slot, or every identifier in a message — oldest first; none is a refusal naming
+        its slot, or every identifier on a naming line — oldest first; none is a refusal naming
         the newest entry and that it is named
    4.4. Compose: subject `#N, #M: title; title`; body `Items #N, #M.` then each entry's
         `#N — title` and the done file's lines beneath its header

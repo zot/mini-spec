@@ -127,5 +127,5 @@ no-configuration refusal
 **Fire alarm:** make the gate's `LegacyConfigError` check never fire, and confirm the test sees
 the no-configuration refusal instead
 **Inject:** internal/cli/bootstrap.go:gate
-**Pulled:** 2026-09-27 — rang on both assertions: YAML not reported, no-configuration refusal shown; restore byte-clean
+**Pulled:** 2026-09-29 — rang: with the gate's `LegacyConfigError` check disabled, `gate did not report the YAML configuration` and `showed the no-configuration refusal over an existing YAML file`; restore clean (empty diff), delegated
 **Refs:** seq-bootstrap.md#1 — R522

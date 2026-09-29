@@ -122,7 +122,8 @@ carries its `Rn`, read through the same harvest `validate` uses, so a range such
 `R5-R8` answers for `R6` and a prose mention such as `(see R6)` does not.
 
 ```bash
-# By number: the code locations only (ranges and comma lists work)
+# By number: the code locations only (ranges and comma lists work);
+# a number that is not a requirement says "no such requirement"
 minispec query implementation R502-R504,R507
 
 # By text: each requirement the regexp matches, then its locations;

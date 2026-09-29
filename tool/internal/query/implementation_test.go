@@ -1,4 +1,4 @@
-// CRC: crc-Query.md | Test: test-Query.md | R502, R503, R504, R505, R506
+// CRC: crc-Query.md | Test: test-Query.md | R502, R503, R504, R505, R506, R531
 package query
 
 import (
@@ -86,6 +86,20 @@ func TestSelectImplementationAnswersEachRequirement(t *testing.T) {
 	}
 	if e := res.Entries[0]; e.ID != "R5" || len(e.Locations) == 0 || e.Locations[0].Comment != "// R5-R7" {
 		t.Errorf("comment not carried: %+v", e)
+	}
+}
+
+// R531 — a number no requirement carries is unknown, its citing code still listed.
+func TestSelectImplementationUnknownNumber(t *testing.T) {
+	reqs, h := implFixture()
+	h.Files = append(h.Files, parser.FileHarvest{Path: "c.go", Comments: []parser.HarvestComment{{Line: 2, Text: "// R99", Refs: []string{"R99"}}}})
+	res := SelectImplementation(reqs, h, mustClassify(t, false, "R8,R99,R100"))
+	var lines []string
+	for _, e := range res.Entries {
+		lines = append(lines, fmt.Sprintf("%s unknown=%v n=%d", e.ID, e.Unknown, len(e.Locations)))
+	}
+	if got, want := strings.Join(lines, "; "), "R8 unknown=false n=0; R99 unknown=true n=1; R100 unknown=true n=0"; got != want {
+		t.Errorf("got %q, want %q — a number that is not a requirement read as one", got, want)
 	}
 }
 

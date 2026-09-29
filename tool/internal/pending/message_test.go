@@ -1,4 +1,4 @@
-// CRC: crc-CommitMessage.md | R479, R480, R481, R482, R483
+// CRC: crc-CommitMessage.md | R530, R480, R481, R482, R483
 package pending
 
 import (
@@ -33,7 +33,7 @@ func finishedFixture(t *testing.T) string {
 	return root
 }
 
-// R479, R480, R481 — the uncommitted items are the ones no message names, bounded.
+// R530, R480, R481 — the uncommitted items are the ones no message names, bounded.
 func TestTheUncommittedItemsAreTheOnesNoMessageNames(t *testing.T) {
 	root := finishedFixture(t)
 	msg, err := Compose(root, false)
@@ -44,7 +44,7 @@ func TestTheUncommittedItemsAreTheOnesNoMessageNames(t *testing.T) {
 		!strings.Contains(msg.Text, "#4 — a part to queue\n") || !strings.Contains(msg.Text, "what a reader needs to know.") {
 		t.Errorf("composed:\n%s", msg.Text)
 	}
-	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "unrelated: names #40 only")
+	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "unrelated\n\nItems #40.")
 	if _, err := Compose(root, false); err != nil {
 		t.Errorf("#40 was read as naming #4: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestTheUncommittedItemsAreTheOnesNoMessageNames(t *testing.T) {
 	if msg, err := Compose(root, false); err != nil || strings.Contains(msg.Text, "#9") {
 		t.Errorf("an entry with a hash was composed: %v\n%s", err, msg.Text)
 	}
-	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "lands #4")
+	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "lands it\n\nItems #4.")
 	_, err = Compose(root, false)
 	if !errors.Is(err, ErrNothingToCommit) || !strings.Contains(err.Error(), "#4") {
 		t.Errorf("want the nothing-to-compose refusal naming #4, got %v", err)
@@ -68,6 +68,19 @@ func TestTheUncommittedItemsAreTheOnesNoMessageNames(t *testing.T) {
 	}
 	if _, err := Compose(root, false); !errors.Is(err, ErrNothingToCommit) {
 		t.Errorf("an entry older than a named one was composed: %v", err)
+	}
+}
+
+// R530 — a #N in a subject or in prose is a mention; only a naming line lands an item.
+func TestAMentionIsNotALanding(t *testing.T) {
+	root := finishedFixture(t)
+	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "plan: then the query (#4)\n\nNext is #4, once #3 lands.")
+	if msg, err := Compose(root, false); err != nil || msg.Subject != "#4: a part to queue" {
+		t.Errorf("a mentioned #4 was read as landed: %v", err)
+	}
+	gitIn(t, root, "commit", "-q", "--allow-empty", "-m", "the subject\n\nsome prose first.\n\nAlso lands #4.")
+	if _, err := Compose(root, false); !errors.Is(err, ErrNothingToCommit) {
+		t.Errorf("an Also lands line did not name #4: %v", err)
 	}
 }
 

@@ -533,8 +533,17 @@ commits; the human stages and commits.
 commit, so the tool cannot ask git which entries it holds; it asks the other way round —
 which `#N` the messages on `HEAD`'s history name — and the uncommitted entries are the
 newest ones down to, and excluding, the first that a commit names, by a hash in its slot or
-by every identifier appearing in a message. `#N` is bounded by a non-digit, so `#40` does not
-name `#4` (open question 1, answered). **Everything older than a named entry is history,
+by every identifier appearing in a message's **naming line**. `#N` is bounded by a non-digit,
+so `#40` does not name `#4` (open question 1, answered).
+
+**A message names an item only on the lines this verb writes**: `Items #N, #M.` and, from an
+amend, `Also lands #N, #M.` — each a line of its own, the list and nothing else. A `#N`
+anywhere else in a message is a *mention*, not a landing: a commit that plans an item writes
+its number before the item exists as work. Measured 2026-09-29: a commit that wrote "then
+`query implementation` (#92)" while planning it made the verb read `#92` as landed, refuse,
+and, since the walk stops at the first named entry, drop the two items finished before it as
+well (gap `O32`). Every commit since the verb existed carries its naming line, so reading
+only those lines loses nothing. **Everything older than a named entry is history,
 whatever its slot says**: measured on this repository's first run, two entries from August
 carried neither a hash the reader recognises nor a number any message names, and a rule that
 looked at each entry alone composed them into the message. A repository with no commits

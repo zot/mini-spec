@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324, R329, R331, R332, R334, R335, R336, R455, R458, R461, R463, R467, R468, R469, R475, R476, R477, R478, R484, R488, R489, R495, R496, R502, R503, R504, R505, R507
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79, R80, R81, R82, R83, R89, R103, R117, R115, R116, R152, R153, R154, R155, R156, R157, R158, R159, R160, R169, R174, R175, R176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215, R216, R217, R218, R241, R244, R247, R253, R254, R255, R256, R261, R262, R264, R265, R268, R277, R280, R281, R282, R283, R285, R299, R301, R313, R314, R315, R317, R323, R324, R329, R331, R332, R334, R335, R336, R455, R458, R461, R463, R467, R468, R469, R475, R476, R477, R478, R484, R488, R489, R495, R496, R502, R503, R504, R505, R507, R531
 
 Command-line interface handling.
 
@@ -90,7 +90,8 @@ a missing `track` to the malformed refusal told the agent to hand-edit a file th
 - query implementation: parses `--retired` and `--json` wherever they sit, hands the rest to
   `ClassifyImplArgs`, and renders the answer — one head line per requirement (its `Rn`, and in
   text mode its text; `(retired)` marked), each location as `file:line  comment` beneath it,
-  `no impl refs` under one with none, and the files the harvest could not read last. A pattern
+  `no impl refs` under one with none — `no such requirement` instead for a number no
+  requirement carries — and the files the harvest could not read last. A pattern
   matching nothing prints `no requirements match <pattern>` rather than nothing (R504, R507)
 
 ## Collaborators

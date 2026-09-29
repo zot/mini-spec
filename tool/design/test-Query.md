@@ -63,6 +63,17 @@
 **Inject:** internal/query/implementation.go:SelectImplementation
 **Pulled:** 2026-09-29 — rang: text mode came back `R8; R6; R5` in document order, three assertions red; restore byte-clean by copy
 
+## Test: a number that is not a requirement says so
+**Purpose:** validates R531 — in number mode an ID no requirement carries is marked unknown rather than answered as unimplemented, and code still citing it is listed
+**Input:** the fixture above plus `c.go` line 2 `// R99`; number `R8,R99,R100`
+**Expected:** R8 known with no locations; R99 unknown with `c.go:2`; R100 unknown with none
+**Refs:** crc-Query.md, crc-CLI.md — R531
+**Code:** internal/query/implementation_test.go
+**Alarm:** 7
+**Fire alarm:** make `Unknown` always false in `SelectImplementation` (`!known && id == ""`, which keeps `known` in use — deleting the field leaves it unused and the build fails, which is no result) — R100 reads as a requirement with no impl refs, the output `R99999` gave before this test
+**Inject:** internal/query/implementation.go:SelectImplementation
+**Pulled:** 2026-09-29 — rang: `R99 unknown=false n=1; R100 unknown=false n=0` — a number that is not a requirement read as one; restore byte-clean by copy. The first attempt, deleting the field, broke the build and was not counted
+
 ## Test: retired requirements answer by number, and by text only with --retired
 **Purpose:** validates R505 — a retired requirement selected by number is answered with its locations; text mode leaves it out unless the flag is set; the flag changes nothing in number mode
 **Input:** the harvest and requirements above; number `R7` with and without the flag; text `.` with and without the flag

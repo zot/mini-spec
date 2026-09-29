@@ -180,6 +180,9 @@ number.
 
 - **Number mode lists the code locations only.** The caller named the `Rn`, so echoing its
   text back is noise.
+  A number that is not a requirement at all says **no such requirement** (Bill, 2026-09-29):
+  `no impl refs` under it would read as a requirement nobody implemented. Any code that still
+  cites the number is listed beneath it, since that is a dangling ref worth finding.
 - **Text mode lists each matched requirement** — its `Rn` and one-line text — then its code
   locations, so the caller sees which requirements the pattern caught.
 - **A matched requirement with no implementing code prints an explicit "no impl refs"** — the
