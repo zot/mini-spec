@@ -32,7 +32,11 @@ number" case. Developed from planning notes worked up with Bill on 2026-09-18.
 - [x] ~~**Item 1 — wire `minispecsdom.Comments` into the harvest; retire `parser.ParseTraceability`.**~~ **LANDED (2026-09-29 — `#93`.)** Re-point `validate.go`'s impl-coverage harvest and `query.go`'s code-ref reader onto the sdom reader. Build one positioned harvest both consume.
 - [x] ~~**Item 2 — `minispec query implementation` (ark's request).**~~ **LANDED (2026-09-29 — `#92`.)** Reverse lookup `Rn` (or a pattern) → the code that implements it, over the sdom harvest. Rides on Item 1's positioned harvest.
 - **Item 4 — C++ raw strings.** **MOVED (Bill, 2026-09-25 — [sdom.md](sdom.md) Item 5.5.)** Language support is tracked in the sdom carve.
-- [ ] **Item 3 — `RangeSet` on `RequirementList`.** **OPEN (not queued.)** An interval view (`Ranges() [][2]int` / `Contains(n)`) beside `Items()`. Enhancement, not a correctness fix — see Decisions.
+- [x] ~~**Item 3 — a canonical writer on `RequirementList`.**~~ **DISCHARGED (mini-spec-tool `355c36d`, 2026-09-30.)** The writer already existed — `SetItems([]int)` since their `#15`, with `RequirementText([]int)` beside it; `Ranges()` and `Contains(n)` were added on our request (their R364, R365). Unreleased; reached through the workspace. Item 5.2's precondition is met — see Decisions.
+- **Item 5 — requirement lists in minimal range form.** No checkbox: the subparts carry the state.
+  - [ ] **5.1 — a CRC card's `**Requirements:**` line is read through `sdom.RequirementList`.** **OPEN (not queued.)**
+  - [ ] **5.2 — `add-ref` and `remove-ref` rewrite the line in sorted minimal form.** **OPEN (not queued.)**
+  - [ ] **5.3 — the grep lookup is superseded by the range-aware queries.** **OPEN (not queued.)**
 
 ## Decisions
 
@@ -60,7 +64,7 @@ Item 2 rides Item 1.
 n)`, and requirement spans are tiny). A `RangeSet` of `(lo,hi)` intervals is worth doing
 for the **write** side — editing a ref while keeping the range literal, cheap inclusion
 without materializing — but it does not block the read query, so Item 3 is independent
-of Item 2.
+of Item 2. *Its write-side consumer arrived 2026-09-29 as Item 5.2, and the whole-line decision below replaced the interval view with a canonical writer — see the next decision.*
 
 **DECIDED (Bill, 2026-09-25): Item 1 lands before Item 2, in the same batch.** Measured the
 same day over this repository's 92 Artifacts code files: of about 890 distinct (file, Rn)
@@ -161,6 +165,61 @@ unclosed and stray counts on malformed code shift, and the harvest's unread repo
 those. **It reaches this tool only through a simple-dom release:** `go.mod` requires the
 published v1.0.0, and `~/work/go.work`, which uses the local checkout, is off in release
 builds and in worktree alarm pulls.
+
+**DECIDED (Bill, 2026-09-29): `add-ref` writes requirement lists in minimal range form —
+pairs as lists, and the whole line rewritten.** Bill's proposal, for the write side the
+`RangeSet` record above was waiting on. A run of three or more consecutive numbers is written
+as a range (`R502-R505`); two neighbours stay a list (`R5, R6`), since a range saves nothing
+on a pair and reads worse. Every `add-ref` and `remove-ref` rewrites the whole line sorted
+and minimal, rather than merging into an adjacent run — rigid on output — at the cost of one
+reordering diff per card, once. Measured the same day over the 51 `**Requirements:**` lines
+in the CRC, sequence and test designs: all plain `Rn` lists, 12 out of numeric order, 46 that
+would shrink, 4611 characters to 2531. This spans Items 3 and 5, so it sits here.
+
+**Item 5** carries it, in the order that keeps every step safe. **5.1** first: today
+`ParseCRCCard` splits the line on commas and keeps each token as written, so `validate` and
+`Coverage()` — both reached through `GlobCRCCards`, CRC cards only — would read `R502-R505`
+as one unknown ref and R503, R504 as uncovered. Loud rather than silent, but a range must not
+be written until the reader expands it, through the grammar code comments already use.
+**5.2** then: `add-ref` sorts, dedupes and compacts; `remove-ref` is where a range splits
+(`R502-R505` less R504 is `R502-R503, R505`), which is what Item 3's `RangeSet` is for.
+*Spelling and the empty-line rule superseded 2026-09-30 — see the answer below.* The
+`**Requirements:**` lines of sequence and test designs are read by nothing and written by no
+verb, so they are out of scope. **5.3** last: `/minimap` teaches *Requirement → everywhere it
+lands: grep -rn "R5" design/ src/*, and a grep for R503 misses a card that writes
+`R502-R505`. Code comments already allow ranges, which is why `query implementation` exists;
+`query coverage` maps each Rn to its design files and becomes the lookup to teach. The grep
+line in minimap and any echo of it in SKILL.md is rewritten at the source, or it is a trap.
+
+**DECIDED (Bill, 2026-09-29): Item 3 asks simple-dom for a canonical writer, not an interval
+view.** The interval view was for byte-preserving edits inside a range; with the whole line
+rewritten nothing edits inside one — the verb reads the members through `Items()`, changes the
+set, and writes it back. So the request is a `SetItems([]int)` on `RequirementList` that renders
+the minimal form (runs of three or more as `Rn-Rm`, pairs and singles as a list, `, ` between),
+so the reader and writer share one grammar by construction. `Ranges()` and `Contains(n)` are
+named in the request as optional. *Supersedes the `Ranges() [][2]int` / `Contains(n)` shape
+Item 3 was filed with on 2026-09-18.*
+
+**ANSWERED (mini-spec-tool, 2026-09-30 — `RESP-requirement-list-writer.md`): the writer was
+already there.** `SetItems` predates the request, which was filed without reading sdom's
+`list.go` — the *ask the tool what exists* lesson, paid for with one round trip. Three things
+came back with it:
+
+- **DECIDED (Bill, 2026-09-30, with mini-spec-tool): a range is written `R5-8`, not `R5-R8`.**
+  A grep finds only a range's two ends in either spelling, so the second `R` buys little and
+  the short form is the smaller line. The reader accepts both, so existing lines still read.
+  *This supersedes "`Rn-Rm`" and "`R502-R505`" in the 2026-09-29 decisions above*, which are
+  left as written because they were the decision of that day. Re-measured with the short
+  form: 51 lines, 46 shrink, 4611 characters to 2420.
+- **An empty set does not read back** (their R366): `SetItems` of nothing writes an empty
+  literal, and a list has at least one item. **Bill's rule: removing the last requirement
+  removes the `**Requirements:**` line.** `validate` already reports a card with no
+  requirements as an orphan whether the line is missing or empty, so the rule opens no
+  second corner there.
+- **But it exposes one in `AddRef`, live today.** It looks for the `**Requirements:**` line
+  and, finding none, writes the file back unchanged and returns success — so `add-ref` on a
+  card whose line was removed does nothing and says nothing. Item 5.2 inserts the line when
+  it is absent (beneath the card's heading), and that path gets a test and an alarm.
 
 ## The CLAUDE.md obligation
 
