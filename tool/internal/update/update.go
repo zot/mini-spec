@@ -3,6 +3,7 @@ package update
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
 	"github.com/zot/minispec/internal/minispecsdom"
+	"github.com/zot/simple-dom/sdom"
 )
 
 // Update provides atomic modification operations on design files
@@ -68,72 +70,110 @@ func (u *Update) setCheckbox(file, item string, checked bool) error {
 	return fmt.Errorf("item %q not found in %s", item, file)
 }
 
-// AddRef adds a requirement reference to a CRC card's Requirements field
+// CRC: crc-Update.md | Seq: seq-update.md | R20, R533, R534
+// AddRef adds a requirement reference to a CRC card's Requirements field, rewriting the field
+// in canonical form. A card with no Requirements line gets one.
 func (u *Update) AddRef(crcFile, reqID string) error {
-	path := u.Project.DesignPath(crcFile)
-	card, err := parser.ParseCRCCard(path)
+	n, err := reqNumber(reqID)
 	if err != nil {
 		return err
 	}
-
-	if slices.Contains(card.Requirements, reqID) {
+	return rewriteRequirements(u.Project.DesignPath(crcFile), func(refs map[int]bool) error {
+		refs[n] = true
 		return nil
-	}
+	})
+}
 
+// CRC: crc-Update.md | R21, R533, R535, R537
+// RemoveRef removes a requirement reference from a CRC card, splitting a range that holds it.
+// A ref the card does not carry is an error, and the card is left as it was.
+func (u *Update) RemoveRef(crcFile, reqID string) error {
+	n, err := reqNumber(reqID)
+	if err != nil {
+		return err
+	}
+	return rewriteRequirements(u.Project.DesignPath(crcFile), func(refs map[int]bool) error {
+		if !refs[n] {
+			return fmt.Errorf("%s is not on %s", reqID, crcFile)
+		}
+		delete(refs, n)
+		return nil
+	})
+}
+
+// reqNumber reads an `Rn` argument.
+func reqNumber(reqID string) (int, error) {
+	digits, ok := strings.CutPrefix(reqID, "R")
+	n, err := strconv.Atoi(digits)
+	if !ok || err != nil || n <= 0 {
+		return 0, fmt.Errorf("%q is not a requirement ref (R5)", reqID)
+	}
+	return n, nil
+}
+
+var crcReqLineRe = regexp.MustCompile(`^\*\*Requirements:\*\*\s*(.*)$`)
+
+// reqPrefix is how the rewrite writes the field's label, whatever spacing it was read with.
+const reqPrefix = "**Requirements:** "
+
+// CRC: crc-Update.md | Seq: seq-update.md | R533, R534, R535, R536
+// rewriteRequirements is the one rewrite of a card's Requirements field. The field is read
+// through the requirement-list grammar — refs as a set of numbers, whatever it does not consume
+// as comma tokens — edit changes the set, and the field is written back as the grammar's own
+// canonical text followed by the tokens as written, after the canonical label. No line yet is a
+// line to insert beneath the card's heading; an empty result removes the line, since the grammar
+// has no empty list. A rewrite that changes nothing writes nothing.
+func rewriteRequirements(path string, edit func(refs map[int]bool) error) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-
 	lines := strings.Split(string(content), "\n")
-	reqPattern := regexp.MustCompile(`^(\*\*Requirements:\*\*\s*)(.*)$`)
-
+	at, field := -1, ""
 	for i, line := range lines {
-		if matches := reqPattern.FindStringSubmatch(line); matches != nil {
-			existing := strings.TrimSpace(matches[2])
-			newReqs := reqID
-			if existing != "" {
-				newReqs = existing + ", " + reqID
-			}
-			lines[i] = matches[1] + newReqs
+		if m := crcReqLineRe.FindStringSubmatch(line); m != nil {
+			at, field = i, m[1]
 			break
 		}
 	}
-
+	nums, tokens := parser.RequirementsField(strings.TrimSpace(field))
+	refs := map[int]bool{}
+	for _, n := range nums {
+		refs[n] = true
+	}
+	if err := edit(refs); err != nil {
+		return err
+	}
+	fields := tokens
+	if canon := sdom.RequirementText(slices.Collect(maps.Keys(refs))); canon != "" {
+		fields = append([]string{canon}, tokens...)
+	}
+	text := strings.Join(fields, ", ")
+	switch {
+	case at >= 0 && text == "":
+		lines = slices.Delete(lines, at, at+1)
+	case at >= 0:
+		if lines[at] == reqPrefix+text {
+			return nil
+		}
+		lines[at] = reqPrefix + text
+	case text == "":
+		return nil
+	default:
+		lines = slices.Insert(lines, headingEnd(lines), reqPrefix+text)
+	}
 	return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
 }
 
-// RemoveRef removes a requirement reference from a CRC card
-func (u *Update) RemoveRef(crcFile, reqID string) error {
-	path := u.Project.DesignPath(crcFile)
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	lines := strings.Split(string(content), "\n")
-	reqPattern := regexp.MustCompile(`^(\*\*Requirements:\*\*\s*)(.*)$`)
-
+// headingEnd is the line after a card's `#` heading, where a Requirements line belongs; a card
+// with no heading takes it first.
+func headingEnd(lines []string) int {
 	for i, line := range lines {
-		if matches := reqPattern.FindStringSubmatch(line); matches != nil {
-			existing := strings.TrimSpace(matches[2])
-			if existing == "" {
-				break
-			}
-			parts := strings.Split(existing, ",")
-			var newParts []string
-			for _, p := range parts {
-				p = strings.TrimSpace(p)
-				if p != reqID {
-					newParts = append(newParts, p)
-				}
-			}
-			lines[i] = matches[1] + strings.Join(newParts, ", ")
-			break
+		if strings.HasPrefix(line, "# ") {
+			return i + 1
 		}
 	}
-
-	return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+	return 0
 }
 
 // permanentTypes are gap types that are permanent (never resolved); their

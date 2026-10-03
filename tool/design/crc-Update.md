@@ -1,5 +1,5 @@
 # Update
-**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62, R80, R81, R82, R83, R103, R310, R313, R314, R315, R316, R311, R324, R325, R326
+**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62, R80, R81, R82, R83, R103, R310, R313, R314, R315, R316, R311, R324, R325, R326, R533, R534, R535, R536, R537
 
 Atomic modifications to structured parts of design files.
 
@@ -27,8 +27,16 @@ Atomic modifications to structured parts of design files.
 - resolveAlarm(key): `<doc>#<n>` to a design-directory path and a number; anything else is
   refused by name (R310)
 - Uncheck(file, item): uncheck a checkbox in file
-- AddRef(crcFile, reqID): add Rn to CRC card's Requirements field
-- RemoveRef(crcFile, reqID): remove Rn from CRC card's Requirements field
+- AddRef(crcFile, reqID): add Rn to CRC card's Requirements field, rewriting the whole field
+  in canonical form; a card with no Requirements line gets one beneath its `#` heading; a ref
+  already present, inside a range or not, changes nothing (R20, R533, R534)
+- RemoveRef(crcFile, reqID): remove Rn, rewriting the field canonically so a range splits; the
+  last ref removes the line; a ref the card lacks is an error and the card is untouched (R21,
+  R533, R535, R537)
+- rewriteRequirements(path, edit): the one field rewrite both verbs share. Reads the field
+  through `sdom.ParseRequirementList` — refs as numbers, the unconsumed rest as tokens — lets
+  the verb edit the number set, and writes `sdom.RequirementText(set)` followed by the tokens
+  as written (R533, R536)
 - AddGap(gapType, desc): add new gap with auto-numbered ID; A-typed and T-typed entries are written without a leading checkbox
 - ResolveGap(gapID): mark gap as resolved (check its checkbox); refuses A and T types
 - ApproveGap(gapID): convert existing gap to A type with next A-number, preserve description; written without checkbox

@@ -47,7 +47,11 @@ func ParseCRCCard(path string) (CRCCard, error) {
 		// Extract requirements
 		if matches := crcReqsRe.FindStringSubmatch(line); matches != nil {
 			card.ReqLine = lineNum
-			card.Requirements = requirementsField(strings.TrimSpace(matches[1]))
+			refs, others := RequirementsField(strings.TrimSpace(matches[1]))
+			for _, n := range refs {
+				card.Requirements = append(card.Requirements, "R"+strconv.Itoa(n))
+			}
+			card.Requirements = append(card.Requirements, others...)
 			continue
 		}
 
@@ -75,22 +79,26 @@ func ParseCRCCard(path string) (CRCCard, error) {
 }
 
 // CRC: crc-Parser.md | R532
-// requirementsField reads a card's Requirements field through the grammar traceability
-// comments use, so a range names every member. What the grammar does not consume is kept as
-// comma-separated tokens, as written, for validate to report as unknown references.
-func requirementsField(field string) []string {
-	var refs []string
+// RequirementsField reads a card's Requirements field through the grammar traceability
+// comments use, so a range names every member. The list is read from the head; every comma
+// token after it that is itself a whole requirement list joins the refs too, so a ref written
+// after a stray word is still a ref. What remains is kept, as written and in order, for validate
+// to report as unknown references and for a rewrite to carry through unchanged.
+func RequirementsField(field string) (refs []int, others []string) {
 	rest := field
 	if list, after, ok := sdom.ParseRequirementList(field, sdom.Loc{}); ok {
-		for _, n := range list.Items() {
-			refs = append(refs, "R"+strconv.Itoa(n))
-		}
+		refs = list.Items()
 		rest = after
 	}
 	for _, tok := range strings.Split(rest, ",") {
-		if tok = strings.TrimSpace(tok); tok != "" {
-			refs = append(refs, tok)
+		if tok = strings.TrimSpace(tok); tok == "" {
+			continue
 		}
+		if list, after, ok := sdom.ParseRequirementList(tok, sdom.Loc{}); ok && strings.TrimSpace(after) == "" {
+			refs = append(refs, list.Items()...)
+			continue
+		}
+		others = append(others, tok)
 	}
-	return refs
+	return refs, others
 }

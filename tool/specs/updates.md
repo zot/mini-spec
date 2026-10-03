@@ -20,16 +20,31 @@ Uncheck a checkbox in the specified file.
 
 Add a requirement reference to a CRC card's Requirements field.
 
+**The whole field is rewritten in its canonical form** (Bill, 2026-09-29): the refs sorted,
+each once, a run of three or more consecutive numbers written as one range, `R5-8`, and a
+pair or a single ref listed, separated by a comma and a space. The form is the requirement-list
+grammar's own writer, so what the field says is exactly what reads back. The first add on a card
+written by hand may reorder its line; every later one is stable.
+
 Example:
 ```
-minispec update add-ref crc-Store.md R5
-# Changes: **Requirements:** R1, R3
-# To:      **Requirements:** R1, R3, R5
+minispec update add-ref crc-Store.md R6
+# Changes: **Requirements:** R7, R1, R5, R8
+# To:      **Requirements:** R1, R5-8
 ```
+
+A ref already on the card — including one inside a range — changes nothing. **A card with no
+Requirements line gets one**, written beneath its `#` heading: an add that found nowhere to
+write and reported success would be telling the caller something false. Anything in the field
+that is not a requirement ref is kept, as written, after the refs, so `validate` still reports it.
 
 ## minispec update remove-ref [crc-file] [Rn]
 
-Remove a requirement reference from a CRC card.
+Remove a requirement reference from a CRC card, rewriting the field in the same canonical form —
+so removing `R6` from `R5-8` leaves `R5, R7, R8`. **Removing the last ref removes the
+Requirements line** (Bill, 2026-09-30), since the grammar has no empty list; `validate` then
+reports the card as having no requirements, as it would an empty field. **A ref the card does
+not carry is an error naming it**, never a silent success.
 
 ## minispec update add-gap [type] [description]
 

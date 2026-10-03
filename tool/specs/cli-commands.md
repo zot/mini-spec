@@ -61,8 +61,8 @@
 |---|---|---|
 | `update check [file] [item]` | [updates.md](updates.md) | Check a checkbox in the specified file. |
 | `update uncheck [file] [item]` | [updates.md](updates.md) | Uncheck a checkbox. |
-| `update add-ref [crc-file] [Rn]` | [updates.md](updates.md) | Add a requirement reference to a CRC card. |
-| `update remove-ref [crc-file] [Rn]` | [updates.md](updates.md) | Remove a requirement reference from a CRC card. |
+| `update add-ref [crc-file] [Rn]` | [updates.md](updates.md) | Add a requirement reference to a CRC card, rewriting the field sorted and minimal (`R1, R5-8`); a card with no Requirements line gets one. |
+| `update remove-ref [crc-file] [Rn]` | [updates.md](updates.md) | Remove a requirement reference, rewriting the field minimal (a range splits); the last ref removes the line; a ref the card lacks is an error. |
 | `update add-gap [type] [description]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Add a new gap with auto-numbered ID. Migration spec amends: `A` and `T` gaps are written without checkboxes. |
 | `update resolve-gap [id]` | [updates.md](updates.md) | Mark a gap as resolved. Alias for `update check design.md [id]`. |
 | `update approve-gap [id]` | [updates.md](updates.md), [migrations/complete/001](migrations/complete/001-migration-and-retirement.md) | Convert an existing gap to approved (A) type. Migration spec amends: A entries have no checkbox. |

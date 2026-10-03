@@ -37,15 +37,20 @@ func TestCRCRequirementsReadRangesAsMembers(t *testing.T) {
 
 // R532 — text the grammar stops on is kept as tokens, so validate can report it.
 func TestCRCRequirementsKeepLeftoverTokens(t *testing.T) {
-	want := []string{"R5", "TBD", "R9"}
+	want := []string{"R5", "R9", "TBD"}
 	if got := crcWith(t, "R5, TBD, R9").Requirements; !slices.Equal(got, want) {
 		t.Errorf("got %q, want %q — text after the list was dropped, not reported", got, want)
+	}
+	// A range written after a stray word still names its members.
+	want = []string{"R5", "R10", "R11", "R12", "TBD"}
+	if got := crcWith(t, "R5, TBD, R10-12").Requirements; !slices.Equal(got, want) {
+		t.Errorf("got %q, want %q — a range after a stray word was read as one token", got, want)
 	}
 }
 
 // R532 — a field the grammar cannot start on keeps every token, so none goes unreported.
 func TestCRCRequirementsKeepAFieldThatOpensWithJunk(t *testing.T) {
-	want := []string{"TBD", "R5"}
+	want := []string{"R5", "TBD"}
 	if got := crcWith(t, "TBD, R5").Requirements; !slices.Equal(got, want) {
 		t.Errorf("got %q, want %q — a field opening with a non-ref was dropped", got, want)
 	}

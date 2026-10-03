@@ -1,5 +1,5 @@
 # Parser
-**Requirements:** R310, R312, R316, R5, R6, R7, R8, R51, R52, R53, R61, R66, R71, R73, R74, R75, R77, R90, R91, R94, R95, R96, R178, R326, R532
+**Requirements:** R5-8, R51-53, R61, R66, R71, R73-75, R77, R90, R91, R94-96, R178, R310, R312, R316, R326, R532, R536
 
 Parses mini-spec design file formats into structured data.
 
@@ -23,10 +23,11 @@ Parses mini-spec design file formats into structured data.
   - Splits comma-separated paths on `**Source:**` line into Sources []string
 - ScanSourceLineIssues(path): re-scan requirements.md for lines that look like Source markers but don't match the canonical `**Source:** ...` pattern -> []SourceLineIssue
 - ParseCRCCard(path): parse crc-*.md -> CRCCard. The `**Requirements:**` field is read
-  through `sdom.ParseRequirementList` from its head: each ref and every member of a range
-  (`R5-8`, `R5-R8`) becomes an `Rn` in Requirements, in the field's order. Text the list does
-  not consume is split on commas and kept as tokens as written, so validate reports it as an
-  unknown reference rather than losing it (R532)
+  through `RequirementsField`, then each ref as an `Rn` followed by the field's non-refs (R532)
+- RequirementsField(field): the one reading of a Requirements field, shared with Update's
+  rewrite. `sdom.ParseRequirementList` reads the head; each comma token after it that is itself
+  a whole requirement list joins the refs, so `R5, TBD, R10-12` is R5, R10–R12 and the token
+  `TBD`. Returns the refs as numbers and the non-refs as written, in order (R532, R536)
 - ParseArtifacts(path): parse design.md Artifacts section -> []Artifact
   - Supports inline format: `- [x] design.md → code.ts, code2.ts`
   - Skips subsection headers (`### CRC Cards`, etc.)

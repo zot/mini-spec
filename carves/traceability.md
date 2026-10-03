@@ -35,7 +35,7 @@ number" case. Developed from planning notes worked up with Bill on 2026-09-18.
 - [x] ~~**Item 3 — a canonical writer on `RequirementList`.**~~ **DISCHARGED (mini-spec-tool `355c36d`, 2026-09-30.)** The writer already existed — `SetItems([]int)` since their `#15`, with `RequirementText([]int)` beside it; `Ranges()` and `Contains(n)` were added on our request (their R364, R365). Unreleased; reached through the workspace. Item 5.2's precondition is met — see Decisions.
 - **Item 5 — requirement lists in minimal range form.** No checkbox: the subparts carry the state.
   - [x] ~~**5.1 — a CRC card's `**Requirements:**` line is read through `sdom.RequirementList`.**~~ **LANDED (2026-10-02 — `#97`.)**
-  - [ ] **5.2 — `add-ref` and `remove-ref` rewrite the line in sorted minimal form.** **OPEN (not queued.)**
+  - [x] ~~**5.2 — `add-ref` and `remove-ref` rewrite the line in sorted minimal form.**~~ **LANDED (2026-10-03 — `#99`.)**
   - [ ] **5.3 — the grep lookup is superseded by the range-aware queries.** **OPEN (not queued.)**
 
 ## Decisions

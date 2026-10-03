@@ -23,13 +23,12 @@ CLI --> User: "Checked D1 in design.md"
 User -> CLI: minispec update add-ref crc-Store.md R5
 CLI -> Update: AddRef(project, "crc-Store.md", "R5")
 
-Update -> Parser: ParseCRCCard(path)
-Parser --> Update: CRCCard {Requirements: [R1, R3], line 2}
-
-Update -> Update: read file lines
-Update -> Update: find "**Requirements:** R1, R3"
-Update -> Update: replace with "**Requirements:** R1, R3, R5"
-Update -> os: WriteFile(path, modified)
+Update -> Update: rewriteRequirements(path, add 5)
+Update -> Update: find "**Requirements:** R7, R1, R6" (none: insert beneath the # heading)
+Update -> sdom: ParseRequirementList(field) -> {1, 6, 7}, leftover tokens
+Update -> Update: add 5 to the set (already there: no write)
+Update -> sdom: RequirementText({1, 5, 6, 7}) -> "R1, R5-7"
+Update -> os: WriteFile(path, "**Requirements:** R1, R5-7" + leftover tokens)
 Update --> CLI: success
 
 CLI --> User: "Added R5 to crc-Store.md"

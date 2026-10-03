@@ -24,24 +24,28 @@
 **Input:** crc-Store.md with "**Requirements:** R1, R3"
 **Expected:** Changed to "**Requirements:** R1, R3, R5"
 **Refs:** crc-Update.md, seq-update.md
+**Code:** internal/update/update_test.go
 
 ## Test: AddRef_FirstRequirement
 **Purpose:** Add requirement to empty list
 **Input:** crc-Store.md with "**Requirements:**" (empty)
 **Expected:** Changed to "**Requirements:** R5"
 **Refs:** crc-Update.md
+**Code:** internal/update/update_test.go
 
 ## Test: AddRef_Duplicate
 **Purpose:** Don't add duplicate requirement
 **Input:** crc-Store.md already has R5
 **Expected:** No change, no error
 **Refs:** crc-Update.md
+**Code:** internal/update/update_test.go
 
 ## Test: RemoveRef_Middle
 **Purpose:** Remove requirement from middle of list
 **Input:** "**Requirements:** R1, R3, R5"
 **Expected:** "**Requirements:** R1, R5"
 **Refs:** crc-Update.md
+**Code:** internal/update/update_test.go
 
 ## Test: AddGap_AutoNumber
 **Purpose:** Auto-number new gap
@@ -120,3 +124,69 @@
 **Fire alarm:** skip the gaps write — return after the requirements render — and confirm the Tn line is missing
 **Inject:** internal/update/update.go:Retire
 **Pulled:** 2026-09-07 — rang: `the Tn gap was not added`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature
+
+## Test: add-ref writes the canonical form
+**Purpose:** validates R533 — the whole field comes back sorted, each ref once, a run of three or more as `R5-8`, a pair listed
+**Input:** a card with `**Requirements:** R8, R1, R5, R7`; add R6
+**Expected:** `**Requirements:** R1, R5-8`; then add R3 to `R1, R2` gives `R1, R2, R3`'s canonical `R1-3`
+**Refs:** crc-Update.md, seq-update.md — R533
+**Code:** internal/update/update_test.go
+**Alarm:** 7
+**Fire alarm:** render each ref as a separate list item in `rewriteRequirements` instead of `sdom.RequirementText` — sorted, but no range ever forms, and a card already written `R5-8` is expanded on its next add. Keep `sdom` referenced, or the build fails on the unused import and nothing is learned
+**Inject:** internal/update/update.go:rewriteRequirements
+**Pulled:** 2026-10-03 — rang: with each ref listed and no range rendered, `got "…R1, R5, R6, R7, R8…", want "…R1, R5-8…"`; the first attempt replaced the only `sdom` call, broke the build on an unused import and was not counted; restore byte-clean by copy
+
+## Test: add-ref on a card with no Requirements line writes one
+**Purpose:** validates R534 and closes O36 — the line appears beneath the `#` heading; a ref inside a range is already present and nothing is written
+**Input:** a card `# Store` with no Requirements line; add R5. Then a card with `R5-8`; add R6
+**Expected:** `# Store` followed by `**Requirements:** R5`; the second card byte-identical
+**Refs:** crc-Update.md — R534
+**Code:** internal/update/update_test.go
+**Alarm:** 8
+**Fire alarm:** return without inserting when `rewriteRequirements` finds no Requirements line — the O36 defect: the add reports success and the card is unchanged
+**Inject:** internal/update/update.go:rewriteRequirements
+**Pulled:** 2026-10-03 — rang: with no insert when the line is absent, `an add with nowhere to write must make the line (O36)`; restore byte-clean by copy
+
+## Test: remove-ref splits a range, and the last ref takes the line with it
+**Purpose:** validates R535 — removing a member from inside a range splits it; removing the only ref removes the line rather than leaving `**Requirements:**` empty
+**Input:** `**Requirements:** R5-8`, remove R6; a card with only `R5`, remove R5
+**Expected:** `**Requirements:** R5, R7, R8`; the second card has no Requirements line and nothing else changed
+**Refs:** crc-Update.md — R535
+**Code:** internal/update/update_test.go
+**Alarm:** 9
+**Fire alarm:** write the empty field instead of removing the line in `rewriteRequirements` — `**Requirements:**` with nothing after it, which the grammar does not read back
+**Inject:** internal/update/update.go:rewriteRequirements
+**Pulled:** 2026-10-03 — rang: with the empty field written instead of the line removed, `got "# Store\n**Requirements:** \n\nA store.\n"`; restore byte-clean by copy
+
+## Test: tokens that are not refs survive the rewrite
+**Purpose:** validates R536 — a non-ref token is kept as written after the refs, so validate still reports it
+**Input:** `**Requirements:** R5, TBD, R9`; add R6
+**Expected:** `**Requirements:** R5, R6, R9, TBD`
+**Refs:** crc-Update.md — R536
+**Code:** internal/update/update_test.go
+**Alarm:** 10
+**Fire alarm:** drop the leftover tokens in `rewriteRequirements` — `TBD` vanishes, and the one thing validate would have reported is gone with no trace
+**Inject:** internal/update/update.go:rewriteRequirements
+**Pulled:** 2026-10-03 — rang: with the tokens dropped, `got "**Requirements:** R5, R6, R9", want "…, TBD"`; restore byte-clean by copy
+
+## Test: removing a ref the card lacks is an error
+**Purpose:** validates R537 — a remove that finds nothing is refused naming the ref and the card, and the file is untouched
+**Input:** `**Requirements:** R1, R5`; remove R3
+**Expected:** an error naming R3 and the card; the file byte-identical
+**Refs:** crc-Update.md — R537
+**Code:** internal/update/update_test.go
+**Alarm:** 11
+**Fire alarm:** let `RemoveRef` succeed when the ref is absent — the old behavior, a silent success that tells the caller something false
+**Inject:** internal/update/update.go:RemoveRef
+**Pulled:** 2026-10-03 — rang: with the absence check disabled, `want an error naming R3 and the card, got <nil>`; restore byte-clean by copy
+
+## Test: an argument that is not a requirement ref is refused
+**Purpose:** validates R533 — `add-ref` takes an `Rn` with n at least 1; anything else is refused and the card is untouched
+**Input:** a card with `R1`; add `5`, `R0`, `Rx`, `O5`
+**Expected:** four refusals; the card byte-identical
+**Refs:** crc-Update.md — R533
+**Code:** internal/update/update_test.go
+**Alarm:** 12
+**Fire alarm:** let `reqNumber` accept any number it can read — `5` writes R5 and `R0` writes a ref to a requirement that cannot exist. Found past the list: the suite stayed green under exactly this injection until this test existed
+**Inject:** internal/update/update.go:reqNumber
+**Pulled:** 2026-10-03 — rang: with only the number checked, `"5" changed the card: … R1, R5` and `"R0" changed the card: … R0, R1`; restore byte-clean by copy
