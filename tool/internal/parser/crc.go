@@ -5,7 +5,10 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/zot/simple-dom/sdom"
 )
 
 var (
@@ -16,6 +19,7 @@ var (
 )
 
 // ParseCRCCard parses a CRC card file
+// CRC: crc-Parser.md | R6, R532
 func ParseCRCCard(path string) (CRCCard, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -43,16 +47,7 @@ func ParseCRCCard(path string) (CRCCard, error) {
 		// Extract requirements
 		if matches := crcReqsRe.FindStringSubmatch(line); matches != nil {
 			card.ReqLine = lineNum
-			reqStr := strings.TrimSpace(matches[1])
-			if reqStr != "" {
-				parts := strings.Split(reqStr, ",")
-				for _, p := range parts {
-					p = strings.TrimSpace(p)
-					if p != "" {
-						card.Requirements = append(card.Requirements, p)
-					}
-				}
-			}
+			card.Requirements = requirementsField(strings.TrimSpace(matches[1]))
 			continue
 		}
 
@@ -77,4 +72,25 @@ func ParseCRCCard(path string) (CRCCard, error) {
 	}
 
 	return card, scanner.Err()
+}
+
+// CRC: crc-Parser.md | R532
+// requirementsField reads a card's Requirements field through the grammar traceability
+// comments use, so a range names every member. What the grammar does not consume is kept as
+// comma-separated tokens, as written, for validate to report as unknown references.
+func requirementsField(field string) []string {
+	var refs []string
+	rest := field
+	if list, after, ok := sdom.ParseRequirementList(field, sdom.Loc{}); ok {
+		for _, n := range list.Items() {
+			refs = append(refs, "R"+strconv.Itoa(n))
+		}
+		rest = after
+	}
+	for _, tok := range strings.Split(rest, ",") {
+		if tok = strings.TrimSpace(tok); tok != "" {
+			refs = append(refs, tok)
+		}
+	}
+	return refs
 }

@@ -93,3 +93,36 @@ filter in `alarmOf` — and confirm the malformed sites appear. *Re-sited 2026-0
 **Pulled:** 2026-09-07 — rang: `Sites = [good.go:Fine garbage-no-colon: nosymbol:], want only good.go:Fine`; restore byte-clean by copy, and again after the simplification pass touched the file, same signature. Previously 2026-08-13 against `parseSites`
 **Refs:** crc-Parser.md — R178, R316
 
+## Test: a CRC card's Requirements field reads ranges as their members
+**Purpose:** validates R532 — a range in either spelling contributes every member; a plain list is unchanged; text the grammar does not consume is kept as tokens, so validate can still report it
+**Input:** cards whose field is `R5-8, R10`; `R5-R7`; `R1, R3, R7`; `R5, TBD, R9`
+**Expected:** `R5 R6 R7 R8 R10`; `R5 R6 R7`; `R1 R3 R7`; `R5` then the leftover tokens `TBD` and `R9`
+**Refs:** crc-Parser.md — R532
+**Code:** internal/parser/parser_test.go
+**Alarm:** 3
+**Fire alarm:** go back to the comma split — skip the list parse in `requirementsField`, so every token is kept as written. `R5-8` comes back as one token, so R6 and R7 vanish from coverage while an unknown-ref finding is the only trace
+**Inject:** internal/parser/crc.go:requirementsField
+**Pulled:** 2026-10-02 — rang: with the list parse skipped, `"R5-8, R10": got ["R5-8" "R10"]` — a range must name every member; restore byte-clean by copy
+
+## Test: leftover text in the field is kept, not dropped
+**Purpose:** validates R532 — a field the grammar stops short on still yields every token after the stop, so a junk token is reported and never silently lost
+**Input:** a card whose field is `R5, TBD, R9`
+**Expected:** Requirements holds `R5`, `TBD`, `R9`, in that order
+**Refs:** crc-Parser.md — R532
+**Code:** internal/parser/parser_test.go
+**Alarm:** 4
+**Fire alarm:** discard what `ParseRequirementList` did not consume in `requirementsField` — the card reads as `R5` alone, `TBD` is never reported, and R9 falls out of coverage with nothing saying why
+**Inject:** internal/parser/crc.go:requirementsField
+**Pulled:** 2026-10-02 — rang: with the unconsumed text discarded, `got ["R5"], want ["R5" "TBD" "R9"]`; restore byte-clean by copy
+
+## Test: a field that opens with a non-ref keeps every token
+**Purpose:** validates R532 — when the grammar cannot read even the head, the whole field is kept as tokens, so nothing in it goes unreported
+**Input:** a card whose field is `TBD, R5`
+**Expected:** Requirements holds `TBD`, `R5`, in that order
+**Refs:** crc-Parser.md — R532
+**Code:** internal/parser/parser_test.go
+**Alarm:** 5
+**Fire alarm:** return nothing from `requirementsField` when `ParseRequirementList` does not match — the card reads as having no requirements, and `TBD` and R5 both vanish. Found past the list: the suite stayed green under exactly this injection until this test existed
+**Inject:** internal/parser/crc.go:requirementsField
+**Pulled:** 2026-10-02 — rang: with a non-matching field returning nothing, `got [], want ["TBD" "R5"]`; restore byte-clean by copy
+

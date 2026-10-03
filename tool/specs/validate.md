@@ -16,7 +16,10 @@ Run all validations and report issues.
 
 ### CRC Card Format
 - Every crc-*.md has a **Requirements:** field
-- Requirements field references valid Rn identifiers
+- Requirements field references valid Rn identifiers. The field is a comma list in the grammar
+  traceability comments use: a bare `Rn`, or a range written `R5-8` or `R5-R8`, which references
+  every member — so a card writing `R502-505` covers R503 and R504. Anything in the field that is
+  not a ref is still read and reported as an unknown reference, never dropped
 - No duplicate Rn references within a card
 
 ### Artifacts Structure
