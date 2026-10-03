@@ -1387,6 +1387,7 @@ The `minispec` CLI tool (at `~/.claude/bin/minispec`) performs structural operat
 
 # Queries
 ~/.claude/bin/minispec query artifacts       # Show all artifacts with checkbox states
+~/.claude/bin/minispec query coverage R5-8   # Design files covering each Rn (ranges honored; no args = all)
 ~/.claude/bin/minispec query uncovered       # List Rn without design refs
 ~/.claude/bin/minispec query gaps            # List gap items
 ~/.claude/bin/minispec query requirements    # List all requirements

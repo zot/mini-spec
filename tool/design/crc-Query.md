@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10, R11, R12, R13, R14, R15, R16, R17, R79, R102, R185, R186, R187, R189, R191, R192, R193, R198, R199, R200, R201, R202, R203, R204, R317, R318, R319, R320, R321, R322, R326, R502, R503, R504, R505, R506, R507, R518, R519, R531
+**Requirements:** R10-17, R79, R102, R185-187, R189, R191-193, R198-204, R317-322, R326, R502-507, R518, R519, R531, R538, R539
 
 Read-only operations that query parsed design data.
 
@@ -26,6 +26,9 @@ Read-only operations that query parsed design data.
   files, then ask Alarm to render the brief. Query holds the manifest; Alarm holds the
   wording (R200, R204)
 - Coverage(): map each Rn to design files that reference it
+- SelectCoverage(cov, ids): the entries `query coverage` prints — every requirement, or only the
+  selected IDs (classified by `ClassifyImplArgs`, number mode only) — ascending, each with its
+  design files by base name; a selected ID no requirement carries is marked unknown (R538, R539)
 - Uncovered(): list Rn with no design references
 - OrphanDesigns(): list CRC cards with no/empty Requirements field
 - Artifacts(): list artifacts with checkbox states

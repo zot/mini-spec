@@ -1,15 +1,15 @@
 # Carve: traceability comments over sdom — the last reader, and what it unlocks
 
-> **DRAFT (Daneel, 2026-09-18) — for Bill to edit before its first part is worked.**
+> **FINISHED (2026-10-03, `#100`).** Drafted by Daneel 2026-09-18; every part landed or moved.
 
-The code-file reader is the last file-kind not on sdom, and it is [sdom.md](sdom.md)'s
+The code-file reader is the last file-kind not on sdom, and it is [sdom.md](../sdom.md)'s
 Item 5. `minispecsdom.TraceabilityComment` (`comment.go`) is written and tested but
 **wired to nothing**: `validate.go` and `query.go` still harvest inline `Rn` refs
 through the regex `parser.ParseTraceability`. This carve wires the sdom reader in,
 retires the extractor, and builds what a position-preserving, round-tripping code
 reader unlocks — a positioned reverse lookup, and eventually ref rewriting.
 
-**Provenance.** Split from [sdom.md](sdom.md) Item 5. The reverse-lookup request came
+**Provenance.** Split from [sdom.md](../sdom.md) Item 5. The reverse-lookup request came
 from ark (`minispec-query-implementation`, 2026-09-18): "where is `Rn` implemented?" —
 the positive of the `missing impl coverage` check, honoring the harvest's shape rules
 rather than a raw `grep Rn`, with a pattern form for the "know the concern, not the
@@ -31,12 +31,12 @@ number" case. Developed from planning notes worked up with Bill on 2026-09-18.
 
 - [x] ~~**Item 1 — wire `minispecsdom.Comments` into the harvest; retire `parser.ParseTraceability`.**~~ **LANDED (2026-09-29 — `#93`.)** Re-point `validate.go`'s impl-coverage harvest and `query.go`'s code-ref reader onto the sdom reader. Build one positioned harvest both consume.
 - [x] ~~**Item 2 — `minispec query implementation` (ark's request).**~~ **LANDED (2026-09-29 — `#92`.)** Reverse lookup `Rn` (or a pattern) → the code that implements it, over the sdom harvest. Rides on Item 1's positioned harvest.
-- **Item 4 — C++ raw strings.** **MOVED (Bill, 2026-09-25 — [sdom.md](sdom.md) Item 5.5.)** Language support is tracked in the sdom carve.
+- **Item 4 — C++ raw strings.** **MOVED (Bill, 2026-09-25 — [sdom.md](../sdom.md) Item 5.5.)** Language support is tracked in the sdom carve.
 - [x] ~~**Item 3 — a canonical writer on `RequirementList`.**~~ **DISCHARGED (mini-spec-tool `355c36d`, 2026-09-30.)** The writer already existed — `SetItems([]int)` since their `#15`, with `RequirementText([]int)` beside it; `Ranges()` and `Contains(n)` were added on our request (their R364, R365). Unreleased; reached through the workspace. Item 5.2's precondition is met — see Decisions.
 - **Item 5 — requirement lists in minimal range form.** No checkbox: the subparts carry the state.
   - [x] ~~**5.1 — a CRC card's `**Requirements:**` line is read through `sdom.RequirementList`.**~~ **LANDED (2026-10-02 — `#97`.)**
   - [x] ~~**5.2 — `add-ref` and `remove-ref` rewrite the line in sorted minimal form.**~~ **LANDED (2026-10-03 — `#99`.)**
-  - [ ] **5.3 — the grep lookup is superseded by the range-aware queries.** **OPEN (not queued.)**
+  - [x] ~~**5.3 — the grep lookup is superseded by the range-aware queries.**~~ **LANDED (2026-10-03 — `#100`.)**
 
 ## Decisions
 
@@ -103,7 +103,7 @@ of a regex. ~~No config key maps new extensions to a table yet; an unmapped file
 
 **DECIDED (Bill, 2026-09-25): C, C++ and Java are three built-in tables.** Their comment
 shapes agree from C99 on; their strings do not. C++'s table carries raw strings,
-`R"delim( … )delim"` ([sdom.md](sdom.md) Item 5.5), and Java's carries text blocks, `"""…"""`, as a group ahead
+`R"delim( … )delim"` ([sdom.md](../sdom.md) Item 5.5), and Java's carries text blocks, `"""…"""`, as a group ahead
 of `"` so a text block is not read as an empty string followed by another. Extensions: `.c`,
 `.h` for C; `.cpp`, `.hpp`, `.cc` for C++; `.java` for Java.
 
@@ -126,7 +126,7 @@ need a group that opens only at a token start, because `?` also ends predicate n
 (`f-exists?`): measured over 10,730 installed `.el` files, 17% hold a bracket char literal, and
 16,571 `?` follow a symbol character. sdom cannot yet test what precedes an opener, so
 `BeforeOpen` — the dual of `BeforeClose`, mechanism rather than language — is requested from
-simple-dom ([sdom.md](sdom.md) Item 5.7); the table itself stays here.
+simple-dom ([sdom.md](../sdom.md) Item 5.7); the table itself stays here.
 
 **DECIDED (Bill, 2026-09-25): projects define languages in their configuration, mirroring
 sdom's own structs.** A `languages` entry in `.minispec/config.toml` is a `BracketLang` (or

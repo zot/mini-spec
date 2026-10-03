@@ -142,7 +142,7 @@ Query subcommands:
   project               Show resolved paths (repo root, design root, design, src, specs)
   config                Show effective settings with the file each came from
   requirements          List all requirements
-  coverage              Show requirement coverage by design files
+  coverage [Rn...]      Design files referencing each requirement, or only those named (ranges ok), ascending
   uncovered             List requirements with no design coverage
   orphan-designs        List CRC cards missing Requirements field
   artifacts             List artifacts with checkbox states
@@ -389,19 +389,29 @@ func (c *CLI) runQuery(args []string) int {
 		}
 
 	case "coverage":
+		// CRC: crc-CLI.md | R538, R539
+		ids, err := query.CoverageIDs(args[1:])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			return 1
+		}
 		cov, err := q.Coverage()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			return 1
 		}
+		entries := query.SelectCoverage(cov.Coverage, ids)
 		if c.JSON {
-			c.output(cov)
+			c.output(entries)
 		} else {
-			for id, files := range cov.Coverage {
-				if len(files) > 0 {
-					fmt.Printf("%s: %s\n", id, strings.Join(files, ", "))
-				} else {
-					fmt.Printf("%s: (none)\n", id)
+			for _, e := range entries {
+				switch {
+				case e.Unknown:
+					fmt.Printf("%s: no such requirement\n", e.ID)
+				case len(e.Files) == 0:
+					fmt.Printf("%s: (none)\n", e.ID)
+				default:
+					fmt.Printf("%s: %s\n", e.ID, strings.Join(e.Files, ", "))
 				}
 			}
 		}

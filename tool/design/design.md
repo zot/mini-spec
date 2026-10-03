@@ -21,7 +21,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-Track.md → `internal/project/track.go`
 - [x] crc-Init.md → `internal/project/init.go`
 - [x] crc-Parser.md → `internal/parser/testdoc.go`, `internal/parser/types.go`, `internal/parser/requirements.go`, `internal/parser/crc.go`, `internal/parser/design.go`, `internal/parser/seqdoc.go`
-- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`, `internal/query/implementation.go`
+- [x] crc-Query.md → `internal/query/query.go`, `internal/query/alarms.go`, `internal/query/gaps.go`, `internal/query/implementation.go`, `internal/query/coverage.go`
 - [x] crc-Carve.md → `internal/parser/carve.go`
 - [x] crc-Backup.md → `internal/backup/backup.go`
 - [x] crc-Update.md → `internal/update/update.go`, `internal/update/alarmfields.go`
@@ -81,7 +81,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 ### Test Designs
 - [x] test-Parser.md → `internal/parser/parser_test.go`, `internal/parser/testdoc_test.go`
 - [x] test-Update.md → `internal/update/update_test.go`, `internal/update/alarmfields_test.go`, `internal/update/addreq_test.go`
-- [x] test-Query.md → `internal/query/gaps_test.go`, `internal/query/implementation_test.go`
+- [x] test-Query.md → `internal/query/gaps_test.go`, `internal/query/implementation_test.go`, `internal/query/coverage_test.go`
 - [ ] test-CLI.md → `internal/cli/cli_minted_test.go`
 - [ ] test-Validate.md → `internal/validate/validate_test.go`
 - [x] test-RepoRoot.md → `internal/project/reporoot_test.go`
@@ -190,4 +190,4 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - T29: R479 retired by R530 (2026-09-29 #95: a #N mentioned in prose read as a landing (O32))
 - [ ] O34: `query alarms --brief` names each alarm's test files but not its tests, so a delegated puller chooses its own `-run` filter, and a filter that selects none of the guarding tests returns a well-formed green indistinguishable from an alarm that did not ring. Measured 2026-09-29: of twelve delegated re-pulls, test-Init alarm 2's puller ran `-run 'TestInit'`, which matches none of the `TestRepair…` / `TestSetTrack…` tests guarding `setTrack`, and came back green; the same injection over the whole package failed three tests. The brief should name the tests that guard the alarm, or direct a run of the whole package, and say that a green with no guarding test in the run is no result. **Decided (Bill, 2026-09-29): not named — the brief runs every test in its `Directories:` unfiltered and the pull records which went red; see carves/gaps-2026-0929.md Item 1.**
 - [ ] O35: `pending finish --body-file` places a done-entry body its own reader cannot fully read, and says nothing: a body line beginning `- ` at column zero reads as an entry-like line outside the shape. Measured 2026-09-29: `#92`'s body carried three such bullet lines; the finish reported success, and `validate trajectory` later noted 3 unread lines in DONE.md. The write should refuse, or report, a body whose placement grows `Unread` — the done-file twin of `O25`.
-- [x] O36: `update add-ref` on a CRC card with no `**Requirements:**` line writes the file back unchanged and reports success (`Update.AddRef`: the line loop finds no match, nothing is inserted, the write and the nil return happen anyway). Live today for any card that lost its line, and made routine by Bill's rule of 2026-09-30 that removing a card's last requirement removes the line. `validate` reports such a card as an orphan, so the card is not silent — the verb is: an agent re-adding the ref is told it succeeded. Repair: insert the line beneath the card's heading when absent. Owed by carves/traceability.md Item 5.2, with a test and an alarm.
+- [x] O36: `update add-ref` on a CRC card with no `**Requirements:**` line writes the file back unchanged and reports success (`Update.AddRef`: the line loop finds no match, nothing is inserted, the write and the nil return happen anyway). Live today for any card that lost its line, and made routine by Bill's rule of 2026-09-30 that removing a card's last requirement removes the line. `validate` reports such a card as an orphan, so the card is not silent — the verb is: an agent re-adding the ref is told it succeeded. Repair: insert the line beneath the card's heading when absent. Owed by carves/done/traceability.md Item 5.2, with a test and an alarm.

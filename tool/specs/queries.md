@@ -48,11 +48,20 @@ List all requirements from requirements.md.
 
 Output: List of Rn with text and source spec.
 
-## minispec query coverage
+## minispec query coverage [Rn...]
 
-For each requirement, show which design files reference it.
+For each requirement, show which design files reference it — the design half of *where does
+this requirement land?*, as `query implementation` is the code half. A card that writes a range
+(`R5-8`) covers every member, so this is the lookup to use rather than a grep for `R6`, which
+misses the range.
 
-Output:
+**With arguments, only those requirements**, in the ref grammar `query implementation` reads in
+number mode: bare `R57`, ranges (`R5-8`, `R5-R8`), comma lists, and mixtures. An argument that is
+not a requirement ref is an error. A number no requirement carries says `no such requirement`, as
+in `query implementation`. With none, every requirement.
+
+Requirements come in ascending order, each with the design files that reference it by name:
+
 ```
 R1: crc-Store.md, crc-View.md
 R2: crc-Store.md

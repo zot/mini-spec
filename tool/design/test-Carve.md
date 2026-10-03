@@ -105,7 +105,7 @@ independent guards, and only the cleanup half is this adapter's to prove
 **Fire alarm:** route `carves` through `getProject()` like the other subcommands and confirm
 this goes red with `no design/ directory found`
 **Inject:** internal/cli/cli.go:runQuery
-**Pulled:** 2026-09-29 — rang: with `carves` moved below the design-root resolution in `runQuery`, `runQuery exited 1 in a tree with no design root; want 0`; restore clean (empty diff), delegated
+**Pulled:** 2026-10-03 — rang: with the pre-root `carves` branch removed from `runQuery`, `runQuery exited 1 in a tree with no design root; want 0`; re-pulled by hand after `#100` added the coverage case; restore byte-clean by copy *Earlier —* 2026-09-29 — rang: with `carves` moved below the design-root resolution in `runQuery`, `runQuery exited 1 in a tree with no design root; want 0`; restore clean (empty diff), delegated
 **Refs:** crc-CLI.md — R213
 **Code:** internal/cli/cli_carves_test.go
 

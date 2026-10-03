@@ -41,6 +41,8 @@
 - **R518:** `query comment-patterns` reports, for every extension a language table reads, the comment style to write, the other comment forms the reader accepts, and a warning for every extension whose written form has a closer.
 - **R519:** `query traceability`, for one file or `--all`, reads through the harvest, and a file the harvest cannot read reports the reason rather than a missing comment.
 - **R531:** In number mode `query implementation` reports a selected number that no requirement in `requirements.md` carries as "no such requirement" rather than "no impl refs", still listing any code location that cites it.
+- **R538:** `query coverage` takes optional requirement refs in the grammar `query implementation` reads in number mode (bare `Rn`, ranges `R5-8` and `R5-R8`, comma lists, mixtures) and reports only those requirements; an argument that is not a requirement ref is an error, and a number no requirement carries is reported as "no such requirement".
+- **R539:** `query coverage` lists requirements in ascending numeric order, each with the design files that reference it by file name, `(none)` for a requirement no design file references.
 
 ## Feature: Updates
 **Source:** specs/updates.md

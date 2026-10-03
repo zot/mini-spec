@@ -1380,6 +1380,7 @@ minispec validate              # Run all validations
 
 # Queries
 minispec query artifacts       # Show all artifacts with checkbox states
+minispec query coverage R5-8   # Design files covering each Rn (ranges honored; no args = all)
 minispec query uncovered       # List Rn without design refs
 minispec query gaps            # List gap items
 minispec query requirements    # List all requirements

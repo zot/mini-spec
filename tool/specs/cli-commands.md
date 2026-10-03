@@ -26,7 +26,7 @@
 | `query project` | [queries.md](queries.md), [repository-root.md](repository-root.md) | Show resolved paths: repository root, design root, design, src, specs. States when the two roots are the same directory. |
 | `query config` | [queries.md](queries.md), [config.md](config.md) | Show every effective setting with its value and the file that supplied it. |
 | `query requirements` | [queries.md](queries.md) | List all requirements with text and source spec. |
-| `query coverage` | [queries.md](queries.md) | For each requirement, list referencing design files. |
+| `query coverage [Rn...]` | [queries.md](queries.md) | For each requirement — or only those named, ranges and comma lists accepted — the design files referencing it, ascending; range-aware, unlike a grep. |
 | `query uncovered` | [queries.md](queries.md) | List requirements with no design file references. |
 | `query orphan-designs` | [queries.md](queries.md) | List CRC cards missing or with empty Requirements field. |
 | `query artifacts` | [queries.md](queries.md) | List all artifacts from design.md with checkbox states. |

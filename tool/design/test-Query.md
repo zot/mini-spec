@@ -84,3 +84,26 @@
 **Fire alarm:** drop the retired filter in text mode in `SelectImplementation` — R7 appears in a survey of live intent, looking like a requirement that still holds
 **Inject:** internal/query/implementation.go:SelectImplementation
 **Pulled:** 2026-09-29 — rang: `text mode: got "R5[five] a.go:3; R7[seven](retired) a.go:3" — a retired requirement surveyed as live intent`; restore byte-clean by copy
+
+## Test: coverage selects the named requirements, ascending, by file name
+**Purpose:** validates R538 and R539 — named IDs only, in numeric order whatever order they were named or the map holds; design files by base name; an uncovered requirement kept with none; a number no requirement carries marked unknown; no IDs means every requirement
+**Input:** a coverage map R5 → /d/crc-A.md, R6 → /d/crc-A.md and /d/crc-B.md, R10 → none; select `R10,R5-6` and `R99`; then select nothing
+**Expected:** R5 crc-A.md; R6 crc-A.md, crc-B.md; R10 none; R99 unknown; with nothing selected, R5, R6, R10 in that order
+**Refs:** crc-Query.md — R538, R539
+**Code:** internal/query/coverage_test.go
+**Alarm:** 8
+**Fire alarm:** return the selected IDs in the order they were named in `SelectCoverage` — R10 before R5, which reads as ordered on a short list and is not
+**Inject:** internal/query/coverage.go:SelectCoverage
+**Pulled:** 2026-10-03 — rang: with the sort skipped in `SelectCoverage`, `unsorted selection: got "R99 ?; R10; R5 crc-A.md"` and the all-requirements case out of order; restore byte-clean by copy
+
+## Test: coverage refuses an argument that is not a requirement ref
+**Purpose:** validates R538 — a coverage lookup names requirements, so a pattern is refused rather than read as one
+**Input:** `@status`; `D3`
+**Expected:** both refused
+**Refs:** crc-Query.md, crc-CLI.md — R538
+**Code:** internal/query/coverage_test.go
+**Alarm:** 9
+**Fire alarm:** let `CoverageIDs` accept text mode — `@status` selects nothing and prints an empty answer, which reads as *nothing covers it*
+**Inject:** internal/query/coverage.go:CoverageIDs
+**Pulled:** 2026-10-03 — rang: with text mode accepted in `CoverageIDs`, `"@status": want a refusal, got []` and the same for `D3`; restore byte-clean by copy
+
