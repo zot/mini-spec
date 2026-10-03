@@ -1,4 +1,4 @@
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/zot/simple-dom v1.0.0 h1:DOqr0z+9XGq246Prl1ZRdhzi0Y3hCtZ6B1H4jVReh3w=
-github.com/zot/simple-dom v1.0.0/go.mod h1:UrniX87HJ1YVG6kvlOMD0wXKHnqyaEmQxyWt+6mUFOA=
+github.com/zot/simple-dom v1.0.1 h1:u6B1dZtUimBkEql9iTO3puDdCMZ1YJtvRBufI6OHSIU=
+github.com/zot/simple-dom v1.0.1/go.mod h1:UrniX87HJ1YVG6kvlOMD0wXKHnqyaEmQxyWt+6mUFOA=
