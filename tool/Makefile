@@ -51,7 +51,8 @@ tidy:
 	go mod tidy
 
 # Build for multiple platforms
-release:
+# Also rebuilds bin/minispec, so ~/bin/minispec (a link to it) reports the release's version.
+release: build
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-linux-amd64 ./$(CMD_DIR)
 	GOOS=darwin GOARCH=amd64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-amd64 ./$(CMD_DIR)
 	GOOS=darwin GOARCH=arm64 go build -buildvcs=false $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY)-darwin-arm64 ./$(CMD_DIR)

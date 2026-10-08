@@ -30,7 +30,8 @@ Release process:
 5. Push commit + tag
 6. Create GitHub release with `gh release create`
 7. Upload zip to the release
-8. Build and upload binaries: `cd tool && make release` then `gh release upload <tag> bin/*`
+8. Build and upload binaries: `cd tool && make release` then `gh release upload <tag> bin/minispec-*`
+   (`release` also rebuilds the host's `bin/minispec`, which is not a release asset)
 9. Include in release notes: `claude plugin install code-simplifier`
 
 Note: Binaries must be rebuilt for each release because they embed the version via `--version`.
