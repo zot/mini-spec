@@ -11,17 +11,18 @@ import (
 	"github.com/zot/simple-dom/sdom/schema"
 )
 
-// CRC: crc-Gaps.md | R430, R433
+// CRC: crc-Gaps.md | R430, R550
 //
 // The shapes a gap entry takes: a bullet at any depth, an optional checkbox, a type letter,
 // a number, a colon. A backtick is written \x60 where one is needed.
 var (
 	gapHeadRe = regexp.MustCompile(`^(\s*)- (?:\[([ x])\] )?([SRDCIOAT])(\d+):[ \t]*(.*)$`)
 	bulletRe  = regexp.MustCompile(`^(\s*)- (.*)$`)
+	subHeadRe = regexp.MustCompile(`^###+\s+(.*?)\s*#*\s*$`)
 	gapKeyRe  = regexp.MustCompile(`^([SRDCIOAT])(\d+)$`)
 )
 
-// CRC: crc-Gaps.md | R433, R434, R435
+// CRC: crc-Gaps.md | R434, R435, R550
 var (
 	ErrNoSection = errors.New("minispecsdom: the document has no `## Gaps` section")
 	ErrNoGap     = errors.New("minispecsdom: no gap carries that ID")
@@ -42,6 +43,15 @@ type Gaps struct {
 	sectionEnd int // one past the `## Gaps` section's last byte
 	items      []*Gap
 	unread     []Unread
+	// regions are the section's head and then each `###` subsection, in order: where each
+	// one's last non-blank line ends, the point `Add` places into. R550
+	regions []gapRegion
+}
+
+// gapRegion is the section head (no title) or one `###` subsection. R550
+type gapRegion struct {
+	title string
+	end   int // one past its last non-blank line
 }
 
 // CRC: crc-Gaps.md | R430, R431, R432
@@ -112,7 +122,7 @@ func (g *Gaps) Gap(id string) *Gap {
 // CRC: crc-Gaps.md | Seq: seq-gaps.md#1.2 | R429, R430, R431, R432
 // scan finds the region and reads its bullets.
 func (g *Gaps) scan() {
-	g.heading, g.items, g.unread = nil, nil, nil
+	g.heading, g.items, g.unread, g.regions = nil, nil, nil, nil
 	nodes := g.doc.Nodes()
 	start := -1
 	for i, n := range nodes {
@@ -146,10 +156,12 @@ func (g *Gaps) readItems(run []sdom.Node) {
 		s, _ := n.Render()
 		b.WriteString(s)
 	}
+	src := b.String()
 	off := run[0].Location().Offset()
 	seen := map[string]bool{}
 	var cur *Gap // the entry whose body is open
 	inSub := false
+	g.regions = []gapRegion{{end: off + len(strings.SplitAfterN(src, "\n", 2)[0])}}
 	closeBody := func(at int) {
 		if cur != nil {
 			cur.body.end = at
@@ -157,7 +169,7 @@ func (g *Gaps) readItems(run []sdom.Node) {
 		}
 		inSub = false
 	}
-	for i, l := range strings.SplitAfter(b.String(), "\n") {
+	for i, l := range strings.SplitAfter(src, "\n") {
 		lineStart := off
 		off += len(l)
 		line := strings.TrimRight(l, "\n")
@@ -169,8 +181,17 @@ func (g *Gaps) readItems(run []sdom.Node) {
 			continue
 		}
 		if g.inCode(lineStart) {
+			g.regions[len(g.regions)-1].end = off
 			continue
 		}
+		// Seq: seq-gaps.md#1.3.6 | R551
+		// A subsection heading ends the entry above it and opens a region of its own.
+		if m := subHeadRe.FindStringSubmatch(line); m != nil {
+			closeBody(lineStart)
+			g.regions = append(g.regions, gapRegion{title: m[1], end: off})
+			continue
+		}
+		g.regions[len(g.regions)-1].end = off
 		if m := gapHeadRe.FindStringSubmatch(line); m != nil {
 			closeBody(lineStart)
 			cur = newGap(m, g.doc.Line(lineStart), span{lineStart, off})
@@ -261,7 +282,7 @@ func (g *Gaps) writable(id string) (*Gap, error) {
 	return gap, nil
 }
 
-// CRC: crc-Gaps.md | Seq: seq-gaps.md#2.2 | R433, R540
+// CRC: crc-Gaps.md | Seq: seq-gaps.md#2.2 | R540, R550
 func (g *Gaps) Add(id, text string) error {
 	m := gapKeyRe.FindStringSubmatch(id)
 	if m == nil {
@@ -280,10 +301,7 @@ func (g *Gaps) Add(id, text string) error {
 	}
 	text = strings.TrimSpace(text)
 	line := "- " + box + id + ": " + text + "\n"
-	at := g.afterHeading()
-	for _, gap := range g.items { // the last span in the document, not the last read
-		at = max(at, gap.body.end)
-	}
+	at := g.insertionPoint(m[1])
 	if err := g.doc.Mutate(func() error { return g.insertLine(at, line) }); err != nil {
 		return err
 	}
@@ -292,6 +310,60 @@ func (g *Gaps) Add(id, text string) error {
 	ok := got != nil && got.Text == text && got.Checkbox == !permanent && len(got.deviations) == 0
 	mustReadBack("Gaps", "Add", id, ok, line, fmt.Sprintf("%+v", got))
 	return nil
+}
+
+// CRC: crc-Gaps.md | Seq: seq-gaps.md#2.2.1 | R550
+// insertionPoint is where `Add` places an entry of the letter. With no subsections, after the
+// last gap's span or the heading; with them, after the last gap of the same letter, else at
+// the end of the subsection whose heading names the type, else at the end of the head.
+func (g *Gaps) insertionPoint(letter string) int {
+	if len(g.regions) <= 1 {
+		at := g.afterHeading()
+		for _, gap := range g.items { // the last span in the document, not the last read
+			at = max(at, gap.body.end)
+		}
+		return at
+	}
+	at := -1
+	for _, gap := range g.items {
+		if gap.Type == letter {
+			at = max(at, gap.body.end)
+		}
+	}
+	if at >= 0 {
+		return at
+	}
+	for _, r := range g.regions[1:] {
+		if namesType(r.title, letter) {
+			return r.end
+		}
+	}
+	return g.regions[0].end
+}
+
+// typeNames are the standard subsection names, in normalised form. R550
+var typeNames = map[string]string{
+	"S": "spec→requirements", "R": "requirements→design", "D": "design→code",
+	"C": "code→design", "I": "incomplete implementation", "O": "oversights",
+	"A": "approved", "T": "retired",
+}
+
+var typeSuffixRe = regexp.MustCompile(`\(([SRDCIOAT])n\)`)
+
+// CRC: crc-Gaps.md | R550
+// namesType reports whether a subsection title names the gap type: a `(Xn)` suffix, or the
+// standard name with arrows written `→` or `->`, spaced or not, case ignored, and a trailing
+// word such as `Gaps` allowed.
+func namesType(title, letter string) bool {
+	if m := typeSuffixRe.FindStringSubmatch(title); m != nil {
+		return m[1] == letter
+	}
+	t := strings.ToLower(title)
+	t = strings.ReplaceAll(t, "->", "→")
+	t = strings.ReplaceAll(t, " →", "→")
+	t = strings.ReplaceAll(t, "→ ", "→")
+	name := typeNames[letter]
+	return t == name || strings.HasPrefix(t, name+" ")
 }
 
 // afterHeading is the offset just past the heading's line.

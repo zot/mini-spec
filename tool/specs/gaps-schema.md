@@ -83,9 +83,26 @@ was the reader's to make (measured in ui-engine, 2026-10-07).
 
 **`Add(id, text)`** appends one entry: `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
 for a permanent one, on one line, with the number the caller minted (`query next-id gap`
-owns the numbering). It goes directly after the last gap's span — after its continuation and
-its sub-items, before any blank line that follows — or directly after the heading's line when
-the section is empty. An ID not of the shape `X<n>` is `ErrBadGapID`; one the section already
+owns the numbering). In a section with no `###` subsections it goes directly after the last
+gap's span — after its continuation and its sub-items, before any blank line that follows — or
+directly after the heading's line when the section is empty.
+
+**A section grouped by `###` subsections places the entry by its letter** (Bill, 2026-10-08):
+
+1. directly after the span of the last gap of the same letter, wherever that gap sits — a
+   project's own habit wins, and one measured project keeps an `A` under its
+   Requirements→Design heading;
+2. else at the end of the subsection whose heading names the type — a `(Xn)` suffix such as
+   `Oversights (On)`, or the standard name: Spec→Requirements, Requirements→Design,
+   Design→Code, Code→Design, Incomplete Implementation, Oversights, Approved, Retired —
+   arrows written `→` or `->`, spaced or not, case ignored, a trailing word such as `Gaps`
+   allowed;
+3. else at the section head, after its last line before the first `###`.
+
+"The end" of a region is after its last non-blank line, before the blank lines that separate
+it from the next heading. A `###` line also ends the entry above it, so a heading never folds
+into a gap's text. Measured 2026-10-08: 6 of 18 projects' design documents group their gaps
+this way, and `Add` had put every new entry under the last subsection (ark's ui-engine report). An ID not of the shape `X<n>` is `ErrBadGapID`; one the section already
 carries is `ErrGapExists`; no section is `ErrNoSection`. The text is written as given, unwrapped.
 
 **`Resolve(id)`** turns the head line's `[ ]` into `[x]`. A permanent gap is `ErrPermanent`,

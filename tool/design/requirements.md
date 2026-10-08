@@ -768,7 +768,7 @@
   rule; `Gap(id)` returns the first entry with that ID; every write to a deviant entry refuses with
   a `DeviationError`; every gap reports its 1-based line at parse time, and `Unread` is ordered by line
   and carries every group open at end of input or closer that closes nothing.
-- **R433:** `Add(id, text)` appends one line — `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
+- **~~R433:~~** (Retired T30 — see R550) `Add(id, text)` appends one line — `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
   for a permanent one — directly after the last gap's span or after the heading's line when the
   section is empty; an ID not of the shape `X<n>` is `ErrBadGapID`, one already present
   is `ErrGapExists`, no section is `ErrNoSection`; the text is written unwrapped.
@@ -780,6 +780,8 @@
 - **R436:** Every write edits inside the region only, decides its refusal before any byte moves, and
   after the re-read reads its own write back or panics with a `ReadBackError`.
 - **R540:** `Add` starts its line on a line of its own: when the line it goes after has no final newline, it writes that newline first, so the new entry never glues onto the previous one
+- **R550:** `Add(id, text)` appends one line — `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>` for a permanent one; with no `###` subsections in the section, directly after the last gap's span or after the heading's line when the section is empty; with subsections, after the last gap of the same letter, else at the end of the subsection whose heading names the type (`(Xn)` or the standard name), else at the end of the section head before the first `###`; an ID not of the shape `X<n>` is `ErrBadGapID`, one already present is `ErrGapExists`, no section is `ErrNoSection`; the text is written unwrapped
+- **R551:** A `###` line inside the Gaps section ends the entry above it and opens a subsection; the entry's text never folds in a heading
 
 ## Feature: requirements schema
 **Source:** specs/requirements-schema.md

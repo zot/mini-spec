@@ -97,7 +97,7 @@ func TestGapsDeviationsAndNesting(t *testing.T) {
 	}
 }
 
-// CRC: crc-Gaps.md | R433, R436
+// CRC: crc-Gaps.md | R436, R550
 func TestGapsAdd(t *testing.T) {
 	g, src := loadGaps(t)
 	if err := g.Add("O5", "a new one with `code`"); err != nil {
@@ -193,5 +193,63 @@ func TestGapsAddAfterUnterminatedLine(t *testing.T) {
 	}
 	if got := g.Gap("O1"); got == nil || got.Text != "last, no newline" {
 		t.Errorf("O1 read back as %+v", got)
+	}
+}
+
+// subsectionGaps is ui-engine's layout in miniature: T entries at the head, prose under one
+// subsection, a D under its own, and an A filed under Oversights as frictionless does.
+const subsectionGaps = "# Design\n\n## Gaps\n\n- T1: R1 retired by R2 (x)\n\n" +
+	"### Incomplete Implementation\n\nNone identified.\n\n" +
+	"### Design → Code Gaps\n\n- [ ] D1: a design gap\n\n" +
+	"### Oversights (On)\n\n- [ ] O1: an oversight\n- A1: approved here\n\n## Notes\n"
+
+// CRC: crc-Gaps.md | Test: test-Gaps.md | R550, R551
+func TestGapsAddPlacesBySubsection(t *testing.T) {
+	g := ParseGaps(subsectionGaps)
+	for _, add := range [][2]string{{"T2", "t"}, {"O2", "o"}, {"A2", "a"}, {"I1", "i"}, {"S1", "s"}} {
+		if err := g.Add(add[0], add[1]); err != nil {
+			t.Fatalf("%s: %v", add[0], err)
+		}
+	}
+	out, _ := g.Render()
+	for _, want := range []string{
+		"- T1: R1 retired by R2 (x)\n- T2: t\n- [ ] S1: s\n\n### Incomplete Implementation",
+		"None identified.\n- [ ] I1: i\n\n### Design",
+		"- [ ] O1: an oversight\n- [ ] O2: o\n- A1: approved here\n- A2: a\n\n## Notes",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+}
+
+// CRC: crc-Gaps.md | Test: test-Gaps.md | R550
+func TestASubsectionHeadingNamesAType(t *testing.T) {
+	for _, c := range []struct {
+		title, letter string
+		want          bool
+	}{
+		{"Oversights (On)", "O", true},
+		{"design -> code gaps", "D", true},
+		{"Spec→Requirements", "S", true},
+		{"Spec → Design Gaps", "S", false},
+		{"Spec → Design Gaps", "D", false},
+		{"Notes", "O", false},
+		{"Approved (An)", "O", false},
+	} {
+		if got := namesType(c.title, c.letter); got != c.want {
+			t.Errorf("namesType(%q, %s) = %v, want %v", c.title, c.letter, got, c.want)
+		}
+	}
+}
+
+// CRC: crc-Gaps.md | Test: test-Gaps.md | R551
+func TestAHeadingEndsTheEntryAboveIt(t *testing.T) {
+	g := ParseGaps("# D\n\n## Gaps\n\n- [ ] O1: first\n### Later\n- [ ] O2: second\n")
+	if got := g.Gap("O1"); got == nil || got.Text != "first" {
+		t.Errorf("O1 read as %+v", got)
+	}
+	if g.Gap("O2") == nil {
+		t.Error("O2 under the subsection was not read")
 	}
 }

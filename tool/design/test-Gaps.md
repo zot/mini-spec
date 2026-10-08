@@ -10,7 +10,7 @@
 **Alarm:** 1
 **Fire alarm:** drop the code-group skip so a fenced bullet is read. Red: `O99` resolves as a gap and the ID list grows.
 **Inject:** internal/minispecsdom/gaps.go:Gaps.readItems
-**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `O99` resolved as a gap and the ID list grew to `A1,T1,I1,O1,O2,O3,O99,O4`; restore clean. *Earlier —* 2026-09-07 — rang, by hand: `ids = A1,T1,I1,O1,O2,O3,O99,O4` and `O99` resolved as a gap; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by hand at `#103`'s commit after `readItems` gained regions and the `###` break: dropping the code-group skip reads the fenced `O99` — `ids = A1,T1,I1,O1,O2,O3,O99,O4` in `TestGapsReadsTheFixture`; minispecsdom run unfiltered with `-count=1`; restore byte-clean *Earlier —* 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `O99` resolved as a gap and the ID list grew to `A1,T1,I1,O1,O2,O3,O99,O4`; restore clean. *Earlier —* 2026-09-07 — rang, by hand: `ids = A1,T1,I1,O1,O2,O3,O99,O4` and `O99` resolved as a gap; restore byte-clean
 ## Test: deviations, nesting, and a bare bullet
 **Purpose:** R430, R432
 **Input:** a section with a boxed `A1`, an unboxed `O2`, an `O3` with a nested `O4`, a second `O3`, and a bare `- reason:` bullet at column 0
@@ -22,7 +22,7 @@
 **Inject:** internal/minispecsdom/gaps.go:gapHeadRe
 **Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `the nested O4 was not read as a gap`; restore clean. *Earlier —* 2026-09-07 — rang, by hand: `the nested O4 was not read as a gap`; restore byte-clean
 ## Test: Add appends after the last gap, or after the heading
-**Purpose:** R433, R436
+**Purpose:** R436, R550
 **Input:** `Add("O5", …)` then `Add("A2", …)` on the fixture; a taken ID; a bad ID; no section; a section with no entries
 **Expected:** `O5` sits between `O4` and the blank before `## Notes`, the file longer by that line alone; `A2` follows it with no checkbox; `ErrGapExists`, `ErrBadGapID`, `ErrNoSection`; the empty section gains its first entry directly under the heading
 **Refs:** crc-Gaps.md, seq-gaps.md#2.2
@@ -52,3 +52,36 @@
 **Fire alarm:** replace the whole body span on approve rather than the head line. Red: `O1`'s continuation lines are gone from the render. (`O3` cannot carry this alarm: a blank line follows its head, so its body is the head alone and the injection cannot reach it — found on the first pull, which stayed green.)
 **Inject:** internal/minispecsdom/gaps.go:Gaps.Approve
 **Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: the approved entry's continuation lines were gone from the render; restore clean. *Earlier —* 2026-09-07 — rang, by hand, on the re-targeted test: `approve of a wrapped entry` — `O1`'s continuation lines gone; the first pull against `O3` stayed green and is recorded in the alarm; restore byte-clean
+
+## Test: Add places an entry by subsection
+**Purpose:** R550, R551 — same letter first, then the heading that names the type, then the head
+**Input:** a section with a head holding `T1`, then `### Incomplete Implementation` (prose only), `### Design → Code Gaps` holding `D1`, and `### Oversights (On)` holding `O1` with an `A1` filed beneath it; add `T2`, `O2`, `A2`, `I1`, `S1`
+**Expected:** `T2` after `T1` at the head; `O2` after `O1`; `A2` after `A1` under Oversights; `I1` at the end of Incomplete Implementation; `S1` at the head; every subsection heading still on its own line
+**Refs:** crc-Gaps.md, seq-gaps.md#2.2.1
+**Code:** internal/minispecsdom/gaps_test.go
+**Alarm:** 6
+**Fire alarm:** restore the field behaviour — always insert after the last gap in the section. Red: `T2` lands under Oversights (ark's ui-engine report, 2026-10-07)
+**Inject:** internal/minispecsdom/gaps.go:Gaps.insertionPoint
+**Pulled:** 2026-10-08 — rang, by hand after simplification: always placing after the last gap in the section fails `TestGapsAddPlacesBySubsection` on all three placements (`T2`, `I1` and the Oversights run); minispecsdom and update run unfiltered with `-count=1`; restore byte-clean
+
+## Test: a subsection heading names a type in either form
+**Purpose:** R550 — `(Xn)` or the standard name, arrows `→` or `->`, spaced or not, case ignored, a trailing word allowed
+**Input:** headings `Oversights (On)`, `design -> code gaps`, `Spec→Requirements`, `Spec → Design Gaps`, `Notes`
+**Expected:** O, D and S named; `Spec → Design Gaps` and `Notes` name nothing
+**Refs:** crc-Gaps.md
+**Code:** internal/minispecsdom/gaps_test.go
+**Alarm:** 7
+**Fire alarm:** compare the title exactly rather than normalised. Red: `design -> code gaps` names nothing
+**Inject:** internal/minispecsdom/gaps.go:namesType
+**Pulled:** 2026-10-08 — rang, by hand after simplification: comparing titles unnormalised fails `TestASubsectionHeadingNamesAType` and the head and Incomplete Implementation placements in `TestGapsAddPlacesBySubsection`; restore byte-clean
+
+## Test: a heading ends the entry above it
+**Purpose:** R551 — a `###` line directly under a gap, with no blank line between, is not folded into its text
+**Input:** `- [ ] O1: first` followed at once by `### Later` and `- [ ] O2: second`
+**Expected:** `O1`'s text is `first`
+**Refs:** crc-Gaps.md, seq-gaps.md#1.3.6
+**Code:** internal/minispecsdom/gaps_test.go
+**Alarm:** 8
+**Fire alarm:** let a `###` line fall through to the fold. Red: `O1`'s text is `first ### Later`
+**Inject:** internal/minispecsdom/gaps.go:Gaps.readItems
+**Pulled:** 2026-10-08 — rang, by hand after simplification: with the `###` branch unreachable, `TestAHeadingEndsTheEntryAboveIt` reads O1 as `first ### Later`, and every placement in `TestGapsAddPlacesBySubsection` fails; restore byte-clean
