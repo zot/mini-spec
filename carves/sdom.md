@@ -120,6 +120,16 @@ well as by extension, and optionally a shebang fallback (`#!/bin/bash`, `#!/usr/
 python3`) onto the built-in tables. `@undecided:` (resolution: settle when queued) — whether the
 shebang fallback is in scope, and whether path and glob are one field or two.
 
+**DECIDED (Bill, 2026-10-08): no GPL dependency — the shebang reader is our own.**
+`github.com/liamg/magic` was considered: its FreeDesktop shared-mime-info table does carry
+interpreter-line rules (`/bin/bash`, `#!/usr/bin/python3`, `/bin/env lua`), but it is GPL-2.0
+and mini-spec is MIT, and Bill rules GPL out. It would also have covered only the fallback, not
+the path and glob mapping, and its content heuristics (`def` → Ruby, `function` → Lua) would
+pick a wrong comment syntax silently. *Proposed, not yet decided:* the fallback reads a real
+interpreter line only — `#!`, the interpreter's base name, the next word under `env`, version
+suffixes stripped — mapped onto the built-in tables; an unmapped interpreter stays "not read".
+Whether path and glob are one field or two is still open.
+
 ## Item 6 — `specs/*.md`
 
 `@undecided:` (resolution: settle when reached) — do specs need structural sdom reading
