@@ -76,6 +76,11 @@ Every write edits inside the region and nothing outside it, decides its refusal 
 byte moves, and re-reads the document afterwards, reading its own write back or panicking
 with a `ReadBackError`.
 
+**An added line starts on a line of its own.** When the line it goes after has no final
+newline — the last line of a file saved without one — the write supplies that newline first.
+Without it the new entry glues onto the previous one, and the read-back refuses a write that
+was the reader's to make (measured in ui-engine, 2026-10-07).
+
 **`Add(id, text)`** appends one entry: `- [ ] <id>: <text>` for a tracked letter, `- <id>: <text>`
 for a permanent one, on one line, with the number the caller minted (`query next-id gap`
 owns the numbering). It goes directly after the last gap's span — after its continuation and

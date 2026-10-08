@@ -1,5 +1,5 @@
 # CLI
-**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79-83, R89, R103, R115-117, R152-160, R169, R174-176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215-218, R241, R244, R247, R253-256, R261, R262, R264, R265, R268, R277, R280-283, R285, R299, R301, R313-315, R317, R323, R324, R329, R331, R332, R334-336, R455, R458, R461, R463, R467-469, R475-478, R484, R488, R489, R495, R496, R502-505, R507, R531, R538, R539
+**Requirements:** R1, R2, R35, R36, R49, R50, R54, R55, R60, R62, R79-83, R89, R103, R115-117, R152-160, R169, R174-176, R189, R196, R198, R199, R204, R207, R208, R212, R213, R215-218, R241, R244, R247, R253-256, R261, R262, R264, R265, R268, R277, R280-283, R285, R299, R301, R313-315, R317, R323, R324, R329, R331, R332, R334-336, R455, R458, R461, R463, R467-469, R475-478, R484, R488, R489, R495, R496, R502-505, R507, R531, R538, R539, R545, R546
 
 Command-line interface handling.
 
@@ -96,6 +96,9 @@ a missing `track` to the malformed refusal told the agent to hand-edit a file th
   `no impl refs` under one with none — `no such requirement` instead for a number no
   requirement carries — and the files the harvest could not read last. A pattern
   matching nothing prints `no requirements match <pattern>` rather than nothing (R504, R507)
+- pending finish `--resolve`: binds the entry's own gap to the design root the entry named
+  (`gapResolver`), and hands `Finish` this invocation's design root for the gaps a part's title
+  names (`gapRoot`): is it carried and open, and resolve it
 
 ## Collaborators
 - Project: to initialize project context and to resolve the repository root for CheckVersion

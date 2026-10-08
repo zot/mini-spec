@@ -382,3 +382,24 @@ func TestWrittenLineSaysWhichWriteIsTracked(t *testing.T) {
 		}
 	}
 }
+
+// CRC: crc-CLI.md | Test: test-Pending.md | R545, R546
+func TestReportFinishedNamesThePartsGaps(t *testing.T) {
+	done := pending.Finished{ID: 9, PartGaps: []string{"O5", "O6"}, PartGapsResolved: []string{"O5"}, PartGapsClosed: []string{"O6"}}
+	out := captureStdout(t, func() { reportFinished("", done, "a body", true) })
+	for _, want := range []string{"resolved gap O5, named by the part", "gap O6, named by the part, was already resolved"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the report is missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "did nothing") || strings.Contains(out, "left open") {
+		t.Errorf("a resolving report says it did nothing or left a gap open:\n%s", out)
+	}
+	declined := pending.Finished{ID: 9, PartGaps: []string{"O5", "O6"}}
+	out = captureStdout(t, func() { reportFinished("", declined, "a body", true) })
+	for _, want := range []string{"left open gap O5, named by the part, by decision (--no-resolve)", "left open gap O6"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the --no-resolve report is missing %q:\n%s", want, out)
+		}
+	}
+}

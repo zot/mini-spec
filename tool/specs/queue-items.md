@@ -154,6 +154,28 @@ a gap-sourced one records `` Gap `<doc>#<gap>` `` in the same shape, so the ledg
 the pending file held. Without it the pointer survives only in whatever free text `--discharged`
 was given, which is a record by luck.
 
+### A part-sourced item's gaps follow its part
+
+**A part that names gaps carries them to `finish`.** A carve part whose title names gap IDs —
+`` **3.2 — `Gaps.Add` ends the previous line before appending (`O26`).** `` — is the gap's repair
+as surely as a gap-sourced item is, and a carve that promises "the gap is resolved when the part
+lands" is promising the tool does it (Bill, 2026-10-08, after `#101` landed its part and left
+`O26` open with "the resolve flag did nothing").
+
+- **What names a gap.** An ID in the part's bold title, bare or backticked, of the letters `S`,
+  `D`, `C`, `I` or `O`. `R` is left out because a title's `R` ID is a requirement in practice
+  (ark's `symlinks.md` Item 5: `R3382, R3384–R3388`); `A` and `T` are permanent and have nothing
+  to close. Prose after the title names nothing: it is where a part says what it is *not*.
+- **The decision is required, as for a gap-sourced item.** An item whose parts name gaps needs
+  `--resolve` or `--no-resolve`, refused before anything is written when neither is given.
+- **`--resolve` closes every gap the parts name**, in the design root this invocation resolved,
+  after the parts land and before the current file resets. A named gap that root does not carry
+  is refused **before anything is written**, naming the gap and the root; one already closed is
+  reported and left as it is. To close some and not others, finish with `--no-resolve` and
+  resolve the rest with `update resolve-gap` — the per-gap choice `#60` made.
+- **`--no-resolve` records each named gap as left open by decision**, as it does for a
+  gap-sourced item.
+
 ### The written line says what kind of file each write is
 
 Every queue verb ends by naming what it wrote, and since 2026-09-12 each name carries a word:

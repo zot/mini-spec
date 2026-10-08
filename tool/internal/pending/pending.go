@@ -106,6 +106,51 @@ type Finished struct {
 	HasGap bool           `json:"has_gap"`
 	// GapResolved records that `--resolve` was given and the resolve succeeded. R277
 	GapResolved bool `json:"gap_resolved"`
+	// PartGaps are the gaps the recorded parts' titles name, in order, once each; PartGapsResolved
+	// those `--resolve` closed, and PartGapsClosed those it found already closed and left. R543–R546
+	PartGaps         []string `json:"part_gaps,omitempty"`
+	PartGapsResolved []string `json:"part_gaps_resolved,omitempty"`
+	PartGapsClosed   []string `json:"part_gaps_closed,omitempty"`
+}
+
+// GapRoot is the caller's design root, for the gaps a part's title names: whether it carries a
+// gap and whether that gap is still open, and the act that resolves it. Callbacks for the reason
+// ResolveGap is one — this package keeps its one-way path to parser. R545
+type GapRoot struct {
+	Doc     string // repository-relative design.md, for the report and the written line
+	Open    func(key string) (carried, open bool, err error)
+	Resolve func(key string) error
+}
+
+// CRC: crc-Pending.md | Seq: seq-queue-item.md#2.2.2 | R543
+// titleGapRe is a gap ID in a part's title: `S`, `D`, `C`, `I` or `O` and digits, bare or
+// backticked. `R` is left out because a title's `R` ID is a requirement in practice (ark's
+// `symlinks.md` Item 5), and `A` and `T` are permanent, with nothing to close.
+var titleGapRe = regexp.MustCompile(`(?:^|[^\w#])([SDCIO]\d+)\b`)
+
+// CRC: crc-Pending.md | Seq: seq-queue-item.md#2.2.2 | R543
+// gapsNamedBy reads each part's bold title from its carve and returns the gap IDs the titles
+// name, in order, once each. Prose after the title names nothing: it is where a part says what
+// it is not.
+func gapsNamedBy(repoRoot string, parts []parser.PartRef) ([]string, error) {
+	var keys []string
+	for _, ref := range parts {
+		c, err := parser.ReadCarve(filepath.Join(repoRoot, filepath.FromSlash(ref.Doc)), ref.Doc)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range c.Parts {
+			if p.Key() != ref.Key {
+				continue
+			}
+			for _, m := range titleGapRe.FindAllStringSubmatch(p.Title(), -1) {
+				if !slices.Contains(keys, m[1]) {
+					keys = append(keys, m[1])
+				}
+			}
+		}
+	}
+	return keys, nil
 }
 
 // Started is what an opening wrote. R265
@@ -361,6 +406,10 @@ type FinishOpts struct {
 	// gap. It exists so that decision has a spelling, which is what makes the question
 	// unskippable — a gap-sourced completion supplying neither is refused (R279). R281
 	DeclineResolve bool
+	// PartGaps is the caller's design root for the gaps the parts' titles name, given with
+	// `--resolve`. Nil means the caller did not ask; an item whose parts name gaps then needs
+	// DeclineResolve, as a gap-sourced one does. R544, R545
+	PartGaps *GapRoot
 }
 
 // CRC: crc-Pending.md | Seq: seq-queue-item.md#2 | R476, R246, R478, R248
@@ -394,6 +443,34 @@ func Finish(repoRoot string, id int, opt FinishOpts) (Finished, error) {
 		return out, fmt.Errorf("#%d repairs gap %s, so completing it needs a decision: --resolve if this closed it,\n"+
 			"--no-resolve if it did not. There is no default, because a default would guess which of those happened.", id, out.Gap.Key)
 	}
+	// Seq: seq-queue-item.md#2.2.2 | R543, R544
+	if out.PartGaps, err = gapsNamedBy(repoRoot, out.Parts); err != nil {
+		return out, err
+	}
+	if len(out.PartGaps) > 0 && opt.PartGaps == nil && !opt.DeclineResolve {
+		return out, fmt.Errorf("#%d's parts name gaps %s, so completing it needs a decision: --resolve if this closed them,\n"+
+			"--no-resolve if it did not. There is no default, because a default would guess which of those happened.", id, strings.Join(out.PartGaps, ", "))
+	}
+	// Seq: seq-queue-item.md#2.2.3 | R545
+	// **Before the slot opens**: a named gap the root does not carry is a refusal, not a
+	// half-completed item; one already closed is set aside to be reported.
+	var toResolve []string
+	if opt.PartGaps != nil {
+		for _, key := range out.PartGaps {
+			carried, open, err := opt.PartGaps.Open(key)
+			if err != nil {
+				return out, err
+			}
+			switch {
+			case !carried:
+				return out, fmt.Errorf("#%d's parts name gap %s, which %s does not carry; nothing was written", id, key, opt.PartGaps.Doc)
+			case open:
+				toResolve = append(toResolve, key)
+			default:
+				out.PartGapsClosed = append(out.PartGapsClosed, key)
+			}
+		}
+	}
 
 	// R477 — the date and the queue ID, and no commit hash: the item number is the identifier,
 	// so this runs before the commit and the flip lands in it (Bill, 2026-09-15).
@@ -418,6 +495,17 @@ func Finish(repoRoot string, id int, opt FinishOpts) (Finished, error) {
 			}
 			out.GapResolved = true
 			out.Files = append(out.Files, out.Gap.Doc)
+		}
+		// Seq: seq-queue-item.md#2.3.6 | R545
+		// The gaps the parts named, after the parts land and before the current file resets.
+		for _, key := range toResolve {
+			if err := opt.PartGaps.Resolve(key); err != nil {
+				return err
+			}
+			out.PartGapsResolved = append(out.PartGapsResolved, key)
+		}
+		if len(out.PartGapsResolved) > 0 && !slices.Contains(out.Files, opt.PartGaps.Doc) {
+			out.Files = append(out.Files, opt.PartGaps.Doc)
 		}
 		// Seq: seq-queue-item.md#2.3.3 | R249
 		// The `## Active` section and nothing else. How that region is found is the reader's

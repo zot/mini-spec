@@ -1,5 +1,5 @@
 # Requirements
-**Requirements:** R437, R438, R439, R440, R441, R442, R443, R444, R445
+**Requirements:** R437-445, R541
 
 The requirements schema: embeds the markdown base, owns the document, and reads every heading
 as a section with its own content, its source, and its numbered entries in live and retired
@@ -19,7 +19,8 @@ form. The third design-document reader, on the same base as TestDoc and Gaps.
 - `Sections`, `Section(title)`, `Requirements`, `Requirement(id)`, `Render`, `Doc`; `Unread`:
   unkeyed column-0 bullets, later `Source:` lines, deviant entries, and every group the context
   reports open or closing nothing, ordered by line
-- `Add(title, id, text)`: one line at the end of the section's own content
+- `Add(title, id, text)`: one line at the end of the section's own content, on a line of its
+  own, ending an unterminated previous line first
 - `Retire(id, tn, clause)`: the head line struck and claused, the body untouched
 - after every write, re-reads the render and reads the write back on the addressed entry, or
   panics with `ReadBackError`
@@ -33,7 +34,7 @@ form. The third design-document reader, on the same base as TestDoc and Gaps.
 - **No minting, no coverage, no `Tn` gap.** Those are the verb's and the gaps reader's
 
 ## Collaborators
-- markdownDoc: the base parse, `inCode`, `replaceSpan`
+- markdownDoc: the base parse, `inCode`, `replaceSpan`, `insertLine`
 - Deviation, DeviationError, Unread, mustReadBack: shared with the other readers
 
 ## Sequences

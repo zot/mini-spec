@@ -27,5 +27,6 @@
    2.3. `Resolve`: `ErrPermanent`, `ErrResolved`; the head line with `[x]`
    2.4. `Approve`: `ErrBadGapID` unless an `A` number, `ErrGapExists`, `ErrPermanent`; the head
         line rewritten `- A<n>: <head text>` at its depth
-   2.5. Inside `Mutate`: replace the head line's span, or insert at the point
+   2.5. Inside `Mutate`: replace the head line's span, or insert at the point — after a newline
+        of its own when the point ends no line (`insertLine`)
    2.6. Re-read the render; read the entry back or panic with `ReadBackError`

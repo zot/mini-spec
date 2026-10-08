@@ -43,6 +43,7 @@ through sdom behind that wrapper. The wrapper is not deleted — see Item 7.
   - [x] ~~**5.5 — C++ raw strings.**~~ **LANDED (2026-09-29 — `#93`.)** `R"delim( … )delim"`, through simple-dom's `CloseRegex`: a closer whose named capture groups must equal the opener's (landed in mini-spec-tool as `#43`, 2026-09-25). Needs the simple-dom version bump — see [traceability.md](done/traceability.md) Decisions.
   - [x] ~~**5.6 — Lua long brackets.**~~ **DISCHARGED (2026-09-25 — mini-spec-tool `#44`.)** `[==[ … ]==]` and `--[==[ … ]==]` at every level, in simple-dom's `LangLua`. Before it, `[=[` was not a string at all (their measurement): `end` inside a level-n string or comment closed real groups, and a level-1 comment's later lines parsed as code. Reaches this tool with the simple-dom version bump.
   - [x] ~~**5.7 — Emacs Lisp character literals.**~~ **LANDED (2026-09-29 — `#93`.)** `?(`, `?\)` and the like: a group opening only at a token start, through simple-dom's `BeforeOpen` (landed in mini-spec-tool as `#45`, 2026-09-27). Any restricted group listing it in `AllowedInner` names it by its literal opener `?` or its exact `OpenRegex` text.
+  - [ ] **5.8 — languages chosen by path, glob or shebang, not only extension.** **OPEN (#104.)** Asked by ark `requests/ms-filename-lang.md` — see body.
 - [ ] **Item 6 — `specs/*.md`.** **OPEN (not queued.)** Scope to settle — see body.
 - [ ] **Item 7 — retire the old `parser` wrappers.** **OPEN (not queued.)** End-state to settle — see body.
 
@@ -109,6 +110,15 @@ through the regex `parser.ParseTraceability`. Converting code files = wire `Comm
 into the harvest and retire `ParseTraceability`. This is also the reader that unlocks
 positioned harvest (`file:line`), ref rewriting, and the reverse lookup ark asked for —
 so the traceability sub-problem is a carve of its own: [traceability.md](done/traceability.md).
+
+**5.8 — languages chosen by path, glob or shebang.** The harvest picks a table by extension
+only, so an extensionless script is reported as not read and its refs never count. Measured by
+ark 2026-10-07 in the frictionless repo: `install/linkapp` (bash, named by its installer) carries
+`R85, R184–R188`, `validate` notes `no language for`, and the project had to file an `I` gap for
+a reader limitation. Ark asks for a configured language to name files by exact path or glob as
+well as by extension, and optionally a shebang fallback (`#!/bin/bash`, `#!/usr/bin/env
+python3`) onto the built-in tables. `@undecided:` (resolution: settle when queued) — whether the
+shebang fallback is in scope, and whether path and glob are one field or two.
 
 ## Item 6 — `specs/*.md`
 

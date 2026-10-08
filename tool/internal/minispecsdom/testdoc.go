@@ -314,7 +314,7 @@ func (t *TestDoc) writable(n int) (*TestEntry, error) {
 	return e, nil
 }
 
-// CRC: crc-TestDoc.md | Seq: seq-testdoc.md#2.2.1 | R426
+// CRC: crc-TestDoc.md | Seq: seq-testdoc.md#2.2.1 | R426, R542
 func (t *TestDoc) SetPulled(n int, date, body string) error {
 	e, err := t.writable(n)
 	if err != nil {
@@ -322,13 +322,18 @@ func (t *TestDoc) SetPulled(n int, date, body string) error {
 	}
 	body = strings.TrimSpace(body)
 	line := "**" + fieldPulled + ":** " + date + " — " + body
-	start := e.insertionPoint()
-	end := start // an empty span, so a first record is an insertion
-	if old := e.field(fieldPulled); old != nil {
+	old := e.field(fieldPulled)
+	if old != nil {
 		line += " *Earlier —* " + old.content
-		start, end = old.start, old.end
 	}
-	if err := t.doc.Mutate(func() error { return t.replaceSpan(start, end, line+"\n") }); err != nil {
+	line += "\n"
+	write := func() error {
+		if old == nil { // a first record
+			return t.insertLine(e.insertionPoint(), line)
+		}
+		return t.replaceSpan(old.start, old.end, line)
+	}
+	if err := t.doc.Mutate(write); err != nil {
 		return err
 	}
 	t.reload()

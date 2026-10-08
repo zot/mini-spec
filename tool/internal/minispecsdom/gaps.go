@@ -261,7 +261,7 @@ func (g *Gaps) writable(id string) (*Gap, error) {
 	return gap, nil
 }
 
-// CRC: crc-Gaps.md | Seq: seq-gaps.md#2.2 | R433
+// CRC: crc-Gaps.md | Seq: seq-gaps.md#2.2 | R433, R540
 func (g *Gaps) Add(id, text string) error {
 	m := gapKeyRe.FindStringSubmatch(id)
 	if m == nil {
@@ -284,7 +284,7 @@ func (g *Gaps) Add(id, text string) error {
 	for _, gap := range g.items { // the last span in the document, not the last read
 		at = max(at, gap.body.end)
 	}
-	if err := g.doc.Mutate(func() error { return g.replaceSpan(at, at, line) }); err != nil {
+	if err := g.doc.Mutate(func() error { return g.insertLine(at, line) }); err != nil {
 		return err
 	}
 	g.reload()

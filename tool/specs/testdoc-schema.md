@@ -103,7 +103,8 @@ When the entry already carries one, the new line replaces it and the old line's 
 folded after the body as ` *Earlier —* <old content>`, so the leading date moves and the
 history is kept in one line. When it carries none, the line is inserted directly after the
 `**Inject:**` field's last line, or, with no `**Inject:**`, after the `**Fire alarm:**`
-field's last line. The date is the caller's: which clock it comes from is the verb's rule.
+field's last line, on a line of its own: when that field ends the file with no final newline,
+the write supplies it first. The date is the caller's: which clock it comes from is the verb's rule.
 
 **`SetInject(n, sites, void)`** rewrites the `**Inject:**` line as `**Inject:** ` followed by
 the sites joined by `, `. No `**Inject:**` line is `ErrNoInject`; an empty site list is

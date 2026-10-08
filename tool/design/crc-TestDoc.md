@@ -1,5 +1,5 @@
 # TestDoc
-**Requirements:** R418, R419, R420, R421, R422, R423, R424, R425, R426, R427, R428, R445, R446
+**Requirements:** R418-428, R445, R446, R542
 
 The test-design file schema: embeds the markdown base, owns the document, and adds the
 `## Test:` entry with its five alarm fields. The first reader over a design document rather
@@ -16,7 +16,7 @@ than a trajectory file.
 - `Tests`, `Alarm(n)`, `Render`, `Doc`; `Unread`: non-test headings, deviant entries, and every
   group the context reports open or closing nothing, ordered by line
 - `SetPulled(n, date, body)`: replace with the old content folded as history, or insert after
-  `Inject`, else after `Fire alarm`
+  `Inject`, else after `Fire alarm`, on a line of its own, ending an unterminated field first
 - `SetInject(n, sites, void)`: rewrite the sites; when `void`, demote the `Pulled` line to the
   history shape naming the old sites, in the same write
 - `NumberAlarms`: `**Alarm:** <n>` above every unnumbered alarm's `Fire alarm`, from max+1
@@ -35,6 +35,7 @@ than a trajectory file.
 - schema.MarkdownParser, schema.Heading: the base
 - BracketContext: `Enclosing` for the code-group test, and the unbalanced report
 - Doc: `Split`, `Insert`, `Replace`, `Remove` inside `Mutate`; `Line`
+- markdownDoc: `insertLine`, shared with Gaps and Requirements
 - Deviation, DeviationError, Unread, mustReadBack: shared with the trajectory readers
 
 ## Sequences

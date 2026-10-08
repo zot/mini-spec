@@ -1,5 +1,5 @@
 # Pending
-**Requirements:** R241, R242, R243, R244, R246, R247, R248, R252, R253, R256, R257, R262, R263, R264, R265, R267, R268, R269, R271, R272, R273, R274, R275, R276, R277, R278, R279, R280, R281, R245, R249, R250, R258, R259, R282, R330, R332, R333, R334, R476, R477, R478
+**Requirements:** R241-250, R252, R253, R256-259, R262-265, R267-269, R271-282, R330, R332-334, R476-478, R543-546
 
 The three verbs over the trajectory files — `pending add-item` and `pending finish`, which
 write **both sides of the item↔part link**, and `pending start`, which opens the item. Package
@@ -112,6 +112,12 @@ readers, the part line to [Carve](crc-Carve.md)'s.
 - *What earns the flags their place in this verb rather than in `update resolve-gap` alone:*
   `--discharged` already brings the gap IDs here at completion time and lets them die as free
   text in a header. This makes a conversation the verb is already having actionable
+- **A part's gaps follow it** (R543–R546, Bill 2026-10-08). The gaps a recorded part's bold
+  title names — `S`/`D`/`C`/`I`/`O` IDs, bare or backticked — need the same decision a gap
+  source does. With `--resolve` each is checked against the caller's design root **before the
+  slot opens** (absent: refused; already closed: reported) and resolved after the parts land;
+  with `--no-resolve` each is reported left open by decision. `R` is left out of the grammar
+  because a title's `R` ID is a requirement in practice
 - **The done entry carries the gap pointer** (R278), as `` Gap `<doc>#<gap>` `` in the shape
   `` Part `<doc>#<key>` `` uses, so the ledger keeps the link the pending file held instead of
   leaving it to whatever text `--discharged` happened to carry

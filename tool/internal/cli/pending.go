@@ -375,7 +375,10 @@ func (c *CLI) runFinish(repoRoot string, args []string) int {
 			return 1
 		}
 		// R277 — resolve the gap **the entry names**, in the document it named it in.
-		opts.ResolveGap = gapResolver(update.New(p).ResolveGap, p.DesignMdPath(), repoRoot, id)
+		resolveGap := update.New(p).ResolveGap
+		opts.ResolveGap = gapResolver(resolveGap, p.DesignMdPath(), repoRoot, id)
+		// R545 — the gaps a part's title names carry no document, so they are this root's.
+		opts.PartGaps = gapRoot(p.DesignMdPath(), repoRoot, resolveGap)
 	}
 	done, err := pending.Finish(repoRoot, id, opts)
 	if err != nil {
@@ -409,7 +412,33 @@ func gapResolver(resolve func(string) error, designMd, repoRoot string, id int) 
 	}
 }
 
-// CRC: crc-CLI.md | R478, R264, R277, R280, R281, R282
+// CRC: crc-CLI.md | R545
+// gapRoot is this invocation's design root as `Finish` asks about it: whether it carries a gap
+// and whether that gap is still open, and the act that resolves it.
+func gapRoot(designMd, repoRoot string, resolve func(string) error) *pending.GapRoot {
+	rel, err := filepath.Rel(repoRoot, designMd)
+	if err != nil {
+		rel = designMd
+	}
+	return &pending.GapRoot{
+		Doc: filepath.ToSlash(rel),
+		Open: func(key string) (bool, bool, error) {
+			gaps, err := parser.ParseGaps(designMd)
+			if err != nil {
+				return false, false, err
+			}
+			for _, g := range gaps {
+				if g.ID == key {
+					return true, !g.Resolved, nil
+				}
+			}
+			return false, false, nil
+		},
+		Resolve: resolve,
+	}
+}
+
+// CRC: crc-CLI.md | R478, R264, R277, R280, R281, R282, R545, R546
 // reportFinished renders a completion. **Its own function so a test can reach it**: the
 // notices below are decisions about what the caller is told, and a decision nothing can assert
 // on is one that drifts silently.
@@ -421,17 +450,29 @@ func reportFinished(repoRoot string, done pending.Finished, body string, askedRe
 	if done.GapResolved {
 		fmt.Printf("  resolved gap %s in %s\n", done.Gap.Key, done.Gap.Doc)
 	}
+	for _, key := range done.PartGapsResolved { // R545
+		fmt.Printf("  resolved gap %s, named by the part\n", key)
+	}
 	fmt.Printf("  written  %s\n", describeWrites(repoRoot, done.Files))
+	for _, key := range done.PartGapsClosed { // R545
+		fmt.Printf("  note     gap %s, named by the part, was already resolved; left as it is\n", key)
+	}
 	// R280 — a resolve flag on an item that names no gap resolved nothing and said nothing:
 	// a flag that silently does nothing is this project's signature defect wearing the shape
 	// of success.
-	if askedResolve && !done.HasGap {
+	if askedResolve && !done.HasGap && len(done.PartGaps) == 0 {
 		fmt.Printf("  note     the resolve flag did nothing: #%d names no gap, so there was none to close.\n", done.ID)
 	}
 	// R281 — a gap left open **by decision** and one left open by oversight are identical in
 	// design.md, and this completion is the only place that difference is known.
 	if done.HasGap && !done.GapResolved {
 		fmt.Printf("  left open gap %s, by decision (--no-resolve)\n", done.Gap.Key)
+	}
+	// R546 — the same record for the gaps a part names.
+	if len(done.PartGapsResolved)+len(done.PartGapsClosed) == 0 {
+		for _, key := range done.PartGaps {
+			fmt.Printf("  left open gap %s, named by the part, by decision (--no-resolve)\n", key)
+		}
 	}
 	// R478, R264. The body is authoring and stays the caller's; **placing** it is the tool's.
 	// The crank handle below runs when the caller declined the flag — the fallback, never the

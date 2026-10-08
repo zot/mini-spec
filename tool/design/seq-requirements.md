@@ -24,5 +24,6 @@
         entry's deviations and retirement
    2.2. `Add`: the line at the section's last content end
    2.3. `Retire`: the head line rewritten with the strike and the clause
-   2.4. Inside `Mutate`: replace the head line's span, or insert at the point
+   2.4. Inside `Mutate`: replace the head line's span, or insert at the point — after a newline
+        of its own when the point ends no line (`insertLine`)
    2.5. Re-read the render; read the entry back or panic with `ReadBackError`

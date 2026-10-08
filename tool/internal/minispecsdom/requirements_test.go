@@ -160,3 +160,18 @@ func TestRequirementsRetire(t *testing.T) {
 		t.Errorf("no replacement: %+v", q)
 	}
 }
+
+// CRC: crc-Requirements.md | Test: test-Requirements.md | R541
+func TestRequirementsAddAfterUnterminatedLine(t *testing.T) {
+	src := "# Requirements\n\n## Feature: a\n**Source:** specs/a.md\n\n- **R1:** last, no newline"
+	r := ParseRequirements(src)
+	if err := r.Add("Feature: a", "R2", "next"); err != nil {
+		t.Fatal(err)
+	}
+	if out, _ := r.Render(); out != src+"\n- **R2:** next\n" {
+		t.Errorf("render: %q", out)
+	}
+	if got := r.Requirement("R1"); got == nil || got.Text != "last, no newline" {
+		t.Errorf("R1 read back as %+v", got)
+	}
+}

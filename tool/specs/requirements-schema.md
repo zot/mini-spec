@@ -80,6 +80,9 @@ Every write edits inside one section's own content and nothing outside it, decid
 refusal before any byte moves, and re-reads the document afterwards, reading its own write
 back or panicking with a `ReadBackError`.
 
+**An added line starts on a line of its own.** When the line it goes after has no final
+newline, the write supplies that newline first, as the gaps schema's writer does.
+
 **`Add(title, id, text)`** appends `- **<id>:** <text>` on one line at the end of the named
 section's own content — after its last non-blank line, before any blank lines that separate
 it from the next heading — which is the add-req rule: a new requirement goes before the

@@ -90,6 +90,17 @@ type replacement struct {
 	text       string
 }
 
+// CRC: crc-Markdown.md | R540, R541, R542
+// insertLine inserts line, which ends in a newline, at the parsed offset at, inside a mutation
+// window. When at ends no line — the last line of a file saved without a final newline — it
+// supplies that newline first, so the insertion never glues onto the line before it.
+func (m *markdownDoc) insertLine(at int, line string) error {
+	if at > 0 && m.doc.Source()[at-1] != '\n' {
+		line = "\n" + line
+	}
+	return m.replaceSpan(at, at, line)
+}
+
 // CRC: crc-TestDoc.md | Seq: seq-testdoc.md#2.3 | R425
 //
 // replaceSpan replaces the parsed bytes [start, end) with text, inside a mutation window.

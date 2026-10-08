@@ -45,6 +45,8 @@ thinks to check.
 2. CLI → Pending: Finish(id, commit)
 2.1. Trajectory reads the pending file and finds the entry for N, refusing if it is absent or already completed
 2.2.1. For a **gap**-sourced entry, refuse unless the caller decided — `--resolve` or `--no-resolve`, never both, and neither is a refusal named **before the slot opens**, so an undecided caller pays a retry rather than a half-completed item   // R279, R280
+2.2.2. Read each recorded part's bold title from its carve and collect the gap IDs it names — `S`/`D`/`C`/`I`/`O` and digits, bare or backticked, in order, once each; an item whose parts name gaps is refused like 2.2.1 when undecided   // R543, R544
+2.2.3. With `--resolve`, ask the caller's design root about each named gap **before the slot opens**: one it does not carry is refused, naming the gap and the root; one already resolved is set aside to be reported   // R545
 2.2. Collect the parts the entry recorded — a list, since one item may discharge parts in several documents
 2.3. Slot.Record wraps everything below, exactly as in 1.6
 2.3.1. For each recorded part, Carve performs the completion write on its line: checkbox to `[x]`, title struck through, and a `LANDED (date — `#N`.)` record — no hash, the item number is the identifier (R477) — replacing the transient
@@ -57,6 +59,7 @@ thinks to check.
 2.3.3.5. Trajectory writes the file by temp-file-and-rename
 2.3.4. Trajectory removes the entry from the pending file and appends the done entry's **header** — date, identifiers, title, commit, part pointer The body, when the caller supplied one, is spliced in the **same write** rather than found again afterwards, so the completion has no second target to anchor against. // R263 The slot carries the queue ID the tool owns joined to whatever else the caller says the item discharged, and a colon in that text is refused before anything is written. // R268, R269 Both writes are node-addressed: the entry is the heading node that opens it plus the nodes beneath it, and the ledger's rule is found in a text run's own content, so a `## N.` or a `---` quoted inside a fence can neither bound the removal nor receive the record. // R270, R270, R270
 2.3.5. For a **gap**-sourced entry: with `--resolve`, Update resolves the gap in the document the **entry** named, refusing a different design root; with `--no-resolve` it is left open. Never inferred — an item may address a gap only partly, and a gap wrongly resolved is work that silently never happens   // R277
+2.3.6. For each gap the parts named and 2.2.3 left open, Update resolves it in the caller's design root, after the parts land and before the current file resets — source first, as for a part   // R545
 2.5. Report which of the two happened: a gap resolved, or one **left open by decision**. The two are identical in design.md, and this completion is the only place the difference is known   // R281
 2.4. Crank out every part checked and every file written, and name where the done entry's **body** goes — that is authoring, and the tool does not author
 3. CLI → Pending: Start(id, context) — the third verb, and the only one that writes before any record of the work exists elsewhere    // R265

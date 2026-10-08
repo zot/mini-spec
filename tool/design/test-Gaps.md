@@ -30,7 +30,18 @@
 **Alarm:** 3
 **Fire alarm:** insert at the region's end rather than after the last gap's span. Red: `O5` lands after the blank line, directly before `## Notes`, and the placement assertion fails.
 **Inject:** internal/minispecsdom/gaps.go:Gaps.Add
-**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `O5` landed after the blank line, directly before `## Notes`, and the empty-section case failed with it; restore clean. *Earlier —* 2026-09-07 — rang, by hand: the placement and permanent-add assertions both failed, `O5` and `A2` sitting after the blank line; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by delegation at the batch commit after `#101` routed `Add` through `insertLine`: inserting at the section end fails `TestGapsAdd` on placement, the permanent add and the empty section; minispecsdom run unfiltered with `-count=1`; restore clean *Earlier —* 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `O5` landed after the blank line, directly before `## Notes`, and the empty-section case failed with it; restore clean. *Earlier —* 2026-09-07 — rang, by hand: the placement and permanent-add assertions both failed, `O5` and `A2` sitting after the blank line; restore byte-clean
+## Test: Add after an unterminated last line ends it first
+**Purpose:** R540
+**Input:** a Gaps section whose last entry ends the file with no newline; `Add("O2", …)`
+**Expected:** the render is the source plus `\n- [ ] O2: …\n`, and `O2` reads back; no `ReadBackError`
+**Refs:** crc-Gaps.md, seq-gaps.md#2.5
+**Code:** internal/minispecsdom/gaps_test.go
+**Alarm:** 5
+**Fire alarm:** restore the field defect — `Gaps.Add` inserting through `replaceSpan` rather than `insertLine`. Red: `Add` panics with `ReadBackError` (`O2` glued onto `O1`'s line, ui-engine 2026-10-07)
+**Inject:** internal/minispecsdom/gaps.go:Gaps.Add
+**Pulled:** 2026-10-08 — rang, by hand after simplification: `TestGapsAddAfterUnterminatedLine` panicked with `ReadBackError` (`O2` glued onto `O1`); package run unfiltered with `-count=1`; restore byte-clean. Past the list: inverting `insertLine`'s condition also fails `TestGapsAdd`
+
 ## Test: Resolve flips the head; Approve rewrites it permanent
 **Purpose:** R434, R435, R436
 **Input:** `Resolve("O1")` twice, `Resolve("A1")`; `Approve("O3", "A2")`; `Approve("O1", "A3")` on a fresh fixture; `Approve` with a non-A ID, a taken ID, a permanent target

@@ -220,3 +220,18 @@ func TestATitleWithACodeSpanOrBoldReadsWhole(t *testing.T) {
 		}
 	}
 }
+
+// CRC: crc-TestDoc.md | Test: test-TestDoc.md | R542
+func TestTestDocSetPulledAfterUnterminatedInject(t *testing.T) {
+	src := "# Test Design: S\n\n## Test: t\n**Purpose:** p\n**Alarm:** 1\n**Fire alarm:** f\n**Inject:** a.go:F"
+	d := ParseTestDoc(src)
+	if err := d.SetPulled(1, "2026-10-08", "rang"); err != nil {
+		t.Fatal(err)
+	}
+	if out, _ := d.Render(); out != src+"\n**Pulled:** 2026-10-08 — rang\n" {
+		t.Errorf("render: %q", out)
+	}
+	if e := d.Alarm(1); len(e.Inject) != 1 || e.Inject[0] != (Site{"a.go", "F"}) || e.Pulled == nil {
+		t.Errorf("read back %+v", e)
+	}
+}

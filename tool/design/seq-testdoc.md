@@ -24,7 +24,8 @@
         deviations; `SetInject` refuses `ErrNoInject` and `ErrEmptyInject`
    2.2. Compute the new line text from the old field's lines
         2.2.1. `SetPulled`: fold the old content as ` *Earlier —* …`, or choose the insertion
-               point after `Inject`, else after `Fire alarm`
+               point after `Inject`, else after `Fire alarm` — inserted after a newline of its
+               own when that field ends no line (`insertLine`)
         2.2.2. `SetInject` with `void`: rewrite the `Pulled` line to the history shape naming
                the old sites
         2.2.3. `NumberAlarms`: next number is max+1; insertion is above `Fire alarm`

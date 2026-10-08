@@ -1,5 +1,5 @@
 # Gaps
-**Requirements:** R429, R430, R431, R432, R433, R434, R435, R436, R445
+**Requirements:** R429-436, R445, R540
 
 The gaps schema: embeds the markdown base, owns the document, and reads the `## Gaps`
 region of a design document as typed, numbered entries. The second design-document reader,
@@ -16,7 +16,8 @@ on the same base as TestDoc.
   as a gap, a sub-item, or an unread line, folding continuation lines
 - `Items`, `Gap(id)`, `HasGaps`, `Render`, `Doc`; `Unread`: unkeyed column-0 bullets, deviant
   entries, and every group the context reports open or closing nothing, ordered by line
-- `Add(id, text)`: one line after the last gap's span, or after the heading; checkbox by letter
+- `Add(id, text)`: one line after the last gap's span, or after the heading; checkbox by letter;
+  on a line of its own, ending an unterminated previous line first
 - `Resolve(id)`: `[ ]` to `[x]` on the head line
 - `Approve(id, newID)`: the head line rewritten permanent, everything beneath untouched
 - after every write, re-reads the render and reads the write back on the addressed entry, or
@@ -30,7 +31,7 @@ on the same base as TestDoc.
 - **No minting, no filtering.** Numbers come from the caller; open/closed and ranges are the query's
 
 ## Collaborators
-- markdownDoc: the base parse, `regionEnd`, `inCode`, `replaceSpan`
+- markdownDoc: the base parse, `regionEnd`, `inCode`, `replaceSpan`, `insertLine`
 - schema.Heading: the section heading
 - Deviation, DeviationError, Unread, mustReadBack: shared with the other readers
 

@@ -180,3 +180,18 @@ func TestGapsResolveAndApprove(t *testing.T) {
 		t.Errorf("permanent: %v", err)
 	}
 }
+
+// CRC: crc-Gaps.md | Test: test-Gaps.md | R540
+func TestGapsAddAfterUnterminatedLine(t *testing.T) {
+	src := "# X\n\n## Gaps\n\n- [ ] O1: last, no newline"
+	g := ParseGaps(src)
+	if err := g.Add("O2", "next"); err != nil {
+		t.Fatal(err)
+	}
+	if out, _ := g.Render(); out != src+"\n- [ ] O2: next\n" {
+		t.Errorf("render: %q", out)
+	}
+	if got := g.Gap("O1"); got == nil || got.Text != "last, no newline" {
+		t.Errorf("O1 read back as %+v", got)
+	}
+}

@@ -36,7 +36,8 @@ repair.
 ## Collaborators
 - schema.MarkdownParser: the base
 - BracketContext: `Enclosing` for the code-group test, and the unbalanced report
-- markdownDoc: `parseBase`, `inCode`, `Render`, `replaceSpan`, shared with TestDoc
+- markdownDoc: `parseBase`, `inCode`, `Render`, `replaceSpan`, shared with TestDoc; `insertLine`,
+  which ends an unterminated previous line before inserting one, for the schema writers' adds
 - Doc: `Mutate`; mustReadBack, shared with the trajectory readers
 
 ## Sequences

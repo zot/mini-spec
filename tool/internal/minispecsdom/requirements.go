@@ -238,7 +238,7 @@ func (r *Requirements) parentOf(level int) *Section {
 	return nil
 }
 
-// CRC: crc-Requirements.md | Seq: seq-requirements.md#2.2 | R442, R444
+// CRC: crc-Requirements.md | Seq: seq-requirements.md#2.2 | R442, R444, R541
 func (r *Requirements) Add(title, id, text string) error {
 	if !reqKeyRe.MatchString(id) {
 		return ErrBadReqID
@@ -257,7 +257,7 @@ func (r *Requirements) Add(title, id, text string) error {
 	text = strings.TrimSpace(text)
 	line := "- **" + id + ":** " + text + "\n"
 	at := sec.lastContent
-	if err := r.doc.Mutate(func() error { return r.replaceSpan(at, at, line) }); err != nil {
+	if err := r.doc.Mutate(func() error { return r.insertLine(at, line) }); err != nil {
 		return err
 	}
 	r.reload()

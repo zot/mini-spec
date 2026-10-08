@@ -30,7 +30,18 @@
 **Alarm:** 3
 **Fire alarm:** insert at the end of the section's own span rather than after its last non-blank line. Red: the new line lands after the blank, directly before `### Notes`.
 **Inject:** internal/minispecsdom/requirements.go:Requirements.Add
-**Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `R8` landed after the blank line, directly before `### Notes`, and the fence section likewise; restore clean. *Earlier —* 2026-09-07 — rang, by hand: the placement assertions for the feature and the fence section both failed; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by delegation at the batch commit after `#101`: inserting at the section's own end rather than its last content fails `TestRequirementsAdd` on placement (`R8` after the blank line); minispecsdom run unfiltered with `-count=1`; restore clean *Earlier —* 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `R8` landed after the blank line, directly before `### Notes`, and the fence section likewise; restore clean. *Earlier —* 2026-09-07 — rang, by hand: the placement assertions for the feature and the fence section both failed; restore byte-clean
+## Test: Add after an unterminated last line ends it first
+**Purpose:** R541
+**Input:** a section whose last requirement ends the file with no newline; `Add(title, "R2", …)`
+**Expected:** the render is the source plus `\n- **R2:** …\n`, and `R2` reads back; no `ReadBackError`
+**Refs:** crc-Requirements.md, seq-requirements.md#2.4
+**Code:** internal/minispecsdom/requirements_test.go
+**Alarm:** 5
+**Fire alarm:** restore the defect — `Requirements.Add` inserting through `replaceSpan` rather than `insertLine`. Red: `Add` panics with `ReadBackError`, `R2` glued onto `R1`'s line
+**Inject:** internal/minispecsdom/requirements.go:Requirements.Add
+**Pulled:** 2026-10-08 — rang, by hand after simplification: `TestRequirementsAddAfterUnterminatedLine` panicked with `ReadBackError` (`R2` glued onto `R1`); package run unfiltered with `-count=1`; restore byte-clean. Past the list: inverting `insertLine`'s condition also fails `TestRequirementsAdd`
+
 ## Test: Retire strikes the head and adds the clause
 **Purpose:** R443, R444
 **Input:** `Retire("R1", "T3", "see R7")`; the same again; a bad clause; a bad Tn; an absent ID; `Retire("R2", "T4", "no replacement")`

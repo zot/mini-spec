@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -324,9 +325,16 @@ func TestASourceFailureLeavesTheQueueUntouched(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := read(t, root, "PENDING.md")
-	if err := os.Remove(filepath.Join(root, "carves", "x.md")); err != nil {
+	// The carve stays **readable** and only its write fails: `Finish` reads each part's title
+	// before the slot opens (R543), so a deleted carve is refused there, before either write,
+	// and the order would go unobserved. Measured 2026-10-08 — the swap stayed green until this
+	// failed the write instead. The write goes through a temp file beside the carve, so a
+	// read-only directory refuses it.
+	carves := filepath.Join(root, "carves")
+	if err := os.Chmod(carves, 0o555); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { os.Chmod(carves, 0o755) })
 	if _, err := Finish(root, 4, FinishOpts{}); err == nil {
 		t.Fatal("expected the completion to fail when its source cannot be written")
 	}
@@ -985,3 +993,97 @@ func TestARevertedPartCanBeQueuedAgain(t *testing.T) {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// partGapCarve is a carve whose one part names gaps in its title — `O5` backticked, `O6` and
+// `D3` bare — beside IDs that are not gaps there: a requirement, two permanent letters, and an
+// `O8` in the prose after the title.
+const partGapCarve = "# Carve: g\n\n## Status\n\n" +
+	"- [ ] **Item 1 — repair `O5`, O6 and D3, not R7, A1 or T2.** **OPEN (not queued.)** O8 is prose.\n"
+
+// partGapItem queues the part and returns the item, with design.md carrying O5 open, O6 closed
+// and D3 open.
+func partGapItem(t *testing.T) (string, int) {
+	t.Helper()
+	root := fixture(t)
+	if err := os.WriteFile(filepath.Join(root, "carves/g.md"), []byte(partGapCarve), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := addItem(root, "carves/g.md#1", "repair the part's gaps", "mini-spec")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root, got.ID
+}
+
+// fakeRoot answers from a fixed map — carried keys to open — and records what it resolved.
+func fakeRoot(gaps map[string]bool, resolved *[]string) *GapRoot {
+	return &GapRoot{
+		Doc: "design/design.md",
+		Open: func(key string) (bool, bool, error) {
+			open, ok := gaps[key]
+			return ok, open, nil
+		},
+		Resolve: func(key string) error {
+			*resolved = append(*resolved, key)
+			return nil
+		},
+	}
+}
+
+// CRC: crc-Pending.md | Test: test-Pending.md | R543, R544, R545
+func TestFinishFollowsThePartToTheGapsItsTitleNames(t *testing.T) {
+	root, id := partGapItem(t)
+	// R544 — undecided is a refusal, before anything is written.
+	if _, err := Finish(root, id, FinishOpts{Body: "x"}); err == nil {
+		t.Fatal("an item whose part names gaps completed with no decision")
+	} else if !strings.Contains(err.Error(), "O5, O6, D3") || !strings.Contains(err.Error(), "--no-resolve") {
+		t.Errorf("the refusal does not name the gaps and both spellings: %v", err)
+	}
+	if strings.Contains(read(t, root, "DONE.md"), "repair the part's gaps") {
+		t.Error("the refusal still moved the entry")
+	}
+	var resolved []string
+	done, err := Finish(root, id, FinishOpts{Body: "x", PartGaps: fakeRoot(map[string]bool{"O5": true, "O6": false, "D3": true}, &resolved)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// R543 — the title's S/D/C/I/O IDs, in order, once each; R, A, T and the prose are not gaps.
+	if got := strings.Join(done.PartGaps, " "); got != "O5 O6 D3" {
+		t.Errorf("PartGaps = %q, want \"O5 O6 D3\"", got)
+	}
+	if got := strings.Join(resolved, " "); got != "O5 D3" {
+		t.Errorf("resolved %q, want \"O5 D3\" — the open ones, and only those", got)
+	}
+	if got := strings.Join(done.PartGapsClosed, " "); got != "O6" {
+		t.Errorf("PartGapsClosed = %q, want O6 reported and left", got)
+	}
+	if !slices.Contains(done.Files, "design/design.md") {
+		t.Errorf("the written files do not name the design root: %v", done.Files)
+	}
+}
+
+// CRC: crc-Pending.md | Test: test-Pending.md | R545
+func TestFinishRefusesAPartGapTheRootDoesNotCarry(t *testing.T) {
+	root, id := partGapItem(t)
+	before := read(t, root, "carves/g.md")
+	var resolved []string
+	_, err := Finish(root, id, FinishOpts{Body: "x", PartGaps: fakeRoot(map[string]bool{"O5": true, "D3": true}, &resolved)})
+	if err == nil || !strings.Contains(err.Error(), "O6") || !strings.Contains(err.Error(), "design/design.md") {
+		t.Fatalf("want a refusal naming O6 and the root, got %v", err)
+	}
+	if len(resolved) > 0 || read(t, root, "carves/g.md") != before || strings.Contains(read(t, root, "DONE.md"), "repair the part's gaps") {
+		t.Error("the refusal wrote something — it must land before the slot opens")
+	}
+}
+
+// CRC: crc-Pending.md | Test: test-Pending.md | R546
+func TestFinishNoResolveLeavesThePartsGapsOpen(t *testing.T) {
+	root, id := partGapItem(t)
+	done, err := Finish(root, id, FinishOpts{Body: "x", DeclineResolve: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(done.PartGaps) != 3 || len(done.PartGapsResolved)+len(done.PartGapsClosed) != 0 {
+		t.Errorf("PartGaps=%v resolved=%v closed=%v; want three named, none touched", done.PartGaps, done.PartGapsResolved, done.PartGapsClosed)
+	}
+}

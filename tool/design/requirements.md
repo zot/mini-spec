@@ -456,6 +456,10 @@
 - **R483:** `--amend` refuses when `HEAD` is contained in any remote branch, naming the branch, because an amended shared commit rewrites history someone else holds.
 - **R484:** The message goes to stdout, or with `--out <file>` to that file byte for byte, for `git commit -F`; the verb never stages or commits, resolves at the repository root and needs no design root.
 - **R530:** `minispec pending commit-message` composes the commit message for the uncommitted items: the newest done entries down to, and excluding, the first one a commit names — by a hash in its slot, or by every identifier appearing on a naming line of a message on `HEAD`'s history. A naming line is a line of its own reading `Items ` or `Also lands ` followed by a comma list of `#N` and a full stop, the lines this verb writes; a `#N` anywhere else in a message is a mention, never a landing. `#N` is bounded by a non-digit so `#40` never names `#4`; everything older than a named entry is history, whatever its slot says.
+- **R543:** A part names a gap when its bold title carries the gap ID, bare or backticked, of the letters `S`, `D`, `C`, `I` or `O`; an `R` ID in a title is a requirement and `A`/`T` are permanent, and prose after the title names nothing
+- **R544:** Completing an item whose parts name gaps requires `--resolve` or `--no-resolve`, refused before anything is written when neither is given, as R279 requires of a gap-sourced item
+- **R545:** `finish --resolve` on a part-sourced item resolves every gap its parts name, in the design root the invocation resolved, after the parts land: a named gap that root does not carry is refused before anything is written, naming the gap and the root; one already resolved is reported and left as it is
+- **R546:** `finish --no-resolve` on a part-sourced item reports each gap its parts name as left open by decision
 
 ## Feature: Trajectory Validation
 **Source:** specs/validate.md
@@ -741,6 +745,7 @@
   assigned in document order.
 - **R446:** The title is every byte after `Test:` to the end of the heading's line, read from the
   source, so a code span or emphasis in the heading is part of the title as its own bytes.
+- **R542:** `SetPulled` inserting a first `**Pulled:**` line starts it on a line of its own: when the field it follows has no final newline, it writes that newline first
 
 ## Feature: gaps schema
 **Source:** specs/gaps-schema.md
@@ -771,6 +776,7 @@
   unused `A<n>` (`ErrBadGapID`, `ErrGapExists`) and a permanent target is `ErrPermanent`.
 - **R436:** Every write edits inside the region only, decides its refusal before any byte moves, and
   after the re-read reads its own write back or panics with a `ReadBackError`.
+- **R540:** `Add` starts its line on a line of its own: when the line it goes after has no final newline, it writes that newline first, so the new entry never glues onto the previous one
 
 ## Feature: requirements schema
 **Source:** specs/requirements-schema.md
@@ -802,6 +808,7 @@
   absent ID is `ErrNoRequirement` and a retired one `ErrRetired`.
 - **R444:** Every write edits inside one section's own content only, decides its refusal before any
   byte moves, and after the re-read reads its own write back or panics with a `ReadBackError`.
+- **R541:** `Add` starts its line on a line of its own: when the line it goes after has no final newline, it writes that newline first
 
 ## Feature: links schema
 **Source:** specs/links-schema.md

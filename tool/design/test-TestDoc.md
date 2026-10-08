@@ -31,6 +31,17 @@
 **Fire alarm:** apply the later span before the earlier one when `void` demotes `Pulled`, so the earlier span's end boundary lands where parsed nodes were already removed. Red: `SetInject` returns *no parsed node at offset* from the boundary guard, where before the guard it silently ran the removal to the end of the file and took the entries after alarm 3 with it. (Sited on the sort, not on `replaceSpan`: the two boundaries inside one span may be resolved in either order and stay green.)
 **Inject:** internal/minispecsdom/testdoc.go:TestDoc.SetInject
 **Pulled:** 2026-09-14 — re-pulled by delegation at `9c6c796`'s tree after the package moved from mini-spec-tool (the census read every ported alarm stale, the files being new to git); rang: `no parsed node at offset 751; a span was already replaced there` from the boundary guard; restore clean. *Earlier —* 2026-09-06 — rang, by hand, on the re-sited injection: `no parsed node at offset 751; a span was already replaced there`; restore byte-clean
+## Test: SetPulled after an unterminated Inject ends it first
+**Purpose:** R542
+**Input:** an entry whose `**Inject:**` line ends the file with no newline and no `**Pulled:**`; `SetPulled(1, …)`
+**Expected:** the render is the source plus `\n**Pulled:** <date> — <body>\n`; the entry's `Inject` still names one site and `Pulled` reads back
+**Refs:** crc-TestDoc.md, seq-testdoc.md#2.2.1
+**Code:** internal/minispecsdom/testdoc_test.go
+**Alarm:** 7
+**Fire alarm:** restore the defect — `SetPulled`'s insertion through `replaceSpan` rather than `insertLine`. Red: `SetPulled` panics with `ReadBackError`, the `Pulled` line folded into the `Inject` site
+**Inject:** internal/minispecsdom/testdoc.go:TestDoc.SetPulled
+**Pulled:** 2026-10-08 — rang, by hand after simplification: `TestTestDocSetPulledAfterUnterminatedInject` panicked with `ReadBackError` (the `Pulled` line folded into the `Inject` site); package run unfiltered with `-count=1`; restore byte-clean. Past the list: inverting `insertLine`'s condition also fails `TestTestDocSetPulled`
+
 ## Test: SetInject rewrites, and demotes Pulled on void
 **Purpose:** R427
 **Input:** alarm 3 → two sites without `void`; the same with `void`; an empty site list; an entry with no `Inject`
