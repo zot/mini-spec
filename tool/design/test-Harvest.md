@@ -49,7 +49,7 @@ line 3
 **Fire alarm:** skip step 2.5, so a file whose string runs to end of input returns no unread
 entry, and confirm the test sees nil where line 3 was expected
 **Inject:** internal/parser/harvest.go:HarvestFile
-**Pulled:** 2026-09-29 — rang: "unread <nil>, want line 3"; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by hand at `#104`'s commit after `HarvestFile` reads the file before choosing its table: skipping step 2.5 gives `unread <nil>, want line 3` in `TestHarvestOfAnUnclosedStringKeepsWhatWasRead`; parser and minispecsdom run unfiltered with `-count=1`; restore byte-clean *Earlier —* 2026-09-29 — rang: "unread <nil>, want line 3"; restore byte-clean
 **Refs:** seq-harvest.md#2.5 — R515
 
 ## Test: stray closers and open code brackets are not reported
@@ -62,7 +62,7 @@ inside an unclosed `{` with a traceability comment inside it
 **Fire alarm:** report the first unclosed group whatever its kind, dropping the restricted test,
 and confirm the Go file ending inside `{` is reported unread
 **Inject:** internal/parser/harvest.go:HarvestFile
-**Pulled:** 2026-09-29 — rang: the open `{` reported unread at line 2; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by hand at `#104`'s commit: reporting every unclosed group gives `an open code bracket reported unread` in `TestHarvestIgnoresStrayClosersAndOpenCodeBrackets`; restore byte-clean *Earlier —* 2026-09-29 — rang: the open `{` reported unread at line 2; restore byte-clean
 **Refs:** seq-harvest.md#2.5 — R515
 
 ## Test: a configured language overrides the built-in table
@@ -75,7 +75,7 @@ and confirm the Go file ending inside `{` is reported unread
 **Fire alarm:** consult the built-in map before the configured one in `LanguageFor`, and confirm
 the `//` comment is read instead of the `##` one
 **Inject:** internal/minispecsdom/langs.go:LanguageFor
-**Pulled:** 2026-09-29 — rang: refs [R2], Go's table read instead; restore byte-clean
+**Pulled:** 2026-10-08 — rang, by hand at `#104`'s commit after `LanguageFor` moved to `Configured.Ext`: the built-in map first gives `refs [R2], want [R1] — the configured table, not Go's` in `TestHarvestUsesAConfiguredLanguageFirst`; restore byte-clean *Earlier —* 2026-09-29 — rang: refs [R2], Go's table read instead; restore byte-clean
 **Refs:** seq-harvest.md#2.1 — R527
 
 ## Test: the manifest is read in order, each file once, missing files skipped
@@ -94,4 +94,15 @@ the `//` comment is read instead of the `##` one
 decides the form
 **Input:** a Python file with a `#` traceability comment
 **Expected:** the comment is harvested with its CRC and Seq fields
-**Refs:** seq-harvest.md#2.1 — R509
+**Refs:** seq-harvest.md#2.1 — R552
+
+## Test: an extensionless script counts by its interpreter line, and an unknown one says where
+**Purpose:** validates R552, R553, R554 — ark's frictionless case end to end through the harvest
+**Input:** `install/linkapp`, `#!/bin/bash` then `# CRC: crc-LinkappScript.md | R85, R184-R188`; `install/odd`, `#!/usr/bin/perl` then the same comment
+**Expected:** linkapp harvested with R85 and R184–R188 and no unread entry; odd unread with `no language for install/odd`
+**Refs:** crc-Harvest.md, seq-harvest.md#2.1 — R552, R553, R554
+**Code:** internal/parser/harvest_test.go
+**Alarm:** 6
+**Fire alarm:** choose by extension alone in `HarvestFile`, as before this item. Red: linkapp is unread, `no language for ` (ark, frictionless, 2026-10-07)
+**Inject:** internal/parser/harvest.go:HarvestFile
+**Pulled:** 2026-10-08 — rang, by hand after simplification: choosing by extension alone leaves linkapp unread — `no language for install/linkapp` — in `TestAnExtensionlessScriptCountsByItsInterpreterLine`, ark's frictionless report reproduced; restore byte-clean

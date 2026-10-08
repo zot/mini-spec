@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/zot/simple-dom/sdom"
 )
 
 // writeFile writes content at a path inside a tree, creating parent directories.
@@ -381,5 +383,29 @@ func TestRejectedLanguageNamesTheFile(t *testing.T) {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q does not name %q", err, want)
 		}
+	}
+}
+
+// CRC: crc-Project.md | Test: test-Languages.md | R555, R556
+// `files` decodes, an attaching definition reads with the built-in, and the rules keep
+// configuration order — the path from config.toml to the harvest's choice.
+func TestLanguagesCarryFilesInOrder(t *testing.T) {
+	root := mkTree(t, "tool/design/")
+	repoConfig(t, root, "[[languages]]\nname = \"shell\"\nfiles = [\"install/linkapp\", \"bin/*\"]\n"+
+		strings.Replace(langDef("toy", ".toy", "%%"), "extensions = [\".toy\"]\n", "extensions = [\".toy\"]\nfiles = [\"tools/*\"]\n", 1))
+	cfg, _ := mustResolveIn(t, root, "tool")
+	got, err := (&Project{Config: cfg}).Languages()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pats []string
+	for _, r := range got.Files {
+		pats = append(pats, r.Pattern)
+	}
+	if !slices.Equal(pats, []string{"install/linkapp", "bin/*", "tools/*"}) {
+		t.Errorf("patterns %v, want configuration order", pats)
+	}
+	if len(got.Files) == 3 && (got.Files[0].Lang != &sdom.LangShell || got.Files[2].Lang != got.Ext[".toy"]) {
+		t.Error("an attaching rule does not read with the built-in, or a definition's rule not with its own table")
 	}
 }

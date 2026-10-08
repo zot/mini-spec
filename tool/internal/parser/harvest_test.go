@@ -1,4 +1,4 @@
-// CRC: crc-Harvest.md | Seq: seq-harvest.md | R508, R509, R513, R514, R515, R527
+// CRC: crc-Harvest.md | Seq: seq-harvest.md | R508, R552, R513, R514, R515, R527
 package parser
 
 import (
@@ -51,7 +51,7 @@ func allRefs(fh FileHarvest) []string {
 
 // R513, R502 — a comment is found with its line, text and fields, ranges expanded.
 func TestHarvestFindsACommentWithItsLineAndFields(t *testing.T) {
-	fh, unread := harvestOne(t, "a.go", "package a\n\n"+gc("CRC: crc-Store.md | Seq: seq-crud.md#1.4 | R4, R5-7")+"func A() {}\n", nil)
+	fh, unread := harvestOne(t, "a.go", "package a\n\n"+gc("CRC: crc-Store.md | Seq: seq-crud.md#1.4 | R4, R5-7")+"func A() {}\n", minispecsdom.Configured{})
 	if unread != nil || len(fh.Comments) != 1 {
 		t.Fatalf("unread %v, %d comments", unread, len(fh.Comments))
 	}
@@ -62,7 +62,7 @@ func TestHarvestFindsACommentWithItsLineAndFields(t *testing.T) {
 		t.Errorf("got %+v", c)
 	}
 	// R502 — a block comment over two lines prints on one.
-	fh, _ = harvestOne(t, "b.go", "package b\n/* CRC: crc-Store.md\n   | R4 */\n", nil)
+	fh, _ = harvestOne(t, "b.go", "package b\n/* CRC: crc-Store.md\n   | R4 */\n", minispecsdom.Configured{})
 	if len(fh.Comments) != 1 || fh.Comments[0].Text != "/* CRC: crc-Store.md | R4 */" {
 		t.Errorf("block comment text: %+v", fh.Comments)
 	}
@@ -70,7 +70,7 @@ func TestHarvestFindsACommentWithItsLineAndFields(t *testing.T) {
 
 // R513 — no traceability comment is a finding for validate, not a failure to read.
 func TestHarvestOfAFileWithNoCommentIsNotUnread(t *testing.T) {
-	fh, unread := harvestOne(t, "a.go", "package a\n\n// ordinary prose\nfunc A() {}\n", nil)
+	fh, unread := harvestOne(t, "a.go", "package a\n\n// ordinary prose\nfunc A() {}\n", minispecsdom.Configured{})
 	if unread != nil || len(fh.Comments) != 0 {
 		t.Errorf("unread %v, comments %+v", unread, fh.Comments)
 	}
@@ -86,7 +86,7 @@ func TestHarvestCountsEveryShapeTheGrammarReads(t *testing.T) {
 		gc("see R14") +
 		gc("computed lazily (R15)") +
 		gc("the leader (e.g. `// R16: desc`) in prose")
-	fh, _ := harvestOne(t, "a.go", body, nil)
+	fh, _ := harvestOne(t, "a.go", body, minispecsdom.Configured{})
 	if got := allRefs(fh); !slices.Equal(got, []string{"R11", "R12", "R13"}) {
 		t.Errorf("refs %v, want [R11 R12 R13]", got)
 	}
@@ -94,7 +94,7 @@ func TestHarvestCountsEveryShapeTheGrammarReads(t *testing.T) {
 
 // R515 — an extension with no table is unread, with its reason.
 func TestHarvestOfAnUnmappedExtensionIsUnread(t *testing.T) {
-	_, unread := harvestOne(t, "x.zig", "// "+"R1\n", nil)
+	_, unread := harvestOne(t, "x.zig", "// "+"R1\n", minispecsdom.Configured{})
 	if unread == nil || unread.Line != 0 || unread.Reason != "no language for .zig" {
 		t.Errorf("unread %+v", unread)
 	}
@@ -103,7 +103,7 @@ func TestHarvestOfAnUnmappedExtensionIsUnread(t *testing.T) {
 // R515 — a string left open swallows what follows; what came before still counts.
 func TestHarvestOfAnUnclosedStringKeepsWhatWasRead(t *testing.T) {
 	body := gc("R1") + "package a\n" + "var s = \"never closed\n" + gc("R2")
-	fh, unread := harvestOne(t, "a.go", body, nil)
+	fh, unread := harvestOne(t, "a.go", body, minispecsdom.Configured{})
 	if unread == nil || unread.Line != 3 {
 		t.Fatalf("unread %+v, want line 3", unread)
 	}
@@ -114,10 +114,10 @@ func TestHarvestOfAnUnclosedStringKeepsWhatWasRead(t *testing.T) {
 
 // R515 — stray closers and open code brackets hide nothing and are not reported.
 func TestHarvestIgnoresStrayClosersAndOpenCodeBrackets(t *testing.T) {
-	if _, unread := harvestOne(t, "p.html", "<p>(see note) and a stray } here</p>\n", nil); unread != nil {
+	if _, unread := harvestOne(t, "p.html", "<p>(see note) and a stray } here</p>\n", minispecsdom.Configured{}); unread != nil {
 		t.Errorf("html page text reported unread: %+v", unread)
 	}
-	fh, unread := harvestOne(t, "a.go", "package a\nfunc A() {\n"+gc("R3"), nil)
+	fh, unread := harvestOne(t, "a.go", "package a\nfunc A() {\n"+gc("R3"), minispecsdom.Configured{})
 	if unread != nil {
 		t.Errorf("an open code bracket reported unread: %+v", unread)
 	}
@@ -130,7 +130,7 @@ func TestHarvestIgnoresStrayClosersAndOpenCodeBrackets(t *testing.T) {
 func TestHarvestUsesAConfiguredLanguageFirst(t *testing.T) {
 	toy := &sdom.BracketLang{Comment: sdom.CommentStyle{Prefix: "## ", Suffix: "\n", Kind: "comment"},
 		Brackets: []sdom.BracketGroup{{Open: []string{"##"}, Close: "\n", AllowedInner: []string{}, Kind: "comment"}}}
-	fh, _ := harvestOne(t, "a.go", "## R1\n"+gc("R2"), minispecsdom.Configured{".go": toy})
+	fh, _ := harvestOne(t, "a.go", "## R1\n"+gc("R2"), minispecsdom.Configured{Ext: map[string]*sdom.BracketLang{".go": toy}})
 	if got := allRefs(fh); !slices.Equal(got, []string{"R1"}) {
 		t.Errorf("refs %v, want [R1] — the configured table, not Go's", got)
 	}
@@ -143,7 +143,7 @@ func TestHarvestReadsTheManifestInOrderOnce(t *testing.T) {
 		{DesignFile: "crc-A.md", CodeFiles: []CodeFile{{Path: "a.go"}, {Path: "b.go"}}},
 		{DesignFile: "crc-B.md", CodeFiles: []CodeFile{{Path: "a.go"}, {Path: "gone.go"}}},
 	}
-	h, err := HarvestArtifacts(root, arts, nil)
+	h, err := HarvestArtifacts(root, arts, minispecsdom.Configured{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,10 +156,26 @@ func TestHarvestReadsTheManifestInOrderOnce(t *testing.T) {
 	}
 }
 
-// R509 — another language's comment form is read by its table, not by a pattern.
+// R552 — another language's comment form is read by its table, not by a pattern.
 func TestHarvestReadsPythonThroughItsTable(t *testing.T) {
-	fh, unread := harvestOne(t, "a.py", "import os\n# CRC"+": crc-Store.md | Seq: seq-crud.md\ndef add(): pass\n", nil)
+	fh, unread := harvestOne(t, "a.py", "import os\n# CRC"+": crc-Store.md | Seq: seq-crud.md\ndef add(): pass\n", minispecsdom.Configured{})
 	if unread != nil || len(fh.Comments) != 1 || !slices.Equal(fh.Comments[0].CRC, []string{"crc-Store.md"}) {
 		t.Errorf("unread %v comments %+v", unread, fh.Comments)
+	}
+}
+
+// CRC: crc-Harvest.md | Test: test-Harvest.md | R552, R553, R554
+func TestAnExtensionlessScriptCountsByItsInterpreterLine(t *testing.T) {
+	comment := "# CRC" + ": crc-LinkappScript.md | R85, R184-R188\n"
+	fh, unread := harvestOne(t, "install/linkapp", "#!/bin/bash\n"+comment+"echo hi\n", minispecsdom.Configured{})
+	if unread != nil {
+		t.Fatalf("linkapp unread: %+v", unread)
+	}
+	if len(fh.Comments) != 1 || !slices.Equal(fh.Comments[0].Refs, []string{"R85", "R184", "R185", "R186", "R187", "R188"}) {
+		t.Errorf("linkapp harvested %+v", fh.Comments)
+	}
+	_, unread = harvestOne(t, "install/odd", "#!/usr/bin/perl\n"+comment, minispecsdom.Configured{})
+	if unread == nil || unread.Reason != "no language for install/odd" {
+		t.Errorf("odd: %+v, want unread naming its path", unread)
 	}
 }

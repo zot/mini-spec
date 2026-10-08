@@ -16,7 +16,7 @@ type Config struct {
 	DesignDir      string   `toml:"design_dir,omitempty"`
 	SrcDir         string   `toml:"src_dir,omitempty"`
 	CodeExtensions []string `toml:"code_extensions,omitempty"`
-	// Languages are the project's own tables, layered by name. R526, R527
+	// Languages are the project's own tables, layered by name. R555, R527
 	Languages []minispecsdom.LanguageDef `toml:"languages,omitempty"`
 	// Track is repository-scoped and belongs to the repository layer alone: it
 	// describes the repository, and a repository may hold several design roots, so

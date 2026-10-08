@@ -1,5 +1,5 @@
 # Project
-**Requirements:** R520, R521, R522, R32, R33, R34, R35, R93, R118, R119, R120, R121, R122, R123, R124, R125, R127, R128, R129, R130, R135, R526, R527
+**Requirements:** R32-35, R93, R118-125, R127-130, R135, R520-522, R527, R555, R556
 
 Finds and loads a mini-spec project's configuration and design files.
 
@@ -15,7 +15,7 @@ Finds and loads a mini-spec project's configuration and design files.
   after merging there is no way to tell where an inherited value came from
 - config.languages: the `[[languages]]` definitions (`minispecsdom.LanguageDef`), layered by
   name — a later layer's definition replaces an earlier one of the same name whole, and a new
-  name is added (R526, R527)
+  name is added (R555, R527)
 - config.track: the one **repository-scoped** setting. It resolves like any other
   scalar, but only the repository layer may supply one — see `applyLayerFile` below.
   Its meaning and verification belong to `Track`, not here
@@ -38,6 +38,9 @@ Finds and loads a mini-spec project's configuration and design files.
   the file when one does not check (R528); then decode one file strictly — every key the file sets that the tool does not
   read is an error naming the file and the key, and `comment_patterns` / `comment_closers` are
   named as retired, pointing at `query comment-patterns` (R521)
+- Languages(): the `minispecsdom.Configured` the definitions make — each extension to its
+  table, and each `files` pattern, in configuration order, to its table; an attaching
+  definition's table is the built-in it names (R555, R556)
 - ResolveSpecSource(src): map a Source value to its on-disk path; for `specs/migrations/X.md` falls back to `specs/migrations/complete/<NNN>-X.md` (NNN digits) so requirements pointing at migrated-completed specs still resolve
 
 ## Collaborators

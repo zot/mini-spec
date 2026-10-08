@@ -163,11 +163,30 @@ close = "}"
   apart, and the difference is the whole difference between a bracket and a comment.
 - **Groups are listed in matching order**, exactly as in sdom: the first opener that matches
   wins, so a longer marker precedes any marker that is its prefix.
-- **`comment` is required.** It is the form written in that language, and `query
-  comment-patterns` reports it.
+- **`comment` is required** for a definition of its own. It is the form written in that
+  language, and `query comment-patterns` reports it.
 - **`tab`, `transparent` and `continuation`**, when any is set, make the definition an
   indent language, as sdom's `IndentLang` is a `BracketLang` with those three fields.
-- **A definition names its extensions** and overrides the built-in table for each.
+- **A definition names its extensions, its files, or both.** Extensions override the
+  built-in table for each. `files` is a list of patterns matched against the file's path
+  relative to the repository with Go's `path.Match` — `*` and `?` within one path segment,
+  `[…]` a class, no `**` — so an exact path is a pattern with no special characters:
+  `files = ["install/linkapp", "bin/*"]`. A file matching a pattern is read with that
+  definition whatever its extension; the first matching definition wins, in the order the
+  configuration lists them. A malformed pattern is an error when the configuration loads.
+- **A definition may attach files to a built-in table instead of defining one.** One that
+  gives a built-in's name (see the table in [traceability-comment.md](traceability-comment.md))
+  and `files`, and no `comment`, `brackets` or `extensions`, reads those files with that
+  built-in table:
+
+  ```toml
+  [[languages]]
+  name = "shell"
+  files = ["install/linkapp", "install/mcp"]
+  ```
+
+  A file whose first line names its interpreter needs no entry at all (see *Interpreter
+  lines* there); `files` is for the scripts that do not.
 - **Layering:** a design root's definition replaces a repository definition of the same
   name whole, and adds one of a new name; definitions never merge field by field.
 - **Every definition is checked when the configuration loads**, with sdom's own check, and a

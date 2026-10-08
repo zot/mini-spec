@@ -1,5 +1,5 @@
 # Languages
-**Requirements:** R509, R510, R511, R512, R525, R526, R528, R529
+**Requirements:** R510-512, R525, R528, R529, R552-556
 
 The bracket tables mini-spec reads code with, the map from a file's extension to one, and the
 tables a project defines in its configuration. sdom ships Go, JavaScript, Lua, Shell, Python
@@ -21,14 +21,26 @@ a consumer should. Package `minispecsdom`.
   `AllowedParent` naming `<script` and the JavaScript brackets `{`, `(`, `[`, `${`. The
   JavaScript line comment never lists `<style`, so it is live in a script and nowhere else
 - builtIn: extension → table for every row of the spec's table, sdom's and these
+- builtInNames: name → table for the same rows (`go`, `javascript`, … `css`), what a
+  configuration attaches files to
+- interpreters: interpreter base name → built-in name (`sh`/`bash`/`zsh`/`dash`/`ksh` →
+  shell, `python`, `lua`/`luajit` → lua, `node`/`nodejs` → javascript)
+- Configured: the configured extension map, and the `files` rules in configuration order —
+  each a pattern and the table it names
 - every table's `Comment` style: the one form written in that language
-- LanguageDef: a `[[languages]]` configuration entry — name, extensions, `comment`, `brackets`
+- LanguageDef: a `[[languages]]` configuration entry — name, extensions, `files`, `comment`, `brackets`
   with sdom's `BracketGroup` fields in snake case, and the three indent fields — decoded by
   `Project` with TOML tags declared here, since this package owns what a table is
 
 ## Does
 - LanguageFor(ext, configured): the configured table for an extension when a definition names
   it, else the built-in one, and false when there is neither
+- LanguageForFile(path, firstLine, configured): the first configured `files` pattern the path
+  matches; else LanguageFor its extension; else Interpreter(firstLine) mapped by name; false
+  when none answers (R552, R553)
+- Interpreter(firstLine): the interpreter a `#!` line names — the first word's base name, or
+  under `env` the first word that is not an option — with a trailing version stripped; "" for
+  any other line. Strict by design: nothing is guessed from content (R553)
 - Extensions(configured): every extension with a table, built in or configured, sorted
 - CommentForms(lang): every comment form the table recognizes — each `comment`-kind group's
   openers and closer — for reporting what the reader accepts beside what is written
@@ -37,7 +49,9 @@ a consumer should. Package `minispecsdom`.
   `transparent` and `continuation` are carried as written: sdom's `IndentLang` adds no checks
   of its own, and the harvest reads comments through the bracket table. Checked with sdom's
   `Check()`; its error, prefixed with the language's name,
-  is returned for the loader to name the file (R526, R528)
+  is returned for the loader to name the file (R555, R528). A definition naming a built-in
+  with only `files` attaches: Build returns that built-in table. Every `files` pattern is
+  checked with `path.Match`, a malformed one an error naming the language (R555, R556)
 
 ## Collaborators
 - sdom.BracketLang, sdom.IndentLang: the table types, their `Check()`, and the tables sdom ships

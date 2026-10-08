@@ -82,23 +82,32 @@ comment with the declaration it sits above is the consumer's job.
 
 ## Languages
 
-A code file is read through the bracket table its **extension** names:
+A code file is read through one bracket table, chosen in this order (Bill, 2026-10-08):
 
-| Extensions | Table | From |
-|---|---|---|
-| `.go` | `LangGo` | sdom |
-| `.js`, `.ts` | `LangJavaScript` | sdom |
-| `.lua` | `LangLua` | sdom |
-| `.sh`, `.bash` | `LangShell` | sdom |
-| `.py` | `LangPython`'s bracket table | sdom |
-| `.pas`, `.dpr` | `LangPascal` | sdom |
-| `.c`, `.h` | `LangC` | here |
-| `.cpp`, `.hpp`, `.cc` | `LangCPP` | here |
-| `.java` | `LangJava` | here |
-| `.el` | `LangElisp` | here |
-| `.html` | `LangHTML` | here |
-| `.md` | `LangMarkdown` | here |
-| `.css` | `LangCSS` | here |
+1. **A configured `files` pattern its path matches** — the first, in configuration order
+   (see [config.md](config.md)). It comes first so a project can say what any file is.
+2. **Its extension** — a configured table for the extension, else the built-in one below.
+3. **Its interpreter line** — for a file nothing above names, a `#!` first line that names an
+   interpreter the table below maps (see *Interpreter lines*).
+
+| Name | Extensions | Table | From |
+|---|---|---|---|
+| `go` | `.go` | `LangGo` | sdom |
+| `javascript` | `.js` | `LangJavaScript` | sdom |
+| `typescript` | `.ts` | `LangTypeScript` | sdom |
+| `lua` | `.lua` | `LangLua` | sdom |
+| `shell` | `.sh`, `.bash` | `LangShell` | sdom |
+| `python` | `.py` | `LangPython`'s bracket table | sdom |
+| `pascal` | `.pas`, `.dpr` | `LangPascal` | sdom |
+| `c` | `.c`, `.h` | `LangC` | here |
+| `cpp` | `.cpp`, `.hpp`, `.cc` | `LangCPP` | here |
+| `java` | `.java` | `LangJava` | here |
+| `elisp` | `.el` | `LangElisp` | here |
+| `html` | `.html` | `LangHTML` | here |
+| `markdown` | `.md` | `LangMarkdown` | here |
+| `css` | `.css` | `LangCSS` | here |
+
+The name is how a configuration attaches files to a built-in table.
 
 sdom ships the tables for the languages it was built against, and says a consumer
 needing another constructs its own. The tables built here:
@@ -134,9 +143,32 @@ several comment forms, the reader accepts them all and the writer uses that one.
 order of a table's brackets is not a preference: it belongs to matching, where a longer
 marker must precede its prefix, so Lua lists `--[[` before the `--` it writes.
 
-A project defines further languages in its configuration, or replaces a built-in one for
-the extensions it names (see [config.md](config.md)). A file whose extension has no table,
-built in or configured, is **not read, and says so** (see below).
+A project defines further languages in its configuration, replaces a built-in one for the
+extensions it names, or attaches files to one by name (see [config.md](config.md)). A file
+no rule gives a table is **not read, and says so** (see below).
+
+### Interpreter lines
+
+An extensionless script names its language on its first line, and that line is read only
+when nothing configured or extension-based answered. It is read **strictly**: the line
+begins `#!`; the interpreter is the base name of its first word, or — when that word is
+`env` — of the first following word that is not an option; a trailing version is stripped
+(`python3.11` reads as `python`). The interpreter maps onto a built-in table:
+
+| Interpreters | Table |
+|---|---|
+| `sh`, `bash`, `zsh`, `dash`, `ksh` | `shell` |
+| `python` | `python` |
+| `lua`, `luajit` | `lua` |
+| `node`, `nodejs` | `javascript` |
+
+An interpreter the table does not list leaves the file unread. Nothing is guessed from the
+file's content: a wrong guess picks a wrong comment syntax and its refs go uncounted with
+nothing saying so, which is the failure the unread list exists to prevent. *Measured
+2026-10-07 by ark:* frictionless's `install/linkapp`, a bash script with no extension, was
+reported `no language for` and its R184–R188 counted for nothing. *Considered and declined
+the same day:* a magic-byte library — `liamg/magic` is GPL-2.0, and `deitch/magic` carries
+no script rules.
 
 ## The harvest
 
@@ -150,7 +182,8 @@ requirement list **expanded**, so `R5-R8` yields R5, R6, R7 and R8.
   `CRC:`, one with only `Seq:` and refs, and a bare `// R5: note` all implement their refs.
   What does not count is what the grammar does not read: `// see R5`, `// (R5)`, and a
   comment that leads with a field but leaves prose uncovered.
-- **Nothing is skipped silently.** A file whose extension has no table is listed unread,
+- **Nothing is skipped silently.** A file no rule gives a table is listed unread, naming its
+  path when it has no extension,
   and so is a file whose parse leaves a **string or comment** open at end of input, at the
   line it opened: inside one, nothing is recognized, so everything after it went unsearched
   and a coverage answer that omitted it would read clean over code it never saw. A stray

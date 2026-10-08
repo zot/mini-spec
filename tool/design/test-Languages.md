@@ -6,9 +6,9 @@ harvest will see: which comments are read, and whether the brackets balance.
 
 ## Test: every extension in the spec maps to a table
 **Purpose:** the extension map and the spec's table stay one list
-**Input:** each extension R509 names
+**Input:** each extension R552 names
 **Expected:** `LanguageFor` returns a table for each, and none for `.zig`
-**Refs:** crc-Languages.md — R509
+**Refs:** crc-Languages.md — R552
 
 ## Test: every built-in table checks, and writes a comment it reads back
 **Purpose:** a table sdom would reject, or whose `Comment` style it cannot read back, fails here
@@ -86,7 +86,7 @@ comment, and confirm the refs no longer match
 three groups in a stated order; a second with `tab` set
 **Expected:** nil and empty `AllowedInner` respectively, groups in the written order; the second
 builds an indent language
-**Refs:** crc-Languages.md — R526
+**Refs:** crc-Languages.md — R555
 
 ## Test: a definition sdom rejects names the language and the group
 **Purpose:** a malformed table is an error at load, never a panic at parse
@@ -105,3 +105,47 @@ reports the example's c differing from the built-in table
 **Inject:** .claude/skills/mini-spec/languages-example.toml
 **Pulled:** 2026-09-29 — rang: "the example's c differs from the built-in table" for .c and .h; restore byte-clean
 **Refs:** crc-Languages.md — R529
+
+## Test: a file's table is chosen by pattern, then extension, then interpreter line
+**Purpose:** validates R552 — the order, and that each step answers only when the one before it did not
+**Input:** a configured rule `bin/*` → a toy table, and a configured `.go`; files `bin/tool.go`, `x.go`, `x.sh`, `install/linkapp` opening `#!/bin/bash`, `notes` opening `hello`
+**Expected:** `bin/tool.go` the toy table (the pattern beats its extension); `x.go` the configured `.go`; `x.sh` shell; `install/linkapp` shell by its interpreter; `notes` none
+**Refs:** crc-Languages.md, seq-harvest.md#2.1 — R552
+**Code:** internal/minispecsdom/langs_test.go
+**Alarm:** 5
+**Fire alarm:** consult the extension before the patterns. Red: `bin/tool.go` reads through Go, not the pattern's table
+**Inject:** internal/minispecsdom/langs.go:LanguageForFile
+**Pulled:** 2026-10-08 — rang, by hand after simplification: consulting the extension before the patterns reads `bin/tool.go` through the configured `.go` table, not the pattern's, in `TestAFilesTableIsChosenByPatternThenExtensionThenInterpreter`; minispecsdom, parser, project run unfiltered with `-count=1`; restore byte-clean
+
+## Test: an interpreter line is read strictly
+**Purpose:** validates R553 — the base name, `env` and its options skipped, a version stripped, and nothing else read as one
+**Input:** `#!/bin/bash`; `#! /usr/bin/env -S python3.11 -u`; `#!/usr/bin/env node`; `#!/usr/bin/perl`; `# a comment`; `class Foo:`
+**Expected:** `bash`; `python`; `node`; `perl` (which maps to no table); "" for the last two
+**Refs:** crc-Languages.md — R553
+**Code:** internal/minispecsdom/langs_test.go
+**Alarm:** 6
+**Fire alarm:** take the first word after `env` without skipping options. Red: the second line reads as `-S`
+**Inject:** internal/minispecsdom/langs.go:Interpreter
+**Pulled:** 2026-10-08 — rang, by hand after simplification: not skipping `env`'s options reads `#! /usr/bin/env -S python3.11 -u` as `-S` in `TestAnInterpreterLineIsReadStrictly`; restore byte-clean
+
+## Test: a definition attaches files to a built-in by name
+**Purpose:** validates R555, R556 — `name` and `files` alone attach to the built-in; a pattern is checked at load; a definition of its own still needs `comment`
+**Input:** `{name: shell, files: [install/linkapp]}`; `{name: shell, files: ["["]}`; `{name: zig, files: [a]}`
+**Expected:** the first builds to `LangShell`; the second is an error naming the language and the pattern; the third is an error that `comment` is required
+**Refs:** crc-Languages.md — R555, R556
+**Code:** internal/minispecsdom/langs_test.go
+**Alarm:** 7
+**Fire alarm:** drop the attach branch in `Build`, so an attaching definition is held to a definition's own rules. Red: `language shell: comment is required`
+**Inject:** internal/minispecsdom/langs.go:LanguageDef.Build
+**Pulled:** 2026-10-08 — rang, by hand after simplification: with the attach branch unreachable, `TestADefinitionAttachesFilesToABuiltIn` gets `language shell: comment is required`; restore byte-clean
+
+## Test: configured files reach the harvest in order
+**Purpose:** validates R555, R556 — `files` decodes from config.toml, an attaching definition's rules read with the built-in, and the rules keep configuration order
+**Input:** a repository config: `shell` attaching `install/linkapp` and `bin/*`, then a `toy` definition of its own with `files = ["tools/*"]`
+**Expected:** `Languages().Files` patterns `install/linkapp bin/* tools/*`; the first reads with `LangShell`, the last with the toy's own table
+**Refs:** crc-Project.md — R555, R556
+**Code:** internal/project/config_test.go
+**Alarm:** 8
+**Fire alarm:** drop the `files` loop in `Project.Languages`. Red: `patterns [], want configuration order`
+**Inject:** internal/project/config.go:Project.Languages
+**Pulled:** 2026-10-08 — rang, by hand after simplification: dropping the `files` loop in `Project.Languages` gives `patterns [], want configuration order` in `TestLanguagesCarryFilesInOrder`; restore byte-clean

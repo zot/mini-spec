@@ -15,7 +15,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 ## Artifacts
 
 ### CRC Cards
-- [ ] crc-Project.md → `cmd/minispec/main.go`, `internal/project/project.go`, `internal/project/config.go`
+- [x] crc-Project.md → `cmd/minispec/main.go`, `internal/project/project.go`, `internal/project/config.go`
 - [x] crc-RepoRoot.md → `internal/project/reporoot.go`
 - [x] crc-Git.md → `internal/project/git.go`
 - [x] crc-Track.md → `internal/project/track.go`
@@ -40,7 +40,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] crc-PartLine.md → `internal/minispecsdom/partline.go`
 - [x] crc-MarkerSpan.md → `internal/minispecsdom/partline.go`
 - [ ] crc-TraceabilityComment.md → `internal/minispecsdom/comment.go`
-- [ ] crc-Languages.md → `internal/minispecsdom/langs.go`
+- [x] crc-Languages.md → `internal/minispecsdom/langs.go`
 - [x] crc-Harvest.md → `internal/parser/harvest.go`
 - [x] crc-TestDoc.md → `internal/minispecsdom/testdoc.go`, `internal/minispecsdom/mdbase.go`
 - [x] crc-Gaps.md → `internal/minispecsdom/gaps.go`
@@ -61,7 +61,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] seq-validate.md
 - [x] seq-phase.md
 - [x] seq-reporoot.md
-- [ ] seq-config.md
+- [x] seq-config.md
 - [x] seq-bootstrap.md
 - [ ] seq-alarm-freshness.md
 - [x] seq-carve-status.md → `internal/parser/carve.go`, `internal/cli/cli.go`
@@ -108,7 +108,7 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] test-CarveSdom.md → `internal/minispecsdom/carve_test.go`
 - [x] test-PartLine.md → `internal/minispecsdom/partline_test.go`
 - [ ] test-TraceabilityComment.md → `internal/minispecsdom/comment_test.go`
-- [ ] test-Languages.md → `internal/minispecsdom/langs_test.go`
+- [x] test-Languages.md → `internal/minispecsdom/langs_test.go`
 - [x] test-Harvest.md → `internal/parser/harvest_test.go`
 - [x] test-TestDoc.md → `internal/minispecsdom/testdoc_test.go`
 - [x] test-Gaps.md → `internal/minispecsdom/gaps_test.go`
@@ -195,3 +195,5 @@ All files are UTF-8. Tool preserves existing line endings (LF/CRLF).
 - [x] O38: `minispecsdom.Gaps.Add` appends every entry at the end of the Gaps section, so in a section grouped by `###` subsections a new `T` lands under the last subsection (often `### Oversights`) rather than at the section head or a matching subsection. Readers are unaffected (`query gaps` reads all of them); the placement is wrong. Measured 2026-10-08 on a fixture; asked for by ark `requests/ms-subsections.md`
 - [x] O39: `pending finish --resolve` closes a gap only for a gap-sourced item; a part-sourced item whose part names its gaps (`3.2 — … (`O26`)`) lands the part and leaves the gaps open, saying "the resolve flag did nothing" — while the gaps carve promises the gap is resolved when its part lands. Measured on `#101`, 2026-10-08. DECIDED (Bill, 2026-10-08): `--resolve` follows the part to every gap its title names — IDs of letters S, D, C, I, O, bare or backticked (R is a requirement in practice; A and T are permanent) — and a part naming gaps needs `--resolve` or `--no-resolve` like a gap-sourced item
 - T30: R433 retired by R550 (2026-10-08 #103: Add places by subsection)
+- T31: R509 retired by R552 (2026-10-08 #104: tables chosen by pattern, extension or interpreter line)
+- T32: R526 retired by R555 (2026-10-08 #104: definitions name files as well as extensions)

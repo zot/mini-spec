@@ -1,10 +1,13 @@
-// CRC: crc-Languages.md | Seq: seq-harvest.md#2.1 | R509
+// CRC: crc-Languages.md | Seq: seq-harvest.md#2.1 | R552
 package minispecsdom
 
 import (
 	"fmt"
+	"path"
+	"regexp"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/zot/simple-dom/sdom"
 )
@@ -135,7 +138,7 @@ var LangHTML = sdom.BracketLang{Comment: htmlComment, Brackets: []sdom.BracketGr
 	{Open: []string{"["}, Close: "]", AllowedParent: jsParents},
 }}
 
-// CRC: crc-Languages.md | R509
+// CRC: crc-Languages.md | R552
 // builtIn is the extension map, sdom's tables and these. Python is an indent language;
 // comments are read through its bracket table.
 var builtIn = map[string]*sdom.BracketLang{
@@ -160,18 +163,95 @@ var builtIn = map[string]*sdom.BracketLang{
 	".css":  &LangCSS,
 }
 
-// Configured maps an extension to the table a project's configuration defines for it.
-type Configured map[string]*sdom.BracketLang
+// CRC: crc-Languages.md | R552, R556
+// builtInNames is the name each built-in table answers to, the name a configuration attaches
+// files to (`name = "shell"`).
+var builtInNames = map[string]*sdom.BracketLang{
+	"go": &sdom.LangGo, "javascript": &sdom.LangJavaScript, "typescript": &sdom.LangTypeScript,
+	"lua": &sdom.LangLua, "shell": &sdom.LangShell, "python": &sdom.LangPython.BracketLang,
+	"pascal": &sdom.LangPascal, "c": &LangC, "cpp": &LangCPP, "java": &LangJava,
+	"elisp": &LangElisp, "html": &LangHTML, "markdown": &LangMarkdown, "css": &LangCSS,
+}
 
-// CRC: crc-Languages.md | Seq: seq-harvest.md#2.1 | R509, R527
+// CRC: crc-Languages.md | R553
+// interpreters maps an interpreter line's base name to the built-in it is read with. An
+// interpreter not listed leaves its file unread: nothing is guessed.
+var interpreters = map[string]string{
+	"sh": "shell", "bash": "shell", "zsh": "shell", "dash": "shell", "ksh": "shell",
+	"python": "python", "lua": "lua", "luajit": "lua", "node": "javascript", "nodejs": "javascript",
+}
+
+// Configured is what a project's configuration adds: a table for each extension a definition
+// names, and its `files` rules in configuration order.
+type Configured struct {
+	Ext   map[string]*sdom.BracketLang
+	Files []FileRule
+}
+
+// FileRule is one `files` pattern and the table it reads its matches with.
+type FileRule struct {
+	Pattern string
+	Lang    *sdom.BracketLang
+}
+
+// CRC: crc-Languages.md | Seq: seq-harvest.md#2.1 | R552, R527
 // LanguageFor returns the table an extension is read with: the configured one when a
 // definition names it, else the built-in one, and false when there is neither.
 func LanguageFor(ext string, configured Configured) (*sdom.BracketLang, bool) {
-	if l, ok := configured[ext]; ok {
+	if l, ok := configured.Ext[ext]; ok {
 		return l, true
 	}
 	l, ok := builtIn[ext]
 	return l, ok
+}
+
+// CRC: crc-Languages.md | Seq: seq-harvest.md#2.1 | R552, R553
+// LanguageForFile chooses the table a code file is read with: the first configured `files`
+// pattern its repository-relative, slash-separated path matches; else its extension's
+// table; else the built-in its interpreter line names. False when none answers.
+func LanguageForFile(file, firstLine string, configured Configured) (*sdom.BracketLang, bool) {
+	// Seq: seq-harvest.md#2.1.1
+	for _, r := range configured.Files {
+		if ok, _ := path.Match(r.Pattern, file); ok {
+			return r.Lang, true
+		}
+	}
+	// Seq: seq-harvest.md#2.1.2
+	if l, ok := LanguageFor(path.Ext(file), configured); ok {
+		return l, true
+	}
+	// Seq: seq-harvest.md#2.1.3
+	l, ok := builtInNames[interpreters[Interpreter(firstLine)]]
+	return l, ok
+}
+
+// versionRe is a trailing interpreter version: `3`, `3.11`, `-5.4`.
+var versionRe = regexp.MustCompile(`[-.]?\d+(\.\d+)*$`)
+
+// CRC: crc-Languages.md | R553
+// Interpreter is the interpreter a `#!` line names: the first word's base name, or under
+// `env` the first word that is not an option, a trailing version stripped. Any other line is
+// "". Strict on purpose: a guess that picks a wrong comment syntax loses refs silently.
+func Interpreter(firstLine string) string {
+	rest, ok := strings.CutPrefix(firstLine, "#!")
+	if !ok {
+		return ""
+	}
+	words := strings.Fields(rest)
+	if len(words) == 0 {
+		return ""
+	}
+	name := path.Base(words[0])
+	if name == "env" {
+		name = ""
+		for _, w := range words[1:] {
+			if !strings.HasPrefix(w, "-") {
+				name = path.Base(w)
+				break
+			}
+		}
+	}
+	return versionRe.ReplaceAllString(name, "")
 }
 
 // CRC: crc-Languages.md | R518
@@ -181,7 +261,7 @@ func Extensions(configured Configured) []string {
 	for ext := range builtIn {
 		seen[ext] = true
 	}
-	for ext := range configured {
+	for ext := range configured.Ext {
 		seen[ext] = true
 	}
 	out := make([]string, 0, len(seen))
@@ -231,7 +311,7 @@ func closerOf(groupClose string) string {
 	return groupClose
 }
 
-// CRC: crc-Languages.md | R526
+// CRC: crc-Languages.md | R555
 // GroupDef is one bracket group of a configured language: sdom's BracketGroup field for
 // field, in snake case, and in sdom's order — Build converts one to the other directly, so
 // a field sdom adds or reorders stops this compiling rather than being silently dropped.
@@ -264,13 +344,14 @@ type CommentDef struct {
 	Kind   string `toml:"kind"`
 }
 
-// CRC: crc-Languages.md | R526
+// CRC: crc-Languages.md | R555
 // LanguageDef is one `[[languages]]` configuration entry: a name, the extensions it reads,
 // its comment style, its groups in matching order, and the three fields that make sdom's
 // IndentLang when any is set.
 type LanguageDef struct {
 	Name         string      `toml:"name"`
 	Extensions   []string    `toml:"extensions"`
+	Files        []string    `toml:"files"`
 	Comment      *CommentDef `toml:"comment"`
 	Brackets     []GroupDef  `toml:"brackets"`
 	Tab          int         `toml:"tab"`
@@ -278,7 +359,7 @@ type LanguageDef struct {
 	Continuation string      `toml:"continuation"`
 }
 
-// CRC: crc-Languages.md | R526, R528
+// CRC: crc-Languages.md | R555, R528
 // Build turns a definition into the table sdom reads, groups in the order written, and
 // checks it with sdom's own check, so a malformed definition is an error at load rather than
 // a panic at parse. An indent definition's three indent fields are carried as written; its
@@ -287,11 +368,20 @@ func (d LanguageDef) Build() (*sdom.BracketLang, error) {
 	if d.Name == "" {
 		return nil, fmt.Errorf("a language definition has no name")
 	}
+	for _, p := range d.Files { // R555: a malformed pattern is an error at load
+		if _, err := path.Match(p, ""); err != nil {
+			return nil, fmt.Errorf("language %s: files pattern %q: %w", d.Name, p, err)
+		}
+	}
+	// R556 — a built-in's name with files and nothing of its own attaches to that table.
+	if b, ok := builtInNames[d.Name]; ok && len(d.Files) > 0 && d.Comment == nil && len(d.Brackets) == 0 && len(d.Extensions) == 0 {
+		return b, nil
+	}
 	if d.Comment == nil || d.Comment.Prefix == "" {
 		return nil, fmt.Errorf("language %s: `comment` is required — it is the form written in this language", d.Name)
 	}
-	if len(d.Extensions) == 0 {
-		return nil, fmt.Errorf("language %s names no extensions", d.Name)
+	if len(d.Extensions) == 0 && len(d.Files) == 0 {
+		return nil, fmt.Errorf("language %s names no extensions and no files", d.Name)
 	}
 	lang := &sdom.BracketLang{Comment: sdom.CommentStyle{Prefix: d.Comment.Prefix, Suffix: d.Comment.Suffix, Kind: d.Comment.Kind}}
 	for _, g := range d.Brackets {

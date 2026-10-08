@@ -1,6 +1,6 @@
 # Sequence: Resolving the effective configuration
 
-**Requirements:** R122, R123, R124, R125, R127, R129, R520, R521, R522, R526, R527, R528
+**Requirements:** R122-125, R127, R129, R520-522, R527, R528, R555
 
 Two diagrams: resolving the layers, and applying one of them.
 

@@ -1,5 +1,5 @@
 # Harvest
-**Requirements:** R513, R514, R515, R502
+**Requirements:** R502, R513-515, R554
 
 The one reader of code files' traceability. `validate`, `query traceability` and `query
 implementation` all consume it, so a ref counts in one exactly where it counts in the

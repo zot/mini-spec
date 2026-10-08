@@ -86,26 +86,30 @@ func HarvestArtifacts(root string, artifacts []Artifact, configured minispecsdom
 	return h, nil
 }
 
-// CRC: crc-Harvest.md | Seq: seq-harvest.md#2 | R513, R514, R515
-// HarvestFile reads one code file, path relative to root, through the table its extension
-// names. The unread entry is non-nil when the file has no table (nothing read, line 0) or
+// CRC: crc-Harvest.md | Seq: seq-harvest.md#2 | R513, R514, R515, R552, R554
+// HarvestFile reads one code file, path relative to root, through the table chosen for it.
+// The unread entry is non-nil when the file has no table (nothing read, line 0) or
 // when its parse left a string or comment open at end of input — inside one nothing is
 // recognized, so everything after its opener went unsearched. A stray closer or an open
 // code bracket hides no comment and is not reported: comments are recognized inside code
 // brackets, and an HTML page's text is full of unmatched `)`.
 func HarvestFile(root, path string, configured minispecsdom.Configured) (FileHarvest, *UnreadFile, error) {
 	fh := FileHarvest{Path: path}
-	// step 2.1
-	ext := filepath.Ext(path)
-	lang, ok := minispecsdom.LanguageFor(ext, configured)
-	if !ok {
-		return fh, &UnreadFile{Path: path, Reason: fmt.Sprintf("no language for %s", ext)}, nil
-	}
 	data, err := os.ReadFile(filepath.Join(root, path))
 	if err != nil {
 		return fh, nil, err
 	}
 	src := string(data)
+	// step 2.1 — a pattern, the extension, or the interpreter line. R552, R553
+	firstLine, _, _ := strings.Cut(src, "\n")
+	lang, ok := minispecsdom.LanguageForFile(filepath.ToSlash(path), firstLine, configured)
+	if !ok {
+		what := filepath.Ext(path)
+		if what == "" { // R554 — an empty extension names nothing, so name the file
+			what = path
+		}
+		return fh, &UnreadFile{Path: path, Reason: fmt.Sprintf("no language for %s", what)}, nil
+	}
 	// step 2.2
 	bp := sdom.NewBracketParser(lang)
 	doc := sdom.Parse(src, 0, bp)

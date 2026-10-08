@@ -43,7 +43,7 @@ through sdom behind that wrapper. The wrapper is not deleted — see Item 7.
   - [x] ~~**5.5 — C++ raw strings.**~~ **LANDED (2026-09-29 — `#93`.)** `R"delim( … )delim"`, through simple-dom's `CloseRegex`: a closer whose named capture groups must equal the opener's (landed in mini-spec-tool as `#43`, 2026-09-25). Needs the simple-dom version bump — see [traceability.md](done/traceability.md) Decisions.
   - [x] ~~**5.6 — Lua long brackets.**~~ **DISCHARGED (2026-09-25 — mini-spec-tool `#44`.)** `[==[ … ]==]` and `--[==[ … ]==]` at every level, in simple-dom's `LangLua`. Before it, `[=[` was not a string at all (their measurement): `end` inside a level-n string or comment closed real groups, and a level-1 comment's later lines parsed as code. Reaches this tool with the simple-dom version bump.
   - [x] ~~**5.7 — Emacs Lisp character literals.**~~ **LANDED (2026-09-29 — `#93`.)** `?(`, `?\)` and the like: a group opening only at a token start, through simple-dom's `BeforeOpen` (landed in mini-spec-tool as `#45`, 2026-09-27). Any restricted group listing it in `AllowedInner` names it by its literal opener `?` or its exact `OpenRegex` text.
-  - [ ] **5.8 — languages chosen by path, glob or shebang, not only extension.** **OPEN (#104.)** Asked by ark `requests/ms-filename-lang.md` — see body.
+  - [x] ~~**5.8 — languages chosen by path, glob or shebang, not only extension.**~~ **LANDED (2026-10-08 — `#104`.)** Asked by ark `requests/ms-filename-lang.md` — see body.
 - [ ] **Item 6 — `specs/*.md`.** **OPEN (not queued.)** Scope to settle — see body.
 - [ ] **Item 7 — retire the old `parser` wrappers.** **OPEN (not queued.)** End-state to settle — see body.
 
@@ -117,18 +117,26 @@ ark 2026-10-07 in the frictionless repo: `install/linkapp` (bash, named by its i
 `R85, R184–R188`, `validate` notes `no language for`, and the project had to file an `I` gap for
 a reader limitation. Ark asks for a configured language to name files by exact path or glob as
 well as by extension, and optionally a shebang fallback (`#!/bin/bash`, `#!/usr/bin/env
-python3`) onto the built-in tables. `@undecided:` (resolution: settle when queued) — whether the
-shebang fallback is in scope, and whether path and glob are one field or two.
+python3`) onto the built-in tables. Both forks are settled below.
 
 **DECIDED (Bill, 2026-10-08): no GPL dependency — the shebang reader is our own.**
 `github.com/liamg/magic` was considered: its FreeDesktop shared-mime-info table does carry
 interpreter-line rules (`/bin/bash`, `#!/usr/bin/python3`, `/bin/env lua`), but it is GPL-2.0
 and mini-spec is MIT, and Bill rules GPL out. It would also have covered only the fallback, not
 the path and glob mapping, and its content heuristics (`def` → Ruby, `function` → Lua) would
-pick a wrong comment syntax silently. *Proposed, not yet decided:* the fallback reads a real
+pick a wrong comment syntax silently. `github.com/deitch/magic` (Apache-2.0) was considered
+next: its only rule set is Linux kernel images, with importing `file(1)`'s rules still a TODO,
+so it cannot name a script at all.
+
+**DECIDED (Bill, 2026-10-08): the shebang fallback is in scope, and in-house.** It reads a real
 interpreter line only — `#!`, the interpreter's base name, the next word under `env`, version
 suffixes stripped — mapped onto the built-in tables; an unmapped interpreter stays "not read".
-Whether path and glob are one field or two is still open.
+**DECIDED (Bill, 2026-10-08): one `files` field of globs.** `files = ["install/linkapp",
+"bin/*"]` on a `[[languages]]` entry, matched against the repository-relative path with Go's
+`path.Match` (no `**`); an exact path is a glob with no metacharacters. An entry giving only
+`name` and `files` for a built-in language (`name = "shell"`) attaches files to that table
+without redefining it. Ark's own case may need no configuration at all: `install/linkapp`
+opens with `#!/bin/bash`, which the shebang reader maps to Shell.
 
 ## Item 6 — `specs/*.md`
 

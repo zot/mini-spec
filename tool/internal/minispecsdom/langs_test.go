@@ -1,4 +1,4 @@
-// CRC: crc-Languages.md | Seq: seq-harvest.md | R509, R510, R511, R512, R518, R525, R526, R528, R529
+// CRC: crc-Languages.md | Seq: seq-harvest.md | R552, R510, R511, R512, R518, R525, R555, R528, R529
 package minispecsdom
 
 import (
@@ -35,23 +35,23 @@ func wrap(lang *sdom.BracketLang, interior string) string {
 	return lang.Comment.Prefix + interior + lang.Comment.Suffix
 }
 
-// R509 — the extension map and the spec's table stay one list.
+// R552 — the extension map and the spec's table stay one list.
 func TestEveryExtensionMapsToATable(t *testing.T) {
 	for _, ext := range []string{".go", ".js", ".ts", ".lua", ".sh", ".bash", ".py", ".pas", ".dpr",
 		".c", ".h", ".cpp", ".hpp", ".cc", ".java", ".el", ".html", ".md", ".css"} {
-		if _, ok := LanguageFor(ext, nil); !ok {
+		if _, ok := LanguageFor(ext, Configured{}); !ok {
 			t.Errorf("no table for %s", ext)
 		}
 	}
-	if _, ok := LanguageFor(".zig", nil); ok {
+	if _, ok := LanguageFor(".zig", Configured{}); ok {
 		t.Error(".zig has a table")
 	}
 }
 
 // R510, R512 — every built-in table checks, and writes a comment it reads back.
 func TestEveryTableChecksAndReadsItsOwnComment(t *testing.T) {
-	for _, ext := range Extensions(nil) {
-		lang, _ := LanguageFor(ext, nil)
+	for _, ext := range Extensions(Configured{}) {
+		lang, _ := LanguageFor(ext, Configured{})
 		if err := lang.Check(); err != nil {
 			t.Errorf("%s: %v", ext, err)
 			continue
@@ -132,7 +132,7 @@ func TestCommentFormsReportTheWrittenFormAndItsCloser(t *testing.T) {
 		{".html", CommentForm{Open: "<!-- ", Close: " -->"}, "<!--"},
 		{".css", CommentForm{Open: "/* ", Close: " */"}, "/*"},
 	} {
-		lang, _ := LanguageFor(tc.ext, nil)
+		lang, _ := LanguageFor(tc.ext, Configured{})
 		write, read := CommentForms(lang)
 		if write != tc.write {
 			t.Errorf("%s writes %+v, want %+v", tc.ext, write, tc.write)
@@ -143,7 +143,7 @@ func TestCommentFormsReportTheWrittenFormAndItsCloser(t *testing.T) {
 	}
 }
 
-// R526 — the configuration's code/raw distinction and order reach sdom unchanged.
+// R555 — the configuration's code/raw distinction and order reach sdom unchanged.
 func TestLanguageDefBuildsTheTableItDescribes(t *testing.T) {
 	var cfg struct {
 		Languages []LanguageDef `toml:"languages"`
@@ -235,7 +235,7 @@ func TestExampleLanguagesConfigLoads(t *testing.T) {
 		// The example claims to copy the built-in tables; hold it to that, so it cannot
 		// drift into teaching a table the tool does not use.
 		for _, ext := range d.Extensions {
-			built, _ := LanguageFor(ext, nil)
+			built, _ := LanguageFor(ext, Configured{})
 			if !reflect.DeepEqual(lang.Brackets, built.Brackets) || lang.Comment != built.Comment {
 				t.Errorf("the example's %s differs from the built-in table for %s", d.Name, ext)
 			}
@@ -245,5 +245,60 @@ func TestExampleLanguagesConfigLoads(t *testing.T) {
 		if !slices.Contains(names, want) {
 			t.Errorf("the example does not define %s (it defines %v)", want, names)
 		}
+	}
+}
+
+// CRC: crc-Languages.md | Test: test-Languages.md | R552
+func TestAFilesTableIsChosenByPatternThenExtensionThenInterpreter(t *testing.T) {
+	toy := &sdom.BracketLang{Comment: sdom.CommentStyle{Prefix: "## ", Suffix: "\n", Kind: comment}}
+	goToy := &sdom.BracketLang{Comment: sdom.CommentStyle{Prefix: "%% ", Suffix: "\n", Kind: comment}}
+	cfg := Configured{Ext: map[string]*sdom.BracketLang{".go": goToy}, Files: []FileRule{{Pattern: "bin/*", Lang: toy}}}
+	for _, c := range []struct {
+		file, first string
+		want        *sdom.BracketLang
+	}{
+		{"bin/tool.go", "package main", toy},
+		{"x.go", "package x", goToy},
+		{"x.sh", "echo", &sdom.LangShell},
+		{"install/linkapp", "#!/bin/bash", &sdom.LangShell},
+		{"notes", "hello", nil},
+	} {
+		got, ok := LanguageForFile(c.file, c.first, cfg)
+		if got != c.want || ok != (c.want != nil) {
+			t.Errorf("%s: got %p (%v), want %p", c.file, got, ok, c.want)
+		}
+	}
+}
+
+// CRC: crc-Languages.md | Test: test-Languages.md | R553
+func TestAnInterpreterLineIsReadStrictly(t *testing.T) {
+	for line, want := range map[string]string{
+		"#!/bin/bash":                      "bash",
+		"#! /usr/bin/env -S python3.11 -u": "python",
+		"#!/usr/bin/env node":              "node",
+		"#!/usr/bin/perl":                  "perl",
+		"# a comment":                      "",
+		"class Foo:":                       "",
+	} {
+		if got := Interpreter(line); got != want {
+			t.Errorf("Interpreter(%q) = %q, want %q", line, got, want)
+		}
+	}
+	if _, ok := LanguageForFile("odd", "#!/usr/bin/perl", Configured{}); ok {
+		t.Error("an interpreter the table does not list was given a table")
+	}
+}
+
+// CRC: crc-Languages.md | Test: test-Languages.md | R555, R556
+func TestADefinitionAttachesFilesToABuiltIn(t *testing.T) {
+	got, err := LanguageDef{Name: "shell", Files: []string{"install/linkapp"}}.Build()
+	if err != nil || got != &sdom.LangShell {
+		t.Errorf("attach: %p, %v; want LangShell", got, err)
+	}
+	if _, err := (LanguageDef{Name: "shell", Files: []string{"["}}).Build(); err == nil || !strings.Contains(err.Error(), "shell") || !strings.Contains(err.Error(), `"["`) {
+		t.Errorf("a malformed pattern: %v", err)
+	}
+	if _, err := (LanguageDef{Name: "zig", Files: []string{"a"}}).Build(); err == nil || !strings.Contains(err.Error(), "comment") {
+		t.Errorf("a definition of its own without comment: %v", err)
 	}
 }

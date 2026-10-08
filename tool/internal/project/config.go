@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/zot/minispec/internal/minispecsdom"
+	"github.com/zot/simple-dom/sdom"
 )
 
 // Origin labels for settings that no configuration file supplied.
@@ -346,19 +347,22 @@ func applyLayer(cfg *Config, layer Config, origin string, origins Origins) {
 	}
 }
 
-// CRC: crc-Project.md | R526, R527
-// Languages is the extension map the project's configured languages make, for the harvest
-// to consult before the built-in tables. Each definition was checked when its file loaded,
+// CRC: crc-Project.md | R527, R555, R556
+// Languages is the extension map and the `files` rules the project's configured languages
+// make, for the harvest to consult before the built-in tables. Each definition was checked when its file loaded,
 // so building it again cannot fail on a configuration that resolved.
 func (p *Project) Languages() (minispecsdom.Configured, error) {
-	out := minispecsdom.Configured{}
+	out := minispecsdom.Configured{Ext: map[string]*sdom.BracketLang{}}
 	for _, def := range p.Config.Languages {
 		lang, err := def.Build()
 		if err != nil {
-			return nil, err
+			return minispecsdom.Configured{}, err
 		}
 		for _, ext := range def.Extensions {
-			out[ext] = lang
+			out.Ext[ext] = lang
+		}
+		for _, pat := range def.Files { // R555, R556 — in configuration order
+			out.Files = append(out.Files, minispecsdom.FileRule{Pattern: pat, Lang: lang})
 		}
 	}
 	return out, nil
