@@ -243,7 +243,7 @@ func (u *Update) ApproveGap(gapID string) (string, error) {
 // reqIDRe matches a bare Rn requirement identifier.
 var reqIDRe = regexp.MustCompile(`^R\d+$`)
 
-// CRC: crc-Update.md | Seq: seq-update.md | R80, R103, R326
+// CRC: crc-Update.md | Seq: seq-update.md | R80, R103, R326, R547, R548, R549
 // Retire rewrites the requirement's head line to its retired form through the requirements
 // reader and appends the `Tn` gap through the gaps reader — two documents, one verb — and
 // returns the assigned Tn with the requirement's `**Source:**` specs, so the CLI can print
@@ -277,7 +277,7 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, e
 	if err != nil {
 		return "", nil, err
 	}
-	newTn := nextGapID(gaps, "T")
+	newTn := fmt.Sprintf("T%d", parser.NextTNum(gaps, reqs)) // R549
 	var clause, gapDesc string
 	if noReplacement {
 		clause = "no replacement"
@@ -286,17 +286,26 @@ func (u *Update) Retire(oldReq, replacement, reason string) (string, []string, e
 		clause = fmt.Sprintf("see %s", replacement)
 		gapDesc = fmt.Sprintf("%s retired by %s (%s)", oldReq, replacement, reason)
 	}
-	err = parser.EditFile(u.Project.RequirementsPath(), func(src string) (string, error) {
-		r := minispecsdom.ParseRequirements(src)
-		if err := r.Retire(oldReq, newTn, clause); err != nil {
-			return "", err
-		}
-		return r.Render()
-	})
+	// R547, R548 — both rendered and read back before either is written, and the gap first,
+	// so a refusal from either reader writes nothing and a failed second write leaves the
+	// number held by a gap.
+	err = parser.EditFiles(
+		parser.FileEdit{Path: u.Project.DesignMdPath(), Render: func(src string) (string, error) {
+			g := minispecsdom.ParseGaps(src)
+			if err := g.Add(newTn, gapDesc); err != nil {
+				return "", err
+			}
+			return g.Render()
+		}},
+		parser.FileEdit{Path: u.Project.RequirementsPath(), Render: func(src string) (string, error) {
+			r := minispecsdom.ParseRequirements(src)
+			if err := r.Retire(oldReq, newTn, clause); err != nil {
+				return "", err
+			}
+			return r.Render()
+		}},
+	)
 	if err != nil {
-		return "", nil, err
-	}
-	if err := u.editGaps(func(g *minispecsdom.Gaps) error { return g.Add(newTn, gapDesc) }); err != nil {
 		return "", nil, err
 	}
 	return newTn, target.Sources, nil

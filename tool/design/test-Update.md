@@ -123,8 +123,7 @@
 **Alarm:** 6
 **Fire alarm:** skip the gaps write — return after the requirements render — and confirm the Tn line is missing
 **Inject:** internal/update/update.go:Retire
-**Pulled:** 2026-09-07 — rang: `the Tn gap was not added`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature
-
+**Pulled:** 2026-10-08 — rang, by hand at `#102`'s commit after `Retire` moved to `EditFiles`: the design-side render returning its source unchanged fails `the Tn gap was not added`, and the refusal and T-number tests beside it; restore byte-clean *Earlier —* 2026-09-07 — rang: `the Tn gap was not added`; restore byte-clean by copy, and again the same day after the simplification pass restructured `update.go`, same signature
 ## Test: add-ref writes the canonical form
 **Purpose:** validates R533 — the whole field comes back sorted, each ref once, a run of three or more as `R5-8`, a pair listed
 **Input:** a card with `**Requirements:** R8, R1, R5, R7`; add R6
@@ -190,3 +189,36 @@
 **Fire alarm:** let `reqNumber` accept any number it can read — `5` writes R5 and `R0` writes a ref to a requirement that cannot exist. Found past the list: the suite stayed green under exactly this injection until this test existed
 **Inject:** internal/update/update.go:reqNumber
 **Pulled:** 2026-10-03 — rang: with only the number checked, `"5" changed the card: … R1, R5` and `"R0" changed the card: … R0, R1`; restore byte-clean by copy
+
+## Test: retire writes neither document when the gap write is refused
+**Purpose:** validates R547 — a refusal from either reader leaves both files as they were
+**Input:** a requirements.md and a design.md whose Gaps section holds a deviant entry the gaps reader refuses to write past, or a `T` already carrying the minted number; retire R3
+**Expected:** an error; requirements.md and design.md byte-identical to before
+**Refs:** crc-Update.md, seq-update.md — R547
+**Code:** internal/update/addreq_test.go
+**Alarm:** 13
+**Fire alarm:** restore the field defect — write requirements.md through its own `EditFile` before the gap edit renders. Red: requirements.md carries `(Retired T…` after the refusal (ui-engine, 2026-10-07)
+**Inject:** internal/update/update.go:Retire
+**Pulled:** 2026-10-08 — rang, by hand after simplification: writing requirements.md through its own `EditFile` before the paired edits fails `TestRetireWritesNeitherDocumentWhenTheGapWriteIsRefused` (`requirements.md was written although the gap was refused`), and the happy path with it (`the requirement is already retired`); update, parser, query run unfiltered with `-count=1`; restore byte-clean
+
+## Test: the next Tn counts the retired markers
+**Purpose:** validates R549 — a `Tn` named only by a requirement's marker is still taken, by `retire` and by `query next-id gap`
+**Input:** a requirements.md with `(Retired T5 — see R1)` and a design.md whose highest `T` gap is `T2`; retire another requirement, and ask next-id
+**Expected:** the retirement is `T6`; `query next-id gap` reports `T6` before it
+**Refs:** crc-Update.md, crc-Query.md — R549
+**Code:** internal/update/addreq_test.go
+**Alarm:** 14
+**Fire alarm:** mint from the gaps alone (`nextGapID(gaps, "T")`). Red: the retirement is `T3`, a number the marker already holds
+**Inject:** internal/update/update.go:Retire
+**Pulled:** 2026-10-08 — rang, by hand after simplification: minting from the gaps alone gives `retired as "T2", want T6` and `the gap does not carry T6`; restore byte-clean
+
+## Test: EditFiles writes in the order given
+**Purpose:** validates R548 — the file passed first is on disk when a later write fails, which is what lets `retire` put the gap first
+**Input:** two files, the second in a read-only directory (readable, its temp file uncreatable); both rendered to new content
+**Expected:** an error; the first file carries the new content
+**Refs:** crc-Update.md — R548
+**Code:** internal/update/addreq_test.go
+**Alarm:** 15
+**Fire alarm:** write the edits in reverse order in `EditFiles`. Red: `the first file was not written before the second failed`
+**Inject:** internal/parser/carve.go:EditFiles
+**Pulled:** 2026-10-08 — rang, by hand after simplification: writing the edits in reverse order fails `TestEditFilesWritesInTheOrderGiven` (`the first file was not written before the second failed`); restore byte-clean

@@ -177,3 +177,17 @@ func NextGapNum(gaps []Gap, gapType string) int {
 	}
 	return maxNum + 1
 }
+
+// CRC: crc-Update.md | R549
+// NextTNum is the next free `Tn`: one past the highest `T` number in the gaps or in any
+// retired requirement's `(Retired Tn …)` marker. A marker whose gap was never written still
+// holds its number, so the gaps alone would hand it out again (ark, ui-engine, 2026-10-07).
+func NextTNum(gaps []Gap, reqs []Requirement) int {
+	next := NextGapNum(gaps, "T")
+	for _, r := range reqs {
+		if num, err := strconv.Atoi(strings.TrimPrefix(r.RetiredBy, "T")); err == nil {
+			next = max(next, num+1)
+		}
+	}
+	return next
+}

@@ -201,6 +201,18 @@ What stays this tool's is minting: the next `On`, `An`, `Tn` or `Rn` is computed
 the reader returned, retired and resolved numbers counted, and passed in. `retire` is two
 documents in one verb — the head line rewritten in one, the `Tn` gap added in the other.
 
+**`retire` writes both documents or neither.** Both edits are rendered and read back in memory
+before either file is touched, so a refusal from either reader — or a read-back that fails —
+leaves both files as they were. Only then are they written, `design.md`'s gap first: should
+the second file write itself fail, the number is held by a gap rather than by a marker
+nothing lists. *Measured 2026-10-08 in ark's report on ui-engine:* the requirements half was
+written, the gap half refused, and the next `retire` handed out the same `T1`.
+
+**A `Tn` is never handed out twice.** The next `Tn` is one past the highest `T` number in
+either document — a `Tn` gap in `design.md`, or a `(Retired Tn …)` marker in
+`requirements.md` — and `query next-id gap` answers by the same rule, so the two cannot
+disagree.
+
 ## minispec update number-alarms [file...]
 
 Assigns `**Alarm:**` numbers to every alarm that has none, writing the field into the

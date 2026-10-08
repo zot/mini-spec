@@ -57,12 +57,13 @@ func ParseRequirementsReport(path string) ([]Requirement, []minispecsdom.Unread,
 		text := strings.TrimSpace(q.Text)
 		inferred := inferredRe.MatchString(text)
 		out = append(out, Requirement{
-			ID:       q.ID,
-			Text:     inferredRe.ReplaceAllString(text, ""),
-			Sources:  splitSourceList(sectionSource(q.Section)),
-			Inferred: inferred,
-			Retired:  q.Retired,
-			Line:     q.Line(),
+			ID:        q.ID,
+			Text:      inferredRe.ReplaceAllString(text, ""),
+			Sources:   splitSourceList(sectionSource(q.Section)),
+			Inferred:  inferred,
+			Retired:   q.Retired,
+			RetiredBy: q.RetiredBy,
+			Line:      q.Line(),
 		})
 	}
 	return out, r.Unread(), nil

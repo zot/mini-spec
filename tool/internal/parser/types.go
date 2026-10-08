@@ -8,7 +8,9 @@ type Requirement struct {
 	Sources  []string // spec file paths (R90: comma-separated list supported)
 	Inferred bool
 	Retired  bool // R77: marked with strikethrough/Retired prefix
-	Line     int
+	// RetiredBy is the Tn a retired requirement's marker names, empty when live. R549
+	RetiredBy string
+	Line      int
 }
 
 // SourceLineIssue is a near-miss Source-like line found in requirements.md

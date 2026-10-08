@@ -1,5 +1,5 @@
 # Update
-**Requirements:** R18, R19, R20, R21, R22, R23, R4, R62, R80, R81, R82, R83, R103, R310, R313, R314, R315, R316, R311, R324, R325, R326, R533, R534, R535, R536, R537
+**Requirements:** R4, R18-23, R62, R80-83, R103, R310, R311, R313-316, R324-326, R533-537, R547-549
 
 Atomic modifications to structured parts of design files.
 
@@ -40,7 +40,7 @@ Atomic modifications to structured parts of design files.
 - AddGap(gapType, desc): add new gap with auto-numbered ID; A-typed and T-typed entries are written without a leading checkbox
 - ResolveGap(gapID): mark gap as resolved (check its checkbox); refuses A and T types
 - ApproveGap(gapID): convert existing gap to A type with next A-number, preserve description; written without checkbox
-- Retire(oldReq, replacement, reason): rewrite the oldReq line in requirements.md to the strikethrough/Retired form AND append a new T-typed gap to design.md; returns the assigned Tn AND the retired requirement's **Source:** spec(s), so the CLI can emit the supersede-at-source reminder
+- Retire(oldReq, replacement, reason): rewrite the oldReq line in requirements.md to the strikethrough/Retired form AND append a new T-typed gap to design.md — both rendered and read back in memory before either file is written, the gap's file written first, and the Tn one past the highest T in either document (R547–R549); returns the assigned Tn AND the retired requirement's **Source:** spec(s), so the CLI can emit the supersede-at-source reminder
 - MigrationComplete(name): move specs/migrations/<name>.md to specs/migrations/complete/<NNN>-<name>.md with the next zero-padded prefix; returns the new path
 
 ## Collaborators

@@ -357,11 +357,58 @@ func EditFile(path string, render func(src string) (string, error)) error {
 	return editFile(path, render)
 }
 
-func editFile(path string, render func(src string) (string, error)) (err error) {
-	src, err := os.ReadFile(path)
+func editFile(path string, render func(src string) (string, error)) error {
+	src, out, err := renderFile(path, render)
 	if err != nil {
 		return err
 	}
+	// R468 — an unchanged render is not written: a no-op run leaves the file's bytes and its
+	// mtime alone, which is what makes a verb safe to re-run rather than something to schedule.
+	if out == src {
+		return nil
+	}
+	return writeFile(path, out)
+}
+
+// FileEdit is one file's render, for EditFiles.
+type FileEdit struct {
+	Path   string
+	Render func(src string) (string, error)
+}
+
+// CRC: crc-Update.md | Seq: seq-update.md | R547, R548
+// EditFiles renders every edit and reads each back **before writing any file**, then writes
+// them in the order given. A refusal or failed read-back from any render leaves every file as
+// it was: two documents changed by one verb are changed together or not at all. The order is
+// the caller's, so the file whose write must survive a later failure goes first.
+func EditFiles(edits ...FileEdit) error {
+	srcs := make([]string, len(edits))
+	outs := make([]string, len(edits))
+	for i, e := range edits {
+		src, out, err := renderFile(e.Path, e.Render)
+		if err != nil {
+			return err
+		}
+		srcs[i], outs[i] = src, out
+	}
+	for i, e := range edits {
+		if outs[i] == srcs[i] { // R468
+			continue
+		}
+		if err := writeFile(e.Path, outs[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// renderFile reads path and renders it, writing nothing.
+func renderFile(path string, render func(src string) (string, error)) (src, out string, err error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", "", err
+	}
+	src = string(b)
 	// A write the reader cannot read back panics inside the dependency with a ReadBackError:
 	// a library invariant, not caller input, so it is not an error a caller could swallow. Here
 	// it becomes a refusal naming the file, and the file stays untouched because nothing has
@@ -375,15 +422,12 @@ func editFile(path string, render func(src string) (string, error)) (err error) 
 			panic(r)
 		}
 	}()
-	out, err := render(string(src))
-	if err != nil {
-		return err
-	}
-	// R468 — an unchanged render is not written: a no-op run leaves the file's bytes and its
-	// mtime alone, which is what makes a verb safe to re-run rather than something to schedule.
-	if out == string(src) {
-		return nil
-	}
+	out, err = render(src)
+	return src, out, err
+}
+
+// writeFile replaces path with out by temp file and rename, so a reader never sees half a file.
+func writeFile(path, out string) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err

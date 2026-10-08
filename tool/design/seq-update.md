@@ -60,9 +60,12 @@ CLI -> Update: Retire(project, "R12", "R40", "ec-rekey reason")
 
 Update -> Parser: ParseRequirements(requirements.md)
 Parser --> Update: []Requirement, find R12 (Sources: [specs/storage.md]) at line N
-Update -> Parser: ParseGaps(design.md) -> next Tn
-Update -> os: rewrite R12 line to "~~R12:~~ (Retired Tn — see R40) ..."
-Update -> os: append "- Tn: R12 retired by R40 (ec-rekey reason)" to Gaps
+Update -> Parser: ParseGaps(design.md), retired markers in requirements.md -> next Tn (R549)
+Update -> Parser: EditFiles(design.md, requirements.md)
+  Parser: render both in memory — the Tn gap added, the R12 head rewritten — and read both
+          back; any refusal or failed read-back returns with neither file written (R547)
+  Parser -> os: write design.md's "- Tn: R12 retired by R40 (ec-rekey reason)" first,
+          then requirements.md's "~~R12:~~ (Retired Tn — see R40) ..." (R548)
 Update --> CLI: tn="Tn", sources=["specs/storage.md"]
 
 CLI --> User (stdout): "Tn"

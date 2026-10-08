@@ -1,5 +1,5 @@
 # Query
-**Requirements:** R10-17, R79, R102, R185-187, R189, R191-193, R198-204, R317-322, R326, R502-507, R518, R519, R531, R538, R539
+**Requirements:** R10-17, R79, R102, R185-187, R189, R191-193, R198-204, R317-322, R326, R502-507, R518, R519, R531, R538, R539, R549
 
 Read-only operations that query parsed design data.
 
@@ -51,7 +51,8 @@ Read-only operations that query parsed design data.
   Trajectory, `gap` and `req` are design-scoped and read what is already parsed (R189,
   R191). `gap` answers for **every** gap type, since numbering runs a separate sequence
   per type (R192), and `req` counts retired requirements, whose numbers are permanently
-  taken (R193)
+  taken (R193); `T` also counts the `(Retired Tn …)` markers in requirements.md, the rule
+  `retire` mints by (R549)
 - Implementation(args, retired): the reverse lookup — where a requirement is implemented.
   Classify the args: a clean list of requirement refs (the `ExpandGapRefs` grammar, R-only)
   is number mode, otherwise the sole arg is a regexp over requirement text. Number mode

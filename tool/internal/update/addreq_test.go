@@ -7,7 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zot/minispec/internal/parser"
 	"github.com/zot/minispec/internal/project"
+	"github.com/zot/minispec/internal/query"
 )
 
 const reqsDoc = `# Requirements
@@ -135,5 +137,83 @@ func TestRetireWritesBothDocumentsThroughTheReaders(t *testing.T) {
 	}
 	if _, _, err := u.Retire("R3", "-", "again"); err == nil {
 		t.Error("a second retirement was absorbed")
+	}
+}
+
+// CRC: crc-Update.md | Test: test-Update.md | R547
+func TestRetireWritesNeitherDocumentWhenTheGapWriteIsRefused(t *testing.T) {
+	u, rp, dp := reqProject(t)
+	// No Gaps section: the gaps reader refuses the add, and the requirements half must not
+	// land without it.
+	if err := os.WriteFile(dp, []byte("# Design\n\n## Notes\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	beforeR, beforeD := read(t, rp), read(t, dp)
+	if _, _, err := u.Retire("R3", "R1", "folded"); err == nil {
+		t.Fatal("retire succeeded with nowhere to put its gap")
+	}
+	if read(t, rp) != beforeR {
+		t.Errorf("requirements.md was written although the gap was refused:\n%s", read(t, rp))
+	}
+	if read(t, dp) != beforeD {
+		t.Error("design.md changed")
+	}
+}
+
+// CRC: crc-Update.md | Test: test-Update.md | R549
+func TestTheNextTnCountsTheRetiredMarkers(t *testing.T) {
+	u, rp, dp := reqProject(t)
+	// R2's marker holds T5 while the gaps go no higher than T1 — the state a half-written
+	// retirement left in ui-engine.
+	if err := os.WriteFile(rp, []byte(strings.Replace(read(t, rp), "(Retired T1 —", "(Retired T5 —", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(read(t, rp), "(Retired T5 —") {
+		t.Fatal("the fixture edit did not land")
+	}
+	res, err := query.New(u.Project).NextID("gap")
+	if err != nil {
+		t.Fatalf("next-id gap: %v", err)
+	}
+	if res.ByType["T"] != "T6" {
+		t.Errorf("next-id gap T = %q, want T6 — the marker's T5 is taken", res.ByType["T"])
+	}
+	tn, _, err := u.Retire("R3", "R1", "folded")
+	if err != nil || tn != "T6" {
+		t.Errorf("retired as %q (%v), want T6", tn, err)
+	}
+	if !strings.Contains(read(t, dp), "- T6: R3 retired by R1 (folded)") {
+		t.Error("the gap does not carry T6")
+	}
+}
+
+// CRC: crc-Update.md | Test: test-Update.md | R548
+func TestEditFilesWritesInTheOrderGiven(t *testing.T) {
+	root := t.TempDir()
+	first, locked := filepath.Join(root, "first"), filepath.Join(root, "locked")
+	for _, d := range []string{first, locked} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a, b := filepath.Join(first, "a.md"), filepath.Join(locked, "b.md")
+	for _, p := range []string{a, b} {
+		if err := os.WriteFile(p, []byte("old\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// b stays readable and its write fails: the temp file beside it cannot be created.
+	if err := os.Chmod(locked, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(locked, 0o755) })
+	edit := func(p string) parser.FileEdit {
+		return parser.FileEdit{Path: p, Render: func(string) (string, error) { return "new\n", nil }}
+	}
+	if err := parser.EditFiles(edit(a), edit(b)); err == nil {
+		t.Fatal("the second write could not fail")
+	}
+	if read(t, a) != "new\n" {
+		t.Error("the first file was not written before the second failed — the order given is the order written")
 	}
 }

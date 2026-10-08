@@ -309,7 +309,7 @@ func NextItemID() (*NextIDResult, error) {
 	return res, nil
 }
 
-// CRC: crc-Query.md | R192
+// CRC: crc-Query.md | R192, R549
 // nextGapIDs answers for every gap type, since each runs its own sequence.
 func (q *Query) nextGapIDs() (*NextIDResult, error) {
 	gaps, err := q.Gaps()
@@ -324,6 +324,13 @@ func (q *Query) nextGapIDs() (*NextIDResult, error) {
 	for _, t := range parser.GapTypes {
 		res.ByType[t] = fmt.Sprintf("%s%d", t, parser.NextGapNum(gaps, t))
 	}
+	// R549 — a `Tn` named only by a requirement's retired marker is still taken.
+	reqs, err := q.Requirements()
+	if err != nil {
+		return nil, err
+	}
+	res.ByType["T"] = fmt.Sprintf("T%d", parser.NextTNum(gaps, reqs))
+	res.Sources = append(res.Sources, NextIDSource{Name: "requirements.md", Present: true, Count: len(reqs)})
 	return res, nil
 }
 

@@ -66,6 +66,9 @@
 - **R535:** `update remove-ref` removes a member from inside a range by splitting it, and removing the last ref removes the `**Requirements:**` line rather than leaving an empty field.
 - **R536:** The rewrite keeps anything in the field that is not a requirement ref, as written, after the refs, so `validate` still reports it.
 - **R537:** `update remove-ref` of a ref the card does not carry is an error naming the ref and the card, and the card is left unchanged.
+- **R547:** `retire` renders both edits and reads both back in memory before writing either file: a refusal or failed read-back from either reader leaves both files untouched
+- **R548:** `retire` writes `design.md`'s `Tn` gap before `requirements.md`'s marker, so a file write failing between them leaves the number held by a gap
+- **R549:** The next `Tn` is one past the highest `T` number in `design.md`'s gaps or in any `(Retired Tn …)` marker in `requirements.md`; `retire` mints by this rule and `query next-id gap` reports by it
 
 ## Feature: Validate
 **Source:** specs/validate.md
