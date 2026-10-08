@@ -46,6 +46,7 @@ through sdom behind that wrapper. The wrapper is not deleted — see Item 7.
   - [x] ~~**5.8 — languages chosen by path, glob or shebang, not only extension.**~~ **LANDED (2026-10-08 — `#104`.)** Asked by ark `requests/ms-filename-lang.md` — see body.
 - [ ] **Item 6 — `specs/*.md`.** **OPEN (not queued.)** Scope to settle — see body.
 - [ ] **Item 7 — retire the old `parser` wrappers.** **OPEN (not queued.)** End-state to settle — see body.
+- [ ] **Item 8 — explicit anchors for numeric cross-references.** **OPEN (not queued.)** Asked by ark; scope to settle — see body.
 
 ## Decisions
 
@@ -151,3 +152,36 @@ sdom, the old `parser` package is only a file-path wrapper over `minispecsdom`. 
 end-state could retire the wrappers (consumers call `minispecsdom` and own their file
 IO), or keep them as a deliberate file-IO adapter. Not a decision to force now; named so
 it is not lost.
+
+## Item 8 — explicit anchors for numeric cross-references
+
+@ark-request-ref: doc-anchor-convention
+
+Ark (2026-09-22) adopted an explicit HTML anchor above each numbered section of its specs,
+designs and carves — `<a id="3"></a>` on its own line, a blank line, then `## Part 3: …` — so
+that a link like `carves/windows-support.md#3` resolves when rendered. GitHub's generated
+slugs (`#part-3-…`) never equal a bare number, so without the anchor a numeric link lands at
+the top of the file. Ark suggests mini-spec adopt the convention for its own spec and design
+documents.
+
+*Measured here 2026-10-08:* this repository's `carves/`, `tool/specs/` and `tool/design/` hold
+**no** markdown link to a numeric fragment and **no** `<a id>` anchor. Cross-references here
+are backtick pointers — `` `carves/x.md#3.2` ``, read by the markdown reader's `Pointers()`
+and `query refs` — which a renderer never makes a link, so the convention would change nothing
+they do. Where fragments are checked today: a code comment's `Seq: seq-x.md#1.4` against the
+diagram's step numbers (R97). A markdown link's `#fragment` is split off (`Path`, `Fragment`)
+and never resolved; a fragment-only link is listed as `local`, not checked.
+
+`@undecided:` (resolution: settle when queued) — three questions, in order:
+
+1. **Does mini-spec want rendered navigation at all?** If cross-references stay backtick
+   pointers, the anchors serve only a reader on GitHub, and the decision is the convention
+   alone (Bill's, in the skill's format docs), with no tool work.
+2. **If so, which documents carry them** — carve parts, spec sections, sequence steps — and
+   does `trajectory-format.md` mandate the anchor above every part heading?
+3. **Should the tool check or write them?** A checker would resolve a link's fragment against
+   the target's `<a id>` anchors (the classification `query links` already does by path, one
+   level deeper); a writer would add the anchor when a part is minted. Either one reads the
+   document through sdom, which is why the part sits in this carve: an `<a id>` line must read
+   as an anchor, not as stray HTML or an unread line, in every reader that meets it.
+

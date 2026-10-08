@@ -17,6 +17,10 @@ Release contents (zip file):
   directory: `code-simplifier.md` there is untracked and comes from the plugin. Through
   v2.11.0 the list named only `spec-agent`; v3.0.0 is the first zip with all four.
 - Exclude Emacs backup files: `zip -x "*.~undo-tree~"`
+- Exclude `.claude/skills/mini-spec/notes.md`: it is git-ignored private notes, and `zip -r` takes
+  the whole directory, tracked or not. The v4.0.1 build picked it up until the file list was
+  compared with v4.0.0's zip. Compare the new zip's file list with the previous release's before
+  uploading: `diff <(unzip -Z1 new.zip | sort) <(unzip -Z1 old.zip | sort)`.
 
 Release process:
 1. Check existing tags (`git tag -l`) to confirm next version number
